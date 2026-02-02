@@ -50,7 +50,7 @@ const lightTheme = createTheme({
 // --- Main Component ---
 
 export default function Landing() {
-    const { platform, programs = [], stats = {}, allPrograms = [] } = usePage().props;
+    const { platform, programs = [], stats = {} } = usePage().props;
 
     // If platform is set up, show the platform-specific landing
     if (platform) {
@@ -59,7 +59,6 @@ export default function Landing() {
                 platform={platform}
                 programs={programs}
                 stats={stats}
-                allPrograms={allPrograms}
             />
         );
     }
@@ -105,7 +104,7 @@ export default function Landing() {
 
 // --- Platform Landing (Premium Design) ---
 
-function PlatformLanding({ platform, programs = [], stats = {}, allPrograms = [] }) {
+function PlatformLanding({ platform, programs = [], stats = {} }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Dynamic colors from platform settings
@@ -339,7 +338,7 @@ function PlatformLanding({ platform, programs = [], stats = {}, allPrograms = []
                 </Drawer>
 
                 {/* ================== HERO SECTION (Eager Loaded) ================== */}
-                <HeroSection platform={platform} stats={stats} allPrograms={allPrograms} />
+                <HeroSection platform={platform} stats={stats} />
 
                 {/* ================== LAZY LOADED SECTIONS ================== */}
 

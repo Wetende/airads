@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import {
     Box,
     Container,
@@ -7,21 +7,16 @@ import {
     Stack,
     Card,
     useTheme,
-    Button,
-    TextField,
-    Alert,
 } from "@mui/material";
 import {
     IconBrandTabler,
     IconMapPin,
     IconPhone,
     IconMail,
-    IconSend,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { getBackgroundDots } from "../../utils/getBackgroundDots";
 import PublicNavbar from "../../components/common/PublicNavbar";
-import ButtonAnimationWrapper from "../../components/common/ButtonAnimationWrapper";
 
 // --- Helper Components ---
 function GraphicsCard({ children, sx = {} }) {
@@ -50,17 +45,6 @@ const fadeInUp = {
 
 export default function Contact() {
     const theme = useTheme();
-    const { data, setData, post, processing, wasSuccessful } = useForm({
-        name: "",
-        email: "",
-        subject: "",
-        message: "",
-    });
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        post("/contact/");
-    };
 
     return (
         <>
@@ -87,136 +71,64 @@ export default function Contact() {
                     <Container maxWidth="lg">
                         <motion.div {...fadeInUp}>
                             <Typography variant="h1" textAlign="center" gutterBottom>
-                                Get in Touch
+                                Contact Us
                             </Typography>
                             <Typography variant="h5" color="text.secondary" textAlign="center" sx={{ maxWidth: 600, mx: "auto", mb: 8 }}>
-                                We'd love to hear from you. Whether you have a question about features, trials, or pricing, our team is ready to answer all your questions.
+                                Have questions? Reach out to us through any of the channels below. Our AI assistant is also available to help you 24/7.
                             </Typography>
                         </motion.div>
                     </Container>
                 </Box>
 
                 {/* Content Section */}
-                <Container maxWidth="lg" sx={{ pb: 16 }}>
-                    <Grid container spacing={8}>
-                        {/* Contact Info */}
-                        <Grid item xs={12} md={4}>
-                            <Stack spacing={4}>
-                                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                                    <GraphicsCard sx={{ p: 4 }}>
-                                        <Stack spacing={4}>
-                                            <Stack direction="row" spacing={2}>
-                                                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: "primary.lighter", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                                    <IconMail size={20} />
-                                                </Box>
-                                                <Box>
-                                                    <Typography variant="subtitle1" fontWeight={700}>Email</Typography>
-                                                    <Typography variant="body2" color="text.secondary">Our friendly team is here to help.</Typography>
-                                                    <Typography variant="body1" color="primary.main" fontWeight={600} sx={{ mt: 0.5 }}>hello@crossview.co.ke</Typography>
-                                                </Box>
-                                            </Stack>
+                <Container maxWidth="md" sx={{ pb: 16 }}>
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                        <GraphicsCard sx={{ p: { xs: 4, md: 6 } }}>
+                            <Grid container spacing={4}>
+                                <Grid item xs={12} md={4}>
+                                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                                        <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "primary.lighter", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                            <IconMail size={24} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="subtitle1" fontWeight={700}>Email</Typography>
+                                            <Typography variant="body2" color="text.secondary">Our friendly team is here to help.</Typography>
+                                            <Typography variant="body1" color="primary.main" fontWeight={600} sx={{ mt: 0.5 }}>hello@crossview.co.ke</Typography>
+                                        </Box>
+                                    </Stack>
+                                </Grid>
 
-                                            <Stack direction="row" spacing={2}>
-                                                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: "primary.lighter", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                                    <IconMapPin size={20} />
-                                                </Box>
-                                                <Box>
-                                                    <Typography variant="subtitle1" fontWeight={700}>Office</Typography>
-                                                    <Typography variant="body2" color="text.secondary">Come say hello at our office headquarters.</Typography>
-                                                    <Typography variant="body1" sx={{ mt: 0.5 }}>Westlands, Nairobi, Kenya</Typography>
-                                                </Box>
-                                            </Stack>
+                                <Grid item xs={12} md={4}>
+                                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                                        <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "primary.lighter", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                            <IconMapPin size={24} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="subtitle1" fontWeight={700}>Office</Typography>
+                                            <Typography variant="body2" color="text.secondary">Come say hello at our office.</Typography>
+                                            <Typography variant="body1" sx={{ mt: 0.5 }}>Westlands, Nairobi, Kenya</Typography>
+                                        </Box>
+                                    </Stack>
+                                </Grid>
 
-                                            <Stack direction="row" spacing={2}>
-                                                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: "primary.lighter", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                                    <IconPhone size={20} />
-                                                </Box>
-                                                <Box>
-                                                    <Typography variant="subtitle1" fontWeight={700}>Phone</Typography>
-                                                    <Typography variant="body2" color="text.secondary">Mon-Fri from 8am to 5pm.</Typography>
-                                                    <Typography variant="body1" sx={{ mt: 0.5 }}>+254 700 000 000</Typography>
-                                                </Box>
-                                            </Stack>
-                                        </Stack>
-                                    </GraphicsCard>
-                                </motion.div>
-                            </Stack>
-                        </Grid>
-
-                        {/* Contact Form */}
-                        <Grid item xs={12} md={8}>
-                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-                                <GraphicsCard sx={{ p: { xs: 4, md: 6 } }}>
-                                    {wasSuccessful ? (
-                                        <Alert severity="success" sx={{ mb: 4 }}>
-                                            Thank you! Your message has been sent successfully. We'll be in touch soon.
-                                        </Alert>
-                                    ) : (
-                                        <form onSubmit={handleSubmit}>
-                                            <Grid container spacing={3}>
-                                                <Grid item xs={12} sm={6}>
-                                                    <TextField
-                                                        label="Name"
-                                                        fullWidth
-                                                        required
-                                                        value={data.name}
-                                                        onChange={(e) => setData("name", e.target.value)}
-                                                    />
-                                                </Grid>
-                                                <Grid item xs={12} sm={6}>
-                                                    <TextField
-                                                        label="Email"
-                                                        type="email"
-                                                        fullWidth
-                                                        required
-                                                        value={data.email}
-                                                        onChange={(e) => setData("email", e.target.value)}
-                                                    />
-                                                </Grid>
-                                                <Grid item xs={12}>
-                                                    <TextField
-                                                        label="Subject"
-                                                        fullWidth
-                                                        required
-                                                        value={data.subject}
-                                                        onChange={(e) => setData("subject", e.target.value)}
-                                                    />
-                                                </Grid>
-                                                <Grid item xs={12}>
-                                                    <TextField
-                                                        label="Message"
-                                                        multiline
-                                                        rows={4}
-                                                        fullWidth
-                                                        required
-                                                        value={data.message}
-                                                        onChange={(e) => setData("message", e.target.value)}
-                                                    />
-                                                </Grid>
-                                                <Grid item xs={12}>
-                                                    <ButtonAnimationWrapper>
-                                                        <Button
-                                                            type="submit"
-                                                            variant="contained"
-                                                            size="large"
-                                                            disabled={processing}
-                                                            endIcon={!processing && <IconSend size={18} />}
-                                                            sx={{ borderRadius: 100, px: 4 }}
-                                                        >
-                                                            {processing ? "Sending..." : "Send Message"}
-                                                        </Button>
-                                                    </ButtonAnimationWrapper>
-                                                </Grid>
-                                            </Grid>
-                                        </form>
-                                    )}
-                                </GraphicsCard>
-                            </motion.div>
-                        </Grid>
-                    </Grid>
+                                <Grid item xs={12} md={4}>
+                                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                                        <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "primary.lighter", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                            <IconPhone size={24} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="subtitle1" fontWeight={700}>Phone</Typography>
+                                            <Typography variant="body2" color="text.secondary">Mon-Fri from 8am to 5pm.</Typography>
+                                            <Typography variant="body1" sx={{ mt: 0.5 }}>+254 700 000 000</Typography>
+                                        </Box>
+                                    </Stack>
+                                </Grid>
+                            </Grid>
+                        </GraphicsCard>
+                    </motion.div>
                 </Container>
 
-                {/* Footer (Consistent) */}
+                {/* Footer */}
                 <Box sx={{ bgcolor: "grey.900", color: "grey.400", py: 8 }}>
                     <Container maxWidth="lg">
                         <Grid container spacing={8}>

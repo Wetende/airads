@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, router } from "@inertiajs/react";
+import { Link } from "@inertiajs/react";
 import PropTypes from "prop-types";
 import {
     Box,
@@ -15,10 +15,8 @@ import {
     IconArrowRight,
     IconCheck,
     IconUsers,
-    IconAward,
     IconSchool,
     IconCertificate,
-    IconChevronDown,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import ButtonAnimationWrapper from "../../common/ButtonAnimationWrapper";
@@ -87,37 +85,25 @@ SectionLabel.propTypes = {
     bgColor: PropTypes.string,
 };
 
-// --- Contact Card Component ---
-function ContactCard({ primaryColor, programs = [] }) {
-    const [formData, setFormData] = React.useState({
-        name: "",
-        email: "",
-        phone: "",
-        course: "",
-    });
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
-    const [submitted, setSubmitted] = React.useState(false);
-
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-
-        router.post("/contact/", formData, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setIsSubmitting(false);
-                setSubmitted(true);
-                setFormData({ name: "", email: "", phone: "", course: "" });
-            },
-            onError: () => {
-                setIsSubmitting(false);
-            },
-        });
-    };
+// --- Stats Highlight Card Component ---
+function StatsHighlightCard({ primaryColor, stats = {} }) {
+    const statItems = [
+        {
+            icon: IconUsers,
+            value: stats?.studentCount ?? "500+",
+            label: "Students Enrolled",
+        },
+        {
+            icon: IconSchool,
+            value: stats?.programCount ?? "20+",
+            label: "Programs",
+        },
+        {
+            icon: IconCertificate,
+            value: "100%",
+            label: "Verified Certificates",
+        },
+    ];
 
     return (
         <Card
@@ -127,15 +113,15 @@ function ContactCard({ primaryColor, programs = [] }) {
             whileInView="whileInView"
             viewport={{ once: true }}
             sx={{
-                p: { xs: 3, md: 5 }, // Increased padding to widen visual appearance
+                p: { xs: 3, md: 5 },
                 background: `linear-gradient(135deg, ${hexToRgba("#ffffff", 0.98)} 0%, ${hexToRgba("#ffffff", 0.92)} 100%)`,
                 backdropFilter: "blur(20px)",
                 borderRadius: 4,
                 boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
                 border: "1px solid rgba(255,255,255,0.3)",
-                maxWidth: 600, // Ensure it doesn't get too wide on very large screens but allows standard width
-                mx: "auto", // Center if it's smaller than container
-                width: "100%", // Take available width
+                maxWidth: 500,
+                mx: "auto",
+                width: "100%",
             }}
         >
             <Typography
@@ -144,235 +130,70 @@ function ContactCard({ primaryColor, programs = [] }) {
                 mb={1}
                 sx={{ color: "#1F2937" }}
             >
-                We're here to help!
+                Why Choose Us?
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                Please contact us in case of any query.
+                Join our growing community of learners.
             </Typography>
 
-            {submitted ? (
-                <Box
-                    sx={{
-                        textAlign: "center",
-                        py: 4,
-                    }}
-                >
-                    <Box
-                        sx={{
-                            width: 64,
-                            height: 64,
-                            borderRadius: "50%",
-                            bgcolor: hexToRgba("#10B981", 0.1),
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            mx: "auto",
-                            mb: 2,
-                        }}
+            <Stack spacing={3}>
+                {statItems.map((item, index) => (
+                    <motion.div
+                        key={index}
+                        variants={statItem}
+                        initial="initial"
+                        whileInView="whileInView"
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.1 }}
                     >
-                        <IconCheck size={32} color="#10B981" />
-                    </Box>
-                    <Typography variant="h6" fontWeight={600} gutterBottom>
-                        Message Sent!
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        We'll get back to you soon.
-                    </Typography>
-                    <Button
-                        onClick={() => setSubmitted(false)}
-                        sx={{ mt: 2, color: primaryColor }}
-                    >
-                        Send Another
-                    </Button>
-                </Box>
-            ) : (
-                <Stack component="form" onSubmit={handleSubmit} spacing={1.5}>
-                    <Box
-                        component="input"
-                        name="name"
-                        placeholder="Your name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        sx={{
-                            width: "100%",
-                            p: 2,
-                            pl: 2.5,
-                            borderRadius: 1,
-                            border: "none",
-                            borderLeft: "3px solid",
-                            borderColor: "#E5E7EB",
-                            bgcolor: "#FAFAFA",
-                            fontSize: "0.95rem",
-                            color: "#1F2937",
-                            outline: "none",
-                            transition: "all 0.2s",
-                            "&::placeholder": {
-                                color: "#9CA3AF",
-                            },
-                            "&:focus": {
-                                borderColor: primaryColor,
-                                bgcolor: "#FFFFFF",
-                            },
-                        }}
-                    />
-                    <Box
-                        component="input"
-                        name="email"
-                        type="email"
-                        placeholder="Your email address"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        sx={{
-                            width: "100%",
-                            p: 2,
-                            pl: 2.5,
-                            borderRadius: 1,
-                            border: "none",
-                            borderLeft: "3px solid",
-                            borderColor: "#E5E7EB",
-                            bgcolor: "#FAFAFA",
-                            fontSize: "0.95rem",
-                            color: "#1F2937",
-                            outline: "none",
-                            transition: "all 0.2s",
-                            "&::placeholder": {
-                                color: "#9CA3AF",
-                            },
-                            "&:focus": {
-                                borderColor: primaryColor,
-                                bgcolor: "#FFFFFF",
-                            },
-                        }}
-                    />
-                    <Box
-                        component="input"
-                        name="phone"
-                        type="tel"
-                        placeholder="Your phone number"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        required
-                        sx={{
-                            width: "100%",
-                            p: 2,
-                            pl: 2.5,
-                            borderRadius: 1,
-                            border: "none",
-                            borderLeft: "3px solid",
-                            borderColor: "#E5E7EB",
-                            bgcolor: "#FAFAFA",
-                            fontSize: "0.95rem",
-                            color: "#1F2937",
-                            outline: "none",
-                            transition: "all 0.2s",
-                            "&::placeholder": {
-                                color: "#9CA3AF",
-                            },
-                            "&:focus": {
-                                borderColor: primaryColor,
-                                bgcolor: "#FFFFFF",
-                            },
-                        }}
-                    />
-                    <Box sx={{ position: "relative" }}>
-                        <Box
-                            component="select"
-                            name="course"
-                            value={formData.course}
-                            onChange={handleChange}
-                            required
-                            sx={{
-                                width: "100%",
-                                p: 2,
-                                pl: 2.5,
-                                pr: 5, // space for arrow
-                                borderRadius: 1,
-                                border: "none",
-                                borderLeft: "3px solid",
-                                borderColor: "#E5E7EB",
-                                bgcolor: "#FAFAFA",
-                                fontSize: "0.95rem",
-                                color: formData.course ? "#1F2937" : "#9CA3AF",
-                                outline: "none",
-                                appearance: "none", // hide default arrow
-                                cursor: "pointer",
-                                transition: "all 0.2s",
-                                "&:focus": {
-                                    borderColor: primaryColor,
-                                    bgcolor: "#FFFFFF",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>
-                                Select Course
-                            </option>
-                            {programs.map((program) => (
-                                <option key={program.id} value={program.id}>
-                                    {program.name}
-                                </option>
-                            ))}
-                        </Box>
-                        {/* Custom Arrow */}
-                        <Box
-                            sx={{
-                                position: "absolute",
-                                right: 16,
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                pointerEvents: "none",
-                                color: "#6B7280",
-                            }}
-                        >
-                            <IconChevronDown size={20} />
-                        </Box>
-                    </Box>
-
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "flex-start",
-                            mt: 1,
-                        }}
-                    >
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={isSubmitting}
-                            endIcon={
-                                !isSubmitting && <IconArrowRight size={18} />
-                            }
-                            sx={{
-                                bgcolor: primaryColor,
-                                "&:hover": {
-                                    bgcolor: hexToRgba(primaryColor, 0.9),
-                                },
-                                py: 1.2,
-                                px: 2.5,
-                                borderRadius: 1,
-                                fontWeight: 700,
-                                textTransform: "none",
-                                fontSize: "1rem",
-                                minWidth: "auto", // Allow it to be 'small' / fit content
-                            }}
-                        >
-                            {isSubmitting ? "Sending..." : "Get in Touch"}
-                        </Button>
-                    </Box>
-                </Stack>
-            )}
+                        <Stack direction="row" spacing={2} alignItems="center">
+                            <Box
+                                sx={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: 2,
+                                    bgcolor: hexToRgba(primaryColor, 0.1),
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: primaryColor,
+                                }}
+                            >
+                                <item.icon size={24} />
+                            </Box>
+                            <Box>
+                                <Typography
+                                    variant="h5"
+                                    fontWeight={700}
+                                    sx={{ color: "#1F2937" }}
+                                >
+                                    {item.value}
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                >
+                                    {item.label}
+                                </Typography>
+                            </Box>
+                        </Stack>
+                    </motion.div>
+                ))}
+            </Stack>
         </Card>
     );
 }
 
-ContactCard.propTypes = {
+StatsHighlightCard.propTypes = {
     primaryColor: PropTypes.string.isRequired,
-    programs: PropTypes.array,
+    stats: PropTypes.shape({
+        studentCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        programCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    }),
 };
 
 // --- Main HeroSection Component ---
-export default function HeroSection({ platform, allPrograms = [] }) {
+export default function HeroSection({ platform, stats = {} }) {
     const primaryColor = platform?.primaryColor || "#3B82F6";
     const secondaryColor = platform?.secondaryColor || "#1E40AF";
 
@@ -621,9 +442,9 @@ export default function HeroSection({ platform, allPrograms = [] }) {
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 5 }}>
-                        <ContactCard
+                        <StatsHighlightCard
                             primaryColor={primaryColor}
-                            programs={allPrograms}
+                            stats={stats}
                         />
                     </Grid>
                 </Grid>
@@ -638,6 +459,10 @@ HeroSection.propTypes = {
         secondaryColor: PropTypes.string,
         institutionName: PropTypes.string,
         tagline: PropTypes.string,
+    }),
+    stats: PropTypes.shape({
+        studentCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        programCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     }),
 };
 
