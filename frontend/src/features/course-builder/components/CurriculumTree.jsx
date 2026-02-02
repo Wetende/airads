@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import SearchMaterialsModal from './SearchMaterialsModal';
 import { router } from '@inertiajs/react';
 import {
@@ -52,7 +52,7 @@ import {
     VideoCameraFront as ZoomIcon,
     Cast as StreamIcon,
     Quiz as QuizIcon,
-    Assignment as AssignmentIcon,
+    AssignmentTurnedIn as AssignmentIcon,
     Close as CloseIcon,
 } from '@mui/icons-material';
 
@@ -69,6 +69,55 @@ export const flattenNodes = (nodes) => {
     return result;
 };
 
+// Sortable Section wrapper component
+function SortableSection({ id, children }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : undefined,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            {children}
+        </div>
+    );
+}
+
+// Sortable Leaf (lesson) wrapper component
+function SortableLeaf({ id, children }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            {children}
+        </div>
+    );
+}
+
 export default function CurriculumTree({ program, nodes, onNodeSelect, onCurriculumUpdate, blueprint }) {
     // Get feature flags from blueprint (with defaults)
     const featureFlags = blueprint?.featureFlags || {
@@ -76,6 +125,7 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
     };
     const [selectedNodeId, setSelectedNodeId] = useState(null);
     const [localNodes, setLocalNodes] = useState(nodes);
+    const oldIdsRef = useRef(new Set());
     
     // Update local nodes when props change
     React.useEffect(() => {
@@ -98,6 +148,29 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
             
             // Call backend to persist order
             router.post(`/instructor/programs/${program.id}/nodes/reorder/`, {
+                ordered_ids: reordered.map(n => n.id)
+            }, { preserveScroll: true });
+        }
+    };
+    
+    // Handler for reordering children within a section
+    const handleChildDragEnd = (parentId, children) => (event) => {
+        const { active, over } = event;
+        if (active.id !== over?.id && children) {
+            const oldIndex = children.findIndex((n) => n.id === active.id);
+            const newIndex = children.findIndex((n) => n.id === over.id);
+            const reordered = arrayMove(children, oldIndex, newIndex);
+            
+            // Update local state
+            setLocalNodes(prev => prev.map(section => 
+                section.id === parentId 
+                    ? { ...section, children: reordered }
+                    : section
+            ));
+            
+            // Call backend to persist order with parent context
+            router.post(`/instructor/programs/${program.id}/nodes/reorder/`, {
+                parent_id: parentId,
                 ordered_ids: reordered.map(n => n.id)
             }, { preserveScroll: true });
         }
@@ -312,39 +385,57 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
     // Render a single leaf item
     const renderLeaf = (node) => {
         const isSelected = selectedNodeId === node.id;
+        const lessonType = node.properties?.lesson_type;
+        
+        // Icon and color based on lesson_type property (preferred) or node type
         let Icon = ArticleIcon;
-        if (node.properties?.lesson_type === 'video') Icon = VideoIcon;
-        else if (node.properties?.lesson_type === 'live_class') Icon = ZoomIcon;
-        else if (node.type === 'Quiz') Icon = QuizIcon;
-        else if (node.type === 'Assignment') Icon = AssignmentIcon;
+        let iconColor = '#4caf50'; // Green for text lessons (default)
+        
+        if (lessonType === 'video') {
+            Icon = VideoIcon;
+            iconColor = '#9c27b0'; // Purple for video
+        } else if (lessonType === 'live_class') {
+            Icon = ZoomIcon;
+            iconColor = '#2196f3'; // Blue for live class
+        } else if (lessonType === 'stream') {
+            Icon = StreamIcon;
+            iconColor = '#00bcd4'; // Cyan/teal for streaming
+        } else if (lessonType === 'quiz' || node.type === 'Quiz') {
+            Icon = QuizIcon;
+            iconColor = '#ff9800'; // Orange for quiz (current warning.main)
+        } else if (lessonType === 'assignment' || node.type === 'Assignment') {
+            Icon = AssignmentIcon;
+            iconColor = '#ff9800'; // Orange for assignment (same as quiz)
+        }
 
         return (
-            <ListItem 
-                key={node.id} 
-                disablePadding 
-                sx={{ mb: 0.5 }}
-            >
-                <ListItemButton 
-                    selected={isSelected}
-                    onClick={() => handleSelect(node)}
-                    sx={{ 
-                        borderRadius: 1, 
-                        py: 0.5, 
-                        px: 1,
-                        '&.Mui-selected': { bgcolor: 'primary.lighter', color: 'primary.main' }
-                    }}
+            <SortableLeaf key={node.id} id={node.id}>
+                <ListItem 
+                    disablePadding 
+                    sx={{ mb: 0.5 }}
                 >
-                    <Box component={DragIcon} sx={{ color: 'text.disabled', fontSize: 16, mr: 1, cursor: 'grab' }} />
-                    <Box component={Icon} sx={{ color: isSelected ? 'primary.main' : 'warning.main', fontSize: 18, mr: 1.5 }} />
-                    <ListItemText 
-                        primary={node.title} 
-                        primaryTypographyProps={{ variant: 'body2', fontSize: '0.9rem' }} 
-                    />
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(node.id); }}>
-                        <DeleteIcon fontSize="small" sx={{ fontSize: 16, color: 'text.disabled' }} />
-                    </IconButton>
-                </ListItemButton>
-            </ListItem>
+                    <ListItemButton 
+                        selected={isSelected}
+                        onClick={() => handleSelect(node)}
+                        sx={{ 
+                            borderRadius: 1, 
+                            py: 0.5, 
+                            px: 1,
+                            '&.Mui-selected': { bgcolor: 'primary.lighter', color: 'primary.main' }
+                        }}
+                    >
+                        <Box component={DragIcon} sx={{ color: 'text.disabled', fontSize: 16, mr: 1, cursor: 'grab' }} />
+                        <Box component={Icon} sx={{ color: isSelected ? 'primary.main' : iconColor, fontSize: 18, mr: 1.5 }} />
+                        <ListItemText 
+                            primary={node.title} 
+                            primaryTypographyProps={{ variant: 'body2', fontSize: '0.9rem' }} 
+                        />
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(node.id); }}>
+                            <DeleteIcon fontSize="small" sx={{ fontSize: 16, color: 'text.disabled' }} />
+                        </IconButton>
+                    </ListItemButton>
+                </ListItem>
+            </SortableLeaf>
         );
     };
 
@@ -352,90 +443,100 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
     const renderSection = (node) => {
         const isExpanded = expandedSections[node.id] !== false;
         const isEditing = editingSectionId === node.id;
+        const children = node.children || [];
         
         return (
-            <Paper 
-                key={node.id} 
-                variant="outlined" 
-                sx={{ 
-                    mb: 2, 
-                    overflow: 'hidden', 
-                    borderColor: selectedNodeId === node.id ? 'primary.main' : 'divider'
-                }}
-            >
-                <Box 
+            <SortableSection key={node.id} id={node.id}>
+                <Paper 
+                    variant="outlined" 
                     sx={{ 
-                        p: 1.5, 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        bgcolor: 'background.paper',
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: 'action.hover' }
+                        mb: 2, 
+                        overflow: 'hidden', 
+                        borderColor: selectedNodeId === node.id ? 'primary.main' : 'divider'
                     }}
-                    onClick={() => !isEditing && toggleSection(node.id)}
                 >
-                    <Box component={DragIcon} sx={{ color: 'text.disabled', mr: 1, cursor: 'grab' }} />
-                    
-                    {isEditing ? (
-                        <TextField
-                            value={editingSectionTitle}
-                            onChange={(e) => setEditingSectionTitle(e.target.value)}
-                            onBlur={saveSectionTitle}
-                            onKeyDown={handleSectionTitleKeyDown}
-                            autoFocus
-                            size="small"
-                            variant="standard"
-                            onClick={(e) => e.stopPropagation()}
-                            InputProps={{ sx: { fontWeight: 'bold', fontSize: '0.875rem' } }}
-                            sx={{ flex: 1 }}
-                        />
-                    ) : (
-                        <Typography variant="subtitle2" fontWeight="bold" sx={{ flex: 1 }}>
-                            {node.title}
-                        </Typography>
-                    )}
-                    
-                    <Box sx={{ display: 'flex' }}>
-                        <IconButton size="small" onClick={(e) => startEditingSection(node, e)}>
-                            <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(node.id); }}>
-                            <DeleteIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleSection(node.id); }}>
-                            {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-                        </IconButton>
-                    </Box>
-                </Box>
-
-                {isExpanded && (
-                    <Box sx={{ p: 1 }}>
-                        <List disablePadding>
-                            {node.children?.map(child => renderLeaf(child))}
-                        </List>
+                    <Box 
+                        sx={{ 
+                            p: 1.5, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            bgcolor: 'background.paper',
+                            cursor: 'pointer',
+                            '&:hover': { bgcolor: 'action.hover' }
+                        }}
+                        onClick={() => !isEditing && toggleSection(node.id)}
+                    >
+                        <Box component={DragIcon} sx={{ color: 'text.disabled', mr: 1, cursor: 'grab' }} />
                         
-                        <Stack direction="row" spacing={1} mt={1}>
-                            <Button 
-                                size="small" 
-                                startIcon={<AddIcon />} 
-                                variant="text" 
-                                sx={{ bgcolor: '#e3f2fd', color: '#1976d2', textTransform: 'none', flex: 1, justifyContent: 'flex-start', '&:hover': { bgcolor: '#bbdefb' } }}
-                                onClick={() => openCreateLesson(node.id)}
-                            >
-                                Add a lesson
-                            </Button>
-                            <Button 
-                                size="small" 
-                                startIcon={<SearchIcon />} 
-                                sx={{ bgcolor: 'action.hover', color: 'text.secondary', textTransform: 'none', px: 2, minWidth: 'auto' }}
-                                onClick={() => openSearchModal(node.id, node.title)}
-                            >
-                                Search
-                            </Button>
-                        </Stack>
+                        {isEditing ? (
+                            <TextField
+                                value={editingSectionTitle}
+                                onChange={(e) => setEditingSectionTitle(e.target.value)}
+                                onBlur={saveSectionTitle}
+                                onKeyDown={handleSectionTitleKeyDown}
+                                autoFocus
+                                size="small"
+                                variant="standard"
+                                onClick={(e) => e.stopPropagation()}
+                                InputProps={{ sx: { fontWeight: 'bold', fontSize: '0.875rem' } }}
+                                sx={{ flex: 1 }}
+                            />
+                        ) : (
+                            <Typography variant="subtitle2" fontWeight="bold" sx={{ flex: 1 }}>
+                                {node.title}
+                            </Typography>
+                        )}
+                        
+                        <Box sx={{ display: 'flex' }}>
+                            <IconButton size="small" onClick={(e) => startEditingSection(node, e)}>
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(node.id); }}>
+                                <DeleteIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleSection(node.id); }}>
+                                {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                            </IconButton>
+                        </Box>
                     </Box>
-                )}
-            </Paper>
+
+                    {isExpanded && (
+                        <Box sx={{ p: 1 }}>
+                            <DndContext 
+                                sensors={sensors} 
+                                collisionDetection={closestCenter} 
+                                onDragEnd={handleChildDragEnd(node.id, children)}
+                            >
+                                <SortableContext items={children.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                                    <List disablePadding>
+                                        {children.map(child => renderLeaf(child))}
+                                    </List>
+                                </SortableContext>
+                            </DndContext>
+                            
+                            <Stack direction="row" spacing={1} mt={1}>
+                                <Button 
+                                    size="small" 
+                                    startIcon={<AddIcon />} 
+                                    variant="text" 
+                                    sx={{ bgcolor: '#e3f2fd', color: '#1976d2', textTransform: 'none', flex: 1, justifyContent: 'flex-start', '&:hover': { bgcolor: '#bbdefb' } }}
+                                    onClick={() => openCreateLesson(node.id)}
+                                >
+                                    Add a lesson
+                                </Button>
+                                <Button 
+                                    size="small" 
+                                    startIcon={<SearchIcon />} 
+                                    sx={{ bgcolor: 'action.hover', color: 'text.secondary', textTransform: 'none', px: 2, minWidth: 'auto' }}
+                                    onClick={() => openSearchModal(node.id, node.title)}
+                                >
+                                    Search
+                                </Button>
+                            </Stack>
+                        </Box>
+                    )}
+                </Paper>
+            </SortableSection>
         );
     };
 
@@ -559,6 +660,9 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                             variant="outlined"
                             value={quizTitle}
                             onChange={(e) => setQuizTitle(e.target.value)}
+                            inputProps={{ minLength: 30 }}
+                            helperText={`${quizTitle.length}/30 characters minimum`}
+                            error={quizTitle.length > 0 && quizTitle.length < 30}
                         />
                     ) : (
                         <TextField
@@ -569,14 +673,18 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                             variant="outlined"
                             value={createTitle}
                             onChange={(e) => setCreateTitle(e.target.value)}
+                            inputProps={{ minLength: 30 }}
+                            helperText={`${createTitle.length}/30 characters minimum`}
+                            error={createTitle.length > 0 && createTitle.length < 30}
                         />
                     )}
                 </DialogContent>
                 <DialogActions>
-                    {createType !== 'lesson_select' && (
+                    {(createQuizModalOpen || createType === 'section') && (
                         <Button 
                             variant="contained" 
                             onClick={createQuizModalOpen ? handleCreateQuiz : handleCreateSection}
+                            disabled={createQuizModalOpen ? quizTitle.length < 30 : createTitle.length < 30}
                         >
                             Create
                         </Button>
