@@ -1,6 +1,15 @@
 from django.db.models import Q
 from apps.core.models import User, Program
-from .models import Question, QuestionBankEntry, QuestionBank, Quiz, QuestionOption, QuestionMatchingPair, QuestionGapAnswer
+from .models import (
+    Question,
+    QuestionBankEntry,
+    QuestionBank,
+    Quiz,
+    QuestionOption,
+    QuestionMatchingPair,
+    QuestionGapAnswer,
+    QuestionImageMatchingPair,
+)
 
 class QuestionBankService:
     """
@@ -88,6 +97,17 @@ class QuestionBankService:
                 question=new_q,
                 gap_index=gap.gap_index,
                 accepted_answers=gap.accepted_answers
+            )
+
+        for pair in original_q.image_matching_pairs.all():
+            QuestionImageMatchingPair.objects.create(
+                question=new_q,
+                question_text=pair.question_text,
+                question_image=pair.question_image,
+                answer_text=pair.answer_text,
+                answer_image=pair.answer_image,
+                explanation=pair.explanation,
+                position=pair.position,
             )
             
         entry.usage_count += 1

@@ -1257,33 +1257,41 @@ def admin_program_detail(request, pk: int):
     validation_errors = validator.validate(program)
 
     # Structure readiness report for frontend
+    # Find specific errors for each category
+    def find_error(keyword):
+        for e in validation_errors:
+            if keyword.lower() in e.lower():
+                return e
+        return None
+
     readiness = {
         "isReady": len(validation_errors) == 0,
         "errors": validation_errors,
         "checks": [
             {
-                "label": "Structural Integrity",
-                "passed": "Program must have at least one Session/Lesson."
-                not in validation_errors,
+                "label": "Course Content",
+                "passed": "Program must have at least one Session/Lesson." not in validation_errors,
+                "error": find_error("Session/Lesson"),
             },
             {
-                "label": "Instructor Assignment",
-                "passed": "Program must have at least one assigned Instructor."
-                not in validation_errors,
+                "label": "Instructor Assigned",
+                "passed": "Program must have at least one assigned Instructor." not in validation_errors,
+                "error": find_error("Instructor"),
             },
             {
-                "label": "Metadata (Description)",
-                "passed": "Program must have a Description for the public catalog."
-                not in validation_errors,
+                "label": "Course Description",
+                "passed": "Program must have a Description for the public catalog." not in validation_errors,
+                "error": find_error("Description"),
             },
             {
-                "label": "Metadata (Thumbnail)",
-                "passed": "Program must have a Thumbnail image."
-                not in validation_errors,
+                "label": "Cover Image",
+                "passed": "Program must have a Thumbnail image." not in validation_errors,
+                "error": find_error("Thumbnail"),
             },
             {
-                "label": "Mode Validations",
+                "label": "Grading Weights",
                 "passed": not any("assessment weight" in e for e in validation_errors),
+                "error": find_error("assessment weight"),
             },
         ],
     }
@@ -3276,7 +3284,7 @@ def student_quiz_start(request, quiz_id: int):
     import random
 
     quiz_questions = quiz.questions.all().prefetch_related(
-        "options", "matching_pairs", "gap_answers"
+        "options", "matching_pairs", "gap_answers", "image_matching_pairs"
     )
 
     questions = []
@@ -3310,6 +3318,29 @@ def student_quiz_start(request, quiz_id: int):
             random.shuffle(items)
             q_data["items"] = items
 
+        elif q.question_type == "image_matching":
+            # Provide stable IDs so student answers can map left->right.
+            left_items = []
+            right_items = []
+            for p in q.image_matching_pairs.all().order_by("position", "id"):
+                left_items.append(
+                    {
+                        "id": str(p.id),
+                        "text": p.question_text,
+                        "image": p.question_image,
+                    }
+                )
+                right_items.append(
+                    {
+                        "id": str(p.id),
+                        "text": p.answer_text,
+                        "image": p.answer_image,
+                    }
+                )
+            random.shuffle(right_items)
+            q_data["left_items"] = left_items
+            q_data["right_items"] = right_items
+
         questions.append(q_data)
 
     return render(
@@ -3321,6 +3352,8 @@ def student_quiz_start(request, quiz_id: int):
                 "title": quiz.title,
                 "description": quiz.description,
                 "timeLimit": quiz.time_limit_minutes,
+                "timeUnit": quiz.time_unit,
+                "style": quiz.quiz_style,
                 "nodeTitle": quiz.node.title,
             },
             "attempt": {
@@ -3333,6 +3366,7 @@ def student_quiz_start(request, quiz_id: int):
             "attemptsRemaining": quiz.max_attempts
             - existing_attempts
             - (0 if in_progress else 1),
+            "allowRetakeAfterPass": quiz.allow_retake_after_pass,
         },
     )
 
@@ -3430,6 +3464,8 @@ def student_quiz_results(request, quiz_id: int):
                 "passThreshold": quiz.pass_threshold,
                 "maxAttempts": quiz.max_attempts,
                 "nodeTitle": quiz.node.title,
+                "showCorrectAnswers": quiz.show_answers_after_submit,
+                "showAttemptHistory": quiz.show_attempt_history,
             },
             "attempts": [
                 {
@@ -4839,32 +4875,90 @@ def _sync_quiz_questions(node, questions_data: list):
     4. Deletes removed questions
     5. Stores db_id mapping back in node properties
     """
-    from apps.assessments.models import Question, QuestionGapAnswer, QuestionOption, Quiz
+    from apps.assessments.models import (
+        Question,
+        QuestionGapAnswer,
+        QuestionImageMatchingPair,
+        QuestionOption,
+        Quiz,
+    )
 
     if not questions_data:
         return
 
     # Get or create Quiz for this node
-    quiz, created = Quiz.objects.get_or_create(
-        node=node,
-        defaults={
-            "title": node.title,
-            "pass_threshold": node.properties.get("passing_grade", 70),
-            "time_limit_minutes": node.properties.get("quiz_duration"),
-            "max_attempts": node.properties.get("max_attempts", 1),
-            "randomize_questions": node.properties.get("randomize_questions", False),
-            "retake_penalty_percent": node.properties.get("retake_penalty", 0),
-        },
-    )
+    props = node.properties or {}
+
+    # Build defaults dynamically so we don't overwrite model defaults
+    # when older nodes don't have newer AssessmentEditor properties.
+    quiz_defaults = {
+        "title": node.title,
+        "description": props.get("description", ""),
+        "pass_threshold": props.get("passing_grade", 70),
+        "time_limit_minutes": props.get("quiz_duration"),
+        "max_attempts": props.get("max_attempts", 1),
+        "randomize_questions": props.get("randomize_questions", False),
+        "retake_penalty_percent": props.get("retake_penalty", 0)
+        or props.get("points_cut_after_retake", 0),
+    }
+
+    # Newer settings synced from AssessmentEditor (only if present)
+    if "randomize_answers" in props:
+        quiz_defaults["shuffle_options"] = props.get("randomize_answers")
+    if "show_correct_answer" in props:
+        quiz_defaults["show_answers_after_submit"] = props.get("show_correct_answer")
+    if "quiz_time_unit" in props:
+        quiz_defaults["time_unit"] = (props.get("quiz_time_unit") or "minutes").lower()
+    if "quiz_style" in props:
+        quiz_defaults["quiz_style"] = props.get("quiz_style") or "default"
+    if "quiz_attempt_history" in props:
+        quiz_defaults["show_attempt_history"] = props.get("quiz_attempt_history")
+    if "retake_after_pass" in props:
+        quiz_defaults["allow_retake_after_pass"] = props.get("retake_after_pass")
+    if "weight" in props:
+        quiz_defaults["weight"] = props.get("weight") or 0
+    if "total_points_override" in props:
+        quiz_defaults["total_points_override"] = props.get("total_points_override")
+
+    quiz, created = Quiz.objects.get_or_create(node=node, defaults=quiz_defaults)
 
     # Update quiz settings if not created
     if not created:
         quiz.title = node.title
-        quiz.pass_threshold = node.properties.get("passing_grade", 70)
-        quiz.time_limit_minutes = node.properties.get("quiz_duration")
-        quiz.max_attempts = node.properties.get("max_attempts", 1)
-        quiz.randomize_questions = node.properties.get("randomize_questions", False)
-        quiz.retake_penalty_percent = node.properties.get("retake_penalty", 0)
+        if "description" in props:
+            quiz.description = props.get("description") or ""
+        if "passing_grade" in props:
+            quiz.pass_threshold = props.get("passing_grade", quiz.pass_threshold)
+        if "quiz_duration" in props:
+            quiz.time_limit_minutes = props.get("quiz_duration")
+        if "max_attempts" in props:
+            quiz.max_attempts = props.get("max_attempts", quiz.max_attempts)
+        if "randomize_questions" in props:
+            quiz.randomize_questions = props.get("randomize_questions", quiz.randomize_questions)
+
+        # Support both legacy and new retake penalty keys.
+        if "retake_penalty" in props or "points_cut_after_retake" in props:
+            quiz.retake_penalty_percent = props.get("retake_penalty", 0) or props.get(
+                "points_cut_after_retake", 0
+            )
+
+        # New settings synced from AssessmentEditor (only if present)
+        if "randomize_answers" in props:
+            quiz.shuffle_options = props.get("randomize_answers")
+        if "show_correct_answer" in props:
+            quiz.show_answers_after_submit = props.get("show_correct_answer")
+        if "quiz_time_unit" in props:
+            quiz.time_unit = (props.get("quiz_time_unit") or "minutes").lower()
+        if "quiz_style" in props:
+            quiz.quiz_style = props.get("quiz_style") or "default"
+        if "quiz_attempt_history" in props:
+            quiz.show_attempt_history = props.get("quiz_attempt_history")
+        if "retake_after_pass" in props:
+            quiz.allow_retake_after_pass = props.get("retake_after_pass")
+        if "weight" in props:
+            quiz.weight = props.get("weight") or 0
+        if "total_points_override" in props:
+            quiz.total_points_override = props.get("total_points_override")
         quiz.save()
 
     # Track existing question IDs
@@ -4884,10 +4978,15 @@ def _sync_quiz_questions(node, questions_data: list):
             "true_false": "true_false",
             "short_answer": "short_answer",
             "matching": "matching",
+            "image_matching": "image_matching",
             "fill_blank": "fill_blank",
             "ordering": "ordering",
         }
         backend_type = type_mapping.get(question_type, question_type)
+
+        # Normalize frontend naming: image matching uses image_pairs in the editor.
+        if backend_type == "image_matching" and "pairs" not in q_data and "image_pairs" in q_data:
+            q_data = {**q_data, "pairs": q_data.get("image_pairs")}
 
         from django.utils.html import strip_tags
 
@@ -4943,6 +5042,19 @@ def _sync_quiz_questions(node, questions_data: list):
             items = [item for item in raw_items if str(item).strip()]
             answer_data = {"items": items}
 
+        elif backend_type == "image_matching":
+            # Stored in dedicated table; keep answer_data minimal/empty.
+            answer_data = {}
+
+        def normalize_image_value(value):
+            if not value:
+                return ""
+            if isinstance(value, str):
+                return value
+            if isinstance(value, dict):
+                return value.get("url") or value.get("preview") or ""
+            return ""
+
         if db_id and db_id in existing_ids:
             # Update existing question
             Question.objects.filter(pk=db_id).update(
@@ -4983,6 +5095,24 @@ def _sync_quiz_questions(node, questions_data: list):
                         accepted_answers=gap["accepted_answers"],
                     )
 
+            if backend_type == "image_matching":
+                question = Question.objects.get(pk=db_id)
+                question.image_matching_pairs.all().delete()
+                pairs_data = q_data.get("pairs", [])
+                if isinstance(pairs_data, list):
+                    for pair_idx, pair in enumerate(pairs_data):
+                        if not isinstance(pair, dict):
+                            continue
+                        QuestionImageMatchingPair.objects.create(
+                            question=question,
+                            question_text=pair.get("question_text", "") or "",
+                            question_image=normalize_image_value(pair.get("question_image")),
+                            answer_text=pair.get("answer_text", "") or "",
+                            answer_image=normalize_image_value(pair.get("answer_image")),
+                            explanation=pair.get("explanation", "") or "",
+                            position=pair.get("position", pair_idx) or 0,
+                        )
+
             updated_questions.append({**q_data, "db_id": db_id})
         else:
             # Create new question
@@ -5020,6 +5150,22 @@ def _sync_quiz_questions(node, questions_data: list):
                         gap_index=gap["gap_index"],
                         accepted_answers=gap["accepted_answers"],
                     )
+
+            if backend_type == "image_matching":
+                pairs_data = q_data.get("pairs", [])
+                if isinstance(pairs_data, list):
+                    for pair_idx, pair in enumerate(pairs_data):
+                        if not isinstance(pair, dict):
+                            continue
+                        QuestionImageMatchingPair.objects.create(
+                            question=new_question,
+                            question_text=pair.get("question_text", "") or "",
+                            question_image=normalize_image_value(pair.get("question_image")),
+                            answer_text=pair.get("answer_text", "") or "",
+                            answer_image=normalize_image_value(pair.get("answer_image")),
+                            explanation=pair.get("explanation", "") or "",
+                            position=pair.get("position", pair_idx) or 0,
+                        )
 
             updated_questions.append({**q_data, "db_id": new_question.id})
 
@@ -5373,6 +5519,64 @@ def instructor_lesson_file_delete(request, node_id: int):
     return JsonResponse({"success": True})
 
 
+@login_required
+def instructor_quiz_image_upload(request, node_id: int):
+    """Upload an image for quiz question content (e.g. image matching pairs)."""
+    import os
+    import uuid
+
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    if not is_instructor(request.user) or request.method != "POST":
+        return JsonResponse({"error": "Permission denied"}, status=403)
+
+    from apps.curriculum.models import CurriculumNode
+
+    program_ids = get_instructor_program_ids(request.user)
+    try:
+        node = CurriculumNode.objects.get(pk=node_id, program_id__in=program_ids)
+    except CurriculumNode.DoesNotExist:
+        return JsonResponse({"error": "Node not found"}, status=404)
+
+    if "file" not in request.FILES:
+        return JsonResponse({"error": "No file provided"}, status=400)
+
+    uploaded_file = request.FILES["file"]
+    if not getattr(uploaded_file, "content_type", "").startswith("image/"):
+        return JsonResponse({"error": "Only image uploads are supported"}, status=400)
+
+    file_name = uploaded_file.name
+
+    upload_dir = os.path.join(
+        settings.MEDIA_ROOT, "quiz_images", str(node.program_id), str(node_id)
+    )
+    os.makedirs(upload_dir, exist_ok=True)
+
+    ext = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
+    unique_name = f"{uuid.uuid4().hex}.{ext}" if ext else uuid.uuid4().hex
+    file_path = os.path.join(upload_dir, unique_name)
+
+    with open(file_path, "wb+") as dest:
+        for chunk in uploaded_file.chunks():
+            dest.write(chunk)
+
+    relative_path = f"quiz_images/{node.program_id}/{node_id}/{unique_name}"
+    file_url = f"{settings.MEDIA_URL}{relative_path}"
+
+    return JsonResponse(
+        {
+            "success": True,
+            "image": {
+                "name": file_name,
+                "url": file_url,
+                "path": relative_path,
+                "size": uploaded_file.size,
+            },
+        }
+    )
+
+
 # =============================================================================
 # Material Import/Clone (Feature 3B)
 # =============================================================================
@@ -5447,6 +5651,7 @@ def _clone_quiz(source_quiz, new_node):
     from apps.assessments.models import (
         Question,
         QuestionGapAnswer,
+        QuestionImageMatchingPair,
         QuestionMatchingPair,
         QuestionOption,
         Quiz,
@@ -5500,6 +5705,18 @@ def _clone_quiz(source_quiz, new_node):
                 question=new_question,
                 gap_index=gap.gap_index,
                 accepted_answers=copy.deepcopy(gap.accepted_answers),
+            )
+
+        # Clone image matching pairs
+        for pair in q.image_matching_pairs.all():
+            QuestionImageMatchingPair.objects.create(
+                question=new_question,
+                question_text=pair.question_text,
+                question_image=pair.question_image,
+                answer_text=pair.answer_text,
+                answer_image=pair.answer_image,
+                explanation=pair.explanation,
+                position=pair.position,
             )
 
     return new_quiz

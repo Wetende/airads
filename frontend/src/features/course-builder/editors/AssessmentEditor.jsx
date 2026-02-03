@@ -54,6 +54,7 @@ const QUESTION_TYPES = [
     { value: "true_false", label: "True/False", color: "#388e3c" },
     { value: "short_answer", label: "Keywords", color: "#f57c00" },
     { value: "matching", label: "Matching", color: "#0288d1" },
+    { value: "image_matching", label: "Image Matching", color: "#6a1b9a" },
     { value: "fill_blank", label: "Fill in the Gap", color: "#5d4037" },
     { value: "ordering", label: "Ordering", color: "#455a64" },
 ];
@@ -146,6 +147,11 @@ export default function AssessmentEditor({
             typeof normalized.text === "string"
         ) {
             normalized.text = normalized.text.replace(/<[^>]*>/g, "");
+        }
+
+        if (normalized.type === "image_matching") {
+            const raw = normalized.image_pairs || normalized.pairs || [];
+            normalized.image_pairs = Array.isArray(raw) ? raw : [];
         }
 
         return normalized;
@@ -279,9 +285,9 @@ export default function AssessmentEditor({
     const isFormValid = () => {
         if (!title || title.trim().length < 5 || title.length > 100)
             return false;
-        if (isQuiz && questions.length === 0 && questionBanks.length === 0)
-            return false;
-        if (isAssignment && (!instructions || instructions.length < 100))
+        // Both Quiz and Assignment can have questions - at least one required
+        if (questions.length === 0 && questionBanks.length === 0) return false;
+        if (isAssignment && (!instructions || instructions.trim().length < 100))
             return false;
         return true;
     };
@@ -296,36 +302,36 @@ export default function AssessmentEditor({
             return;
         }
 
-        const properties = isQuiz
-            ? {
-                  ...node.properties,
-                  description,
-                  quiz_duration: quizDuration,
-                  quiz_time_unit: quizTimeUnit,
-                  quiz_style: quizStyle,
-                  passing_grade: passingGrade,
-                  max_attempts: maxAttempts,
-                  randomize_questions: randomizeQuestions,
-                  randomize_answers: randomizeAnswers,
-                  show_correct_answer: showCorrectAnswer,
-                  quiz_attempt_history: quizAttemptHistory,
-                  retake_after_pass: retakeAfterPass,
-                  limited_retake_attempts: limitedRetakeAttempts,
-                  retake_penalty: retakePenalty,
-                  points_cut_after_retake: pointsCutAfterRetake,
-                  questions: questions,
-                  question_banks: questionBanks,
-                  lesson_content: lessonContent,
-                  qa_questions: qaQuestions,
-              }
-            : {
-                  ...node.properties,
-                  instructions,
-                  points,
-                  weight,
-                  submission_type: submissionType,
-                  allow_late: allowLate,
-              };
+        // All properties are saved for both Quiz and Assignment
+        const properties = {
+            ...node.properties,
+            // Questions and Q&A (shared)
+            questions: questions,
+            question_banks: questionBanks,
+            qa_questions: qaQuestions,
+            // Quiz-specific settings
+            description,
+            quiz_duration: quizDuration,
+            quiz_time_unit: quizTimeUnit,
+            quiz_style: quizStyle,
+            passing_grade: passingGrade,
+            max_attempts: maxAttempts,
+            randomize_questions: randomizeQuestions,
+            randomize_answers: randomizeAnswers,
+            show_correct_answer: showCorrectAnswer,
+            quiz_attempt_history: quizAttemptHistory,
+            retake_after_pass: retakeAfterPass,
+            limited_retake_attempts: limitedRetakeAttempts,
+            retake_penalty: retakePenalty,
+            points_cut_after_retake: pointsCutAfterRetake,
+            lesson_content: lessonContent,
+            // Assignment-specific settings
+            instructions,
+            points,
+            weight,
+            submission_type: submissionType,
+            allow_late: allowLate,
+        };
 
         onSave(node.id, { title, properties });
         setSnackbar({
@@ -451,12 +457,11 @@ export default function AssessmentEditor({
                         entry.question_data?.answer_data?.correct_indices || [],
                     pairs: entry.question_data?.matching_pairs || [],
                     gaps: entry.question_data?.gap_answers || [],
-                    items:
-                        (
-                            entry.question_data?.answer_data?.items ||
-                            entry.question_data?.answer_data?.correct_order ||
-                            []
-                        ).filter((item) => typeof item === "string"),
+                    items: (
+                        entry.question_data?.answer_data?.items ||
+                        entry.question_data?.answer_data?.correct_order ||
+                        []
+                    ).filter((item) => typeof item === "string"),
                     fromLibrary: true,
                     libraryEntryId: entry.id,
                 }),
@@ -501,13 +506,12 @@ export default function AssessmentEditor({
         );
     };
 
-    const tabs = isQuiz
-        ? [
-              { value: "questions", label: "Questions" },
-              { value: "settings", label: "Settings" },
-              { value: "qa", label: "Q&A" },
-          ]
-        : [{ value: "settings", label: "Settings" }];
+    // Both Quiz and Assignment use the same tabs
+    const tabs = [
+        { value: "questions", label: "Questions" },
+        { value: "settings", label: "Settings" },
+        { value: "qa", label: "Q&A" },
+    ];
 
     return (
         <Box>
@@ -541,9 +545,15 @@ export default function AssessmentEditor({
                             borderColor: "primary.200",
                         }}
                     >
-                        <QuizIcon
-                            sx={{ fontSize: 18, color: "primary.main" }}
-                        />
+                        {isQuiz ? (
+                            <QuizIcon
+                                sx={{ fontSize: 18, color: "primary.main" }}
+                            />
+                        ) : (
+                            <AssignmentIcon
+                                sx={{ fontSize: 18, color: "primary.main" }}
+                            />
+                        )}
                         <Typography
                             variant="body2"
                             color="primary.main"
@@ -566,15 +576,13 @@ export default function AssessmentEditor({
                     />
                 </Box>
                 <Stack direction="row" spacing={1}>
-                    {isQuiz && (
-                        <Button
-                            variant="outlined"
-                            startIcon={<LibraryIcon />}
-                            onClick={() => setLibraryDrawerOpen(true)}
-                        >
-                            Questions library
-                        </Button>
-                    )}
+                    <Button
+                        variant="outlined"
+                        startIcon={<LibraryIcon />}
+                        onClick={() => setLibraryDrawerOpen(true)}
+                    >
+                        Questions library
+                    </Button>
                     <Button
                         variant="contained"
                         onClick={handleSave}
@@ -596,13 +604,14 @@ export default function AssessmentEditor({
                 />
             </Box>
 
-            {/* Questions Tab */}
-            {isQuiz && activeTab === "questions" && (
+            {/* Questions Tab - Available for both Quiz and Assignment */}
+            {activeTab === "questions" && (
                 <Stack spacing={2}>
                     {/* Questions List - Using QuestionEditorCard */}
                     {questions.map((q, idx) => (
                         <QuestionEditorCard
                             key={q.id || idx}
+                            nodeId={node?.id}
                             question={q}
                             onChange={(updatedQuestion) => {
                                 const newQuestions = [...questions];
@@ -745,319 +754,308 @@ export default function AssessmentEditor({
                 </Stack>
             )}
 
-            {/* Settings Tab */}
+            {/* Settings Tab - All settings available for both Quiz and Assignment */}
             {activeTab === "settings" && (
                 <Stack spacing={3}>
-                    {isQuiz && (
-                        <>
-                            <TextField
-                                label="Quiz Frontend description"
-                                placeholder="Quiz Frontend description"
-                                multiline
-                                rows={2}
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                fullWidth
-                            />
+                    {/* Quiz/Assessment Settings */}
+                    <TextField
+                        label="Quiz Frontend description"
+                        placeholder="Quiz Frontend description"
+                        multiline
+                        rows={2}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        fullWidth
+                    />
 
-                            <Stack direction="row" spacing={2}>
-                                <TextField
-                                    label="Quiz duration"
-                                    type="number"
-                                    value={quizDuration}
-                                    onChange={(e) =>
-                                        setQuizDuration(
-                                            parseInt(e.target.value),
-                                        )
-                                    }
-                                    sx={{ width: 150 }}
-                                    InputProps={{ inputProps: { min: 1 } }}
-                                />
-                                <FormControl sx={{ width: 150 }}>
-                                    <InputLabel>Time unit</InputLabel>
-                                    <Select
-                                        value={quizTimeUnit}
-                                        label="Time unit"
-                                        onChange={(e) =>
-                                            setQuizTimeUnit(e.target.value)
-                                        }
-                                    >
-                                        <MenuItem value="Minutes">
-                                            Minutes
-                                        </MenuItem>
-                                        <MenuItem value="Hours">Hours</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Stack>
-
-                            <FormControl fullWidth>
-                                <InputLabel>Quiz style</InputLabel>
-                                <Select
-                                    value={quizStyle}
-                                    label="Quiz style"
-                                    onChange={(e) =>
-                                        setQuizStyle(e.target.value)
-                                    }
-                                >
-                                    {QUIZ_STYLES.map((style) => (
-                                        <MenuItem
-                                            key={style.value}
-                                            value={style.value}
-                                        >
-                                            {style.label}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <Stack direction="row" spacing={2}>
-                                <TextField
-                                    label="Passing Grade (%)"
-                                    type="number"
-                                    value={passingGrade}
-                                    onChange={(e) =>
-                                        setPassingGrade(
-                                            parseInt(e.target.value),
-                                        )
-                                    }
-                                    sx={{ width: 150 }}
-                                    InputProps={{
-                                        inputProps: { min: 0, max: 100 },
-                                    }}
-                                />
-                                <TextField
-                                    label="Points cut after retake (%)"
-                                    type="number"
-                                    value={pointsCutAfterRetake}
-                                    onChange={(e) =>
-                                        setPointsCutAfterRetake(
-                                            parseInt(e.target.value) || 0,
-                                        )
-                                    }
-                                    sx={{ width: 200 }}
-                                    InputProps={{
-                                        inputProps: { min: 0, max: 100 },
-                                    }}
-                                    placeholder="Enter points cut after retake"
-                                />
-                            </Stack>
-
-                            {/* Toggle switches in 2-column grid like STM LMS */}
-                            <Box
-                                sx={{
-                                    display: "grid",
-                                    gridTemplateColumns: "repeat(2, 1fr)",
-                                    gap: 1,
-                                    mt: 2,
-                                }}
-                            >
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={randomizeQuestions}
-                                            onChange={(e) =>
-                                                setRandomizeQuestions(
-                                                    e.target.checked,
-                                                )
-                                            }
-                                        />
-                                    }
-                                    label="Randomize questions"
-                                />
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={randomizeAnswers}
-                                            onChange={(e) =>
-                                                setRandomizeAnswers(
-                                                    e.target.checked,
-                                                )
-                                            }
-                                        />
-                                    }
-                                    label="Randomize answers"
-                                />
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={showCorrectAnswer}
-                                            onChange={(e) =>
-                                                setShowCorrectAnswer(
-                                                    e.target.checked,
-                                                )
-                                            }
-                                        />
-                                    }
-                                    label="Show correct answer"
-                                />
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={quizAttemptHistory}
-                                            onChange={(e) =>
-                                                setQuizAttemptHistory(
-                                                    e.target.checked,
-                                                )
-                                            }
-                                        />
-                                    }
-                                    label="Quiz Attempt History"
-                                />
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={retakeAfterPass}
-                                            onChange={(e) =>
-                                                setRetakeAfterPass(
-                                                    e.target.checked,
-                                                )
-                                            }
-                                        />
-                                    }
-                                    label="Retake After Pass"
-                                />
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={limitedRetakeAttempts}
-                                            onChange={(e) =>
-                                                setLimitedRetakeAttempts(
-                                                    e.target.checked,
-                                                )
-                                            }
-                                        />
-                                    }
-                                    label="Limited attempts to retake quizzes"
-                                />
-                            </Box>
-
-                            <Box>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Lesson content
-                                </Typography>
-                                <TextField
-                                    multiline
-                                    rows={4}
-                                    fullWidth
-                                    placeholder="Several question to understand what do you want."
-                                    value={lessonContent}
-                                    onChange={(e) =>
-                                        setLessonContent(e.target.value)
-                                    }
-                                />
-                            </Box>
-                        </>
-                    )}
-
-                    {isAssignment && (
-                        <>
-                            <Box onBlur={() => handleBlur("instructions")}>
-                                <Typography
-                                    variant="subtitle2"
-                                    gutterBottom
-                                    color={
-                                        getFieldError("instructions")
-                                            ? "error"
-                                            : "inherit"
-                                    }
-                                >
-                                    Instructions *
-                                </Typography>
-                                <TextField
-                                    multiline
-                                    rows={6}
-                                    fullWidth
-                                    placeholder="Enter assignment instructions (min 100 characters)..."
-                                    value={instructions}
-                                    onChange={(e) =>
-                                        setInstructions(e.target.value)
-                                    }
-                                    error={!!getFieldError("instructions")}
-                                />
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                >
-                                    {instructions.length}/100 minimum characters
-                                </Typography>
-                            </Box>
-
-                            <Stack direction="row" spacing={2}>
-                                <TextField
-                                    label="Total Points *"
-                                    type="number"
-                                    value={points}
-                                    onChange={(e) =>
-                                        setPoints(parseInt(e.target.value))
-                                    }
-                                    size="small"
-                                    sx={{ width: 150 }}
-                                />
-                                <TextField
-                                    label="Weight (%)"
-                                    type="number"
-                                    value={weight}
-                                    onChange={(e) =>
-                                        setWeight(
-                                            Math.min(
-                                                100,
-                                                Math.max(
-                                                    0,
-                                                    parseInt(e.target.value) ||
-                                                        0,
-                                                ),
-                                            ),
-                                        )
-                                    }
-                                    size="small"
-                                    sx={{ width: 120 }}
-                                    InputProps={{
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                %
-                                            </InputAdornment>
-                                        ),
-                                    }}
-                                    helperText="Grading weight"
-                                />
-                                <FormControl size="small" sx={{ width: 200 }}>
-                                    <InputLabel>Submission Type</InputLabel>
-                                    <Select
-                                        value={submissionType}
-                                        label="Submission Type"
-                                        onChange={(e) =>
-                                            setSubmissionType(e.target.value)
-                                        }
-                                    >
-                                        <MenuItem value="file_upload">
-                                            File Upload
-                                        </MenuItem>
-                                        <MenuItem value="text_entry">
-                                            Text Entry
-                                        </MenuItem>
-                                        <MenuItem value="external_link">
-                                            External Link/URL
-                                        </MenuItem>
-                                        <MenuItem value="media_recording">
-                                            Media Recording
-                                        </MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Stack>
-
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={allowLate}
-                                        onChange={(e) =>
-                                            setAllowLate(e.target.checked)
-                                        }
-                                    />
+                    <Stack direction="row" spacing={2}>
+                        <TextField
+                            label="Quiz duration"
+                            type="number"
+                            value={quizDuration}
+                            onChange={(e) =>
+                                setQuizDuration(parseInt(e.target.value))
+                            }
+                            sx={{ width: 150 }}
+                            InputProps={{ inputProps: { min: 1 } }}
+                        />
+                        <FormControl sx={{ width: 150 }}>
+                            <InputLabel>Time unit</InputLabel>
+                            <Select
+                                value={quizTimeUnit}
+                                label="Time unit"
+                                onChange={(e) =>
+                                    setQuizTimeUnit(e.target.value)
                                 }
-                                label="Allow Late Submissions"
+                            >
+                                <MenuItem value="Minutes">Minutes</MenuItem>
+                                <MenuItem value="Hours">Hours</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Stack>
+
+                    <FormControl fullWidth>
+                        <InputLabel>Quiz style</InputLabel>
+                        <Select
+                            value={quizStyle}
+                            label="Quiz style"
+                            onChange={(e) => setQuizStyle(e.target.value)}
+                        >
+                            {QUIZ_STYLES.map((style) => (
+                                <MenuItem key={style.value} value={style.value}>
+                                    {style.label}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <Stack direction="row" spacing={2}>
+                        <TextField
+                            label="Passing Grade (%)"
+                            type="number"
+                            value={passingGrade}
+                            onChange={(e) =>
+                                setPassingGrade(parseInt(e.target.value))
+                            }
+                            sx={{ width: 150 }}
+                            InputProps={{
+                                inputProps: { min: 0, max: 100 },
+                            }}
+                        />
+                        <TextField
+                            label="Points cut after retake (%)"
+                            type="number"
+                            value={pointsCutAfterRetake}
+                            onChange={(e) =>
+                                setPointsCutAfterRetake(
+                                    parseInt(e.target.value) || 0,
+                                )
+                            }
+                            sx={{ width: 200 }}
+                            InputProps={{
+                                inputProps: { min: 0, max: 100 },
+                            }}
+                            placeholder="Enter points cut after retake"
+                        />
+                        <TextField
+                            label="Weight (%)"
+                            type="number"
+                            value={weight}
+                            onChange={(e) =>
+                                setWeight(
+                                    Math.min(
+                                        100,
+                                        Math.max(
+                                            0,
+                                            parseInt(e.target.value) || 0,
+                                        ),
+                                    ),
+                                )
+                            }
+                            sx={{ width: 120 }}
+                            InputProps={{
+                                inputProps: { min: 0, max: 100 },
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        %
+                                    </InputAdornment>
+                                ),
+                            }}
+                            helperText="Grading weight (quiz + assignments = 100%)"
+                        />
+                    </Stack>
+
+                    {/* Toggle switches in 2-column grid like STM LMS */}
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(2, 1fr)",
+                            gap: 1,
+                            mt: 2,
+                        }}
+                    >
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={randomizeQuestions}
+                                    onChange={(e) =>
+                                        setRandomizeQuestions(e.target.checked)
+                                    }
+                                />
+                            }
+                            label="Randomize questions"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={randomizeAnswers}
+                                    onChange={(e) =>
+                                        setRandomizeAnswers(e.target.checked)
+                                    }
+                                />
+                            }
+                            label="Randomize answers"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={showCorrectAnswer}
+                                    onChange={(e) =>
+                                        setShowCorrectAnswer(e.target.checked)
+                                    }
+                                />
+                            }
+                            label="Show correct answer"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={quizAttemptHistory}
+                                    onChange={(e) =>
+                                        setQuizAttemptHistory(e.target.checked)
+                                    }
+                                />
+                            }
+                            label="Quiz Attempt History"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={retakeAfterPass}
+                                    onChange={(e) =>
+                                        setRetakeAfterPass(e.target.checked)
+                                    }
+                                />
+                            }
+                            label="Retake After Pass"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={limitedRetakeAttempts}
+                                    onChange={(e) =>
+                                        setLimitedRetakeAttempts(
+                                            e.target.checked,
+                                        )
+                                    }
+                                />
+                            }
+                            label="Limited attempts to retake quizzes"
+                        />
+                    </Box>
+
+                    <Box>
+                        <Typography variant="subtitle2" gutterBottom>
+                            Lesson content
+                        </Typography>
+                        <TextField
+                            multiline
+                            rows={4}
+                            fullWidth
+                            placeholder="Several question to understand what do you want."
+                            value={lessonContent}
+                            onChange={(e) => setLessonContent(e.target.value)}
+                        />
+                    </Box>
+
+                    {/* Assignment-specific Settings */}
+                    <Box onBlur={() => handleBlur("instructions")}>
+                        <Typography
+                            variant="subtitle2"
+                            gutterBottom
+                            color={
+                                getFieldError("instructions")
+                                    ? "error"
+                                    : "inherit"
+                            }
+                        >
+                            Instructions *
+                        </Typography>
+                        <TextField
+                            multiline
+                            rows={6}
+                            fullWidth
+                            placeholder="Enter assignment instructions (min 100 characters)..."
+                            value={instructions}
+                            onChange={(e) => setInstructions(e.target.value)}
+                            error={!!getFieldError("instructions")}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                            {instructions.length}/100 minimum characters
+                        </Typography>
+                    </Box>
+
+                    <Stack direction="row" spacing={2}>
+                        <TextField
+                            label="Total Points *"
+                            type="number"
+                            value={points}
+                            onChange={(e) =>
+                                setPoints(parseInt(e.target.value))
+                            }
+                            size="small"
+                            sx={{ width: 150 }}
+                        />
+                        <TextField
+                            label="Weight (%)"
+                            type="number"
+                            value={weight}
+                            onChange={(e) =>
+                                setWeight(
+                                    Math.min(
+                                        100,
+                                        Math.max(
+                                            0,
+                                            parseInt(e.target.value) || 0,
+                                        ),
+                                    ),
+                                )
+                            }
+                            size="small"
+                            sx={{ width: 120 }}
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        %
+                                    </InputAdornment>
+                                ),
+                            }}
+                            helperText="Grading weight"
+                        />
+                        <FormControl size="small" sx={{ width: 200 }}>
+                            <InputLabel>Submission Type</InputLabel>
+                            <Select
+                                value={submissionType}
+                                label="Submission Type"
+                                onChange={(e) =>
+                                    setSubmissionType(e.target.value)
+                                }
+                            >
+                                <MenuItem value="file_upload">
+                                    File Upload
+                                </MenuItem>
+                                <MenuItem value="text_entry">
+                                    Text Entry
+                                </MenuItem>
+                                <MenuItem value="external_link">
+                                    External Link/URL
+                                </MenuItem>
+                                <MenuItem value="media_recording">
+                                    Media Recording
+                                </MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Stack>
+
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={allowLate}
+                                onChange={(e) => setAllowLate(e.target.checked)}
                             />
-                        </>
-                    )}
+                        }
+                        label="Allow Late Submissions"
+                    />
                 </Stack>
             )}
 

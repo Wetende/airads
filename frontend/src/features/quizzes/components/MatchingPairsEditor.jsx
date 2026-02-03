@@ -1,58 +1,308 @@
-import { Stack, TextField, IconButton, Button, Typography, Box } from '@mui/material';
-import { IconTrash, IconPlus } from '@tabler/icons-react';
+import React, { useState } from 'react';
+import {
+  Stack,
+  TextField,
+  IconButton,
+  Button,
+  Typography,
+  Box,
+  Paper,
+  InputAdornment,
+  Popover,
+} from '@mui/material';
+import {
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Add as AddIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
 
-export default function MatchingPairsEditor({ pairs, onChange }) {
+/**
+ * MatchingPairsEditor - STM LMS style matching question editor
+ * Two-column layout: Question | Answer with editable placeholders
+ */
+export default function MatchingPairsEditor({ pairs = [], onChange }) {
+  const [editingField, setEditingField] = useState(null);
+  const [explanationAnchor, setExplanationAnchor] = useState(null);
+  const [activeExplanationIndex, setActiveExplanationIndex] = useState(null);
+
+  // Ensure we have at least 2 default pairs for matching
+  const safePairs = pairs.length >= 2 ? pairs : [
+    { left_text: '', right_text: '', explanation: '', position: 0 },
+    { left_text: '', right_text: '', explanation: '', position: 1 },
+  ];
+
   const handleAddPair = () => {
-    onChange([
-      ...pairs,
-      { left_text: '', right_text: '', position: pairs.length }
-    ]);
+    const newPairs = [
+      ...safePairs,
+      { left_text: '', right_text: '', explanation: '', position: safePairs.length },
+    ];
+    onChange(newPairs);
   };
 
   const handleUpdate = (index, field, value) => {
-    const newPairs = [...pairs];
+    const newPairs = [...safePairs];
     newPairs[index] = { ...newPairs[index], [field]: value };
     onChange(newPairs);
   };
 
   const handleRemove = (index) => {
-    const newPairs = pairs.filter((_, i) => i !== index)
-      .map((p, i) => ({ ...p, position: i })); // Reindex
+    if (safePairs.length <= 2) {
+      // Minimum 2 pairs required for matching
+      return;
+    }
+    const newPairs = safePairs
+      .filter((_, i) => i !== index)
+      .map((p, i) => ({ ...p, position: i }));
     onChange(newPairs);
+  };
+
+  const handleFocus = (index, field) => {
+    setEditingField(`${index}-${field}`);
+  };
+
+  const handleBlur = () => {
+    setEditingField(null);
+  };
+
+  const isFieldEmpty = (value) => !value || value.trim() === '';
+
+  // Explanation handlers
+  const handleOpenExplanation = (event, index) => {
+    setExplanationAnchor(event.currentTarget);
+    setActiveExplanationIndex(index);
+  };
+
+  const handleCloseExplanation = () => {
+    setExplanationAnchor(null);
+    setActiveExplanationIndex(null);
   };
 
   return (
     <Box>
-      <Typography variant="subtitle2" gutterBottom>
-        Matching Pairs (Left - Right)
+      {/* Header */}
+      <Typography
+        variant="subtitle1"
+        fontWeight={500}
+        sx={{ mb: 2, color: 'text.secondary' }}
+      >
+        Questions & Answers
       </Typography>
+
+      {/* Pairs List */}
       <Stack spacing={2}>
-        {pairs.map((pair, index) => (
-          <Stack key={index} direction="row" spacing={1} alignItems="center">
-            <TextField
-              placeholder="Left Item (e.g. Country)"
-              value={pair.left_text}
-              onChange={(e) => handleUpdate(index, 'left_text', e.target.value)}
-              size="small"
-              fullWidth
-            />
-            <Typography variant="body2">=</Typography>
-            <TextField
-              placeholder="Right Item (e.g. Capital)"
-              value={pair.right_text}
-              onChange={(e) => handleUpdate(index, 'right_text', e.target.value)}
-              size="small"
-              fullWidth
-            />
-            <IconButton color="error" onClick={() => handleRemove(index)}>
-              <IconTrash size={18} />
-            </IconButton>
-          </Stack>
+        {safePairs.map((pair, index) => (
+          <Paper
+            key={index}
+            variant="outlined"
+            sx={{
+              display: 'flex',
+              borderColor: 'divider',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Question Column */}
+            <Box
+              sx={{
+                flex: 1,
+                p: 2,
+                bgcolor: 'grey.50',
+                borderRight: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mb: 0.5 }}
+              >
+                Question
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TextField
+                  size="small"
+                  fullWidth
+                  variant="standard"
+                  placeholder="Enter your question"
+                  value={pair.left_text}
+                  onChange={(e) => handleUpdate(index, 'left_text', e.target.value)}
+                  onFocus={() => handleFocus(index, 'left')}
+                  onBlur={handleBlur}
+                  InputProps={{
+                    disableUnderline: editingField !== `${index}-left`,
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <EditIcon
+                          sx={{ fontSize: 16, color: 'text.disabled' }}
+                        />
+                      </InputAdornment>
+                    ),
+                    sx: {
+                      fontSize: '0.9rem',
+                      '& input': {
+                        color: pair.left_text ? 'text.primary' : 'text.secondary',
+                      },
+                    },
+                  }}
+                />
+              </Box>
+              {/* Validation message */}
+              {isFieldEmpty(pair.left_text) && (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'error.main', mt: 0.5, display: 'block' }}
+                >
+                  This field is required
+                </Typography>
+              )}
+            </Box>
+
+            {/* Answer Column */}
+            <Box
+              sx={{
+                flex: 1,
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+              }}
+            >
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mb: 0.5 }}
+              >
+                Answer
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TextField
+                  size="small"
+                  fullWidth
+                  variant="standard"
+                  placeholder="Enter matching answer"
+                  value={pair.right_text}
+                  onChange={(e) => handleUpdate(index, 'right_text', e.target.value)}
+                  onFocus={() => handleFocus(index, 'right')}
+                  onBlur={handleBlur}
+                  InputProps={{
+                    disableUnderline: editingField !== `${index}-right`,
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <EditIcon
+                          sx={{ fontSize: 16, color: 'text.disabled' }}
+                        />
+                      </InputAdornment>
+                    ),
+                    sx: {
+                      fontSize: '0.9rem',
+                      '& input': {
+                        color: pair.right_text ? 'text.primary' : 'text.secondary',
+                      },
+                    },
+                  }}
+                />
+                {/* Add explanation button */}
+                <Button
+                  size="small"
+                  startIcon={<AddIcon sx={{ fontSize: 14 }} />}
+                  onClick={(e) => handleOpenExplanation(e, index)}
+                  sx={{
+                    textTransform: 'none',
+                    color: 'primary.main',
+                    fontSize: '0.7rem',
+                    minWidth: 'auto',
+                    ml: 1,
+                  }}
+                >
+                  Explain
+                </Button>
+                {/* Delete button - only show if more than 2 pairs */}
+                {safePairs.length > 2 && (
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => handleRemove(index)}
+                    sx={{ ml: 1 }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
+              {/* Validation message */}
+              {isFieldEmpty(pair.right_text) && (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'error.main', mt: 0.5, display: 'block' }}
+                >
+                  This field is required
+                </Typography>
+              )}
+            </Box>
+          </Paper>
         ))}
-        <Button startIcon={<IconPlus />} onClick={handleAddPair} variant="outlined" size="small">
-          Add Pair
-        </Button>
       </Stack>
+
+      {/* Add New Answer Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+        <Button
+          startIcon={<AddIcon />}
+          onClick={handleAddPair}
+          sx={{
+            color: 'primary.main',
+            textTransform: 'none',
+            fontWeight: 500,
+            '&:hover': {
+              bgcolor: 'primary.50',
+            },
+          }}
+        >
+          Add new answer
+        </Button>
+      </Box>
+
+      {/* Explanation Popover */}
+      <Popover
+        open={Boolean(explanationAnchor)}
+        anchorEl={explanationAnchor}
+        onClose={handleCloseExplanation}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <Box sx={{ p: 2, width: 280 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={600}>
+                Answer explanation
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Will be shown in "Show answer" section
+              </Typography>
+            </Box>
+            <IconButton size="small" onClick={handleCloseExplanation}>
+              <CloseIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Box>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Enter explanation"
+            value={activeExplanationIndex !== null ? (safePairs[activeExplanationIndex]?.explanation || '') : ''}
+            onChange={(e) => {
+              if (activeExplanationIndex !== null) {
+                handleUpdate(activeExplanationIndex, 'explanation', e.target.value);
+              }
+            }}
+            multiline
+            rows={2}
+          />
+        </Box>
+      </Popover>
     </Box>
   );
 }

@@ -1,6 +1,13 @@
 
 import pytest
-from apps.assessments.models import Quiz, Question, QuestionOption, QuestionMatchingPair, QuestionGapAnswer
+from apps.assessments.models import (
+    Quiz,
+    Question,
+    QuestionOption,
+    QuestionMatchingPair,
+    QuestionGapAnswer,
+    QuestionImageMatchingPair,
+)
 from apps.curriculum.models import CurriculumNode
 from apps.core.models import Program
 
@@ -131,3 +138,41 @@ class TestNewQuestionTypes:
         is_correct, points = q.check_answer([1])
         assert is_correct is False
         assert points == 0
+
+    def test_image_matching_partial_credit(self):
+        q = Question.objects.create(
+            quiz=self.quiz,
+            question_type='image_matching',
+            points=10,
+            text='Match images',
+            answer_data={},
+        )
+        p0 = QuestionImageMatchingPair.objects.create(
+            question=q,
+            question_text='Dog',
+            question_image='/media/x/dog.png',
+            answer_text='Bark',
+            answer_image='/media/x/bark.png',
+            position=0,
+        )
+        p1 = QuestionImageMatchingPair.objects.create(
+            question=q,
+            question_text='Cat',
+            question_image='/media/x/cat.png',
+            answer_text='Meow',
+            answer_image='/media/x/meow.png',
+            position=1,
+        )
+
+        # 1 correct, 1 blank
+        student_answer = {str(p0.id): str(p0.id)}
+        is_correct, points = q.check_answer(student_answer)
+
+        assert is_correct is False
+        assert points == 5
+
+        # Full correct
+        student_answer = {str(p0.id): str(p0.id), str(p1.id): str(p1.id)}
+        is_correct, points = q.check_answer(student_answer)
+        assert is_correct is True
+        assert points == 10

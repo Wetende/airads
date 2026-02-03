@@ -1,4 +1,4 @@
-from django.db.models import Sum
+from django.db.models import Q, Sum
 
 from apps.assessments.models import Assignment, Quiz
 from apps.core.models import Program
@@ -74,21 +74,36 @@ class ProgramValidationService:
         return errors
 
     def _validate_weighted(self, program: Program) -> list[str]:
-        """Checks for Weighted/Theology mode."""
+        """
+        Checks for Weighted/Theology mode.
+        Valid scenarios:
+        1. Quiz weights alone = 100%
+        2. Assignment weights alone = 100%
+        3. Quiz weights + Assignment weights = 100%
+        4. No assessments yet (allow publishing, instructor may add later)
+        """
         errors = []
 
-        # Calculate total weight from Assignments
-        # Note: Quizzes might contribute if they have weights, but for now we look at Assignments
-        total_weight = (
-            Assignment.objects.filter(program=program).aggregate(Sum("weight"))[
-                "weight__sum"
-            ]
-            or 0
+        # Get Quiz weights.
+        # Some curriculum trees use `node_type='quiz'`, others store it as `properties.lesson_type='quiz'`.
+        quiz_nodes = CurriculumNode.objects.filter(program=program).filter(
+            Q(node_type="quiz") | Q(properties__lesson_type="quiz")
         )
+        quiz_weight = Quiz.objects.filter(node__in=quiz_nodes).aggregate(Sum("weight"))["weight__sum"] or 0
 
+        # Get Assignment weights (Assignment has program FK, not node FK)
+        assignment_weight = Assignment.objects.filter(program=program).aggregate(Sum("weight"))["weight__sum"] or 0
+
+        total_weight = quiz_weight + assignment_weight
+
+        # If no assessments exist at all, skip validation (allow publishing)
+        if total_weight == 0:
+            return errors
+
+        # If assessments exist, they must sum to exactly 100%
         if total_weight != 100:
             errors.append(
-                f"Total assessment weight is {total_weight}%. It must sum to exactly 100%."
+                f"Total assessment weight is {total_weight}%. Quizzes ({quiz_weight}%) + Assignments ({assignment_weight}%) must sum to exactly 100%."
             )
 
         return errors

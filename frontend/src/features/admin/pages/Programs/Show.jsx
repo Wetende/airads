@@ -318,7 +318,7 @@ export default function ProgramShow({ program, stats, instructors = [], readines
                                 </ListItemIcon>
                                 <ListItemText 
                                     primary={check.label} 
-                                    secondary={!check.passed && "Requirement missing"}
+                                    secondary={!check.passed && (check.error || "Requirement missing")}
                                     primaryTypographyProps={{
                                         color: check.passed ? 'text.primary' : 'error.main',
                                         fontWeight: check.passed ? 'medium' : 'bold'
