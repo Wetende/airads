@@ -2,8 +2,7 @@ import React from 'react';
 import { Box, Typography, Paper } from '@mui/material';
 import { Block as BlockIcon } from '@mui/icons-material';
 import ContentEditor from './ContentEditor';
-import QuizEditor from './QuizEditor';
-import AssignmentEditor from './AssignmentEditor';
+import AssessmentEditor from './AssessmentEditor';
 
 function DisabledFeatureMessage({ feature }) {
     return (
@@ -28,7 +27,7 @@ function DisabledFeatureMessage({ feature }) {
     );
 }
 
-export default function EditorContainer({ node, onSave, blueprint }) {
+export default function EditorContainer({ node, onSave, blueprint, programId, questionLibrary = [], categories = [] }) {
     // Determine the type of the node/lesson to choose the correct editor
     // Normalize type string: 'Quiz' -> 'quiz', 'Assignment' -> 'assignment'
     const type = (node.type || node.node_type || '').toLowerCase();
@@ -48,18 +47,31 @@ export default function EditorContainer({ node, onSave, blueprint }) {
         return null;
     }
 
+    // Quiz and Assignment both use the unified AssessmentEditor
     if (type === 'quiz' || lessonType === 'quiz') {
-        if (!featureFlags.quizzes) {
-            return <DisabledFeatureMessage feature="Quizzes" />;
-        }
-        return <QuizEditor node={node} onSave={onSave} />;
+        return (
+            <AssessmentEditor 
+                node={node} 
+                onSave={onSave} 
+                type="quiz"
+                programId={programId}
+                questionLibrary={questionLibrary}
+                categories={categories}
+            />
+        );
     }
 
     if (type === 'assignment' || lessonType === 'assignment') {
-        if (!featureFlags.assignments) {
-            return <DisabledFeatureMessage feature="Assignments" />;
-        }
-        return <AssignmentEditor node={node} onSave={onSave} />;
+        return (
+            <AssessmentEditor 
+                node={node} 
+                onSave={onSave} 
+                type="assignment"
+                programId={programId}
+                questionLibrary={questionLibrary}
+                categories={categories}
+            />
+        );
     }
 
     // Default to Content Editor for 'Lesson' type (text, video, live_class, etc.)

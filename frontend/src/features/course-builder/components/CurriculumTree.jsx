@@ -660,9 +660,9 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                             variant="outlined"
                             value={quizTitle}
                             onChange={(e) => setQuizTitle(e.target.value)}
-                            inputProps={{ minLength: 30 }}
-                            helperText={`${quizTitle.length}/30 characters minimum`}
-                            error={quizTitle.length > 0 && quizTitle.length < 30}
+                            inputProps={{ minLength: 3 }}
+                            helperText={`${quizTitle.length}/3 characters minimum`}
+                            error={quizTitle.length > 0 && quizTitle.length < 3}
                         />
                     ) : (
                         <TextField
@@ -673,9 +673,9 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                             variant="outlined"
                             value={createTitle}
                             onChange={(e) => setCreateTitle(e.target.value)}
-                            inputProps={{ minLength: 30 }}
-                            helperText={`${createTitle.length}/30 characters minimum`}
-                            error={createTitle.length > 0 && createTitle.length < 30}
+                            inputProps={{ minLength: 3 }}
+                            helperText={`${createTitle.length}/3 characters minimum`}
+                            error={createTitle.length > 0 && createTitle.length < 3}
                         />
                     )}
                 </DialogContent>
@@ -684,7 +684,7 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                         <Button 
                             variant="contained" 
                             onClick={createQuizModalOpen ? handleCreateQuiz : handleCreateSection}
-                            disabled={createQuizModalOpen ? quizTitle.length < 30 : createTitle.length < 30}
+                            disabled={createQuizModalOpen ? quizTitle.length < 3 : createTitle.length < 3}
                         >
                             Create
                         </Button>
