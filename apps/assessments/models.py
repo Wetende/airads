@@ -239,9 +239,15 @@ class Question(TimeStampedModel):
 
         # 3. Ordering / Sequence
         elif self.question_type == 'ordering':
-            # student_answer: [2, 0, 1, 3] (indices in correct order)
-            correct_order = self.answer_data.get('correct_order', [])
-            is_correct = (student_answer == correct_order)
+            # student_answer: ["Step 1", "Step 2"] or [2, 0, 1] (legacy)
+            expected_order = self.answer_data.get('items')
+            if not expected_order:
+                expected_order = self.answer_data.get('correct_order', [])
+
+            if not isinstance(expected_order, list) or not isinstance(student_answer, list):
+                return False, 0
+
+            is_correct = (student_answer == expected_order)
             return is_correct, self.points if is_correct else 0
 
         # 4. Multi-Select MCQ
@@ -524,6 +530,38 @@ class QuestionGapAnswer(models.Model):
         return f"Gap {self.gap_index} for Q{self.question.id}"
 
 
+class QuestionBank(TimeStampedModel):
+    """
+    Question Bank for organizing reusable questions by program.
+    Allows instructors to group questions by topic/category within a program.
+    """
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    program = models.ForeignKey(
+        'core.Program',
+        on_delete=models.CASCADE,
+        related_name='question_banks',
+        help_text='Questions in this bank are shared within the program'
+    )
+    owner = models.ForeignKey(
+        'core.User',
+        on_delete=models.CASCADE,
+        related_name='owned_question_banks'
+    )
+    category = models.CharField(max_length=100, blank=True, default='')
+    
+    class Meta:
+        db_table = 'question_banks'
+        indexes = [
+            models.Index(fields=['program']),
+            models.Index(fields=['owner']),
+            models.Index(fields=['category']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} ({self.program.name})"
+
+
 class QuestionBankEntry(TimeStampedModel):
     """
     Reusable question library entry.
@@ -537,8 +575,17 @@ class QuestionBankEntry(TimeStampedModel):
 
     owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='question_bank')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='bank_entries')
+    bank = models.ForeignKey(
+        QuestionBank,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='entries',
+        help_text='Optional grouping for questions'
+    )
     
     subject_area = models.CharField(max_length=100, blank=True, default='')
+    category = models.CharField(max_length=100, blank=True, default='')
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='medium')
     tags = models.JSONField(default=list, blank=True)
     
@@ -548,6 +595,8 @@ class QuestionBankEntry(TimeStampedModel):
         db_table = 'question_bank_entries'
         indexes = [
             models.Index(fields=['owner', 'subject_area']),
+            models.Index(fields=['bank']),
+            models.Index(fields=['category']),
         ]
 
     def __str__(self):

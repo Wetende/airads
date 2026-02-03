@@ -3303,7 +3303,10 @@ def student_quiz_start(request, quiz_id: int):
             ]
 
         elif q.question_type == "ordering":
-            items = list(q.answer_data.get("correct_order", []))
+            raw_items = q.answer_data.get("items")
+            if not raw_items:
+                raw_items = q.answer_data.get("correct_order", [])
+            items = list(raw_items) if isinstance(raw_items, (list, tuple)) else []
             random.shuffle(items)
             q_data["items"] = items
 
@@ -4426,6 +4429,37 @@ def instructor_resolve_change_request(request, change_request_id: int):
 
 
 @login_required
+def instructor_program_validate(request, program_id: int):
+    """
+    Validate a program for publishing readiness.
+    Returns JSON with errors, warnings, and details.
+    """
+    from django.http import JsonResponse
+    from apps.curriculum.services import CoursePublishValidationService
+    from apps.progression.models import InstructorAssignment
+    
+    try:
+        program = Program.objects.get(pk=program_id)
+    except Program.DoesNotExist:
+        return JsonResponse({'error': 'Program not found'}, status=404)
+    
+    # Verify instructor access
+    if (
+        not InstructorAssignment.objects.filter(
+            instructor=request.user, program=program
+        ).exists()
+        and not request.user.is_staff
+    ):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
+    # Run validation
+    validator = CoursePublishValidationService()
+    result = validator.validate_for_publish(program)
+    
+    return JsonResponse(result)
+
+
+@login_required
 def instructor_program_publish(request, program_id: int):
     """
     Publish an approved program.
@@ -4638,6 +4672,33 @@ def instructor_program_manage(request, pk: int):
     # Serialize program data using shared helper
     response_data = serialize_program_data(program)
     response_data["curriculum"] = curriculum
+    
+    # Add question library data as Inertia props (no REST API needed)
+    from apps.assessments.models import QuestionBankEntry
+    from apps.assessments.serializers import QuestionSerializer
+    library_entries = QuestionBankEntry.objects.filter(
+        bank__program=program
+    ).select_related('bank', 'question').prefetch_related(
+        'question__options',
+        'question__matching_pairs',
+        'question__gap_answers',
+    ).order_by('-created_at')[:100]
+    
+    response_data["questionLibrary"] = [
+        {
+            "id": entry.id,
+            "question_type": entry.question.question_type,
+            "question_data": QuestionSerializer(entry.question).data,
+            "category": entry.category,
+            "bank_name": entry.bank.name if entry.bank else None,
+        }
+        for entry in library_entries
+    ]
+    
+    # Get unique categories (must query before slicing)
+    all_entries_qs = QuestionBankEntry.objects.filter(bank__program=program)
+    categories = list(all_entries_qs.values_list('category', flat=True).distinct())
+    response_data["questionCategories"] = [c for c in categories if c]
 
     return render(request, "Instructor/Program/Manage", response_data)
 
@@ -4778,7 +4839,7 @@ def _sync_quiz_questions(node, questions_data: list):
     4. Deletes removed questions
     5. Stores db_id mapping back in node properties
     """
-    from apps.assessments.models import Question, QuestionOption, Quiz
+    from apps.assessments.models import Question, QuestionGapAnswer, QuestionOption, Quiz
 
     if not questions_data:
         return
@@ -4818,6 +4879,8 @@ def _sync_quiz_questions(node, questions_data: list):
         # Map frontend types to backend types
         type_mapping = {
             "multiple_choice": "mcq",
+            "multi_choice": "mcq_multi",
+            "mcq_multi": "mcq_multi",
             "true_false": "true_false",
             "short_answer": "short_answer",
             "matching": "matching",
@@ -4826,12 +4889,40 @@ def _sync_quiz_questions(node, questions_data: list):
         }
         backend_type = type_mapping.get(question_type, question_type)
 
+        from django.utils.html import strip_tags
+
+        question_text = q_data.get("text", "")
+        if backend_type == "fill_blank":
+            question_text = strip_tags(question_text)
+
+        def normalize_gaps(raw_gaps):
+            if not isinstance(raw_gaps, list):
+                return []
+            normalized = []
+            for gap_idx, gap in enumerate(raw_gaps):
+                if isinstance(gap, dict):
+                    index = gap.get("gap_index", gap_idx)
+                    answers = gap.get("accepted_answers", [])
+                else:
+                    index = gap_idx
+                    answers = []
+                if not isinstance(answers, list):
+                    answers = []
+                cleaned = [a for a in answers if str(a).strip()]
+                normalized.append({"gap_index": index, "accepted_answers": cleaned})
+            return normalized
+
         # Build answer_data based on question type
         answer_data = {}
         if backend_type == "mcq":
             answer_data = {
                 "options": q_data.get("options", []),
                 "correct": q_data.get("correct", 0),
+            }
+        elif backend_type == "mcq_multi":
+            answer_data = {
+                "options": q_data.get("options", []),
+                "correct_indices": q_data.get("correct_indices", q_data.get("correctAnswers", [])),
             }
         elif backend_type == "true_false":
             answer_data = {"correct": q_data.get("correct", True)}
@@ -4841,12 +4932,21 @@ def _sync_quiz_questions(node, questions_data: list):
                 "manual_grading": q_data.get("manual_grading", True),
             }
         elif backend_type == "ordering":
-            answer_data = {"correct_order": q_data.get("correct_order", [])}
+            raw_items = q_data.get("items", [])
+            if not raw_items:
+                legacy_order = q_data.get("correct_order", [])
+                if isinstance(legacy_order, list) and all(
+                    isinstance(item, str) for item in legacy_order
+                ):
+                    raw_items = legacy_order
+
+            items = [item for item in raw_items if str(item).strip()]
+            answer_data = {"items": items}
 
         if db_id and db_id in existing_ids:
             # Update existing question
             Question.objects.filter(pk=db_id).update(
-                text=q_data.get("text", ""),
+                text=question_text,
                 question_type=backend_type,
                 points=q_data.get("points", 1),
                 position=idx,
@@ -4855,15 +4955,32 @@ def _sync_quiz_questions(node, questions_data: list):
             processed_ids.add(db_id)
 
             # Handle MCQ options update
-            if backend_type == "mcq" and "options" in q_data:
+            if backend_type in ("mcq", "mcq_multi") and "options" in q_data:
                 question = Question.objects.get(pk=db_id)
                 question.options.all().delete()
                 for opt_idx, opt_text in enumerate(q_data.get("options", [])):
                     QuestionOption.objects.create(
                         question=question,
                         text=opt_text,
-                        is_correct=(opt_idx == q_data.get("correct", 0)),
+                        is_correct=(
+                            (opt_idx == q_data.get("correct", 0))
+                            if backend_type == "mcq"
+                            else (opt_idx in set(answer_data.get("correct_indices", [])))
+                        ),
                         position=opt_idx,
+                    )
+
+            if backend_type == "fill_blank":
+                question = Question.objects.get(pk=db_id)
+                question.gap_answers.all().delete()
+                gaps_data = normalize_gaps(
+                    q_data.get("gaps", q_data.get("gap_answers", []))
+                )
+                for gap in gaps_data:
+                    QuestionGapAnswer.objects.create(
+                        question=question,
+                        gap_index=gap["gap_index"],
+                        accepted_answers=gap["accepted_answers"],
                     )
 
             updated_questions.append({**q_data, "db_id": db_id})
@@ -4871,7 +4988,7 @@ def _sync_quiz_questions(node, questions_data: list):
             # Create new question
             new_question = Question.objects.create(
                 quiz=quiz,
-                text=q_data.get("text", ""),
+                text=question_text,
                 question_type=backend_type,
                 points=q_data.get("points", 1),
                 position=idx,
@@ -4880,13 +4997,28 @@ def _sync_quiz_questions(node, questions_data: list):
             processed_ids.add(new_question.id)
 
             # Create MCQ options
-            if backend_type == "mcq" and "options" in q_data:
+            if backend_type in ("mcq", "mcq_multi") and "options" in q_data:
                 for opt_idx, opt_text in enumerate(q_data.get("options", [])):
                     QuestionOption.objects.create(
                         question=new_question,
                         text=opt_text,
-                        is_correct=(opt_idx == q_data.get("correct", 0)),
+                        is_correct=(
+                            (opt_idx == q_data.get("correct", 0))
+                            if backend_type == "mcq"
+                            else (opt_idx in set(answer_data.get("correct_indices", [])))
+                        ),
                         position=opt_idx,
+                    )
+
+            if backend_type == "fill_blank":
+                gaps_data = normalize_gaps(
+                    q_data.get("gaps", q_data.get("gap_answers", []))
+                )
+                for gap in gaps_data:
+                    QuestionGapAnswer.objects.create(
+                        question=new_question,
+                        gap_index=gap["gap_index"],
+                        accepted_answers=gap["accepted_answers"],
                     )
 
             updated_questions.append({**q_data, "db_id": new_question.id})
@@ -5051,7 +5183,7 @@ def instructor_program_preview(request, pk: int):
 
 @login_required
 def instructor_node_reorder(request, program_id: int):
-    """Reorder siblings."""
+    """Reorder siblings within a parent (or root-level if no parent_id)."""
     if not is_instructor(request.user) or request.method != "POST":
         return redirect("/dashboard/")
 
@@ -5066,16 +5198,28 @@ def instructor_node_reorder(request, program_id: int):
     ):
         return redirect("/dashboard/")
 
-    # For MVP, maybe just "move up/down" or full list update?
-    # Let's assume full list of IDs for a specific parent context
     data = get_post_data(request)
     ordered_ids = data.get("ordered_ids", [])
+    parent_id = data.get("parent_id")  # Optional: reorder children of this parent
+
+    # Validate parent exists if provided
+    if parent_id:
+        parent_exists = CurriculumNode.objects.filter(
+            pk=parent_id, program_id=program_id
+        ).exists()
+        if not parent_exists:
+            messages.error(request, "Invalid parent node")
+            return redirect("core:instructor.program_manage", pk=program_id)
+
+    # Constrain updates to the intended sibling set
+    if parent_id:
+        sibling_filter = {"program_id": program_id, "parent_id": parent_id}
+    else:
+        sibling_filter = {"program_id": program_id, "parent__isnull": True}
 
     for idx, node_id in enumerate(ordered_ids):
-        # Bulk update would be better but keeping it safe for now
-        CurriculumNode.objects.filter(pk=node_id, program_id=program_id).update(
-            position=idx
-        )
+        # Update position for nodes in the specified parent context
+        CurriculumNode.objects.filter(pk=node_id, **sibling_filter).update(position=idx)
 
     messages.success(request, "Order updated")
     return redirect("core:instructor.program_manage", pk=program_id)

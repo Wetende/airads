@@ -136,6 +136,7 @@ urlpatterns = [
 
     path("instructor/programs/<int:program_id>/submit/", views.instructor_program_submit_for_review, name="instructor.program_submit"),
 
+    path("instructor/programs/<int:program_id>/validate/", views.instructor_program_validate, name="instructor.program_validate"),
     path("instructor/programs/<int:program_id>/publish/", views.instructor_program_publish, name="instructor.program_publish"),
     path("instructor/programs/<int:program_id>/change-requests/", views.instructor_program_change_requests, name="instructor.program_change_requests"),
     path("instructor/change-requests/<int:change_request_id>/resolve/", views.instructor_resolve_change_request, name="instructor.resolve_change_request"),

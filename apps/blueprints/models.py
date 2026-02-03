@@ -49,7 +49,7 @@ class AcademicBlueprint(TimeStampedModel):
                 'portfolio': True, 'gamification': False, 'enforce_standard_rubrics': True
             },
             'weighted': {  # Theology/Traditional
-                'quizzes': False, 'assignments': True, 'practicum': True,
+                'quizzes': True, 'assignments': True, 'practicum': True,
                 'portfolio': False, 'gamification': False, 'enforce_standard_rubrics': False
             },
             'progress': {  # Online/Self-paced

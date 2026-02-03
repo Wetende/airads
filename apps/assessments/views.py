@@ -1,11 +1,14 @@
 from rest_framework import viewsets, permissions, status, decorators
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import Quiz, Question, QuestionBankEntry, Rubric
+from .models import Quiz, Question, QuestionBankEntry, QuestionBank, Rubric
 from .serializers import (
-    QuizSerializer, QuestionSerializer, QuestionBankEntrySerializer, RubricSerializer
+    QuizSerializer, QuestionSerializer, QuestionBankEntrySerializer, 
+    QuestionBankSerializer, RubricSerializer
 )
+from .question_bank_service import QuestionBankService
 from apps.curriculum.models import CurriculumNode
+from apps.core.models import Program
 from inertia import render
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -231,3 +234,175 @@ class QuestionBankViewSet(viewsets.ModelViewSet):
         entry.save()
         
         return Response(QuestionSerializer(new_q).data, status=201)
+
+
+class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
+    """
+    API endpoint for program-scoped Question Library.
+    All instructors on a program can access and share questions.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def list(self, request, program_id=None):
+        """
+        Search questions in a program's library.
+        Query params: query, category, bank_id, question_type
+        """
+        program = get_object_or_404(Program, pk=program_id)
+
+        # Verify instructor access
+        from apps.progression.models import InstructorAssignment
+        if not (
+            InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
+            or request.user.is_staff
+        ):
+            return Response({"error": "Permission denied"}, status=403)
+        
+        # Get query params
+        query = request.query_params.get('query', '')
+        category = request.query_params.get('category', '')
+        bank_id = request.query_params.get('bank_id')
+        question_type = request.query_params.get('question_type', '')
+        
+        service = QuestionBankService()
+        entries = service.search_program_library(
+            program=program,
+            query=query if query else None,
+            category=category if category else None,
+            bank_id=int(bank_id) if bank_id else None,
+            question_type=question_type if question_type else None
+        )
+        
+        serializer = QuestionBankEntrySerializer(entries, many=True)
+        return Response(serializer.data)
+    
+    @decorators.action(detail=False, methods=['get'])
+    def banks(self, request, program_id=None):
+        """
+        List all question banks for a program.
+        """
+        program = get_object_or_404(Program, pk=program_id)
+
+        from apps.progression.models import InstructorAssignment
+        if not (
+            InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
+            or request.user.is_staff
+        ):
+            return Response({"error": "Permission denied"}, status=403)
+        service = QuestionBankService()
+        banks = service.get_program_banks(program)
+        serializer = QuestionBankSerializer(banks, many=True)
+        return Response(serializer.data)
+    
+    @decorators.action(detail=False, methods=['post'])
+    def create_bank(self, request, program_id=None):
+        """
+        Create a new question bank for a program.
+        Expects: { "name": "Bank Name", "description": "...", "category": "..." }
+        """
+        program = get_object_or_404(Program, pk=program_id)
+
+        from apps.progression.models import InstructorAssignment
+        if not (
+            InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
+            or request.user.is_staff
+        ):
+            return Response({"error": "Permission denied"}, status=403)
+        
+        name = request.data.get('name', '').strip()
+        if not name:
+            return Response({"error": "Bank name is required"}, status=400)
+        
+        service = QuestionBankService()
+        bank = service.create_bank(
+            program=program,
+            owner=request.user,
+            name=name,
+            description=request.data.get('description', ''),
+            category=request.data.get('category', '')
+        )
+        
+        return Response(QuestionBankSerializer(bank).data, status=201)
+    
+    @decorators.action(detail=False, methods=['get'])
+    def categories(self, request, program_id=None):
+        """
+        Get all unique categories for a program's questions.
+        """
+        program = get_object_or_404(Program, pk=program_id)
+
+        from apps.progression.models import InstructorAssignment
+        if not (
+            InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
+            or request.user.is_staff
+        ):
+            return Response({"error": "Permission denied"}, status=403)
+        service = QuestionBankService()
+        categories = service.get_categories(program)
+        return Response({"categories": categories})
+    
+    @decorators.action(detail=True, methods=['post'], url_path='add-to-quiz')
+    def add_to_quiz(self, request, program_id=None, pk=None):
+        """
+        Copy a question from the library to a quiz.
+        Expects: { "quiz_id": 1 }
+        """
+        program = get_object_or_404(Program, pk=program_id)
+        from apps.progression.models import InstructorAssignment
+        if not (
+            InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
+            or request.user.is_staff
+        ):
+            return Response({"error": "Permission denied"}, status=403)
+
+        entry = get_object_or_404(QuestionBankEntry, pk=pk, bank__program=program)
+        quiz_id = request.data.get('quiz_id')
+        
+        if not quiz_id:
+            return Response({"error": "quiz_id is required"}, status=400)
+        
+        quiz = get_object_or_404(Quiz, pk=quiz_id)
+        if quiz.node.program_id != program.id:
+            return Response({"error": "Permission denied"}, status=403)
+        
+        service = QuestionBankService()
+        new_question = service.copy_from_bank(entry, quiz)
+        
+        return Response(QuestionSerializer(new_question).data, status=201)
+    
+    @decorators.action(detail=False, methods=['post'], url_path='save-to-library')
+    def save_to_library(self, request, program_id=None):
+        """
+        Save a question to the program's library.
+        Expects: { "question_id": 1, "bank_id": 1, "category": "..." }
+        """
+        program = get_object_or_404(Program, pk=program_id)
+        from apps.progression.models import InstructorAssignment
+        if not (
+            InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
+            or request.user.is_staff
+        ):
+            return Response({"error": "Permission denied"}, status=403)
+        question_id = request.data.get('question_id')
+        bank_id = request.data.get('bank_id')
+        category = request.data.get('category', '')
+        
+        if not question_id:
+            return Response({"error": "question_id is required"}, status=400)
+        
+        question = get_object_or_404(Question, pk=question_id)
+        if question.quiz.node.program_id != program.id:
+            return Response({"error": "Permission denied"}, status=403)
+        bank = get_object_or_404(QuestionBank, pk=bank_id, program=program) if bank_id else None
+        
+        service = QuestionBankService()
+        entry = service.add_to_bank(
+            question=question,
+            user=request.user,
+            bank=bank,
+            category=category,
+            difficulty=request.data.get('difficulty', 'medium'),
+            tags=request.data.get('tags', [])
+        )
+        
+        return Response(QuestionBankEntrySerializer(entry).data, status=201)

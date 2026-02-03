@@ -16,3 +16,5 @@ urlpatterns = [
     path('rubrics/create/', views.rubric_create, name='rubric_create'),
     path('rubrics/<int:pk>/edit/', views.rubric_edit, name='rubric_edit'),
 ]
+
+

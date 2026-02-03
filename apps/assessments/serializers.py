@@ -8,7 +8,7 @@ from rest_framework import serializers
 from apps.assessments.models import (
     AssessmentResult, Quiz, Question, 
     QuestionOption, QuestionMatchingPair, 
-    QuestionGapAnswer, QuestionBankEntry,
+    QuestionGapAnswer, QuestionBankEntry, QuestionBank,
     Rubric
 )
 
@@ -275,15 +275,35 @@ class QuizSerializer(serializers.ModelSerializer):
         ]
 
 
+class QuestionBankSerializer(serializers.ModelSerializer):
+    """Serializer for QuestionBank model (question groupings)."""
+    entries_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = QuestionBank
+        fields = [
+            'id', 'name', 'description', 'program', 'owner', 'category',
+            'entries_count', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['owner', 'entries_count']
+    
+    def get_entries_count(self, obj):
+        return obj.entries.count()
+
+
 class QuestionBankEntrySerializer(serializers.ModelSerializer):
     question_data = QuestionSerializer(source='question', read_only=True)
+    bank_name = serializers.CharField(source='bank.name', read_only=True, allow_null=True)
+    owner_name = serializers.CharField(source='owner.get_full_name', read_only=True)
+    question_type = serializers.CharField(source='question.question_type', read_only=True)
     
     class Meta:
         model = QuestionBankEntry
         fields = [
-            'id', 'owner', 'question', 'question_data',
-            'subject_area', 'difficulty', 'tags', 'usage_count',
-            'created_at', 'updated_at'
+            'id', 'owner', 'owner_name', 'question', 'question_data',
+            'bank', 'bank_name', 'category', 'subject_area', 'difficulty', 
+            'tags', 'usage_count', 'question_type', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['owner', 'usage_count']
+        read_only_fields = ['owner', 'usage_count', 'owner_name', 'bank_name', 'question_type']
+
 
