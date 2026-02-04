@@ -10,14 +10,19 @@ import {
     List,
     ListItem,
     ListItemText,
+    ListItemIcon,
     ThemeProvider,
     createTheme,
     CssBaseline,
     useScrollTrigger,
     AppBar,
     Toolbar,
+    Avatar,
+    Menu,
+    MenuItem,
+    Divider,
 } from "@mui/material";
-import { IconSchool, IconMenu2, IconX } from "@tabler/icons-react";
+import { IconSchool, IconMenu2, IconX, IconBell, IconDashboard, IconUser, IconLogout } from "@tabler/icons-react";
 import { cloneElement, useState } from "react";
 
 // Components
@@ -106,6 +111,9 @@ export default function Landing() {
 
 function PlatformLanding({ platform, programs = [], stats = {} }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+    const { auth } = usePage().props;
+    const user = auth?.user;
 
     // Dynamic colors from platform settings
     const primaryColor = platform.primaryColor || "#3B82F6";
@@ -128,6 +136,22 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
 
     // Dynamic text color based on scroll state
     const navbarTextColor = scrolled ? lightTheme.palette.text.primary : "white";
+
+    // Dashboard URL based on user role
+    const getDashboardUrl = () => {
+        if (!user) return "/dashboard/";
+        if (user.role === "instructor") return "/instructor/";
+        if (user.role === "student") return "/student/";
+        return "/dashboard/";
+    };
+
+    // Get user initials for avatar
+    const getInitials = () => {
+        if (!user) return "?";
+        const first = user.first_name?.[0] || user.firstName?.[0] || "";
+        const last = user.last_name?.[0] || user.lastName?.[0] || "";
+        return (first + last).toUpperCase() || user.email?.[0]?.toUpperCase() || "U";
+    };
 
     return (
         <ThemeProvider theme={lightTheme}>
@@ -231,49 +255,131 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                 ))}
                             </Stack>
 
-                            {/* CTA Buttons */}
+                            {/* CTA Buttons / User Menu */}
                             <Stack
                                 direction="row"
                                 spacing={2}
                                 alignItems="center"
                             >
-                                <Button
-                                    component={Link}
-                                    href="/login/"
-                                    color="inherit"
-                                    sx={{
-                                        fontWeight: 600,
-                                        color: navbarTextColor,
-                                        transition: "color 0.3s ease",
-                                        display: {
-                                            xs: "none",
-                                            sm: "inline-flex",
-                                        },
-                                    }}
-                                >
-                                    Sign In
-                                </Button>
-                                <ButtonAnimationWrapper>
-                                    <Button
-                                        component={Link}
-                                        href="/register/"
-                                        variant="contained"
-                                        sx={{
-                                            borderRadius: 100,
-                                            px: 3,
-                                            bgcolor: primaryColor,
-                                            "&:hover": {
-                                                bgcolor: secondaryColor,
-                                            },
-                                            display: {
-                                                xs: "none",
-                                                sm: "inline-flex",
-                                            },
-                                        }}
-                                    >
-                                        Get Started
-                                    </Button>
-                                </ButtonAnimationWrapper>
+                                {user ? (
+                                    /* Logged In State */
+                                    <>
+                                        {/* Notification Bell */}
+                                        <IconButton
+                                            sx={{ 
+                                                color: navbarTextColor,
+                                                display: { xs: "none", sm: "flex" },
+                                            }}
+                                        >
+                                            <IconBell size={22} />
+                                        </IconButton>
+
+                                        {/* User Avatar with Dropdown */}
+                                        <Box>
+                                            <IconButton
+                                                onClick={(e) => setUserMenuAnchor(e.currentTarget)}
+                                                sx={{ p: 0.5 }}
+                                            >
+                                                {user.avatar_url || user.avatarUrl ? (
+                                                    <Avatar
+                                                        src={user.avatar_url || user.avatarUrl}
+                                                        alt={user.first_name || user.firstName}
+                                                        sx={{ width: 36, height: 36 }}
+                                                    />
+                                                ) : (
+                                                    <Avatar
+                                                        sx={{ 
+                                                            width: 36, 
+                                                            height: 36, 
+                                                            bgcolor: primaryColor,
+                                                            fontSize: 14,
+                                                            fontWeight: 600,
+                                                        }}
+                                                    >
+                                                        {getInitials()}
+                                                    </Avatar>
+                                                )}
+                                            </IconButton>
+                                            <Menu
+                                                anchorEl={userMenuAnchor}
+                                                open={Boolean(userMenuAnchor)}
+                                                onClose={() => setUserMenuAnchor(null)}
+                                                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                                                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                                                PaperProps={{ sx: { mt: 1, minWidth: 180 } }}
+                                            >
+                                                <MenuItem 
+                                                    component={Link} 
+                                                    href={getDashboardUrl()}
+                                                    onClick={() => setUserMenuAnchor(null)}
+                                                >
+                                                    <ListItemIcon><IconDashboard size={18} /></ListItemIcon>
+                                                    <ListItemText>Dashboard</ListItemText>
+                                                </MenuItem>
+                                                <MenuItem 
+                                                    component={Link} 
+                                                    href="/profile/"
+                                                    onClick={() => setUserMenuAnchor(null)}
+                                                >
+                                                    <ListItemIcon><IconUser size={18} /></ListItemIcon>
+                                                    <ListItemText>Profile</ListItemText>
+                                                </MenuItem>
+                                                <Divider />
+                                                <MenuItem 
+                                                    component={Link} 
+                                                    href="/logout/" 
+                                                    method="post"
+                                                    as="button"
+                                                    onClick={() => setUserMenuAnchor(null)}
+                                                >
+                                                    <ListItemIcon><IconLogout size={18} /></ListItemIcon>
+                                                    <ListItemText>Logout</ListItemText>
+                                                </MenuItem>
+                                            </Menu>
+                                        </Box>
+                                    </>
+                                ) : (
+                                    /* Logged Out State */
+                                    <>
+                                        <Button
+                                            component={Link}
+                                            href="/login/"
+                                            color="inherit"
+                                            sx={{
+                                                fontWeight: 600,
+                                                color: navbarTextColor,
+                                                transition: "color 0.3s ease",
+                                                display: {
+                                                    xs: "none",
+                                                    sm: "inline-flex",
+                                                },
+                                            }}
+                                        >
+                                            Sign In
+                                        </Button>
+                                        <ButtonAnimationWrapper>
+                                            <Button
+                                                component={Link}
+                                                href="/register/"
+                                                variant="contained"
+                                                sx={{
+                                                    borderRadius: 100,
+                                                    px: 3,
+                                                    bgcolor: primaryColor,
+                                                    "&:hover": {
+                                                        bgcolor: secondaryColor,
+                                                    },
+                                                    display: {
+                                                        xs: "none",
+                                                        sm: "inline-flex",
+                                                    },
+                                                }}
+                                            >
+                                                Get Started
+                                            </Button>
+                                        </ButtonAnimationWrapper>
+                                    </>
+                                )}
 
                                 {/* Mobile Menu Toggle */}
                                 <IconButton
@@ -320,20 +426,46 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                 <ListItemText primary={link.label} />
                             </ListItem>
                         ))}
-                        <ListItem component={Link} href="/login/">
-                            <ListItemText primary="Sign In" />
-                        </ListItem>
-                        <ListItem>
-                            <Button
-                                component={Link}
-                                href="/register/"
-                                variant="contained"
-                                fullWidth
-                                sx={{ bgcolor: primaryColor, borderRadius: 2 }}
-                            >
-                                Get Started
-                            </Button>
-                        </ListItem>
+                        {user ? (
+                            <>
+                                <Divider sx={{ my: 1 }} />
+                                <ListItem component={Link} href={getDashboardUrl()}>
+                                    <ListItemText primary="Dashboard" />
+                                </ListItem>
+                                <ListItem component={Link} href="/profile/">
+                                    <ListItemText primary="Profile" />
+                                </ListItem>
+                                <ListItem>
+                                    <Button
+                                        component={Link}
+                                        href="/logout/"
+                                        method="post"
+                                        variant="outlined"
+                                        fullWidth
+                                        sx={{ borderRadius: 2 }}
+                                    >
+                                        Logout
+                                    </Button>
+                                </ListItem>
+                            </>
+                        ) : (
+                            <>
+                                <ListItem component={Link} href="/login/">
+                                    <ListItemText primary="Sign In" />
+                                </ListItem>
+                                <ListItem>
+                                    <Button
+                                        component={Link}
+                                        href="/register/"
+                                        variant="contained"
+                                        fullWidth
+                                        sx={{ bgcolor: primaryColor, borderRadius: 2 }}
+                                    >
+                                        Get Started
+                                    </Button>
+                                </ListItem>
+                            </>
+                        )}
                     </List>
                 </Drawer>
 
