@@ -47,6 +47,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "7.60.0",
+    "react-pdf": "^10.3.0",
     "react-player": "^3.4.0",
     "react-quill": "^2.0.0",
     "react-quill-new": "^3.8.3",

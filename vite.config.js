@@ -46,8 +46,9 @@ export default defineConfig(({ command }) => ({
                         return; // Let Rollup handle app code
                     }
                     
-                    // Only split truly independent large libraries
-                    // Video players don't depend on React/MUI at all
+                    // ===== Large standalone libraries (no React deps) =====
+                    
+                    // Video players - completely independent
                     if (id.includes('hls.js')) {
                         return 'vendor-hls';
                     }
@@ -55,15 +56,30 @@ export default defineConfig(({ command }) => ({
                         return 'vendor-dash';
                     }
                     
-                    // Rich text editor is also fairly independent
+                    // PDF rendering - very large (~500kb), independent
+                    if (id.includes('react-pdf') || id.includes('pdfjs-dist')) {
+                        return 'vendor-pdf';
+                    }
+                    
+                    // Rich text editors
                     if (id.includes('tiptap') || id.includes('prosemirror')) {
                         return 'vendor-editor';
+                    }
+                    if (id.includes('react-quill') || id.includes('quill')) {
+                        return 'vendor-quill';
                     }
                     
                     // Charts are independent
                     if (id.includes('recharts') || id.includes('d3-')) {
                         return 'vendor-charts';
                     }
+                    
+                    // Drag and drop
+                    if (id.includes('@dnd-kit')) {
+                        return 'vendor-dnd';
+                    }
+                    
+                    // ===== UI & Animation libraries =====
                     
                     // Framer motion is independent
                     if (id.includes('framer-motion')) {
@@ -88,6 +104,38 @@ export default defineConfig(({ command }) => ({
                     // Swiper carousel
                     if (id.includes('swiper')) {
                         return 'vendor-swiper';
+                    }
+                    
+                    // ===== Utilities & Data libraries =====
+                    
+                    // React Player (video embeds)
+                    if (id.includes('react-player')) {
+                        return 'vendor-player';
+                    }
+                    
+                    // Date utilities
+                    if (id.includes('date-fns')) {
+                        return 'vendor-date';
+                    }
+                    
+                    // Form handling
+                    if (id.includes('react-hook-form')) {
+                        return 'vendor-forms';
+                    }
+                    
+                    // Data fetching
+                    if (id.includes('@tanstack/react-query')) {
+                        return 'vendor-query';
+                    }
+                    
+                    // HTTP client
+                    if (id.includes('axios')) {
+                        return 'vendor-axios';
+                    }
+                    
+                    // Lodash utilities
+                    if (id.includes('lodash')) {
+                        return 'vendor-lodash';
                     }
                     
                     // Let everything else (React, Inertia, etc.) stay together

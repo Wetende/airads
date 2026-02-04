@@ -160,29 +160,25 @@
     "src": "../node_modules/@fontsource/figtree/files/figtree-latin-ext-700-normal.woff2"
   },
   "../node_modules/@mux/mux-player-react/dist/index.mjs": {
-    "file": "index-BdBSQjmH.js",
+    "file": "index-B6dHNlCP.js",
     "name": "index",
     "src": "../node_modules/@mux/mux-player-react/dist/index.mjs",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
+      "_vendor-dnd-BbkTYtbq.js",
       "_vendor-hls-Cp2x8l1r.js",
       "_mixin-D3UDm--6.js"
     ]
   },
   "../node_modules/dash-video-element/dist/react.js": {
-    "file": "react-kms816c6.js",
+    "file": "react-LIkU6vB2.js",
     "name": "react",
     "src": "../node_modules/dash-video-element/dist/react.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
-      "src/main.jsx",
-      "_mixin-D3UDm--6.js",
-      "_vendor-icons-FMN-Fswh.js",
-      "_vendor-mui-D-vN39f_.js",
-      "_vendor-emotion-IPR5N1Tm.js",
-      "_vendor-motion-Kt4iJLIA.js"
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-player-AW3MFJiD.js",
+      "_mixin-D3UDm--6.js"
     ],
     "dynamicImports": [
       "../node_modules/dashjs/dist/modern/esm/dash.all.min.js"
@@ -195,130 +191,189 @@
     "isDynamicEntry": true
   },
   "../node_modules/hls-video-element/dist/react.js": {
-    "file": "react-BLr1pKhB.js",
+    "file": "react-FT1WmYh5.js",
     "name": "react",
     "src": "../node_modules/hls-video-element/dist/react.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
+      "_vendor-dnd-BbkTYtbq.js",
       "_mixin-D3UDm--6.js",
       "_vendor-hls-Cp2x8l1r.js"
     ]
   },
-  "../node_modules/react-player/dist/Preview.js": {
-    "file": "Preview-CeCR9Lke.js",
-    "name": "Preview",
-    "src": "../node_modules/react-player/dist/Preview.js",
-    "isDynamicEntry": true,
-    "imports": [
-      "_vendor-editor-CivAAO7m.js"
-    ]
-  },
   "../node_modules/spotify-audio-element/dist/react.js": {
-    "file": "react-DU4c32Dp.js",
+    "file": "react-BR252ei1.js",
     "name": "react",
     "src": "../node_modules/spotify-audio-element/dist/react.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js"
+      "_vendor-dnd-BbkTYtbq.js"
     ]
   },
   "../node_modules/tiktok-video-element/dist/react.js": {
-    "file": "react-CrdRTpJJ.js",
+    "file": "react-B2FoTjkR.js",
     "name": "react",
     "src": "../node_modules/tiktok-video-element/dist/react.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js"
+      "_vendor-dnd-BbkTYtbq.js"
     ]
   },
   "../node_modules/twitch-video-element/dist/react.js": {
-    "file": "react-CJUaqvwJ.js",
+    "file": "react-ZaDqFVh6.js",
     "name": "react",
     "src": "../node_modules/twitch-video-element/dist/react.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js"
+      "_vendor-dnd-BbkTYtbq.js"
     ]
   },
   "../node_modules/vimeo-video-element/dist/react.js": {
-    "file": "react-E8sCfDep.js",
+    "file": "react-v1XPum0X.js",
     "name": "react",
     "src": "../node_modules/vimeo-video-element/dist/react.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js"
+      "_vendor-dnd-BbkTYtbq.js"
     ]
   },
   "../node_modules/wistia-video-element/dist/react.js": {
-    "file": "react-35ud-Bqk.js",
+    "file": "react-DSVN_Q3R.js",
     "name": "react",
     "src": "../node_modules/wistia-video-element/dist/react.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js"
+      "_vendor-dnd-BbkTYtbq.js"
     ]
   },
   "../node_modules/youtube-video-element/dist/react.js": {
-    "file": "react-DvvDwgix.js",
+    "file": "react-FVqN6hKF.js",
     "name": "react",
     "src": "../node_modules/youtube-video-element/dist/react.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js"
+      "_vendor-dnd-BbkTYtbq.js"
     ]
   },
   "_mixin-D3UDm--6.js": {
     "file": "mixin-D3UDm--6.js",
     "name": "mixin"
   },
-  "_vendor-editor-CivAAO7m.js": {
-    "file": "vendor-editor-CivAAO7m.js",
-    "name": "vendor-editor"
+  "_vendor-axios-CZMj-T3T.js": {
+    "file": "vendor-axios-CZMj-T3T.js",
+    "name": "vendor-axios"
   },
-  "_vendor-emotion-IPR5N1Tm.js": {
-    "file": "vendor-emotion-IPR5N1Tm.js",
+  "_vendor-date-D5ebMS61.js": {
+    "file": "vendor-date-D5ebMS61.js",
+    "name": "vendor-date"
+  },
+  "_vendor-dnd-BbkTYtbq.js": {
+    "file": "vendor-dnd-BbkTYtbq.js",
+    "name": "vendor-dnd"
+  },
+  "_vendor-editor-WHHSXeeu.js": {
+    "file": "vendor-editor-WHHSXeeu.js",
+    "name": "vendor-editor",
+    "imports": [
+      "_vendor-dnd-BbkTYtbq.js"
+    ]
+  },
+  "_vendor-emotion-iqQZ7t0F.js": {
+    "file": "vendor-emotion-iqQZ7t0F.js",
     "name": "vendor-emotion",
     "imports": [
-      "_vendor-editor-CivAAO7m.js"
+      "_vendor-dnd-BbkTYtbq.js"
     ]
   },
   "_vendor-hls-Cp2x8l1r.js": {
     "file": "vendor-hls-Cp2x8l1r.js",
     "name": "vendor-hls"
   },
-  "_vendor-icons-FMN-Fswh.js": {
-    "file": "vendor-icons-FMN-Fswh.js",
+  "_vendor-icons-DFMniH8a.js": {
+    "file": "vendor-icons-DFMniH8a.js",
     "name": "vendor-icons",
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
-      "_vendor-mui-D-vN39f_.js"
+      "_vendor-editor-WHHSXeeu.js",
+      "_vendor-mui--kQli_V-.js",
+      "_vendor-dnd-BbkTYtbq.js"
     ]
   },
-  "_vendor-motion-Kt4iJLIA.js": {
-    "file": "vendor-motion-Kt4iJLIA.js",
+  "_vendor-lodash-CDLuBejv.js": {
+    "file": "vendor-lodash-CDLuBejv.js",
+    "name": "vendor-lodash",
+    "imports": [
+      "_vendor-dnd-BbkTYtbq.js"
+    ]
+  },
+  "_vendor-motion-BNO2tkJK.js": {
+    "file": "vendor-motion-BNO2tkJK.js",
     "name": "vendor-motion",
     "imports": [
-      "_vendor-editor-CivAAO7m.js"
+      "_vendor-editor-WHHSXeeu.js",
+      "_vendor-dnd-BbkTYtbq.js"
     ]
   },
-  "_vendor-mui-D-vN39f_.js": {
-    "file": "vendor-mui-D-vN39f_.js",
+  "_vendor-mui--kQli_V-.js": {
+    "file": "vendor-mui--kQli_V-.js",
     "name": "vendor-mui",
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
-      "_vendor-emotion-IPR5N1Tm.js"
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-editor-WHHSXeeu.js",
+      "_vendor-emotion-iqQZ7t0F.js"
     ]
+  },
+  "_vendor-pdf-C_1sgbFN.js": {
+    "file": "vendor-pdf-C_1sgbFN.js",
+    "name": "vendor-pdf",
+    "imports": [
+      "_vendor-editor-WHHSXeeu.js",
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-mui--kQli_V-.js"
+    ]
+  },
+  "_vendor-player-AW3MFJiD.js": {
+    "file": "vendor-player-AW3MFJiD.js",
+    "name": "vendor-player",
+    "imports": [
+      "_vendor-dnd-BbkTYtbq.js"
+    ],
+    "dynamicImports": [
+      "../node_modules/hls-video-element/dist/react.js",
+      "../node_modules/dash-video-element/dist/react.js",
+      "../node_modules/@mux/mux-player-react/dist/index.mjs",
+      "../node_modules/youtube-video-element/dist/react.js",
+      "../node_modules/vimeo-video-element/dist/react.js",
+      "../node_modules/wistia-video-element/dist/react.js",
+      "../node_modules/spotify-audio-element/dist/react.js",
+      "../node_modules/twitch-video-element/dist/react.js",
+      "../node_modules/tiktok-video-element/dist/react.js"
+    ]
+  },
+  "_vendor-quill-C1CzkRsG.js": {
+    "file": "vendor-quill-C1CzkRsG.js",
+    "name": "vendor-quill",
+    "imports": [
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-lodash-CDLuBejv.js",
+      "_vendor-editor-WHHSXeeu.js"
+    ],
+    "css": [
+      "vendor-quill-CQ7DNbul.css"
+    ]
+  },
+  "_vendor-quill-CQ7DNbul.css": {
+    "file": "vendor-quill-CQ7DNbul.css",
+    "src": "_vendor-quill-CQ7DNbul.css"
   },
   "_vendor-swiper-DLUS6Zxv.css": {
     "file": "vendor-swiper-DLUS6Zxv.css",
     "src": "_vendor-swiper-DLUS6Zxv.css"
   },
-  "_vendor-swiper-DgJ3t5ew.js": {
-    "file": "vendor-swiper-DgJ3t5ew.js",
+  "_vendor-swiper-gFbsDU59.js": {
+    "file": "vendor-swiper-gFbsDU59.js",
     "name": "vendor-swiper",
     "imports": [
-      "_vendor-editor-CivAAO7m.js"
+      "_vendor-dnd-BbkTYtbq.js"
     ],
     "css": [
       "vendor-swiper-DLUS6Zxv.css"
@@ -333,124 +388,140 @@
     "src": "src/assets/images/learning.jpg"
   },
   "src/components/sections/landing/FAQSection.jsx": {
-    "file": "FAQSection-Bg8Wg6_U.js",
+    "file": "FAQSection-D5dc6iH1.js",
     "name": "FAQSection",
     "src": "src/components/sections/landing/FAQSection.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
-      "_vendor-mui-D-vN39f_.js",
-      "_vendor-motion-Kt4iJLIA.js",
-      "_vendor-icons-FMN-Fswh.js",
-      "_vendor-emotion-IPR5N1Tm.js"
+      "_vendor-editor-WHHSXeeu.js",
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-mui--kQli_V-.js",
+      "_vendor-motion-BNO2tkJK.js",
+      "_vendor-icons-DFMniH8a.js",
+      "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/FeaturesSection.jsx": {
-    "file": "FeaturesSection-B0s5ycwT.js",
+    "file": "FeaturesSection-ChroScUm.js",
     "name": "FeaturesSection",
     "src": "src/components/sections/landing/FeaturesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
-      "_vendor-mui-D-vN39f_.js",
-      "_vendor-motion-Kt4iJLIA.js",
-      "_vendor-icons-FMN-Fswh.js",
-      "_vendor-emotion-IPR5N1Tm.js"
+      "_vendor-editor-WHHSXeeu.js",
+      "_vendor-mui--kQli_V-.js",
+      "_vendor-motion-BNO2tkJK.js",
+      "_vendor-icons-DFMniH8a.js",
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/InstructorsSection.jsx": {
-    "file": "InstructorsSection-DHDkCvo7.js",
+    "file": "InstructorsSection-e8uwcpg8.js",
     "name": "InstructorsSection",
     "src": "src/components/sections/landing/InstructorsSection.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
-      "_vendor-mui-D-vN39f_.js",
-      "_vendor-motion-Kt4iJLIA.js",
-      "_vendor-emotion-IPR5N1Tm.js"
+      "_vendor-editor-WHHSXeeu.js",
+      "_vendor-mui--kQli_V-.js",
+      "_vendor-motion-BNO2tkJK.js",
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/LearningModesSection.jsx": {
-    "file": "LearningModesSection-DyIwLZDo.js",
+    "file": "LearningModesSection-DfCQGcsd.js",
     "name": "LearningModesSection",
     "src": "src/components/sections/landing/LearningModesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
+      "_vendor-editor-WHHSXeeu.js",
       "src/main.jsx",
-      "_vendor-mui-D-vN39f_.js",
-      "_vendor-motion-Kt4iJLIA.js",
-      "_vendor-icons-FMN-Fswh.js",
-      "_vendor-emotion-IPR5N1Tm.js"
+      "_vendor-mui--kQli_V-.js",
+      "_vendor-motion-BNO2tkJK.js",
+      "_vendor-icons-DFMniH8a.js",
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-axios-CZMj-T3T.js",
+      "_vendor-lodash-CDLuBejv.js",
+      "_vendor-player-AW3MFJiD.js",
+      "_vendor-quill-C1CzkRsG.js",
+      "_vendor-pdf-C_1sgbFN.js",
+      "_vendor-date-D5ebMS61.js",
+      "_vendor-emotion-iqQZ7t0F.js"
     ],
     "assets": [
       "learning-DYQY2Bmh.jpg"
     ]
   },
   "src/components/sections/landing/ProgramsSection.jsx": {
-    "file": "ProgramsSection-CwY57gPh.js",
+    "file": "ProgramsSection-B_77uGF0.js",
     "name": "ProgramsSection",
     "src": "src/components/sections/landing/ProgramsSection.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
+      "_vendor-editor-WHHSXeeu.js",
       "src/main.jsx",
-      "_vendor-mui-D-vN39f_.js",
-      "_vendor-motion-Kt4iJLIA.js",
-      "_vendor-icons-FMN-Fswh.js",
-      "_vendor-emotion-IPR5N1Tm.js"
+      "_vendor-mui--kQli_V-.js",
+      "_vendor-motion-BNO2tkJK.js",
+      "_vendor-icons-DFMniH8a.js",
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-axios-CZMj-T3T.js",
+      "_vendor-lodash-CDLuBejv.js",
+      "_vendor-player-AW3MFJiD.js",
+      "_vendor-quill-C1CzkRsG.js",
+      "_vendor-pdf-C_1sgbFN.js",
+      "_vendor-date-D5ebMS61.js",
+      "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/TestimonialsSection.jsx": {
-    "file": "TestimonialsSection-Bd0daswQ.js",
+    "file": "TestimonialsSection-CfKjrx5u.js",
     "name": "TestimonialsSection",
     "src": "src/components/sections/landing/TestimonialsSection.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
-      "_vendor-swiper-DgJ3t5ew.js",
-      "_vendor-mui-D-vN39f_.js",
-      "_vendor-motion-Kt4iJLIA.js",
-      "_vendor-icons-FMN-Fswh.js",
-      "_vendor-emotion-IPR5N1Tm.js"
+      "_vendor-editor-WHHSXeeu.js",
+      "_vendor-swiper-gFbsDU59.js",
+      "_vendor-mui--kQli_V-.js",
+      "_vendor-motion-BNO2tkJK.js",
+      "_vendor-icons-DFMniH8a.js",
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/TrustBadgesSection.jsx": {
-    "file": "TrustBadgesSection-CcFDcO2h.js",
+    "file": "TrustBadgesSection-Uk1r7sdu.js",
     "name": "TrustBadgesSection",
     "src": "src/components/sections/landing/TrustBadgesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
-      "_vendor-mui-D-vN39f_.js",
-      "_vendor-motion-Kt4iJLIA.js",
-      "_vendor-icons-FMN-Fswh.js",
-      "_vendor-emotion-IPR5N1Tm.js"
+      "_vendor-editor-WHHSXeeu.js",
+      "_vendor-mui--kQli_V-.js",
+      "_vendor-motion-BNO2tkJK.js",
+      "_vendor-icons-DFMniH8a.js",
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/main.jsx": {
-    "file": "main-B2-CqCjc.js",
+    "file": "main-BZ5jzoLT.js",
     "name": "main",
     "src": "src/main.jsx",
     "isEntry": true,
     "imports": [
-      "_vendor-editor-CivAAO7m.js",
-      "_vendor-icons-FMN-Fswh.js",
-      "_vendor-mui-D-vN39f_.js",
-      "_vendor-motion-Kt4iJLIA.js",
-      "_vendor-emotion-IPR5N1Tm.js"
+      "_vendor-editor-WHHSXeeu.js",
+      "_vendor-dnd-BbkTYtbq.js",
+      "_vendor-axios-CZMj-T3T.js",
+      "_vendor-lodash-CDLuBejv.js",
+      "_vendor-icons-DFMniH8a.js",
+      "_vendor-mui--kQli_V-.js",
+      "_vendor-motion-BNO2tkJK.js",
+      "_vendor-player-AW3MFJiD.js",
+      "_vendor-quill-C1CzkRsG.js",
+      "_vendor-pdf-C_1sgbFN.js",
+      "_vendor-date-D5ebMS61.js",
+      "_vendor-emotion-iqQZ7t0F.js"
     ],
     "dynamicImports": [
-      "../node_modules/hls-video-element/dist/react.js",
-      "../node_modules/dash-video-element/dist/react.js",
-      "../node_modules/@mux/mux-player-react/dist/index.mjs",
-      "../node_modules/youtube-video-element/dist/react.js",
-      "../node_modules/vimeo-video-element/dist/react.js",
-      "../node_modules/wistia-video-element/dist/react.js",
-      "../node_modules/spotify-audio-element/dist/react.js",
-      "../node_modules/twitch-video-element/dist/react.js",
-      "../node_modules/tiktok-video-element/dist/react.js",
-      "../node_modules/react-player/dist/Preview.js",
       "src/components/sections/landing/TrustBadgesSection.jsx",
       "src/components/sections/landing/FeaturesSection.jsx",
       "src/components/sections/landing/ProgramsSection.jsx",
@@ -460,7 +531,7 @@
       "src/components/sections/landing/FAQSection.jsx"
     ],
     "css": [
-      "main-D1yrGF7S.css"
+      "main-DPtSWvRz.css"
     ],
     "assets": [
       "hero1-BkQM_8wF.jpg",
