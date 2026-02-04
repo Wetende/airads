@@ -616,14 +616,63 @@ def _build_curriculum_tree(
     nodes, 
     completions: list, 
     enrollment: Enrollment, 
-    status_map: dict = None
+    status_map: dict = None,
+    last_attempts_by_quiz_id: dict = None,
 ) -> list:
     """Build curriculum tree with completion and unlock status."""
     result = []
     status_map = status_map or {}
+
+    if last_attempts_by_quiz_id is None:
+        # Build a single lookup map to avoid per-node queries.
+        # Note: this may include quiz attempts for quiz nodes not in the passed
+        # `nodes` subtree, but keeps runtime predictable and query count low.
+        from apps.assessments.models import QuizAttempt
+
+        quiz_ids = set()
+        for props in CurriculumNode.objects.filter(
+            program=enrollment.program, node_type="quiz", is_published=True
+        ).values_list("properties", flat=True):
+            if isinstance(props, dict):
+                quiz_id = props.get("quiz_id")
+                if quiz_id:
+                    quiz_ids.add(quiz_id)
+
+        last_attempts_by_quiz_id = {}
+        if quiz_ids:
+            attempts = (
+                QuizAttempt.objects.filter(enrollment=enrollment, quiz_id__in=quiz_ids)
+                .order_by("quiz_id", "-attempt_number")
+                .values(
+                    "quiz_id",
+                    "attempt_number",
+                    "score",
+                    "passed",
+                    "submitted_at",
+                )
+            )
+
+            seen = set()
+            for attempt in attempts:
+                quiz_id = attempt["quiz_id"]
+                if quiz_id in seen:
+                    continue
+                seen.add(quiz_id)
+                last_attempts_by_quiz_id[quiz_id] = {
+                    "number": attempt["attempt_number"],
+                    "score": float(attempt["score"]) if attempt["score"] else 0,
+                    "passed": attempt["passed"],
+                    "completedAt": (
+                        attempt["submitted_at"].isoformat()
+                        if attempt["submitted_at"]
+                        else None
+                    ),
+                }
     
     for node in nodes:
-        children = node.children.filter(is_published=True).order_by("position")
+        children_qs = node.children.filter(is_published=True).order_by("position")
+        children = list(children_qs)
+        has_children = len(children) > 0
         
         node_status = status_map.get(node.id, {})
         status_key = node_status.get('status', 'locked') # default locked if unknown
@@ -643,14 +692,28 @@ def _build_curriculum_tree(
             "isLocked": is_locked,
             "lockReason": node_status.get('lock_reason'),
             "unlocksAt": node_status.get('unlocks_at'),
-            "hasChildren": children.exists(),
+            "hasChildren": has_children,
             "children": (
-                _build_curriculum_tree(children, completions, enrollment, status_map)
-                if children
+                _build_curriculum_tree(
+                    children,
+                    completions,
+                    enrollment,
+                    status_map,
+                    last_attempts_by_quiz_id,
+                )
+                if has_children
                 else []
             ),
             "url": f"/student/programs/{enrollment.id}/session/{node.id}/",
+            "properties": node.properties or {},
         }
+        
+        # Add lastAttempt for quiz nodes
+        if node.node_type == 'quiz':
+            quiz_id = node.properties.get('quiz_id') if node.properties else None
+            if quiz_id and quiz_id in last_attempts_by_quiz_id:
+                node_data["lastAttempt"] = last_attempts_by_quiz_id[quiz_id]
+        
         result.append(node_data)
 
     return result
@@ -1855,6 +1918,155 @@ def instructor_gradebook_publish(request, pk: int):
     ).update(is_published=True, published_at=timezone.now())
 
     return redirect("progression:instructor.gradebook", pk=pk)
+
+
+@login_required
+def instructor_gradebook_student(request, pk: int, enrollment_id: int):
+    """
+    View individual student's progress with detailed quiz answers.
+    Used by instructors to review quiz attempts and see per-question results.
+    """
+    user = request.user
+
+    # Verify instructor has access
+    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
+    program = assignment.program
+
+    # Get enrollment
+    enrollment = get_object_or_404(
+        Enrollment.objects.select_related("user", "program"),
+        pk=enrollment_id,
+        program=program,
+    )
+
+    # Get curriculum tree with completion status
+    root_nodes = (
+        CurriculumNode.objects.filter(
+            program=program, parent__isnull=True, is_published=True
+        )
+        .prefetch_related("children")
+        .order_by("position")
+    )
+
+    completions = list(enrollment.completions.values_list("node_id", flat=True))
+    status_map = {}  # Instructors see everything as accessible
+    curriculum_tree = _build_curriculum_tree(root_nodes, completions, enrollment, status_map)
+
+    # Get all quiz attempts for this student in this program
+    from apps.assessments.models import QuizAttempt, Quiz
+
+    quiz_attempts_data = {}
+    
+    # Find all quiz nodes in the curriculum
+    quiz_nodes = CurriculumNode.objects.filter(
+        program=program,
+        node_type='quiz',
+        is_published=True
+    ).values_list('id', 'properties')
+
+    for node_id, properties in quiz_nodes:
+        quiz_id = properties.get('quiz_id') if properties else None
+        if not quiz_id:
+            continue
+        
+        attempts = QuizAttempt.objects.filter(
+            enrollment=enrollment,
+            quiz_id=quiz_id
+        ).select_related('quiz').prefetch_related('quiz__questions').order_by('-attempt_number')
+        
+        attempts_list = []
+        for attempt in attempts:
+            # Build per-question results
+            question_results = []
+            questions_data = []
+            
+            for question in attempt.quiz.questions.all().order_by('position'):
+                student_answer = attempt.answers.get(str(question.id))
+                is_correct, points = question.check_answer(student_answer) if student_answer is not None else (False, 0)
+                
+                question_results.append({
+                    'questionId': question.id,
+                    'isCorrect': is_correct if is_correct is not None else False,
+                    'correctAnswer': question.correct_answer,
+                    'pointsEarned': points or 0,
+                })
+                
+                questions_data.append({
+                    'id': question.id,
+                    'text': question.text,
+                    'type': question.question_type,
+                    'options': question.options,
+                    'points': question.points,
+                    'explanation': question.explanation,
+                    'correctAnswer': question.correct_answer,
+                })
+            
+            attempts_list.append({
+                'id': attempt.id,
+                'attemptNumber': attempt.attempt_number,
+                'score': float(attempt.score) if attempt.score else 0,
+                'passed': attempt.passed,
+                'completedAt': attempt.submitted_at.isoformat() if attempt.submitted_at else None,
+                'answers': attempt.answers,
+                'questionResults': question_results,
+            })
+        
+        if attempts_list:
+            quiz_attempts_data[node_id] = attempts_list
+            # Also include questions data with first attempt for display
+            if attempts_list:
+                quiz_attempts_data[f'{node_id}_questions'] = questions_data
+
+    # Flatten questions into the attempts dict with node ID as key
+    # Add questions to each node in curriculum for display
+    def attach_questions_to_curriculum(nodes):
+        for node in nodes:
+            node_id = node.get('id')
+            questions_key = f'{node_id}_questions'
+            if questions_key in quiz_attempts_data:
+                node['questions'] = quiz_attempts_data.pop(questions_key)
+            if node.get('children'):
+                attach_questions_to_curriculum(node['children'])
+    
+    attach_questions_to_curriculum(curriculum_tree)
+
+    # Calculate progress stats
+    total_nodes = _get_completable_nodes_count(program)
+    completed_count = len(completions)
+    progress = (completed_count / total_nodes * 100) if total_nodes > 0 else 0
+
+    # Get quiz/assignment stats
+    quiz_count = CurriculumNode.objects.filter(program=program, node_type='quiz', is_published=True).count()
+    assignment_count = CurriculumNode.objects.filter(program=program, node_type='assignment', is_published=True).count()
+    
+    quizzes_passed = QuizAttempt.objects.filter(
+        enrollment=enrollment, passed=True
+    ).values('quiz_id').distinct().count()
+    
+    return render(
+        request,
+        "Gradebook/StudentProgress",
+        {
+            "program": {"id": program.id, "name": program.name},
+            "student": {
+                "id": enrollment.user.id,
+                "enrollmentId": enrollment.id,
+                "name": enrollment.user.get_full_name() or enrollment.user.email,
+                "email": enrollment.user.email,
+                "status": enrollment.status,
+                "enrolledAt": enrollment.enrolled_at.isoformat(),
+                "overallProgress": round(progress, 1),
+                "completedCount": completed_count,
+                "totalNodes": total_nodes,
+                "quizzesPassed": quizzes_passed,
+                "quizzesTotal": quiz_count,
+                "assignmentsPassed": 0,  # TODO: Calculate from submissions
+                "assignmentsTotal": assignment_count,
+            },
+            "curriculum": curriculum_tree,
+            "quizAttempts": quiz_attempts_data,
+        },
+    )
 
 
 @login_required

@@ -1,0 +1,509 @@
+{
+  "../node_modules/@fontsource/archivo/files/archivo-latin-400-normal.woff": {
+    "file": "archivo-latin-400-normal-Bl602Mgc.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-400-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-400-normal.woff2": {
+    "file": "archivo-latin-400-normal-C81ewxNO.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-400-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-500-normal.woff": {
+    "file": "archivo-latin-500-normal-pkzA7jw9.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-500-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-500-normal.woff2": {
+    "file": "archivo-latin-500-normal-CGugC8dq.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-500-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-600-normal.woff": {
+    "file": "archivo-latin-600-normal-DwYieO8P.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-600-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-600-normal.woff2": {
+    "file": "archivo-latin-600-normal-3BBy0ZsW.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-600-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-700-normal.woff": {
+    "file": "archivo-latin-700-normal-lT5TFe7H.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-700-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-700-normal.woff2": {
+    "file": "archivo-latin-700-normal-D9cHMWGj.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-700-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-ext-400-normal.woff": {
+    "file": "archivo-latin-ext-400-normal-DrmqtLj6.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-ext-400-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-ext-400-normal.woff2": {
+    "file": "archivo-latin-ext-400-normal-B5tPZzqW.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-ext-400-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-ext-500-normal.woff": {
+    "file": "archivo-latin-ext-500-normal-D7mXw3Kz.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-ext-500-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-ext-500-normal.woff2": {
+    "file": "archivo-latin-ext-500-normal-RFhg4CpD.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-ext-500-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-ext-600-normal.woff": {
+    "file": "archivo-latin-ext-600-normal-D7uErJuz.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-ext-600-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-ext-600-normal.woff2": {
+    "file": "archivo-latin-ext-600-normal-Dm61iqcg.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-ext-600-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-ext-700-normal.woff": {
+    "file": "archivo-latin-ext-700-normal-CgyfnKjw.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-ext-700-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-latin-ext-700-normal.woff2": {
+    "file": "archivo-latin-ext-700-normal-DD_nkw6b.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-latin-ext-700-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-vietnamese-400-normal.woff": {
+    "file": "archivo-vietnamese-400-normal-FGOLYM1a.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-vietnamese-400-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-vietnamese-400-normal.woff2": {
+    "file": "archivo-vietnamese-400-normal-BF4g3tCF.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-vietnamese-400-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-vietnamese-500-normal.woff": {
+    "file": "archivo-vietnamese-500-normal-7W3lD2kQ.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-vietnamese-500-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-vietnamese-500-normal.woff2": {
+    "file": "archivo-vietnamese-500-normal-k0drYPZA.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-vietnamese-500-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-vietnamese-600-normal.woff": {
+    "file": "archivo-vietnamese-600-normal-C8xBVdfP.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-vietnamese-600-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-vietnamese-600-normal.woff2": {
+    "file": "archivo-vietnamese-600-normal-anCjMumA.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-vietnamese-600-normal.woff2"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-vietnamese-700-normal.woff": {
+    "file": "archivo-vietnamese-700-normal-Bz2vkKqq.woff",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-vietnamese-700-normal.woff"
+  },
+  "../node_modules/@fontsource/archivo/files/archivo-vietnamese-700-normal.woff2": {
+    "file": "archivo-vietnamese-700-normal-nuAQAQa7.woff2",
+    "src": "../node_modules/@fontsource/archivo/files/archivo-vietnamese-700-normal.woff2"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-400-normal.woff": {
+    "file": "figtree-latin-400-normal-BD4aNku5.woff",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-400-normal.woff"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-400-normal.woff2": {
+    "file": "figtree-latin-400-normal-g7Dtegnw.woff2",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-400-normal.woff2"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-500-normal.woff": {
+    "file": "figtree-latin-500-normal-B_yy1phn.woff",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-500-normal.woff"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-500-normal.woff2": {
+    "file": "figtree-latin-500-normal-BWnGEVsr.woff2",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-500-normal.woff2"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-600-normal.woff": {
+    "file": "figtree-latin-600-normal-BM_oTo4n.woff",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-600-normal.woff"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-600-normal.woff2": {
+    "file": "figtree-latin-600-normal-Cv_xCTDl.woff2",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-600-normal.woff2"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-700-normal.woff": {
+    "file": "figtree-latin-700-normal-BCCt2T1q.woff",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-700-normal.woff"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-700-normal.woff2": {
+    "file": "figtree-latin-700-normal-th6qEP7c.woff2",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-700-normal.woff2"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-ext-400-normal.woff": {
+    "file": "figtree-latin-ext-400-normal-Gbh-3PTk.woff",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-ext-400-normal.woff"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-ext-400-normal.woff2": {
+    "file": "figtree-latin-ext-400-normal-CXAzuTZb.woff2",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-ext-400-normal.woff2"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-ext-500-normal.woff": {
+    "file": "figtree-latin-ext-500-normal-BOEJvrb_.woff",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-ext-500-normal.woff"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-ext-500-normal.woff2": {
+    "file": "figtree-latin-ext-500-normal-Du0rIuHj.woff2",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-ext-500-normal.woff2"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-ext-600-normal.woff": {
+    "file": "figtree-latin-ext-600-normal-CQqsimlV.woff",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-ext-600-normal.woff"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-ext-600-normal.woff2": {
+    "file": "figtree-latin-ext-600-normal-DJlfifZj.woff2",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-ext-600-normal.woff2"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-ext-700-normal.woff": {
+    "file": "figtree-latin-ext-700-normal-BoDi4KL2.woff",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-ext-700-normal.woff"
+  },
+  "../node_modules/@fontsource/figtree/files/figtree-latin-ext-700-normal.woff2": {
+    "file": "figtree-latin-ext-700-normal-CS4sQkGV.woff2",
+    "src": "../node_modules/@fontsource/figtree/files/figtree-latin-ext-700-normal.woff2"
+  },
+  "../node_modules/@mux/mux-player-react/dist/index.mjs": {
+    "file": "index-BdBSQjmH.js",
+    "name": "index",
+    "src": "../node_modules/@mux/mux-player-react/dist/index.mjs",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "_vendor-hls-Cp2x8l1r.js",
+      "_mixin-D3UDm--6.js"
+    ]
+  },
+  "../node_modules/dash-video-element/dist/react.js": {
+    "file": "react-kms816c6.js",
+    "name": "react",
+    "src": "../node_modules/dash-video-element/dist/react.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "src/main.jsx",
+      "_mixin-D3UDm--6.js",
+      "_vendor-icons-FMN-Fswh.js",
+      "_vendor-mui-D-vN39f_.js",
+      "_vendor-emotion-IPR5N1Tm.js",
+      "_vendor-motion-Kt4iJLIA.js"
+    ],
+    "dynamicImports": [
+      "../node_modules/dashjs/dist/modern/esm/dash.all.min.js"
+    ]
+  },
+  "../node_modules/dashjs/dist/modern/esm/dash.all.min.js": {
+    "file": "vendor-dash-D_hFuBFJ.js",
+    "name": "vendor-dash",
+    "src": "../node_modules/dashjs/dist/modern/esm/dash.all.min.js",
+    "isDynamicEntry": true
+  },
+  "../node_modules/hls-video-element/dist/react.js": {
+    "file": "react-BLr1pKhB.js",
+    "name": "react",
+    "src": "../node_modules/hls-video-element/dist/react.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "_mixin-D3UDm--6.js",
+      "_vendor-hls-Cp2x8l1r.js"
+    ]
+  },
+  "../node_modules/react-player/dist/Preview.js": {
+    "file": "Preview-CeCR9Lke.js",
+    "name": "Preview",
+    "src": "../node_modules/react-player/dist/Preview.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js"
+    ]
+  },
+  "../node_modules/spotify-audio-element/dist/react.js": {
+    "file": "react-DU4c32Dp.js",
+    "name": "react",
+    "src": "../node_modules/spotify-audio-element/dist/react.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js"
+    ]
+  },
+  "../node_modules/tiktok-video-element/dist/react.js": {
+    "file": "react-CrdRTpJJ.js",
+    "name": "react",
+    "src": "../node_modules/tiktok-video-element/dist/react.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js"
+    ]
+  },
+  "../node_modules/twitch-video-element/dist/react.js": {
+    "file": "react-CJUaqvwJ.js",
+    "name": "react",
+    "src": "../node_modules/twitch-video-element/dist/react.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js"
+    ]
+  },
+  "../node_modules/vimeo-video-element/dist/react.js": {
+    "file": "react-E8sCfDep.js",
+    "name": "react",
+    "src": "../node_modules/vimeo-video-element/dist/react.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js"
+    ]
+  },
+  "../node_modules/wistia-video-element/dist/react.js": {
+    "file": "react-35ud-Bqk.js",
+    "name": "react",
+    "src": "../node_modules/wistia-video-element/dist/react.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js"
+    ]
+  },
+  "../node_modules/youtube-video-element/dist/react.js": {
+    "file": "react-DvvDwgix.js",
+    "name": "react",
+    "src": "../node_modules/youtube-video-element/dist/react.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js"
+    ]
+  },
+  "_mixin-D3UDm--6.js": {
+    "file": "mixin-D3UDm--6.js",
+    "name": "mixin"
+  },
+  "_vendor-editor-CivAAO7m.js": {
+    "file": "vendor-editor-CivAAO7m.js",
+    "name": "vendor-editor"
+  },
+  "_vendor-emotion-IPR5N1Tm.js": {
+    "file": "vendor-emotion-IPR5N1Tm.js",
+    "name": "vendor-emotion",
+    "imports": [
+      "_vendor-editor-CivAAO7m.js"
+    ]
+  },
+  "_vendor-hls-Cp2x8l1r.js": {
+    "file": "vendor-hls-Cp2x8l1r.js",
+    "name": "vendor-hls"
+  },
+  "_vendor-icons-FMN-Fswh.js": {
+    "file": "vendor-icons-FMN-Fswh.js",
+    "name": "vendor-icons",
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "_vendor-mui-D-vN39f_.js"
+    ]
+  },
+  "_vendor-motion-Kt4iJLIA.js": {
+    "file": "vendor-motion-Kt4iJLIA.js",
+    "name": "vendor-motion",
+    "imports": [
+      "_vendor-editor-CivAAO7m.js"
+    ]
+  },
+  "_vendor-mui-D-vN39f_.js": {
+    "file": "vendor-mui-D-vN39f_.js",
+    "name": "vendor-mui",
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "_vendor-emotion-IPR5N1Tm.js"
+    ]
+  },
+  "_vendor-swiper-DLUS6Zxv.css": {
+    "file": "vendor-swiper-DLUS6Zxv.css",
+    "src": "_vendor-swiper-DLUS6Zxv.css"
+  },
+  "_vendor-swiper-DgJ3t5ew.js": {
+    "file": "vendor-swiper-DgJ3t5ew.js",
+    "name": "vendor-swiper",
+    "imports": [
+      "_vendor-editor-CivAAO7m.js"
+    ],
+    "css": [
+      "vendor-swiper-DLUS6Zxv.css"
+    ]
+  },
+  "src/assets/images/hero1.jpg": {
+    "file": "hero1-BkQM_8wF.jpg",
+    "src": "src/assets/images/hero1.jpg"
+  },
+  "src/assets/images/learning.jpg": {
+    "file": "learning-DYQY2Bmh.jpg",
+    "src": "src/assets/images/learning.jpg"
+  },
+  "src/components/sections/landing/FAQSection.jsx": {
+    "file": "FAQSection-Bg8Wg6_U.js",
+    "name": "FAQSection",
+    "src": "src/components/sections/landing/FAQSection.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "_vendor-mui-D-vN39f_.js",
+      "_vendor-motion-Kt4iJLIA.js",
+      "_vendor-icons-FMN-Fswh.js",
+      "_vendor-emotion-IPR5N1Tm.js"
+    ]
+  },
+  "src/components/sections/landing/FeaturesSection.jsx": {
+    "file": "FeaturesSection-B0s5ycwT.js",
+    "name": "FeaturesSection",
+    "src": "src/components/sections/landing/FeaturesSection.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "_vendor-mui-D-vN39f_.js",
+      "_vendor-motion-Kt4iJLIA.js",
+      "_vendor-icons-FMN-Fswh.js",
+      "_vendor-emotion-IPR5N1Tm.js"
+    ]
+  },
+  "src/components/sections/landing/InstructorsSection.jsx": {
+    "file": "InstructorsSection-DHDkCvo7.js",
+    "name": "InstructorsSection",
+    "src": "src/components/sections/landing/InstructorsSection.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "_vendor-mui-D-vN39f_.js",
+      "_vendor-motion-Kt4iJLIA.js",
+      "_vendor-emotion-IPR5N1Tm.js"
+    ]
+  },
+  "src/components/sections/landing/LearningModesSection.jsx": {
+    "file": "LearningModesSection-DyIwLZDo.js",
+    "name": "LearningModesSection",
+    "src": "src/components/sections/landing/LearningModesSection.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "src/main.jsx",
+      "_vendor-mui-D-vN39f_.js",
+      "_vendor-motion-Kt4iJLIA.js",
+      "_vendor-icons-FMN-Fswh.js",
+      "_vendor-emotion-IPR5N1Tm.js"
+    ],
+    "assets": [
+      "learning-DYQY2Bmh.jpg"
+    ]
+  },
+  "src/components/sections/landing/ProgramsSection.jsx": {
+    "file": "ProgramsSection-CwY57gPh.js",
+    "name": "ProgramsSection",
+    "src": "src/components/sections/landing/ProgramsSection.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "src/main.jsx",
+      "_vendor-mui-D-vN39f_.js",
+      "_vendor-motion-Kt4iJLIA.js",
+      "_vendor-icons-FMN-Fswh.js",
+      "_vendor-emotion-IPR5N1Tm.js"
+    ]
+  },
+  "src/components/sections/landing/TestimonialsSection.jsx": {
+    "file": "TestimonialsSection-Bd0daswQ.js",
+    "name": "TestimonialsSection",
+    "src": "src/components/sections/landing/TestimonialsSection.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "_vendor-swiper-DgJ3t5ew.js",
+      "_vendor-mui-D-vN39f_.js",
+      "_vendor-motion-Kt4iJLIA.js",
+      "_vendor-icons-FMN-Fswh.js",
+      "_vendor-emotion-IPR5N1Tm.js"
+    ]
+  },
+  "src/components/sections/landing/TrustBadgesSection.jsx": {
+    "file": "TrustBadgesSection-CcFDcO2h.js",
+    "name": "TrustBadgesSection",
+    "src": "src/components/sections/landing/TrustBadgesSection.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "_vendor-mui-D-vN39f_.js",
+      "_vendor-motion-Kt4iJLIA.js",
+      "_vendor-icons-FMN-Fswh.js",
+      "_vendor-emotion-IPR5N1Tm.js"
+    ]
+  },
+  "src/main.jsx": {
+    "file": "main-B2-CqCjc.js",
+    "name": "main",
+    "src": "src/main.jsx",
+    "isEntry": true,
+    "imports": [
+      "_vendor-editor-CivAAO7m.js",
+      "_vendor-icons-FMN-Fswh.js",
+      "_vendor-mui-D-vN39f_.js",
+      "_vendor-motion-Kt4iJLIA.js",
+      "_vendor-emotion-IPR5N1Tm.js"
+    ],
+    "dynamicImports": [
+      "../node_modules/hls-video-element/dist/react.js",
+      "../node_modules/dash-video-element/dist/react.js",
+      "../node_modules/@mux/mux-player-react/dist/index.mjs",
+      "../node_modules/youtube-video-element/dist/react.js",
+      "../node_modules/vimeo-video-element/dist/react.js",
+      "../node_modules/wistia-video-element/dist/react.js",
+      "../node_modules/spotify-audio-element/dist/react.js",
+      "../node_modules/twitch-video-element/dist/react.js",
+      "../node_modules/tiktok-video-element/dist/react.js",
+      "../node_modules/react-player/dist/Preview.js",
+      "src/components/sections/landing/TrustBadgesSection.jsx",
+      "src/components/sections/landing/FeaturesSection.jsx",
+      "src/components/sections/landing/ProgramsSection.jsx",
+      "src/components/sections/landing/LearningModesSection.jsx",
+      "src/components/sections/landing/InstructorsSection.jsx",
+      "src/components/sections/landing/TestimonialsSection.jsx",
+      "src/components/sections/landing/FAQSection.jsx"
+    ],
+    "css": [
+      "main-D1yrGF7S.css"
+    ],
+    "assets": [
+      "hero1-BkQM_8wF.jpg",
+      "archivo-vietnamese-400-normal-BF4g3tCF.woff2",
+      "archivo-vietnamese-400-normal-FGOLYM1a.woff",
+      "archivo-latin-ext-400-normal-B5tPZzqW.woff2",
+      "archivo-latin-ext-400-normal-DrmqtLj6.woff",
+      "archivo-latin-400-normal-C81ewxNO.woff2",
+      "archivo-latin-400-normal-Bl602Mgc.woff",
+      "archivo-vietnamese-500-normal-k0drYPZA.woff2",
+      "archivo-vietnamese-500-normal-7W3lD2kQ.woff",
+      "archivo-latin-ext-500-normal-RFhg4CpD.woff2",
+      "archivo-latin-ext-500-normal-D7mXw3Kz.woff",
+      "archivo-latin-500-normal-CGugC8dq.woff2",
+      "archivo-latin-500-normal-pkzA7jw9.woff",
+      "archivo-vietnamese-600-normal-anCjMumA.woff2",
+      "archivo-vietnamese-600-normal-C8xBVdfP.woff",
+      "archivo-latin-ext-600-normal-Dm61iqcg.woff2",
+      "archivo-latin-ext-600-normal-D7uErJuz.woff",
+      "archivo-latin-600-normal-3BBy0ZsW.woff2",
+      "archivo-latin-600-normal-DwYieO8P.woff",
+      "archivo-vietnamese-700-normal-nuAQAQa7.woff2",
+      "archivo-vietnamese-700-normal-Bz2vkKqq.woff",
+      "archivo-latin-ext-700-normal-DD_nkw6b.woff2",
+      "archivo-latin-ext-700-normal-CgyfnKjw.woff",
+      "archivo-latin-700-normal-D9cHMWGj.woff2",
+      "archivo-latin-700-normal-lT5TFe7H.woff",
+      "figtree-latin-ext-400-normal-CXAzuTZb.woff2",
+      "figtree-latin-ext-400-normal-Gbh-3PTk.woff",
+      "figtree-latin-400-normal-g7Dtegnw.woff2",
+      "figtree-latin-400-normal-BD4aNku5.woff",
+      "figtree-latin-ext-500-normal-Du0rIuHj.woff2",
+      "figtree-latin-ext-500-normal-BOEJvrb_.woff",
+      "figtree-latin-500-normal-BWnGEVsr.woff2",
+      "figtree-latin-500-normal-B_yy1phn.woff",
+      "figtree-latin-ext-600-normal-DJlfifZj.woff2",
+      "figtree-latin-ext-600-normal-CQqsimlV.woff",
+      "figtree-latin-600-normal-Cv_xCTDl.woff2",
+      "figtree-latin-600-normal-BM_oTo4n.woff",
+      "figtree-latin-ext-700-normal-CS4sQkGV.woff2",
+      "figtree-latin-ext-700-normal-BoDi4KL2.woff",
+      "figtree-latin-700-normal-th6qEP7c.woff2",
+      "figtree-latin-700-normal-BCCt2T1q.woff"
+    ]
+  }
+}

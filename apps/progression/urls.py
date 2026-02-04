@@ -105,6 +105,11 @@ urlpatterns = [
         views.instructor_gradebook_publish,
         name="instructor.gradebook.publish",
     ),
+    path(
+        "instructor/programs/<int:pk>/gradebook/student/<int:enrollment_id>/",
+        views.instructor_gradebook_student,
+        name="instructor.gradebook.student",
+    ),
     # Practicum Review
     path(
         "instructor/practicum/",

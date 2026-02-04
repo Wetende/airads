@@ -38,6 +38,7 @@ import {
     IconCheck,
     IconPlayerPlay,
     IconLock,
+    IconFolder,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { useState } from "react";

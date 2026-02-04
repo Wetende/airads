@@ -37,6 +37,7 @@ htmlcov/
 # Node
 node_modules/
 dist/
+!static/dist/
 .cache/
 
 # Environment
