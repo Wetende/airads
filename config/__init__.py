@@ -1,1 +1,3 @@
-# Crossview LMS Configuration Package
+import pymysql
+
+pymysql.install_as_MySQLdb()

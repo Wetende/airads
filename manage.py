@@ -4,7 +4,7 @@ import os
 import sys
 
 # Default port for runserver
-DEFAULT_PORT = "8001"
+DEFAULT_PORT = "8000"
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    # Auto-set port 8001 for runserver if no port specified
+    # Auto-set port 8000 for runserver if no port specified
     if len(sys.argv) == 2 and sys.argv[1] == "runserver":
         sys.argv.append(DEFAULT_PORT)
 

@@ -10,11 +10,7 @@ inertia-django @ git+https://github.com/inertiajs/inertia-django.git@main
 # Database
 pymysql>=1.1.0
 
-# Testing
-pytest>=8.0.0
-pytest-django>=4.7.0
-hypothesis>=6.98.0
-factory-boy>=3.3.0
+
 
 # PDF Generation
 WeasyPrint>=61.0
