@@ -8,8 +8,7 @@ django-cors-headers>=4.3.0
 inertia-django @ git+https://github.com/inertiajs/inertia-django.git@main
 
 # Database
-mysqlclient>=2.2.0
-pymysql>=1.1.0  # Fallback if mysqlclient fails on shared hosting
+pymysql>=1.1.0
 
 # Testing
 pytest>=8.0.0

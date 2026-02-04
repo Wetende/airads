@@ -105,6 +105,7 @@ This guide walks you through deploying your Django + React (Inertia) app to Name
     pip install --upgrade pip
     pip install -r requirements.txt
     ```
+    _Note: We are using `pymysql` because `mysqlclient` requires compilation (GCC), which is restricted on this server._
 5.  **Verify Frontend Assets**:
     - Ensure `static/dist` exists.
     - _If missing_: You skipped Phase 1. You must build locally and push, then run `git pull` here.
