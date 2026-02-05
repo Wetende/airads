@@ -21,6 +21,7 @@ import {
   TrendingUp as TrendingIcon,
   CheckCircle as CheckIcon,
   Settings as SettingsIcon,
+  HowToReg as EnrollmentIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import InstructorLayout from '@/layouts/InstructorLayout';
@@ -99,6 +100,14 @@ export default function InstructorProgramShow({ program, stats, curriculum }) {
                 startIcon={<PeopleIcon />}
               >
                 Students
+              </Button>
+              <Button
+                component={Link}
+                href={`/instructor/programs/${program.id}/enrollment-requests/`}
+                variant="outlined"
+                startIcon={<EnrollmentIcon />}
+              >
+                Enrollments
               </Button>
               <Button
                 component={Link}

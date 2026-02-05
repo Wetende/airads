@@ -141,29 +141,6 @@ class Quiz(TimeStampedModel):
     retake_penalty_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     shuffle_options = models.BooleanField(default=False)
     is_published = models.BooleanField(default=False)
-    
-    # Extended Quiz Settings (synced from AssessmentEditor)
-    TIME_UNIT_CHOICES = [
-        ('minutes', 'Minutes'),
-        ('hours', 'Hours'),
-    ]
-    QUIZ_STYLE_CHOICES = [
-        ('default', 'Default'),
-        ('pagination', 'Pagination'),
-        ('global', 'Global'),
-    ]
-    time_unit = models.CharField(max_length=20, choices=TIME_UNIT_CHOICES, default='minutes')
-    quiz_style = models.CharField(max_length=20, choices=QUIZ_STYLE_CHOICES, default='default')
-    show_attempt_history = models.BooleanField(default=False)
-    allow_retake_after_pass = models.BooleanField(default=False)
-    weight = models.PositiveIntegerField(
-        default=0, 
-        help_text='Percentage weight in final grade (0-100). Quizzes + Assignments should sum to 100%.'
-    )
-    total_points_override = models.PositiveIntegerField(
-        null=True, blank=True,
-        help_text='If set, quiz score is scaled to this value instead of sum of question points'
-    )
 
     class Meta:
         db_table = 'quizzes'
@@ -176,12 +153,7 @@ class Quiz(TimeStampedModel):
         return f"Quiz: {self.title}"
 
     def get_total_points(self) -> int:
-        """
-        Calculate total possible points for this quiz.
-        Returns total_points_override if set, otherwise sum of question points.
-        """
-        if self.total_points_override is not None:
-            return self.total_points_override
+        """Calculate total possible points for this quiz."""
         return sum(q.points for q in self.questions.all())
 
 
@@ -196,7 +168,6 @@ class Question(TimeStampedModel):
         ('true_false', 'True/False'),
         ('short_answer', 'Short Answer'),
         ('matching', 'Matching'),
-        ('image_matching', 'Image Matching'),
         ('fill_blank', 'Fill in the Blank'),
         ('ordering', 'Ordering/Sequence'),
     ]
@@ -246,34 +217,6 @@ class Question(TimeStampedModel):
             
             is_completely_correct = (correct_count == len(pairs))
             points_earned = self.points if is_completely_correct else int(self.points * correct_count / len(pairs))
-            return is_completely_correct, points_earned
-
-        # 1b. Image Matching Questions
-        elif self.question_type == 'image_matching':
-            # student_answer: {"<left_pair_id>": "<right_pair_id>", ...}
-            # We model left+right as a single row; the correct mapping is left_id == right_id.
-            pairs = list(self.image_matching_pairs.all())
-            if not pairs:
-                return False, 0
-
-            if not isinstance(student_answer, dict):
-                return False, 0
-
-            correct_count = 0
-            for pair in pairs:
-                left_key = str(pair.id)
-                submitted = student_answer.get(left_key)
-                if submitted is None:
-                    continue
-                if str(submitted) == left_key:
-                    correct_count += 1
-
-            is_completely_correct = (correct_count == len(pairs))
-            points_earned = (
-                self.points
-                if is_completely_correct
-                else int(self.points * correct_count / len(pairs))
-            )
             return is_completely_correct, points_earned
 
         # 2. Fill in the Blank
@@ -410,8 +353,7 @@ class QuizAttempt(models.Model):
                 is_correct, pts = question.check_answer(answer)
                 if is_correct is None:
                     needs_manual = True
-                elif pts is not None:
-                    # Support partial credit question types (matching, fill_blank, image_matching).
+                elif is_correct:
                     points_earned += pts
         
         percentage = (points_earned / points_possible * 100) if points_possible > 0 else 0
@@ -572,11 +514,31 @@ class QuestionMatchingPair(models.Model):
         return f"Pair {self.position} for Q{self.question.id}"
 
 
-class QuestionImageMatchingPair(models.Model):
-    """A left (question) image+text matched to a right (answer) image+text."""
+class QuestionGapAnswer(models.Model):
+    """
+    Correct answers for fill-in-the-blank gaps.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='gap_answers')
+    gap_index = models.PositiveIntegerField()  # Which blank (0, 1, 2, ...)
+    accepted_answers = models.JSONField(default=list)  # ["answer1", "answer2"] for flexibility
+    
+    class Meta:
+        db_table = 'question_gap_answers'
+        unique_together = ['question', 'gap_index']
+    
+    def __str__(self):
+        return f"Gap {self.gap_index} for Q{self.question.id}"
 
+
+class QuestionImageMatchingPair(models.Model):
+    """
+    Image-based matching pairs for Image Matching questions.
+    Supports pairs where both the prompt and answer can be text or image.
+    """
     question = models.ForeignKey(
-        Question, on_delete=models.CASCADE, related_name='image_matching_pairs'
+        Question,
+        on_delete=models.CASCADE,
+        related_name='image_matching_pairs'
     )
     question_text = models.TextField(blank=True, default='')
     question_image = models.CharField(max_length=500, blank=True, default='')
@@ -593,23 +555,7 @@ class QuestionImageMatchingPair(models.Model):
         ]
 
     def __str__(self):
-        return f"ImagePair {self.position} for Q{self.question.id}"
-
-
-class QuestionGapAnswer(models.Model):
-    """
-    Correct answers for fill-in-the-blank gaps.
-    """
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='gap_answers')
-    gap_index = models.PositiveIntegerField()  # Which blank (0, 1, 2, ...)
-    accepted_answers = models.JSONField(default=list)  # ["answer1", "answer2"] for flexibility
-    
-    class Meta:
-        db_table = 'question_gap_answers'
-        unique_together = ['question', 'gap_index']
-    
-    def __str__(self):
-        return f"Gap {self.gap_index} for Q{self.question.id}"
+        return f"ImageMatch {self.position} for Q{self.question.id}"
 
 
 class QuestionBank(TimeStampedModel):
@@ -683,3 +629,5 @@ class QuestionBankEntry(TimeStampedModel):
 
     def __str__(self):
         return f"Bank Entry: {self.question.text[:30]} ({self.owner})"
+
+

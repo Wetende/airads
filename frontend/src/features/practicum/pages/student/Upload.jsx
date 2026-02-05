@@ -243,7 +243,7 @@ export default function PracticumUpload({
                 { label: "Programs", href: "/student/programs/" },
                 {
                     label: enrollment.programName,
-                    href: `/student/programs/${enrollment.id}/`,
+                    href: `/student/programs/${enrollment.programId}/`,
                 },
                 { label: node.title },
             ]}

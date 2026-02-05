@@ -19,10 +19,6 @@ import {
     Collapse,
     Tooltip,
     Divider,
-    Radio,
-    RadioGroup,
-    Popover,
-    InputAdornment,
 } from "@mui/material";
 import {
     Delete as DeleteIcon,
@@ -33,7 +29,6 @@ import {
     ExpandLess as CollapseIcon,
     Add as AddIcon,
     Help as HelpIcon,
-    Close as CloseIcon,
 } from "@mui/icons-material";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -42,7 +37,6 @@ import "react-quill-new/dist/quill.snow.css";
 import MatchingPairsEditor from "@/features/quizzes/components/MatchingPairsEditor";
 import FillBlankEditor from "@/features/quizzes/components/FillBlankEditor";
 import OrderingEditor from "@/features/quizzes/components/OrderingEditor";
-import ImageMatchingEditor from "@/features/quizzes/components/ImageMatchingEditor";
 
 const QUESTION_TYPES = [
     { value: "mcq", label: "Single choice", color: "#1976d2" },
@@ -50,7 +44,6 @@ const QUESTION_TYPES = [
     { value: "true_false", label: "True-False", color: "#388e3c" },
     { value: "short_answer", label: "Keywords", color: "#f57c00" },
     { value: "matching", label: "Matching", color: "#0288d1" },
-    { value: "image_matching", label: "Image matching", color: "#6a1b9a" },
     { value: "fill_blank", label: "Fill in the Gap", color: "#5d4037" },
     { value: "ordering", label: "Ordering", color: "#455a64" },
 ];
@@ -90,7 +83,6 @@ const normalizeFillBlankText = (text, type) => {
  * Matches STM LMS Quiz Builder design with rich text, media, categories
  */
 export default function QuestionEditorCard({
-    nodeId,
     question,
     onChange,
     onDelete,
@@ -99,8 +91,6 @@ export default function QuestionEditorCard({
     defaultExpanded = false,
 }) {
     const [expanded, setExpanded] = useState(defaultExpanded || isNew);
-    const [explanationAnchor, setExplanationAnchor] = useState(null);
-    const [activeExplanationKey, setActiveExplanationKey] = useState(null);
     const [localData, setLocalData] = useState({
         text: normalizeFillBlankText(question.text, question.type || "mcq"),
         type: question.type || "mcq",
@@ -111,7 +101,6 @@ export default function QuestionEditorCard({
         categories: question.categories || [],
         required: question.required || false,
         pairs: question.pairs || [],
-        image_pairs: question.image_pairs || [],
         gaps: question.gaps || [],
         items: question.items || ["", "", "", ""],
         keywords: question.keywords || [],
@@ -131,7 +120,6 @@ export default function QuestionEditorCard({
             categories: question.categories || [],
             required: question.required || false,
             pairs: question.pairs || [],
-            image_pairs: question.image_pairs || [],
             gaps: question.gaps || [],
             items: question.items || ["", "", "", ""],
             keywords: question.keywords || [],
@@ -198,29 +186,8 @@ export default function QuestionEditorCard({
         setLocalData((prev) => ({ ...prev, [field]: value }));
     };
 
-    const [newOptionText, setNewOptionText] = useState("");
-
     const handleAddAnswer = () => {
-        const trimmed = newOptionText.trim();
-        if (!trimmed) return;
-        updateField("options", [...localData.options, trimmed]);
-        setNewOptionText("");
-    };
-
-    // Explanation popover handlers
-    const handleOpenExplanation = (event, key) => {
-        setExplanationAnchor(event.currentTarget);
-        setActiveExplanationKey(key);
-    };
-
-    const handleCloseExplanation = () => {
-        setExplanationAnchor(null);
-        setActiveExplanationKey(null);
-    };
-
-    const handleUpdateExplanation = (key, value) => {
-        const newExplanations = { ...localData.explanations, [key]: value };
-        updateField("explanations", newExplanations);
+        updateField("options", [...localData.options, ""]);
     };
 
     const handleRemoveAnswer = (index) => {
@@ -595,7 +562,7 @@ export default function QuestionEditorCard({
                                 </Typography>
                             </Box>
 
-                            <Stack spacing={0}>
+                            <Stack spacing={1}>
                                 {localData.options.map((opt, idx) => (
                                     <Box
                                         key={idx}
@@ -603,52 +570,23 @@ export default function QuestionEditorCard({
                                             display: "flex",
                                             alignItems: "center",
                                             gap: 1,
-                                            py: 1.5,
-                                            px: 1,
-                                            borderBottom:
-                                                idx <
-                                                localData.options.length - 1
-                                                    ? "1px solid"
-                                                    : "none",
-                                            borderColor: "divider",
+                                            p: 1,
                                             bgcolor: isAnswerCorrect(idx)
-                                                ? "primary.50"
-                                                : "background.paper",
-                                            "&:first-of-type": {
-                                                borderTopLeftRadius: 8,
-                                                borderTopRightRadius: 8,
-                                                border: "1px solid",
-                                                borderColor: "divider",
-                                                borderBottom: "1px solid",
-                                            },
-                                            "&:last-of-type": {
-                                                borderBottomLeftRadius: 8,
-                                                borderBottomRightRadius: 8,
-                                                border: "1px solid",
-                                                borderColor: "divider",
-                                                borderTop: "none",
-                                            },
-                                            "&:not(:first-of-type):not(:last-of-type)":
-                                                {
-                                                    borderLeft: "1px solid",
-                                                    borderRight: "1px solid",
-                                                    borderColor: "divider",
-                                                },
+                                                ? "success.50"
+                                                : "grey.50",
+                                            borderRadius: 1,
+                                            border: "1px solid",
+                                            borderColor: isAnswerCorrect(idx)
+                                                ? "success.main"
+                                                : "divider",
                                         }}
                                     >
-                                        {/* Drag Handle */}
                                         <IconButton
                                             size="small"
-                                            sx={{
-                                                cursor: "grab",
-                                                color: "text.disabled",
-                                                p: 0.5,
-                                            }}
+                                            sx={{ cursor: "grab" }}
                                         >
-                                            <DragIcon sx={{ fontSize: 18 }} />
+                                            <DragIcon fontSize="small" />
                                         </IconButton>
-
-                                        {/* Answer Text */}
                                         <TextField
                                             fullWidth
                                             size="small"
@@ -663,94 +601,33 @@ export default function QuestionEditorCard({
                                             variant="standard"
                                             InputProps={{
                                                 disableUnderline: true,
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <EditIcon
-                                                            sx={{
-                                                                fontSize: 16,
-                                                                color: "text.disabled",
-                                                            }}
-                                                        />
-                                                    </InputAdornment>
-                                                ),
-                                                sx: {
-                                                    fontWeight: 500,
-                                                },
                                             }}
                                         />
-
-                                        {/* Validation - Show if empty */}
-                                        {!opt?.trim() && (
-                                            <Typography
-                                                variant="caption"
-                                                color="error.main"
-                                                sx={{ whiteSpace: "nowrap" }}
-                                            >
-                                                This field is required
-                                            </Typography>
-                                        )}
-
-                                        {/* Correct Label + Radio/Checkbox */}
+                                        <IconButton size="small">
+                                            <EditIcon fontSize="small" />
+                                        </IconButton>
                                         <Box
                                             sx={{
                                                 display: "flex",
                                                 alignItems: "center",
                                                 gap: 0.5,
-                                                ml: "auto",
                                             }}
                                         >
                                             <Typography
                                                 variant="caption"
-                                                color={
-                                                    isAnswerCorrect(idx)
-                                                        ? "primary.main"
-                                                        : "text.secondary"
-                                                }
-                                                fontWeight={
-                                                    isAnswerCorrect(idx)
-                                                        ? 600
-                                                        : 400
-                                                }
+                                                color="text.secondary"
                                             >
                                                 Correct
                                             </Typography>
-                                            {localData.type === "mcq" ? (
-                                                // Single Choice - Radio button
-                                                <Radio
-                                                    checked={isAnswerCorrect(
-                                                        idx,
-                                                    )}
-                                                    onChange={() =>
-                                                        updateField(
-                                                            "correct",
-                                                            idx,
-                                                        )
-                                                    }
-                                                    size="small"
-                                                    sx={{
-                                                        color: "primary.main",
-                                                        p: 0.5,
-                                                    }}
-                                                />
-                                            ) : (
-                                                // Multiple Choice - Checkbox
-                                                <Checkbox
-                                                    checked={isAnswerCorrect(
-                                                        idx,
-                                                    )}
-                                                    onChange={() =>
-                                                        handleToggleCorrect(idx)
-                                                    }
-                                                    size="small"
-                                                    sx={{
-                                                        color: "primary.main",
-                                                        p: 0.5,
-                                                    }}
-                                                />
-                                            )}
+                                            <Checkbox
+                                                checked={isAnswerCorrect(idx)}
+                                                onChange={() =>
+                                                    handleToggleCorrect(idx)
+                                                }
+                                                size="small"
+                                                color="success"
+                                            />
                                         </Box>
-
-                                        {/* Delete button */}
                                         {localData.options.length > 2 && (
                                             <IconButton
                                                 size="small"
@@ -758,11 +635,8 @@ export default function QuestionEditorCard({
                                                 onClick={() =>
                                                     handleRemoveAnswer(idx)
                                                 }
-                                                sx={{ p: 0.5 }}
                                             >
-                                                <DeleteIcon
-                                                    sx={{ fontSize: 18 }}
-                                                />
+                                                <DeleteIcon fontSize="small" />
                                             </IconButton>
                                         )}
                                     </Box>
@@ -773,14 +647,10 @@ export default function QuestionEditorCard({
                             <Box
                                 sx={{
                                     mt: 2,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                    py: 1.5,
-                                    px: 1,
+                                    p: 1,
                                     bgcolor: "grey.50",
                                     borderRadius: 1,
-                                    border: "1px solid",
+                                    border: "1px dashed",
                                     borderColor: "divider",
                                 }}
                             >
@@ -790,120 +660,79 @@ export default function QuestionEditorCard({
                                     placeholder="Add new answer"
                                     variant="standard"
                                     InputProps={{ disableUnderline: true }}
-                                    value={newOptionText}
-                                    onChange={(e) =>
-                                        setNewOptionText(e.target.value)
-                                    }
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                            e.preventDefault();
-                                            handleAddAnswer();
+                                    onKeyPress={(e) => {
+                                        if (
+                                            e.key === "Enter" &&
+                                            e.target.value.trim()
+                                        ) {
+                                            updateField("options", [
+                                                ...localData.options,
+                                                e.target.value.trim(),
+                                            ]);
+                                            e.target.value = "";
+                                        }
+                                    }}
+                                    onBlur={(e) => {
+                                        if (e.target.value.trim()) {
+                                            updateField("options", [
+                                                ...localData.options,
+                                                e.target.value.trim(),
+                                            ]);
+                                            e.target.value = "";
                                         }
                                     }}
                                 />
-                                <Button
-                                    variant="contained"
-                                    size="small"
-                                    onClick={handleAddAnswer}
-                                    sx={{
-                                        minWidth: "auto",
-                                        px: 2,
-                                        textTransform: "none",
-                                    }}
-                                >
-                                    Add
-                                </Button>
                             </Box>
+                            <Button
+                                startIcon={<AddIcon />}
+                                onClick={handleAddAnswer}
+                                size="small"
+                                sx={{ mt: 1, textTransform: "none" }}
+                            >
+                                Add new answer
+                            </Button>
                         </Box>
                     )}
 
                     {/* True/False */}
                     {localData.type === "true_false" && (
                         <Box>
-                            <Typography
-                                variant="subtitle2"
-                                color="text.secondary"
-                                gutterBottom
-                            >
-                                Answer
+                            <Typography variant="subtitle2" gutterBottom>
+                                Correct Answer
                             </Typography>
-                            <Stack spacing={0}>
+                            <Stack direction="row" spacing={2}>
                                 {["True", "False"].map((label, idx) => (
                                     <Box
                                         key={label}
+                                        onClick={() =>
+                                            updateField("correct", idx)
+                                        }
                                         sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                            p: 1.5,
-                                            borderBottom:
-                                                idx === 0
-                                                    ? "1px solid"
-                                                    : "none",
-                                            borderColor: "divider",
-                                            bgcolor: "background.paper",
-                                            "&:first-of-type": {
-                                                borderTopLeftRadius: 8,
-                                                borderTopRightRadius: 8,
-                                                border: "1px solid",
-                                                borderColor: "divider",
-                                                borderBottom: "none",
-                                            },
-                                            "&:last-of-type": {
-                                                borderBottomLeftRadius: 8,
-                                                borderBottomRightRadius: 8,
-                                                border: "1px solid",
-                                                borderColor: "divider",
-                                            },
+                                            p: 2,
+                                            border: "2px solid",
+                                            borderColor:
+                                                localData.correct === idx
+                                                    ? "success.main"
+                                                    : "divider",
+                                            borderRadius: 1,
+                                            cursor: "pointer",
+                                            bgcolor:
+                                                localData.correct === idx
+                                                    ? "success.50"
+                                                    : "transparent",
+                                            minWidth: 100,
+                                            textAlign: "center",
                                         }}
                                     >
-                                        <FormControlLabel
-                                            control={
-                                                <Radio
-                                                    checked={
-                                                        localData.correct ===
-                                                        idx
-                                                    }
-                                                    onChange={() =>
-                                                        updateField(
-                                                            "correct",
-                                                            idx,
-                                                        )
-                                                    }
-                                                    size="small"
-                                                    sx={{
-                                                        color: "primary.main",
-                                                    }}
-                                                />
+                                        <Typography
+                                            fontWeight={
+                                                localData.correct === idx
+                                                    ? 600
+                                                    : 400
                                             }
-                                            label={
-                                                <Typography fontWeight={500}>
-                                                    {label}
-                                                </Typography>
-                                            }
-                                            sx={{ m: 0 }}
-                                        />
-                                        <Button
-                                            size="small"
-                                            startIcon={
-                                                <AddIcon
-                                                    sx={{ fontSize: 14 }}
-                                                />
-                                            }
-                                            onClick={(e) =>
-                                                handleOpenExplanation(
-                                                    e,
-                                                    `tf_${label.toLowerCase()}`,
-                                                )
-                                            }
-                                            sx={{
-                                                textTransform: "none",
-                                                color: "primary.main",
-                                                fontSize: "0.75rem",
-                                            }}
                                         >
-                                            Add explanation
-                                        </Button>
+                                            {label}
+                                        </Typography>
                                     </Box>
                                 ))}
                             </Stack>
@@ -915,17 +744,6 @@ export default function QuestionEditorCard({
                         <MatchingPairsEditor
                             pairs={localData.pairs}
                             onChange={(pairs) => updateField("pairs", pairs)}
-                        />
-                    )}
-
-                    {/* Image Matching */}
-                    {localData.type === "image_matching" && (
-                        <ImageMatchingEditor
-                            nodeId={nodeId}
-                            pairs={localData.image_pairs}
-                            onChange={(pairs) =>
-                                updateField("image_pairs", pairs)
-                            }
                         />
                     )}
 
@@ -950,280 +768,29 @@ export default function QuestionEditorCard({
                     {/* Keywords */}
                     {localData.type === "short_answer" && (
                         <Box>
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    mb: 1,
-                                }}
-                            >
-                                <Typography variant="subtitle2">
-                                    Accepted Keywords
-                                </Typography>
-                                <Button
-                                    size="small"
-                                    startIcon={
-                                        <AddIcon sx={{ fontSize: 14 }} />
-                                    }
-                                    onClick={(e) =>
-                                        handleOpenExplanation(e, "keywords")
-                                    }
-                                    sx={{
-                                        textTransform: "none",
-                                        color: "primary.main",
-                                        fontSize: "0.75rem",
-                                    }}
-                                >
-                                    Add explanation
-                                </Button>
-                            </Box>
-                            <Stack spacing={0}>
-                                {(localData.keywords || []).map(
-                                    (keyword, idx) => (
-                                        <Box
-                                            key={idx}
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 1,
-                                                py: 1.5,
-                                                px: 1,
-                                                borderBottom:
-                                                    idx <
-                                                    (localData.keywords || [])
-                                                        .length -
-                                                        1
-                                                        ? "1px solid"
-                                                        : "none",
-                                                borderColor: "divider",
-                                                bgcolor: "background.paper",
-                                                "&:first-of-type": {
-                                                    borderTopLeftRadius: 8,
-                                                    borderTopRightRadius: 8,
-                                                    border: "1px solid",
-                                                    borderColor: "divider",
-                                                    borderBottom: "1px solid",
-                                                },
-                                                "&:last-of-type": {
-                                                    borderBottomLeftRadius: 8,
-                                                    borderBottomRightRadius: 8,
-                                                    border: "1px solid",
-                                                    borderColor: "divider",
-                                                    borderTop: "none",
-                                                },
-                                                "&:not(:first-of-type):not(:last-of-type)":
-                                                    {
-                                                        borderLeft: "1px solid",
-                                                        borderRight:
-                                                            "1px solid",
-                                                        borderColor: "divider",
-                                                    },
-                                            }}
-                                        >
-                                            <TextField
-                                                fullWidth
-                                                size="small"
-                                                value={keyword}
-                                                onChange={(e) => {
-                                                    const newKeywords = [
-                                                        ...(localData.keywords ||
-                                                            []),
-                                                    ];
-                                                    newKeywords[idx] =
-                                                        e.target.value;
-                                                    updateField(
-                                                        "keywords",
-                                                        newKeywords,
-                                                    );
-                                                }}
-                                                variant="standard"
-                                                InputProps={{
-                                                    disableUnderline: true,
-                                                    endAdornment: (
-                                                        <InputAdornment position="end">
-                                                            <EditIcon
-                                                                sx={{
-                                                                    fontSize: 16,
-                                                                    color: "text.disabled",
-                                                                }}
-                                                            />
-                                                        </InputAdornment>
-                                                    ),
-                                                }}
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() => {
-                                                    const newKeywords = (
-                                                        localData.keywords || []
-                                                    ).filter(
-                                                        (_, i) => i !== idx,
-                                                    );
-                                                    updateField(
-                                                        "keywords",
-                                                        newKeywords,
-                                                    );
-                                                }}
-                                                sx={{ p: 0.5 }}
-                                            >
-                                                <DeleteIcon
-                                                    sx={{ fontSize: 18 }}
-                                                />
-                                            </IconButton>
-                                        </Box>
-                                    ),
-                                )}
-                            </Stack>
-
-                            {/* Add New Keyword */}
-                            <Box
-                                sx={{
-                                    mt: 2,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                    py: 1.5,
-                                    px: 1,
-                                    bgcolor: "grey.50",
-                                    borderRadius: 1,
-                                    border: "1px solid",
-                                    borderColor: "divider",
-                                }}
-                            >
-                                <TextField
-                                    fullWidth
-                                    size="small"
-                                    placeholder="Add new keyword"
-                                    variant="standard"
-                                    InputProps={{ disableUnderline: true }}
-                                    onKeyPress={(e) => {
-                                        if (
-                                            e.key === "Enter" &&
-                                            e.target.value.trim()
-                                        ) {
-                                            updateField("keywords", [
-                                                ...(localData.keywords || []),
-                                                e.target.value.trim(),
-                                            ]);
-                                            e.target.value = "";
-                                        }
-                                    }}
-                                    onBlur={(e) => {
-                                        if (e.target.value.trim()) {
-                                            updateField("keywords", [
-                                                ...(localData.keywords || []),
-                                                e.target.value.trim(),
-                                            ]);
-                                            e.target.value = "";
-                                        }
-                                    }}
-                                />
-                                <Button
-                                    variant="contained"
-                                    size="small"
-                                    sx={{
-                                        minWidth: "auto",
-                                        px: 2,
-                                        textTransform: "none",
-                                    }}
-                                    onClick={(e) => {
-                                        // The click might be caught before blur, but handling it explicitly
-                                        // requires accessing the input value.
-                                        // Since blur handles addition, this button is visual mostly,
-                                        // but strictly focusing out works.
-                                        // A cleaner way is using a ref or state for the input,
-                                        // but for inline consistency with previous patterns, we rely on blur/enter.
-                                        // To make the button functional without ref, we can just focus the input
-                                        // or leave it as is since users press Enter or Blur.
-                                        // However, to match the "Add" button existing functionality properly:
-                                        const input =
-                                            e.currentTarget.previousSibling.querySelector(
-                                                "input",
-                                            );
-                                        if (input && input.value.trim()) {
-                                            updateField("keywords", [
-                                                ...(localData.keywords || []),
-                                                input.value.trim(),
-                                            ]);
-                                            input.value = "";
-                                        }
-                                    }}
-                                >
-                                    Add
-                                </Button>
-                            </Box>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Accepted Keywords
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                placeholder="Enter keywords separated by commas"
+                                value={(localData.keywords || []).join(", ")}
+                                onChange={(e) =>
+                                    updateField(
+                                        "keywords",
+                                        e.target.value
+                                            .split(",")
+                                            .map((k) => k.trim())
+                                            .filter((k) => k),
+                                    )
+                                }
+                                size="small"
+                                helperText="Student answers must contain at least one of these keywords"
+                            />
                         </Box>
                     )}
                 </Box>
             </Collapse>
-
-            {/* Explanation Popover - Shared across all question types */}
-            <Popover
-                open={Boolean(explanationAnchor)}
-                anchorEl={explanationAnchor}
-                onClose={handleCloseExplanation}
-                anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "right",
-                }}
-                transformOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                }}
-            >
-                <Box sx={{ p: 2, width: 280 }}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "flex-start",
-                            mb: 1,
-                        }}
-                    >
-                        <Box>
-                            <Typography variant="subtitle2" fontWeight={600}>
-                                Answer explanation
-                            </Typography>
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                            >
-                                Will be shown in "Show answer" section
-                            </Typography>
-                        </Box>
-                        <IconButton
-                            size="small"
-                            onClick={handleCloseExplanation}
-                        >
-                            <CloseIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                    </Box>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        placeholder="Enter explanation"
-                        value={
-                            activeExplanationKey
-                                ? localData.explanations?.[
-                                      activeExplanationKey
-                                  ] || ""
-                                : ""
-                        }
-                        onChange={(e) => {
-                            if (activeExplanationKey) {
-                                handleUpdateExplanation(
-                                    activeExplanationKey,
-                                    e.target.value,
-                                );
-                            }
-                        }}
-                        multiline
-                        rows={2}
-                    />
-                </Box>
-            </Popover>
         </Paper>
     );
 }

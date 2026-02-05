@@ -64,6 +64,11 @@ urlpatterns = [
         views.profile_settings,
         name="student.profile",
     ),
+    path(
+        "profile/",
+        views.profile_settings,
+        name="profile",
+    ),
     # ==========================================================================
     # Instructor Routes
     # ==========================================================================

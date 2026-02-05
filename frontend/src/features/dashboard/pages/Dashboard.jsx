@@ -121,7 +121,7 @@ function ProgressCard({ enrollment }) {
       <CardActions>
         <Button
           component={Link}
-          href={`/student/programs/${enrollment.id}/`}
+          href={`/student/programs/${enrollment.programId}/`}
           size="small"
         >
           Continue

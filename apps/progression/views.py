@@ -162,7 +162,7 @@ def program_view(request, pk: int):
     """
     enrollment = get_object_or_404(
         Enrollment.objects.select_related("program", "program__blueprint"),
-        pk=pk,
+        program_id=pk,
         user=request.user,
     )
     program = enrollment.program
@@ -351,16 +351,24 @@ def session_viewer(request, pk: int, node_id: int):
     )
     node = get_object_or_404(CurriculumNode, pk=node_id, program=enrollment.program)
 
+    # Check if node is unlocked before allowing access
+    unlock_status = _check_unlock_status(enrollment, node)
+    if not unlock_status.get("is_unlocked", True):
+        # Node is locked - redirect to program view (shows first available lesson)
+        return redirect("progression:student.program", pk=enrollment.program_id)
+
     # Handle mark as complete POST
-    if request.method == "POST" and request.POST.get("mark_complete"):
-        NodeCompletion.objects.get_or_create(
-            enrollment=enrollment,
-            node=node,
-            defaults={
-                "completion_type": "view",
-                "completed_at": timezone.now(),
-            },
-        )
+    if request.method == "POST":
+        data = _get_post_data(request)
+        if data.get("mark_complete"):
+            NodeCompletion.objects.get_or_create(
+                enrollment=enrollment,
+                node=node,
+                defaults={
+                    "completion_type": "view",
+                    "completed_at": timezone.now(),
+                },
+            )
 
     # Check if completed
     is_completed = NodeCompletion.objects.filter(
@@ -734,8 +742,8 @@ def _check_unlock_status(enrollment: Enrollment, node: CurriculumNode) -> dict:
                 "reason": "Complete prerequisites first",
             }
 
-    # Check sequential completion
-    if completion_rules.get("sequential", False) and node.parent:
+    # Check sequential completion (default to True for sequential locking)
+    if completion_rules.get("sequential", True) and node.parent:
         siblings = node.parent.children.filter(
             is_published=True, position__lt=node.position
         )

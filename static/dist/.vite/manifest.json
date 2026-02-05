@@ -289,8 +289,8 @@
     "file": "vendor-hls-Cp2x8l1r.js",
     "name": "vendor-hls"
   },
-  "_vendor-icons-lNarr0mT.js": {
-    "file": "vendor-icons-lNarr0mT.js",
+  "_vendor-icons-DsghDzpg.js": {
+    "file": "vendor-icons-DsghDzpg.js",
     "name": "vendor-icons",
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
@@ -388,7 +388,7 @@
     "src": "src/assets/images/learning.jpg"
   },
   "src/components/sections/landing/FAQSection.jsx": {
-    "file": "FAQSection-YRrvueyF.js",
+    "file": "FAQSection-CtJbxurB.js",
     "name": "FAQSection",
     "src": "src/components/sections/landing/FAQSection.jsx",
     "isDynamicEntry": true,
@@ -397,12 +397,12 @@
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-mui--kQli_V-.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-lNarr0mT.js",
+      "_vendor-icons-DsghDzpg.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/FeaturesSection.jsx": {
-    "file": "FeaturesSection-BFAlQYwA.js",
+    "file": "FeaturesSection-DvfffUQW.js",
     "name": "FeaturesSection",
     "src": "src/components/sections/landing/FeaturesSection.jsx",
     "isDynamicEntry": true,
@@ -410,7 +410,7 @@
       "_vendor-editor-WHHSXeeu.js",
       "_vendor-mui--kQli_V-.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-lNarr0mT.js",
+      "_vendor-icons-DsghDzpg.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
@@ -429,7 +429,7 @@
     ]
   },
   "src/components/sections/landing/LearningModesSection.jsx": {
-    "file": "LearningModesSection-FdQxR7qN.js",
+    "file": "LearningModesSection-sdNFLJLQ.js",
     "name": "LearningModesSection",
     "src": "src/components/sections/landing/LearningModesSection.jsx",
     "isDynamicEntry": true,
@@ -438,7 +438,7 @@
       "src/main.jsx",
       "_vendor-mui--kQli_V-.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-lNarr0mT.js",
+      "_vendor-icons-DsghDzpg.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-CDLuBejv.js",
@@ -453,7 +453,7 @@
     ]
   },
   "src/components/sections/landing/ProgramsSection.jsx": {
-    "file": "ProgramsSection-B020ZNNh.js",
+    "file": "ProgramsSection-B7YWWCI3.js",
     "name": "ProgramsSection",
     "src": "src/components/sections/landing/ProgramsSection.jsx",
     "isDynamicEntry": true,
@@ -462,7 +462,7 @@
       "src/main.jsx",
       "_vendor-mui--kQli_V-.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-lNarr0mT.js",
+      "_vendor-icons-DsghDzpg.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-CDLuBejv.js",
@@ -474,7 +474,7 @@
     ]
   },
   "src/components/sections/landing/TestimonialsSection.jsx": {
-    "file": "TestimonialsSection-Dtp35H8m.js",
+    "file": "TestimonialsSection-MURL48uL.js",
     "name": "TestimonialsSection",
     "src": "src/components/sections/landing/TestimonialsSection.jsx",
     "isDynamicEntry": true,
@@ -483,13 +483,13 @@
       "_vendor-swiper-gFbsDU59.js",
       "_vendor-mui--kQli_V-.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-lNarr0mT.js",
+      "_vendor-icons-DsghDzpg.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/TrustBadgesSection.jsx": {
-    "file": "TrustBadgesSection-BYRlHkPs.js",
+    "file": "TrustBadgesSection-DNOigOAR.js",
     "name": "TrustBadgesSection",
     "src": "src/components/sections/landing/TrustBadgesSection.jsx",
     "isDynamicEntry": true,
@@ -497,13 +497,13 @@
       "_vendor-editor-WHHSXeeu.js",
       "_vendor-mui--kQli_V-.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-lNarr0mT.js",
+      "_vendor-icons-DsghDzpg.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/main.jsx": {
-    "file": "main-CAmYM97o.js",
+    "file": "main-BWiKDoqX.js",
     "name": "main",
     "src": "src/main.jsx",
     "isEntry": true,
@@ -512,7 +512,7 @@
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-CDLuBejv.js",
-      "_vendor-icons-lNarr0mT.js",
+      "_vendor-icons-DsghDzpg.js",
       "_vendor-mui--kQli_V-.js",
       "_vendor-motion-BNO2tkJK.js",
       "_vendor-player-AW3MFJiD.js",

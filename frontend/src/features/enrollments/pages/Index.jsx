@@ -43,7 +43,7 @@ export default function EnrollmentRequests({ program, requests, filters }) {
         if (newStatus !== null) {
             setStatusFilter(newStatus);
             router.get(
-                `/dashboard/instructor/programs/${program.id}/enrollment-requests/`,
+                `/instructor/programs/${program.id}/enrollment-requests/`,
                 { status: newStatus },
                 { preserveState: true, replace: true }
             );
@@ -52,7 +52,7 @@ export default function EnrollmentRequests({ program, requests, filters }) {
 
     const handleApprove = (requestId) => {
         router.post(
-            `/dashboard/instructor/programs/${program.id}/enrollment-requests/${requestId}/approve/`,
+            `/instructor/programs/${program.id}/enrollment-requests/${requestId}/approve/`,
             {},
             { preserveScroll: true }
         );
@@ -67,7 +67,7 @@ export default function EnrollmentRequests({ program, requests, filters }) {
     const handleReject = () => {
         if (selectedRequest) {
             router.post(
-                `/dashboard/instructor/programs/${program.id}/enrollment-requests/${selectedRequest.id}/reject/`,
+                `/instructor/programs/${program.id}/enrollment-requests/${selectedRequest.id}/reject/`,
                 { notes: rejectNotes },
                 { preserveScroll: true }
             );
@@ -102,7 +102,7 @@ export default function EnrollmentRequests({ program, requests, filters }) {
                 <Box sx={{ mb: 4 }}>
                     <Button
                         component={Link}
-                        href={`/dashboard/instructor/programs/${program.id}/`}
+                        href={`/instructor/programs/${program.id}/`}
                         startIcon={<IconArrowLeft size={18} />}
                         sx={{ mb: 2 }}
                     >
@@ -232,7 +232,7 @@ export default function EnrollmentRequests({ program, requests, filters }) {
                             disabled={!requests.pagination.hasPrev}
                             onClick={() =>
                                 router.get(
-                                    `/dashboard/instructor/programs/${program.id}/enrollment-requests/`,
+                                    `/instructor/programs/${program.id}/enrollment-requests/`,
                                     { page: requests.pagination.page - 1, status: statusFilter },
                                     { preserveState: true }
                                 )
@@ -247,7 +247,7 @@ export default function EnrollmentRequests({ program, requests, filters }) {
                             disabled={!requests.pagination.hasNext}
                             onClick={() =>
                                 router.get(
-                                    `/dashboard/instructor/programs/${program.id}/enrollment-requests/`,
+                                    `/instructor/programs/${program.id}/enrollment-requests/`,
                                     { page: requests.pagination.page + 1, status: statusFilter },
                                     { preserveState: true }
                                 )

@@ -28,9 +28,9 @@ import {
 import {
     IconBrandTabler,
     IconClock,
-    IconVideo,
     IconBook,
     IconChartBar,
+    IconClipboardCheck,
     IconHeart,
     IconHeartFilled,
     IconShare,
@@ -340,7 +340,7 @@ function CourseDetailsSidebar({
                                 color={theme.palette.text.secondary}
                             />
                             <Typography variant="body2" color="text.secondary">
-                                Lectures
+                                Lessons
                             </Typography>
                         </Stack>
                         <Typography variant="body2" fontWeight={600}>
@@ -354,16 +354,16 @@ function CourseDetailsSidebar({
                         alignItems="center"
                     >
                         <Stack direction="row" spacing={1} alignItems="center">
-                            <IconVideo
+                            <IconClipboardCheck
                                 size={18}
                                 color={theme.palette.text.secondary}
                             />
                             <Typography variant="body2" color="text.secondary">
-                                Video
+                                Assessments
                             </Typography>
                         </Stack>
                         <Typography variant="body2" fontWeight={600}>
-                            {program.video_hours} hours
+                            {program.assessment_count || 0}
                         </Typography>
                     </Stack>
 
