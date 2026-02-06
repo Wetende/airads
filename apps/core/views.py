@@ -5440,6 +5440,86 @@ def instructor_lesson_file_delete(request, node_id: int):
     return JsonResponse({"success": True})
 
 
+@login_required
+def instructor_quiz_image_upload(request, node_id: int):
+    """
+    Upload an image for a quiz question.
+    Returns JSON with image URL for use in rich text editors.
+    """
+    import os
+    import uuid
+
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    if not is_instructor(request.user) or request.method != "POST":
+        return JsonResponse({"error": "Permission denied"}, status=403)
+
+    from apps.curriculum.models import CurriculumNode
+
+    program_ids = get_instructor_program_ids(request.user)
+    try:
+        node = CurriculumNode.objects.get(pk=node_id, program_id__in=program_ids)
+    except CurriculumNode.DoesNotExist:
+        return JsonResponse({"error": "Node not found"}, status=404)
+
+    if "image" not in request.FILES and "file" not in request.FILES:
+        return JsonResponse({"error": "No image provided"}, status=400)
+
+    # Accept either 'image' or 'file' field name
+    uploaded_file = request.FILES.get("image") or request.FILES.get("file")
+    file_name = uploaded_file.name
+
+    # Validate file type (images only)
+    allowed_extensions = {"jpg", "jpeg", "png", "gif", "webp", "svg"}
+    ext = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
+    if ext not in allowed_extensions:
+        return JsonResponse(
+            {"error": f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"},
+            status=400,
+        )
+
+    # Create upload directory for quiz images
+    upload_dir = os.path.join(
+        settings.MEDIA_ROOT, "quiz_images", str(node.program_id), str(node_id)
+    )
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Generate unique filename to prevent collisions
+    unique_name = f"{uuid.uuid4().hex}.{ext}"
+    file_path = os.path.join(upload_dir, unique_name)
+
+    # Save file
+    with open(file_path, "wb+") as dest:
+        for chunk in uploaded_file.chunks():
+            dest.write(chunk)
+
+    # Build file URL
+    relative_path = f"quiz_images/{node.program_id}/{node_id}/{unique_name}"
+    file_url = f"{settings.MEDIA_URL}{relative_path}"
+
+    # Track uploaded images in node properties (optional, for cleanup)
+    quiz_images = node.properties.get("quiz_images", [])
+    image_entry = {
+        "id": uuid.uuid4().hex[:8],
+        "name": file_name,
+        "url": file_url,
+        "path": relative_path,
+        "size": uploaded_file.size,
+        "uploaded_at": timezone.now().isoformat(),
+    }
+    quiz_images.append(image_entry)
+    node.properties["quiz_images"] = quiz_images
+    node.save(update_fields=["properties"])
+
+    # Return URL in format expected by rich text editors
+    return JsonResponse({
+        "success": True,
+        "url": file_url,
+        "image": image_entry,
+    })
+
+
 # =============================================================================
 # Material Import/Clone (Feature 3B)
 # =============================================================================

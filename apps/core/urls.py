@@ -123,6 +123,11 @@ urlpatterns = [
     path("instructor/nodes/<int:node_id>/delete/", views.instructor_node_delete, name="instructor.node_delete"),
     path("instructor/nodes/<int:node_id>/files/upload/", views.instructor_lesson_file_upload, name="instructor.lesson_file_upload"),
     path("instructor/nodes/<int:node_id>/files/delete/", views.instructor_lesson_file_delete, name="instructor.lesson_file_delete"),
+    path(
+        "instructor/nodes/<int:node_id>/quiz/images/upload/",
+        views.instructor_quiz_image_upload,
+        name="instructor.quiz_image_upload",
+    ),
     # Material Import/Clone (Feature 3B)
     path("instructor/programs/<int:program_id>/materials/search/", views.instructor_material_search, name="instructor.material_search"),
     path("instructor/programs/<int:program_id>/materials/import/", views.instructor_material_import, name="instructor.material_import"),
