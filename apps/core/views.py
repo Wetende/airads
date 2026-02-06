@@ -1705,14 +1705,11 @@ def admin_program_publish(request, pk: int):
     program.is_published = not program.is_published
     program.save()
 
-    # Cascade publish/unpublish: sync child nodes with program status
+    # Cascade unpublish: when program becomes unpublished, unpublish all child nodes
     if was_published and not program.is_published:
-        # Unpublishing: hide all nodes
         CurriculumNode.objects.filter(program=program).update(is_published=False)
         messages.success(request, f"Program '{program.name}' unpublished.")
-    elif not was_published and program.is_published:
-        # Publishing: publish all nodes so they are visible to students
-        CurriculumNode.objects.filter(program=program).update(is_published=True)
+    else:
         messages.success(request, f"Program '{program.name}' published successfully.")
 
     return redirect("core:admin.program", pk=pk)
@@ -5441,77 +5438,6 @@ def instructor_lesson_file_delete(request, node_id: int):
     node.save(update_fields=["properties"])
 
     return JsonResponse({"success": True})
-
-
-@login_required
-def instructor_quiz_image_upload(request, node_id: int):
-    """
-    Upload an image for a quiz question.
-    Returns JSON with image URL for embedding in questions.
-    """
-    import os
-    import uuid
-
-    from django.conf import settings
-    from django.http import JsonResponse
-
-    if not is_instructor(request.user) or request.method != "POST":
-        return JsonResponse({"error": "Permission denied"}, status=403)
-
-    from apps.curriculum.models import CurriculumNode
-
-    program_ids = get_instructor_program_ids(request.user)
-    try:
-        node = CurriculumNode.objects.get(pk=node_id, program_id__in=program_ids)
-    except CurriculumNode.DoesNotExist:
-        return JsonResponse({"error": "Node not found"}, status=404)
-
-    # Verify node is a quiz
-    if node.node_type != "quiz":
-        return JsonResponse({"error": "Node is not a quiz"}, status=400)
-
-    if "image" not in request.FILES:
-        return JsonResponse({"error": "No image provided"}, status=400)
-
-    uploaded_file = request.FILES["image"]
-    file_name = uploaded_file.name
-
-    # Validate image type
-    allowed_extensions = {"jpg", "jpeg", "png", "gif", "webp"}
-    ext = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
-    if ext not in allowed_extensions:
-        return JsonResponse(
-            {"error": f"Invalid image type. Allowed: {', '.join(allowed_extensions)}"},
-            status=400,
-        )
-
-    # Create upload directory for quiz images
-    upload_dir = os.path.join(
-        settings.MEDIA_ROOT, "quiz_images", str(node.program_id), str(node_id)
-    )
-    os.makedirs(upload_dir, exist_ok=True)
-
-    # Generate unique filename
-    unique_name = f"{uuid.uuid4().hex}.{ext}"
-    file_path = os.path.join(upload_dir, unique_name)
-
-    # Save file
-    with open(file_path, "wb+") as dest:
-        for chunk in uploaded_file.chunks():
-            dest.write(chunk)
-
-    # Build image URL
-    relative_path = f"quiz_images/{node.program_id}/{node_id}/{unique_name}"
-    image_url = f"{settings.MEDIA_URL}{relative_path}"
-
-    return JsonResponse({
-        "success": True,
-        "image": {
-            "url": image_url,
-            "name": file_name,
-            "size": uploaded_file.size,
-        },
-    })
 
 
 # =============================================================================

@@ -530,34 +530,6 @@ class QuestionGapAnswer(models.Model):
         return f"Gap {self.gap_index} for Q{self.question.id}"
 
 
-class QuestionImageMatchingPair(models.Model):
-    """
-    Image-based matching pairs for Image Matching questions.
-    Supports pairs where both the prompt and answer can be text or image.
-    """
-    question = models.ForeignKey(
-        Question,
-        on_delete=models.CASCADE,
-        related_name='image_matching_pairs'
-    )
-    question_text = models.TextField(blank=True, default='')
-    question_image = models.CharField(max_length=500, blank=True, default='')
-    answer_text = models.TextField(blank=True, default='')
-    answer_image = models.CharField(max_length=500, blank=True, default='')
-    explanation = models.TextField(blank=True, default='')
-    position = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        db_table = 'question_image_matching_pairs'
-        ordering = ['position']
-        indexes = [
-            models.Index(fields=['question', 'position']),
-        ]
-
-    def __str__(self):
-        return f"ImageMatch {self.position} for Q{self.question.id}"
-
-
 class QuestionBank(TimeStampedModel):
     """
     Question Bank for organizing reusable questions by program.
