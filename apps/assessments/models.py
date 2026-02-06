@@ -140,6 +140,10 @@ class Quiz(TimeStampedModel):
     show_answers_after_submit = models.BooleanField(default=True)
     retake_penalty_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     shuffle_options = models.BooleanField(default=False)
+    weight = models.PositiveIntegerField(
+        default=0,
+        help_text='Percentage weight in final grade (0-100). Quizzes + Assignments should sum to 100%.'
+    )
     is_published = models.BooleanField(default=False)
 
     class Meta:
