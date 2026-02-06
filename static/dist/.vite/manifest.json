@@ -429,7 +429,7 @@
     ]
   },
   "src/components/sections/landing/LearningModesSection.jsx": {
-    "file": "LearningModesSection-bSjpFWyX.js",
+    "file": "LearningModesSection-BOlH5pmu.js",
     "name": "LearningModesSection",
     "src": "src/components/sections/landing/LearningModesSection.jsx",
     "isDynamicEntry": true,
@@ -453,7 +453,7 @@
     ]
   },
   "src/components/sections/landing/ProgramsSection.jsx": {
-    "file": "ProgramsSection-BYwGSvL2.js",
+    "file": "ProgramsSection-DnB5YOR9.js",
     "name": "ProgramsSection",
     "src": "src/components/sections/landing/ProgramsSection.jsx",
     "isDynamicEntry": true,
@@ -503,7 +503,7 @@
     ]
   },
   "src/main.jsx": {
-    "file": "main-BQv2LOtj.js",
+    "file": "main-D96JKPKW.js",
     "name": "main",
     "src": "src/main.jsx",
     "isEntry": true,
@@ -531,7 +531,7 @@
       "src/components/sections/landing/FAQSection.jsx"
     ],
     "css": [
-      "main-DPtSWvRz.css"
+      "main-DuN5ZYbE.css"
     ],
     "assets": [
       "hero1-BkQM_8wF.jpg",

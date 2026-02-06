@@ -350,7 +350,6 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
         }, {
             preserveScroll: true,
             onSuccess: (page) => {
-                console.log('[DEBUG] Create section success. page.props:', page.props);
                 setCreateModalOpen(false);
                 
                 // Backend now returns updated curriculum in response

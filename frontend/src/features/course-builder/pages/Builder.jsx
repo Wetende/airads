@@ -52,10 +52,6 @@ export default function InstructorProgramBuilder({
     // Update curriculum when page props change (e.g., after creating a new node)
     useEffect(() => {
         if (page.props.curriculum) {
-            console.log(
-                "[DEBUG] Builder: curriculum updated from page props:",
-                page.props.curriculum,
-            );
             setCurriculum(page.props.curriculum);
         }
     }, [page.props.curriculum]);
@@ -148,27 +144,15 @@ export default function InstructorProgramBuilder({
                                 program={program}
                                 nodes={curriculum}
                                 onNodeSelect={(node) => {
-                                    console.log(
-                                        "[DEBUG] Builder: onNodeSelect called with:",
-                                        node,
-                                    );
                                     setSelectedNodeId(node ? node.id : null);
                                 }}
                                 onCurriculumUpdate={(newCurriculum) => {
-                                    console.log(
-                                        "[DEBUG] Builder: onCurriculumUpdate called",
-                                    );
                                     setCurriculum(newCurriculum);
                                 }}
                                 blueprint={program.blueprint}
                             />
 
-                            {/* Right Panel: Content Editor */}
                             <Box sx={{ flex: 1, p: 3, overflowY: "auto" }}>
-                                {console.log(
-                                    "[DEBUG] Builder rendering selectedNode:",
-                                    selectedNode,
-                                )}
                                 {selectedNode ? (
                                     <EditorContainer
                                         key={selectedNode.id} // Force remount on node change

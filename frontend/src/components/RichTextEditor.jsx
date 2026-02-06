@@ -41,19 +41,22 @@ const MenuButton = ({ onClick, active, disabled, icon, title }) => (
     </Tooltip>
 );
 
+// Define extensions once, outside component to prevent duplicates on re-render
+const extensions = [
+    StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+    }),
+    Underline,
+    Link.configure({
+        openOnClick: false,
+        HTMLAttributes: { class: 'text-link' },
+    }),
+    Image,
+];
+
 export default function RichTextEditor({ value, onChange, placeholder, minHeight = 150 }) {
     const editor = useEditor({
-        extensions: [
-            StarterKit.configure({
-                heading: { levels: [1, 2, 3] },
-            }),
-            Underline,
-            Link.configure({
-                openOnClick: false,
-                HTMLAttributes: { class: 'text-link' },
-            }),
-            Image,
-        ],
+        extensions,
         content: value || '',
         onUpdate: ({ editor }) => {
             if (onChange) {
