@@ -1840,8 +1840,6 @@ def instructor_gradebook_save(request, pk: int):
     program = assignment.program
 
     # Parse grades from request
-    from apps.core.views import _get_post_data
-
     data = _get_post_data(request)
     grades = data.get("grades", {})
 
@@ -1980,22 +1978,83 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
         attempts = QuizAttempt.objects.filter(
             enrollment=enrollment,
             quiz_id=quiz_id
-        ).select_related('quiz').prefetch_related('quiz__questions').order_by('-attempt_number')
+        ).select_related('quiz').prefetch_related(
+            'quiz__questions',
+            'quiz__questions__options',
+            'quiz__questions__matching_pairs',
+            'quiz__questions__gap_answers',
+            'quiz__questions__image_matching_pairs',
+        ).order_by('-attempt_number')
         
         attempts_list = []
         for attempt in attempts:
             # Build per-question results
             question_results = []
             questions_data = []
-            
+
+            def _serialize_correct_answer(question):
+                q_type = question.question_type
+                answer_data = question.answer_data or {}
+
+                if q_type == "mcq":
+                    option = question.options.filter(is_correct=True).order_by("position").first()
+                    return option.position if option else answer_data.get("correct")
+
+                if q_type == "mcq_multi":
+                    correct_positions = list(
+                        question.options.filter(is_correct=True)
+                        .order_by("position")
+                        .values_list("position", flat=True)
+                    )
+                    return correct_positions or answer_data.get("correct_indices", [])
+
+                if q_type == "true_false":
+                    return answer_data.get("correct")
+
+                if q_type == "short_answer":
+                    return answer_data.get("keywords", [])
+
+                if q_type == "matching":
+                    return {
+                        pair.left_text: pair.right_text
+                        for pair in question.matching_pairs.all().order_by("position")
+                    }
+
+                if q_type == "ordering":
+                    return answer_data.get("items") or answer_data.get("correct_order", [])
+
+                if q_type == "fill_blank":
+                    return [
+                        " / ".join(gap.accepted_answers)
+                        for gap in question.gap_answers.all().order_by("gap_index")
+                    ]
+
+                if q_type == "image_matching":
+                    # Left item token -> right item token for correct mapping.
+                    return {
+                        question.get_image_matching_item_id(
+                            pair.id, attempt.id, "left"
+                        ): question.get_image_matching_item_id(
+                            pair.id, attempt.id, "right"
+                        )
+                        for pair in question.image_matching_pairs.all().order_by("position")
+                    }
+
+                return None
+                
             for question in attempt.quiz.questions.all().order_by('position'):
                 student_answer = attempt.answers.get(str(question.id))
-                is_correct, points = question.check_answer(student_answer) if student_answer is not None else (False, 0)
+                is_correct, points = (
+                    question.check_answer(student_answer, attempt_id=attempt.id)
+                    if student_answer is not None
+                    else (False, 0)
+                )
+                correct_answer = _serialize_correct_answer(question)
                 
                 question_results.append({
                     'questionId': question.id,
                     'isCorrect': is_correct if is_correct is not None else False,
-                    'correctAnswer': question.correct_answer,
+                    'correctAnswer': correct_answer,
                     'pointsEarned': points or 0,
                 })
                 
@@ -2003,10 +2062,12 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                     'id': question.id,
                     'text': question.text,
                     'type': question.question_type,
-                    'options': question.options,
+                    'options': list(
+                        question.options.all().order_by("position").values_list("text", flat=True)
+                    ),
                     'points': question.points,
-                    'explanation': question.explanation,
-                    'correctAnswer': question.correct_answer,
+                    'explanation': (question.answer_data or {}).get("explanation", ""),
+                    'correctAnswer': correct_answer,
                 })
             
             attempts_list.append({
@@ -2182,8 +2243,6 @@ def instructor_practicum_review(request, pk: int):
 
     # Handle POST - submit review
     if request.method == "POST":
-        from apps.core.views import _get_post_data
-
         data = _get_post_data(request)
 
         status = data.get("status", "approved")

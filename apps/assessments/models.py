@@ -1,8 +1,11 @@
 """
 Assessment models - Grading strategies and results.
 """
-from django.db import models
 from typing import Optional
+
+from django.db import models
+from django.utils.crypto import salted_hmac
+
 from apps.core.models import TimeStampedModel
 
 
@@ -134,16 +137,15 @@ class Quiz(TimeStampedModel):
     time_limit_minutes = models.PositiveIntegerField(null=True, blank=True)
     max_attempts = models.PositiveIntegerField(default=1)
     pass_threshold = models.PositiveIntegerField(default=70)  # Percentage
+    weight = models.PositiveIntegerField(
+        default=0, help_text='Percentage weight in final grade'
+    )
     
     # Enhanced Quiz Settings
     randomize_questions = models.BooleanField(default=False)
     show_answers_after_submit = models.BooleanField(default=True)
     retake_penalty_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     shuffle_options = models.BooleanField(default=False)
-    weight = models.PositiveIntegerField(
-        default=0,
-        help_text='Percentage weight in final grade (0-100). Quizzes + Assignments should sum to 100%.'
-    )
     is_published = models.BooleanField(default=False)
 
     class Meta:
@@ -199,7 +201,17 @@ class Question(TimeStampedModel):
     def __str__(self):
         return f"Q{self.position + 1}: {self.text[:50]}..."
 
-    def check_answer(self, student_answer) -> tuple[bool, int]:
+    def get_image_matching_item_id(self, pair_id: int, attempt_id: int, side: str) -> str:
+        """
+        Generate a stable opaque identifier for image-matching items per attempt.
+        """
+        token = salted_hmac(
+            "assessments.image_matching_item",
+            f"{attempt_id}:{self.id}:{pair_id}:{side}",
+        ).hexdigest()
+        return f"{side}_{token}"
+
+    def check_answer(self, student_answer, attempt_id: Optional[int] = None) -> tuple[bool, int]:
         """
         Check if student answer is correct.
         Returns (is_correct, points_earned).
@@ -224,7 +236,41 @@ class Question(TimeStampedModel):
             points_earned = self.points if is_completely_correct else int(self.points * correct_count / len(pairs))
             return is_completely_correct, points_earned
 
-        # 2. Fill in the Blank
+        # 2. Image Matching
+        elif self.question_type == 'image_matching':
+            # student_answer: {"<left_item_id>": "<right_item_id>", ...}
+            pairs = list(self.image_matching_pairs.all())
+            if not pairs:
+                return False, 0
+
+            if not isinstance(student_answer, dict):
+                return False, 0
+
+            correct_count = 0
+            for pair in pairs:
+                if attempt_id is not None:
+                    left_id = self.get_image_matching_item_id(pair.id, attempt_id, "left")
+                    expected_right_id = self.get_image_matching_item_id(
+                        pair.id, attempt_id, "right"
+                    )
+                    submitted = student_answer.get(left_id)
+
+                    # Backward compatibility for attempts that still use raw pair IDs.
+                    if submitted is None and str(pair.id) in student_answer:
+                        submitted = student_answer.get(str(pair.id))
+                        expected_right_id = str(pair.id)
+                else:
+                    submitted = student_answer.get(str(pair.id))
+                    expected_right_id = str(pair.id)
+
+                if str(submitted) == expected_right_id:
+                    correct_count += 1
+
+            is_completely_correct = (correct_count == len(pairs))
+            points_earned = self.points if is_completely_correct else int(self.points * correct_count / len(pairs))
+            return is_completely_correct, points_earned
+
+        # 3. Fill in the Blank
         elif self.question_type == 'fill_blank':
             # student_answer: {"0": "answer1", "1": "answer2"}
             gaps = list(self.gap_answers.all())
@@ -242,7 +288,7 @@ class Question(TimeStampedModel):
             points_earned = self.points if is_completely_correct else int(self.points * correct_count / len(gaps))
             return is_completely_correct, points_earned
 
-        # 3. Ordering / Sequence
+        # 4. Ordering / Sequence
         elif self.question_type == 'ordering':
             # student_answer: ["Step 1", "Step 2"] or [2, 0, 1] (legacy)
             expected_order = self.answer_data.get('items')
@@ -255,7 +301,7 @@ class Question(TimeStampedModel):
             is_correct = (student_answer == expected_order)
             return is_correct, self.points if is_correct else 0
 
-        # 4. Multi-Select MCQ
+        # 5. Multi-Select MCQ
         elif self.question_type == 'mcq_multi':
             # student_answer: [0, 2] (list of selected option positions)
             # Use QuestionOption model if available, fallback to answer_data for legacy/migration
@@ -271,7 +317,7 @@ class Question(TimeStampedModel):
             is_correct = (submitted_set == correct_positions)
             return is_correct, self.points if is_correct else 0
 
-        # 5. Standard MCQ
+        # 6. Standard MCQ
         elif self.question_type == 'mcq':
             if self.options.exists():
                 # select related is_correct option
@@ -287,13 +333,13 @@ class Question(TimeStampedModel):
                 is_correct = (student_answer == correct_idx)
             return is_correct, self.points if is_correct else 0
         
-        # 6. True/False
+        # 7. True/False
         elif self.question_type == 'true_false':
             correct_val = self.answer_data.get('correct')
             is_correct = (student_answer == correct_val)
             return is_correct, self.points if is_correct else 0
         
-        # 7. Short Answer
+        # 8. Short Answer
         elif self.question_type == 'short_answer':
             if self.answer_data.get('manual_grading', True):
                 return None, None  # Needs manual grading
@@ -355,11 +401,11 @@ class QuizAttempt(models.Model):
             answer = self.answers.get(str(question.id))
             
             if answer is not None:
-                is_correct, pts = question.check_answer(answer)
+                is_correct, pts = question.check_answer(answer, attempt_id=self.id)
                 if is_correct is None:
                     needs_manual = True
-                elif is_correct:
-                    points_earned += pts
+                else:
+                    points_earned += max(0, int(pts or 0))
         
         percentage = (points_earned / points_possible * 100) if points_possible > 0 else 0
         passed = percentage >= self.quiz.pass_threshold if not needs_manual else None
@@ -519,6 +565,28 @@ class QuestionMatchingPair(models.Model):
         return f"Pair {self.position} for Q{self.question.id}"
 
 
+class QuestionImageMatchingPair(models.Model):
+    """
+    Left-right image matching items for Image Matching questions.
+    """
+    question = models.ForeignKey(
+        Question, on_delete=models.CASCADE, related_name='image_matching_pairs'
+    )
+    question_text = models.TextField(blank=True, default='')
+    question_image = models.CharField(max_length=500, blank=True, default='')
+    answer_text = models.TextField(blank=True, default='')
+    answer_image = models.CharField(max_length=500, blank=True, default='')
+    explanation = models.TextField(blank=True, default='')
+    position = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'question_image_matching_pairs'
+        ordering = ['position']
+
+    def __str__(self):
+        return f"Image Pair {self.position} for Q{self.question.id}"
+
+
 class QuestionGapAnswer(models.Model):
     """
     Correct answers for fill-in-the-blank gaps.
@@ -533,34 +601,6 @@ class QuestionGapAnswer(models.Model):
     
     def __str__(self):
         return f"Gap {self.gap_index} for Q{self.question.id}"
-
-
-class QuestionImageMatchingPair(models.Model):
-    """
-    Image-based matching pairs for Image Matching questions.
-    Each pair can have text and/or image on both question and answer sides.
-    """
-    question = models.ForeignKey(
-        Question,
-        on_delete=models.CASCADE,
-        related_name='image_matching_pairs'
-    )
-    question_text = models.TextField(blank=True, default='')
-    question_image = models.CharField(max_length=500, blank=True, default='')
-    answer_text = models.TextField(blank=True, default='')
-    answer_image = models.CharField(max_length=500, blank=True, default='')
-    explanation = models.TextField(blank=True, default='')
-    position = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        db_table = 'question_image_matching_pairs'
-        ordering = ['position']
-        indexes = [
-            models.Index(fields=['question', 'position'], name='question_im_questio_adbfb1_idx'),
-        ]
-
-    def __str__(self):
-        return f"Image Pair {self.position} for Q{self.question.id}"
 
 
 class QuestionBank(TimeStampedModel):
@@ -634,5 +674,3 @@ class QuestionBankEntry(TimeStampedModel):
 
     def __str__(self):
         return f"Bank Entry: {self.question.text[:30]} ({self.owner})"
-
-

@@ -30,7 +30,8 @@ import {
     Add as AddIcon,
     Help as HelpIcon,
 } from "@mui/icons-material";
-import RichTextEditor from "@/components/RichTextEditor";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 
 // Import specialized editors
 import MatchingPairsEditor from "@/features/quizzes/components/MatchingPairsEditor";
@@ -47,7 +48,29 @@ const QUESTION_TYPES = [
     { value: "ordering", label: "Ordering", color: "#455a64" },
 ];
 
+// Quill toolbar modules
+const quillModules = {
+    toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ align: [] }],
+        ["link"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["clean"],
+    ],
+};
 
+// Quill 2.0 formats - 'list' covers both ordered and bullet
+const quillFormats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "align",
+    "link",
+    "list",
+];
 
 const normalizeFillBlankText = (text, type) => {
     if (type !== "fill_blank") return text || "";
@@ -338,13 +361,21 @@ export default function QuestionEditorCard({
                         </Tooltip>
 
                         {/* Rich Text Editor */}
-                        <Box sx={{ flex: 1 }}>
+                        <Box
+                            sx={{
+                                flex: 1,
+                                "& .ql-editor": {
+                                    minHeight: "200px",
+                                    fontSize: "1rem",
+                                },
+                            }}
+                        >
                             <Typography
                                 variant="caption"
                                 color="text.secondary"
-                                sx={{ display: "block", mb: 1 }}
+                                gutterBottom
                             >
-                                Question Text
+                                Enter your question
                             </Typography>
                             {localData.type === "fill_blank" ? (
                                 <Typography
@@ -352,23 +383,27 @@ export default function QuestionEditorCard({
                                     color="text.secondary"
                                     sx={{ mt: 1 }}
                                 >
-                                    Use the "Fill in the Blank" editor below to
+                                    Use the “Fill in the Blank” editor below to
                                     enter text with {"{{blank}}"} placeholders.
                                 </Typography>
                             ) : (
-                                <RichTextEditor
+                                <ReactQuill
+                                    theme="snow"
                                     value={localData.text}
                                     onChange={(value) =>
                                         updateField("text", value)
                                     }
-                                    placeholder="Type your question here..."
-                                    minHeight={120}
+                                    modules={quillModules}
+                                    formats={quillFormats}
+                                    style={{
+                                        backgroundColor: "white",
+                                    }}
                                 />
                             )}
                             <Typography
                                 variant="caption"
                                 color="text.secondary"
-                                sx={{ display: "block", textAlign: "right", mt: 1 }}
+                                sx={{ float: "right", mt: 0.5 }}
                             >
                                 {wordCount} words
                             </Typography>

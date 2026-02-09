@@ -3343,7 +3343,7 @@ def student_quiz_start(request, quiz_id: int):
     import random
 
     quiz_questions = quiz.questions.all().prefetch_related(
-        "options", "matching_pairs", "gap_answers"
+        "options", "matching_pairs", "gap_answers", "image_matching_pairs"
     )
 
     questions = []
@@ -3376,6 +3376,27 @@ def student_quiz_start(request, quiz_id: int):
             items = list(raw_items) if isinstance(raw_items, (list, tuple)) else []
             random.shuffle(items)
             q_data["items"] = items
+        elif q.question_type == "image_matching":
+            image_pairs = list(q.image_matching_pairs.all().order_by("position"))
+            left_items = [
+                {
+                    "id": q.get_image_matching_item_id(pair.id, attempt.id, "left"),
+                    "text": pair.question_text,
+                    "image": pair.question_image,
+                }
+                for pair in image_pairs
+            ]
+            right_items = [
+                {
+                    "id": q.get_image_matching_item_id(pair.id, attempt.id, "right"),
+                    "text": pair.answer_text,
+                    "image": pair.answer_image,
+                }
+                for pair in image_pairs
+            ]
+            random.shuffle(right_items)
+            q_data["left_items"] = left_items
+            q_data["right_items"] = right_items
 
         questions.append(q_data)
 
@@ -4906,7 +4927,13 @@ def _sync_quiz_questions(node, questions_data: list):
     4. Deletes removed questions
     5. Stores db_id mapping back in node properties
     """
-    from apps.assessments.models import Question, QuestionGapAnswer, QuestionOption, Quiz
+    from apps.assessments.models import (
+        Question,
+        QuestionGapAnswer,
+        QuestionImageMatchingPair,
+        QuestionOption,
+        Quiz,
+    )
 
     if not questions_data:
         return
@@ -4951,6 +4978,7 @@ def _sync_quiz_questions(node, questions_data: list):
             "true_false": "true_false",
             "short_answer": "short_answer",
             "matching": "matching",
+            "image_matching": "image_matching",
             "fill_blank": "fill_blank",
             "ordering": "ordering",
         }
@@ -4977,6 +5005,25 @@ def _sync_quiz_questions(node, questions_data: list):
                     answers = []
                 cleaned = [a for a in answers if str(a).strip()]
                 normalized.append({"gap_index": index, "accepted_answers": cleaned})
+            return normalized
+
+        def normalize_image_pairs(raw_pairs):
+            if not isinstance(raw_pairs, list):
+                return []
+            normalized = []
+            for pair_idx, pair in enumerate(raw_pairs):
+                if not isinstance(pair, dict):
+                    continue
+                normalized.append(
+                    {
+                        "question_text": str(pair.get("question_text", "")).strip(),
+                        "question_image": str(pair.get("question_image", "")).strip(),
+                        "answer_text": str(pair.get("answer_text", "")).strip(),
+                        "answer_image": str(pair.get("answer_image", "")).strip(),
+                        "explanation": str(pair.get("explanation", "")).strip(),
+                        "position": pair.get("position", pair_idx),
+                    }
+                )
             return normalized
 
         # Build answer_data based on question type
@@ -5050,6 +5097,21 @@ def _sync_quiz_questions(node, questions_data: list):
                         accepted_answers=gap["accepted_answers"],
                     )
 
+            if backend_type == "image_matching":
+                question = Question.objects.get(pk=db_id)
+                question.image_matching_pairs.all().delete()
+                image_pairs = normalize_image_pairs(q_data.get("image_pairs", []))
+                for pair in image_pairs:
+                    QuestionImageMatchingPair.objects.create(
+                        question=question,
+                        question_text=pair["question_text"],
+                        question_image=pair["question_image"],
+                        answer_text=pair["answer_text"],
+                        answer_image=pair["answer_image"],
+                        explanation=pair["explanation"],
+                        position=pair["position"],
+                    )
+
             updated_questions.append({**q_data, "db_id": db_id})
         else:
             # Create new question
@@ -5086,6 +5148,19 @@ def _sync_quiz_questions(node, questions_data: list):
                         question=new_question,
                         gap_index=gap["gap_index"],
                         accepted_answers=gap["accepted_answers"],
+                    )
+
+            if backend_type == "image_matching":
+                image_pairs = normalize_image_pairs(q_data.get("image_pairs", []))
+                for pair in image_pairs:
+                    QuestionImageMatchingPair.objects.create(
+                        question=new_question,
+                        question_text=pair["question_text"],
+                        question_image=pair["question_image"],
+                        answer_text=pair["answer_text"],
+                        answer_image=pair["answer_image"],
+                        explanation=pair["explanation"],
+                        position=pair["position"],
                     )
 
             updated_questions.append({**q_data, "db_id": new_question.id})
@@ -5324,6 +5399,70 @@ def instructor_program_update_settings(request, pk: int):
 
 
 @login_required
+def instructor_quiz_image_upload(request, node_id: int):
+    """
+    Upload a quiz image (used by image-matching editor).
+    Returns JSON with uploaded image URL.
+    """
+    import os
+    import uuid
+
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    if not is_instructor(request.user) or request.method != "POST":
+        return JsonResponse({"error": "Permission denied"}, status=403)
+
+    from apps.curriculum.models import CurriculumNode
+
+    program_ids = get_instructor_program_ids(request.user)
+    try:
+        node = CurriculumNode.objects.get(pk=node_id, program_id__in=program_ids)
+    except CurriculumNode.DoesNotExist:
+        return JsonResponse({"error": "Node not found"}, status=404)
+
+    if "file" not in request.FILES:
+        return JsonResponse({"error": "No file provided"}, status=400)
+
+    uploaded_file = request.FILES["file"]
+    if not str(uploaded_file.content_type or "").startswith("image/"):
+        return JsonResponse({"error": "Only image files are allowed"}, status=400)
+
+    max_size = 10 * 1024 * 1024  # 10 MB
+    if uploaded_file.size > max_size:
+        return JsonResponse({"error": "Image exceeds 10MB limit"}, status=400)
+
+    upload_dir = os.path.join(
+        settings.MEDIA_ROOT, "quiz_images", str(node.program_id), str(node_id)
+    )
+    os.makedirs(upload_dir, exist_ok=True)
+
+    ext = uploaded_file.name.rsplit(".", 1)[-1].lower() if "." in uploaded_file.name else ""
+    unique_name = f"{uuid.uuid4().hex}.{ext}" if ext else uuid.uuid4().hex
+    file_path = os.path.join(upload_dir, unique_name)
+
+    with open(file_path, "wb+") as dest:
+        for chunk in uploaded_file.chunks():
+            dest.write(chunk)
+
+    relative_path = f"quiz_images/{node.program_id}/{node_id}/{unique_name}"
+    file_url = f"{settings.MEDIA_URL}{relative_path}"
+
+    return JsonResponse(
+        {
+            "success": True,
+            "image": {
+                "name": uploaded_file.name,
+                "url": file_url,
+                "path": relative_path,
+                "size": uploaded_file.size,
+                "uploaded_at": timezone.now().isoformat(),
+            },
+        }
+    )
+
+
+@login_required
 def instructor_lesson_file_upload(request, node_id: int):
     """
     Upload a file attachment to a lesson node.
@@ -5440,86 +5579,6 @@ def instructor_lesson_file_delete(request, node_id: int):
     return JsonResponse({"success": True})
 
 
-@login_required
-def instructor_quiz_image_upload(request, node_id: int):
-    """
-    Upload an image for a quiz question.
-    Returns JSON with image URL for use in rich text editors.
-    """
-    import os
-    import uuid
-
-    from django.conf import settings
-    from django.http import JsonResponse
-
-    if not is_instructor(request.user) or request.method != "POST":
-        return JsonResponse({"error": "Permission denied"}, status=403)
-
-    from apps.curriculum.models import CurriculumNode
-
-    program_ids = get_instructor_program_ids(request.user)
-    try:
-        node = CurriculumNode.objects.get(pk=node_id, program_id__in=program_ids)
-    except CurriculumNode.DoesNotExist:
-        return JsonResponse({"error": "Node not found"}, status=404)
-
-    if "image" not in request.FILES and "file" not in request.FILES:
-        return JsonResponse({"error": "No image provided"}, status=400)
-
-    # Accept either 'image' or 'file' field name
-    uploaded_file = request.FILES.get("image") or request.FILES.get("file")
-    file_name = uploaded_file.name
-
-    # Validate file type (images only)
-    allowed_extensions = {"jpg", "jpeg", "png", "gif", "webp", "svg"}
-    ext = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
-    if ext not in allowed_extensions:
-        return JsonResponse(
-            {"error": f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"},
-            status=400,
-        )
-
-    # Create upload directory for quiz images
-    upload_dir = os.path.join(
-        settings.MEDIA_ROOT, "quiz_images", str(node.program_id), str(node_id)
-    )
-    os.makedirs(upload_dir, exist_ok=True)
-
-    # Generate unique filename to prevent collisions
-    unique_name = f"{uuid.uuid4().hex}.{ext}"
-    file_path = os.path.join(upload_dir, unique_name)
-
-    # Save file
-    with open(file_path, "wb+") as dest:
-        for chunk in uploaded_file.chunks():
-            dest.write(chunk)
-
-    # Build file URL
-    relative_path = f"quiz_images/{node.program_id}/{node_id}/{unique_name}"
-    file_url = f"{settings.MEDIA_URL}{relative_path}"
-
-    # Track uploaded images in node properties (optional, for cleanup)
-    quiz_images = node.properties.get("quiz_images", [])
-    image_entry = {
-        "id": uuid.uuid4().hex[:8],
-        "name": file_name,
-        "url": file_url,
-        "path": relative_path,
-        "size": uploaded_file.size,
-        "uploaded_at": timezone.now().isoformat(),
-    }
-    quiz_images.append(image_entry)
-    node.properties["quiz_images"] = quiz_images
-    node.save(update_fields=["properties"])
-
-    # Return URL in format expected by rich text editors
-    return JsonResponse({
-        "success": True,
-        "url": file_url,
-        "image": image_entry,
-    })
-
-
 # =============================================================================
 # Material Import/Clone (Feature 3B)
 # =============================================================================
@@ -5594,6 +5653,7 @@ def _clone_quiz(source_quiz, new_node):
     from apps.assessments.models import (
         Question,
         QuestionGapAnswer,
+        QuestionImageMatchingPair,
         QuestionMatchingPair,
         QuestionOption,
         Quiz,
@@ -5647,6 +5707,18 @@ def _clone_quiz(source_quiz, new_node):
                 question=new_question,
                 gap_index=gap.gap_index,
                 accepted_answers=copy.deepcopy(gap.accepted_answers),
+            )
+
+        # Clone image matching pairs
+        for pair in q.image_matching_pairs.all():
+            QuestionImageMatchingPair.objects.create(
+                question=new_question,
+                question_text=pair.question_text,
+                question_image=pair.question_image,
+                answer_text=pair.answer_text,
+                answer_image=pair.answer_image,
+                explanation=pair.explanation,
+                position=pair.position,
             )
 
     return new_quiz

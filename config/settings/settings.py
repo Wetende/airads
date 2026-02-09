@@ -20,10 +20,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # =============================================================================
 
 # DEBUG mode - controls development vs production behavior
-DEBUG = os.getenv("DEBUG", "True") == "True"
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 # Security
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-change-me-in-production")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        # Per-process dev fallback only; never use a static, guessable key.
+        SECRET_KEY = os.urandom(32).hex()
+    else:
+        raise RuntimeError(
+            "DJANGO_SECRET_KEY environment variable is required when DEBUG=False."
+        )
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 # =============================================================================
