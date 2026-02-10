@@ -33,6 +33,7 @@ import {
 } from "@tabler/icons-react";
 
 import InstructorLayout from "@/layouts/InstructorLayout";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function Gradebook({
     program,
@@ -53,6 +54,7 @@ export default function Gradebook({
     const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
     const [publishing, setPublishing] = useState(false);
+    const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
     const gradingMode = gradingConfig?.mode || "summative";
 
@@ -72,20 +74,25 @@ export default function Gradebook({
     };
 
     const handlePublish = () => {
-        if (
-            !confirm(
-                "Publish all grades? Students will be able to see their results.",
-            )
-        ) {
-            return;
-        }
+        setPublishDialogOpen(true);
+    };
+
+    const handleClosePublishDialog = () => {
+        if (publishing) return;
+        setPublishDialogOpen(false);
+    };
+
+    const handleConfirmPublish = () => {
         setPublishing(true);
         router.post(
             `/instructor/programs/${program.id}/gradebook/publish/`,
             {},
             {
                 preserveScroll: true,
-                onFinish: () => setPublishing(false),
+                onFinish: () => {
+                    setPublishing(false);
+                    setPublishDialogOpen(false);
+                },
             },
         );
     };
@@ -422,6 +429,15 @@ export default function Gradebook({
                     </TableContainer>
                 </Stack>
             </motion.div>
+            <ConfirmDialog
+                open={publishDialogOpen}
+                onClose={handleClosePublishDialog}
+                onConfirm={handleConfirmPublish}
+                title="Publish Grades"
+                message="Publish all grades? Students will be able to see their results."
+                confirmLabel="Publish"
+                loading={publishing}
+            />
         </InstructorLayout>
     );
 }

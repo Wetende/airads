@@ -30,6 +30,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
 import DataTable from '@/components/DataTable';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const statusColors = {
   active: 'success',
@@ -47,6 +48,9 @@ export default function EnrollmentsIndex({
   const [search, setSearch] = useState(filters.search || '');
   const [program, setProgram] = useState(filters.program || '');
   const [status, setStatus] = useState(filters.status || '');
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [pendingWithdrawRow, setPendingWithdrawRow] = useState(null);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   const handleFilter = () => {
     const params = new URLSearchParams();
@@ -67,6 +71,29 @@ export default function EnrollmentsIndex({
       only: ['enrollments', 'pagination'],
       preserveState: true,
       preserveScroll: true,
+    });
+  };
+
+  const handleWithdrawRequest = (row) => {
+    setPendingWithdrawRow(row);
+    setWithdrawDialogOpen(true);
+  };
+
+  const handleCloseWithdrawDialog = () => {
+    if (withdrawing) return;
+    setWithdrawDialogOpen(false);
+    setPendingWithdrawRow(null);
+  };
+
+  const handleConfirmWithdraw = () => {
+    if (!pendingWithdrawRow) return;
+    setWithdrawing(true);
+    router.post(`/admin/enrollments/${pendingWithdrawRow.id}/withdraw/`, {}, {
+      onFinish: () => {
+        setWithdrawing(false);
+        setWithdrawDialogOpen(false);
+        setPendingWithdrawRow(null);
+      },
     });
   };
 
@@ -130,11 +157,7 @@ export default function EnrollmentsIndex({
     {
       label: 'Withdraw',
       icon: <PersonRemoveIcon fontSize="small" />,
-      onClick: (row) => {
-        if (confirm(`Withdraw ${row.userName} from ${row.programName}?`)) {
-          router.post(`/admin/enrollments/${row.id}/withdraw/`);
-        }
-      },
+      onClick: handleWithdrawRequest,
       disabled: (row) => row.status !== 'active',
       color: 'error',
     },
@@ -237,6 +260,20 @@ export default function EnrollmentsIndex({
           />
         </motion.div>
       </Stack>
+      <ConfirmDialog
+        open={withdrawDialogOpen}
+        onClose={handleCloseWithdrawDialog}
+        onConfirm={handleConfirmWithdraw}
+        title="Withdraw Enrollment"
+        message={
+          pendingWithdrawRow
+            ? `Withdraw ${pendingWithdrawRow.userName} from ${pendingWithdrawRow.programName}?`
+            : 'Withdraw this student from the program?'
+        }
+        confirmLabel="Withdraw"
+        confirmColor="error"
+        loading={withdrawing}
+      />
     </DashboardLayout>
   );
 }

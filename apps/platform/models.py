@@ -217,7 +217,6 @@ class PlatformSettings(TimeStampedModel):
                 {"value": "level_6", "label": "Level 6 - Diploma"},
             ],
             'theology': [
-                {"value": "foundation", "label": "Foundation"},
                 {"value": "certificate", "label": "Certificate"},
                 {"value": "diploma", "label": "Diploma"},
                 {"value": "degree", "label": "Degree"},
@@ -239,4 +238,3 @@ class PlatformSettings(TimeStampedModel):
             {"value": "intermediate", "label": "Intermediate"},
             {"value": "advanced", "label": "Advanced"},
         ])
-

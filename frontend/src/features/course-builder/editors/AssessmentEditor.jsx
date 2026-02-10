@@ -47,6 +47,7 @@ import OrderingEditor from "@/features/quizzes/components/OrderingEditor";
 import QuestionsLibraryDrawer from "../components/QuestionsLibraryDrawer";
 import QuestionBankDialog from "../components/QuestionBankDialog";
 import QuestionEditorCard from "../components/QuestionEditorCard";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const QUESTION_TYPES = [
     { value: "mcq", label: "Single Choice", color: "#1976d2" },
@@ -243,6 +244,13 @@ export default function AssessmentEditor({
     const [addQuestionMenuAnchor, setAddQuestionMenuAnchor] = useState(null);
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [newQuestionType, setNewQuestionType] = useState("mcq");
+    const [confirmDialog, setConfirmDialog] = useState({
+        open: false,
+        title: "Confirm Action",
+        message: "",
+        actionType: null,
+        actionId: null,
+    });
     const [newQuestion, setNewQuestion] = useState({
         text: "",
         points: 1,
@@ -400,16 +408,69 @@ export default function AssessmentEditor({
         });
     };
 
-    const handleDeleteQuestion = (id) => {
-        if (confirm("Delete this question?")) {
-            setQuestions(questions.filter((q) => q.id !== id));
+    const openDeleteDialog = ({ title, message, actionType, actionId }) => {
+        setConfirmDialog({
+            open: true,
+            title,
+            message,
+            actionType,
+            actionId,
+        });
+    };
+
+    const closeDeleteDialog = () => {
+        setConfirmDialog({
+            open: false,
+            title: "Confirm Action",
+            message: "",
+            actionType: null,
+            actionId: null,
+        });
+    };
+
+    const handleConfirmDelete = () => {
+        if (!confirmDialog.actionType || confirmDialog.actionId == null) {
+            closeDeleteDialog();
+            return;
         }
+
+        if (confirmDialog.actionType === "question") {
+            setQuestions(
+                questions.filter((q) => q.id !== confirmDialog.actionId),
+            );
+        }
+
+        if (confirmDialog.actionType === "questionBank") {
+            setQuestionBanks(
+                questionBanks.filter((b) => b.id !== confirmDialog.actionId),
+            );
+        }
+
+        if (confirmDialog.actionType === "qaQuestion") {
+            setQaQuestions(
+                qaQuestions.filter((q) => q.id !== confirmDialog.actionId),
+            );
+        }
+
+        closeDeleteDialog();
+    };
+
+    const handleDeleteQuestion = (id) => {
+        openDeleteDialog({
+            title: "Delete Question",
+            message: "Delete this question?",
+            actionType: "question",
+            actionId: id,
+        });
     };
 
     const handleDeleteQuestionBank = (bankId) => {
-        if (confirm("Delete this question bank?")) {
-            setQuestionBanks(questionBanks.filter((b) => b.id !== bankId));
-        }
+        openDeleteDialog({
+            title: "Delete Question Bank",
+            message: "Delete this question bank?",
+            actionType: "questionBank",
+            actionId: bankId,
+        });
     };
 
     // Handle adding questions from library
@@ -1153,20 +1214,15 @@ export default function AssessmentEditor({
                                         </Box>
                                         <IconButton
                                             size="small"
-                                            onClick={() => {
-                                                if (
-                                                    confirm(
+                                            onClick={() =>
+                                                openDeleteDialog({
+                                                    title: "Delete Question",
+                                                    message:
                                                         "Delete this question?",
-                                                    )
-                                                ) {
-                                                    setQaQuestions(
-                                                        qaQuestions.filter(
-                                                            (q) =>
-                                                                q.id !== qa.id,
-                                                        ),
-                                                    );
-                                                }
-                                            }}
+                                                    actionType: "qaQuestion",
+                                                    actionId: qa.id,
+                                                })
+                                            }
                                         >
                                             <DeleteIcon fontSize="small" />
                                         </IconButton>
@@ -1233,6 +1289,16 @@ export default function AssessmentEditor({
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <ConfirmDialog
+                open={confirmDialog.open}
+                onClose={closeDeleteDialog}
+                onConfirm={handleConfirmDelete}
+                title={confirmDialog.title}
+                message={confirmDialog.message}
+                confirmLabel="Delete"
+                confirmColor="error"
+            />
         </Box>
     );
 }

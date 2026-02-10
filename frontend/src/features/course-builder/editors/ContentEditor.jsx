@@ -48,6 +48,9 @@ import {
 } from "@mui/icons-material";
 
 export default function ContentEditor({ node, onSave, blueprint }) {
+    const TITLE_MIN_LENGTH = 5;
+    const TITLE_MAX_LENGTH = 100;
+
     // Get feature flags from blueprint
     const featureFlags = blueprint?.featureFlags || {};
     const [title, setTitle] = useState(node.title);
@@ -145,10 +148,10 @@ export default function ContentEditor({ node, onSave, blueprint }) {
         const newErrors = {};
 
         // Common validations
-        if (!title || title.trim().length < 5) {
-            newErrors.title = "Title must be at least 5 characters";
-        } else if (title.length > 100) {
-            newErrors.title = "Title must be 100 characters or less";
+        if (!title || title.trim().length < TITLE_MIN_LENGTH) {
+            newErrors.title = `Title must be at least ${TITLE_MIN_LENGTH} characters`;
+        } else if (title.length > TITLE_MAX_LENGTH) {
+            newErrors.title = `Title must be ${TITLE_MAX_LENGTH} characters or less`;
         }
 
         if (!duration || duration.trim() === "") {
@@ -203,7 +206,11 @@ export default function ContentEditor({ node, onSave, blueprint }) {
         const descText = description.replace(/<[^>]*>/g, "");
         const contentText = content.replace(/<[^>]*>/g, "");
 
-        if (!title || title.trim().length < 5 || title.length > 100)
+        if (
+            !title ||
+            title.trim().length < TITLE_MIN_LENGTH ||
+            title.length > TITLE_MAX_LENGTH
+        )
             return false;
         if (!duration || duration.trim() === "") return false;
         if (descText.length < 50) return false;
@@ -315,7 +322,7 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                     error={!!getFieldError("title")}
                     helperText={
                         getFieldError("title") ||
-                        `${title.length}/100 characters`
+                        `${title.length}/${TITLE_MAX_LENGTH} characters (minimum ${TITLE_MIN_LENGTH})`
                     }
                     InputProps={{ sx: { fontSize: "1.2rem", fontWeight: 500 } }}
                 />

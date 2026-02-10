@@ -4,6 +4,7 @@
  */
 
 import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -21,6 +22,7 @@ import GradingIcon from '@mui/icons-material/Grading';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
 import DataTable from '@/components/DataTable';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function RubricsIndex({ 
   rubrics = [], 
@@ -28,6 +30,10 @@ export default function RubricsIndex({
   role = 'instructor',
   canCreate = true 
 }) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingRubric, setPendingRubric] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
   const handlePageChange = (page) => {
     router.visit(`/rubrics/?page=${page}`, {
       only: ['rubrics', 'pagination'],
@@ -37,9 +43,26 @@ export default function RubricsIndex({
   };
 
   const handleDelete = (rubric) => {
-    if (confirm(`Are you sure you want to delete "${rubric.name}"? This cannot be undone.`)) {
-      router.post(`/rubrics/${rubric.id}/delete/`);
-    }
+    setPendingRubric(rubric);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    if (deleting) return;
+    setDeleteDialogOpen(false);
+    setPendingRubric(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!pendingRubric) return;
+    setDeleting(true);
+    router.post(`/rubrics/${pendingRubric.id}/delete/`, {}, {
+      onFinish: () => {
+        setDeleting(false);
+        setDeleteDialogOpen(false);
+        setPendingRubric(null);
+      },
+    });
   };
 
   const columns = [
@@ -174,6 +197,16 @@ export default function RubricsIndex({
           </motion.div>
         )}
       </Stack>
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        title="Delete Rubric"
+        message={pendingRubric ? `Are you sure you want to delete "${pendingRubric.name}"? This cannot be undone.` : 'Are you sure you want to delete this rubric?'}
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+      />
     </DashboardLayout>
   );
 }

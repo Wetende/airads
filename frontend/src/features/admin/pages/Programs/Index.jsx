@@ -36,6 +36,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 
 import DashboardLayout from "@/layouts/DashboardLayout";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function ProgramsIndex({
   programs = [],
@@ -47,6 +48,7 @@ export default function ProgramsIndex({
 }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedProgram, setSelectedProgram] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [search, setSearch] = useState(filters.search || "");
   const [status, setStatus] = useState(filters.status || "");
   const [blueprint, setBlueprint] = useState(filters.blueprint || "");
@@ -96,13 +98,24 @@ export default function ProgramsIndex({
   };
 
   const handleDelete = () => {
-    if (
-      selectedProgram &&
-      confirm("Are you sure you want to delete this program?")
-    ) {
-      router.post(`/admin/programs/${selectedProgram.id}/delete/`);
-    }
-    handleMenuClose();
+    if (!selectedProgram) return;
+    setDeleteDialogOpen(true);
+    setAnchorEl(null);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setSelectedProgram(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedProgram) return;
+    router.post(`/admin/programs/${selectedProgram.id}/delete/`, {}, {
+      onFinish: () => {
+        setDeleteDialogOpen(false);
+        setSelectedProgram(null);
+      },
+    });
   };
 
   const handlePublish = () => {
@@ -400,6 +413,19 @@ export default function ProgramsIndex({
             </MenuItem>
           )}
         </Menu>
+        <ConfirmDialog
+          open={deleteDialogOpen}
+          onClose={handleCloseDeleteDialog}
+          onConfirm={handleConfirmDelete}
+          title="Delete Program"
+          message={
+            selectedProgram
+              ? `Are you sure you want to delete "${selectedProgram.name}"?`
+              : "Are you sure you want to delete this program?"
+          }
+          confirmLabel="Delete"
+          confirmColor="error"
+        />
       </Stack>
     </DashboardLayout>
   );

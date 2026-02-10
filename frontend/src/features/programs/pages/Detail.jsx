@@ -3,6 +3,7 @@
  */
 
 import { Head, Link, router } from "@inertiajs/react";
+import { useState } from "react";
 import {
     Box,
     Container,
@@ -38,6 +39,7 @@ import {
 import { motion } from "framer-motion";
 
 import InstructorLayout from "@/layouts/InstructorLayout";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const STATUS_COLORS = {
     active: "success",
@@ -47,10 +49,20 @@ const STATUS_COLORS = {
 };
 
 export default function Detail({ program, students, curriculum }) {
+    const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+
     const handleSubmitForReview = () => {
-        if (confirm("Submit this program for admin review?")) {
-            router.post(`/instructor/programs/${program.id}/submit/`);
-        }
+        setSubmitDialogOpen(true);
+    };
+
+    const handleCloseSubmitDialog = () => {
+        setSubmitDialogOpen(false);
+    };
+
+    const handleConfirmSubmitForReview = () => {
+        router.post(`/instructor/programs/${program.id}/submit/`, {}, {
+            onFinish: () => setSubmitDialogOpen(false),
+        });
     };
 
     return (
@@ -360,6 +372,14 @@ export default function Detail({ program, students, curriculum }) {
                     </Grid>
                 </Stack>
             </motion.div>
+            <ConfirmDialog
+                open={submitDialogOpen}
+                onClose={handleCloseSubmitDialog}
+                onConfirm={handleConfirmSubmitForReview}
+                title="Submit for Review"
+                message="Submit this program for admin review?"
+                confirmLabel="Submit"
+            />
         </InstructorLayout>
     );
 }

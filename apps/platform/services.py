@@ -193,6 +193,7 @@ class PlatformSettingsService:
             "contactPhone": settings.contact_phone,
             "address": settings.address,
             "deploymentMode": settings.deployment_mode,
+            "courseLevels": settings.get_course_levels(),
             "activeBlueprintId": settings.active_blueprint_id,
             "logo": settings.logo.url if settings.logo else None,
             "favicon": settings.favicon.url if settings.favicon else None,
@@ -325,6 +326,15 @@ class PlatformSettingsService:
         current_features.update(features)
         settings.features = current_features
         settings.save()
+
+    @staticmethod
+    def update_course_levels(course_levels: list) -> None:
+        """Update custom course levels."""
+        from apps.platform.models import PlatformSettings
+
+        settings = PlatformSettings.get_settings()
+        settings.course_levels = course_levels or []
+        settings.save(update_fields=["course_levels"])
 
     @staticmethod
     def complete_setup() -> None:

@@ -4,6 +4,7 @@
  */
 
 import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -27,14 +28,38 @@ import {
 import { motion } from 'framer-motion';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function Index({ announcements = [], programs = [] }) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const breadcrumbs = [{ label: 'Announcements' }];
 
   const handleDelete = (programId, announcementIndex) => {
-    if (confirm('Delete this announcement?')) {
-      router.delete(`/instructor/announcements/${programId}/${announcementIndex}/`);
-    }
+    setPendingDelete({ programId, announcementIndex });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    if (deleting) return;
+    setDeleteDialogOpen(false);
+    setPendingDelete(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    router.delete(
+      `/instructor/announcements/${pendingDelete.programId}/${pendingDelete.announcementIndex}/`,
+      {
+        onFinish: () => {
+          setDeleting(false);
+          setDeleteDialogOpen(false);
+          setPendingDelete(null);
+        },
+      }
+    );
   };
 
   return (
@@ -142,6 +167,16 @@ export default function Index({ announcements = [], programs = [] }) {
           </TableContainer>
         </Paper>
       </motion.div>
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        title="Delete Announcement"
+        message="Delete this announcement?"
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+      />
     </DashboardLayout>
   );
 }

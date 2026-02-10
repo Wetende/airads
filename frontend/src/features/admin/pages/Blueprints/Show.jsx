@@ -4,6 +4,7 @@
  */
 
 import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -32,12 +33,23 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function BlueprintShow({ blueprint, programs = [], canEdit }) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this blueprint?')) {
-      router.post(`/admin/blueprints/${blueprint.id}/delete/`);
-    }
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+  };
+
+  const handleConfirmDelete = () => {
+    router.post(`/admin/blueprints/${blueprint.id}/delete/`, {}, {
+      onFinish: () => setDeleteDialogOpen(false),
+    });
   };
 
   return (
@@ -271,6 +283,15 @@ export default function BlueprintShow({ blueprint, programs = [], canEdit }) {
           </motion.div>
         )}
       </Stack>
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        title="Delete Blueprint"
+        message="Are you sure you want to delete this blueprint?"
+        confirmLabel="Delete"
+        confirmColor="error"
+      />
     </DashboardLayout>
   );
 }

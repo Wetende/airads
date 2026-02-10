@@ -36,6 +36,7 @@ import {
   IconFile,
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const NODE_ICONS = {
   module: IconFolder,
@@ -45,13 +46,18 @@ const NODE_ICONS = {
 
 export default function Review({ program, curriculum, changeRequests }) {
   const [feedbackDialog, setFeedbackDialog] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [selectedNode, setSelectedNode] = useState('');
 
   const handleApprove = () => {
-    if (confirm(`Approve "${program.name}"? This will allow the instructor to publish it.`)) {
-      router.post(`/admin/course-approval/${program.id}/approve/`);
-    }
+    setApproveDialogOpen(true);
+  };
+
+  const handleConfirmApprove = () => {
+    router.post(`/admin/course-approval/${program.id}/approve/`, {}, {
+      onFinish: () => setApproveDialogOpen(false),
+    });
   };
 
   const handleRequestChanges = () => {
@@ -280,6 +286,16 @@ export default function Review({ program, curriculum, changeRequests }) {
             </Button>
           </DialogActions>
         </Dialog>
+
+        <ConfirmDialog
+          open={approveDialogOpen}
+          onClose={() => setApproveDialogOpen(false)}
+          onConfirm={handleConfirmApprove}
+          title="Approve Program"
+          message={`Approve "${program.name}"? This will allow the instructor to publish it.`}
+          confirmLabel="Approve"
+          confirmColor="success"
+        />
       </Container>
     </>
   );

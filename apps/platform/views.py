@@ -1,5 +1,7 @@
 """Platform views - Admin settings, branding, and Super Admin management."""
 
+import json
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
@@ -461,6 +463,27 @@ def platform_settings(request):
             deployment_mode=data.get("deploymentMode", "custom"),
             blueprint_id=data.get("blueprintId"),
         )
+
+        raw_levels = data.get("courseLevelsJson")
+        if raw_levels:
+            try:
+                parsed_levels = json.loads(raw_levels)
+            except (TypeError, ValueError, json.JSONDecodeError):
+                parsed_levels = []
+
+            normalized_levels = []
+            seen_values = set()
+            for lvl in parsed_levels:
+                if not isinstance(lvl, dict):
+                    continue
+                value = str(lvl.get("value", "")).strip()
+                label = str(lvl.get("label", "")).strip()
+                if not value or not label or value in seen_values:
+                    continue
+                seen_values.add(value)
+                normalized_levels.append({"value": value, "label": label})
+
+            PlatformSettingsService.update_course_levels(normalized_levels)
         
         messages.success(request, "Platform settings updated")
         return redirect("tenants:platform.settings")
@@ -481,4 +504,3 @@ def platform_settings(request):
             "blueprints": blueprints,
         },
     )
-

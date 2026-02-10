@@ -24,6 +24,7 @@ import {
     Image as ImageIcon,
     VideoFile as VideoFileIcon,
 } from "@mui/icons-material";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const getFileIcon = (fileName) => {
     const ext = fileName.split(".").pop()?.toLowerCase();
@@ -53,6 +54,9 @@ export default function FileUploader({
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [error, setError] = useState(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [pendingDeleteFileId, setPendingDeleteFileId] = useState(null);
+    const [deleting, setDeleting] = useState(false);
     const fileInputRef = useRef(null);
 
     const handleDragEnter = useCallback((e) => {
@@ -130,23 +134,39 @@ export default function FileUploader({
     };
 
     const handleDelete = (fileId) => {
-        if (!confirm("Delete this file?")) return;
+        setPendingDeleteFileId(fileId);
+        setDeleteDialogOpen(true);
+    };
 
+    const handleCloseDeleteDialog = () => {
+        if (deleting) return;
+        setDeleteDialogOpen(false);
+        setPendingDeleteFileId(null);
+    };
+
+    const handleConfirmDelete = () => {
+        if (!pendingDeleteFileId) return;
+        setDeleting(true);
         setError(null);
 
         // Use Inertia router.post() for delete mutation
         router.post(
             `/instructor/nodes/${nodeId}/files/delete/`,
-            { file_id: fileId },
+            { file_id: pendingDeleteFileId },
             {
                 preserveScroll: true,
                 onSuccess: () => {
                     if (onDeleteComplete) {
-                        onDeleteComplete(fileId);
+                        onDeleteComplete(pendingDeleteFileId);
                     }
                 },
                 onError: (errors) => {
                     setError(errors?.error || "Delete failed");
+                },
+                onFinish: () => {
+                    setDeleting(false);
+                    setDeleteDialogOpen(false);
+                    setPendingDeleteFileId(null);
                 },
             },
         );
@@ -263,6 +283,17 @@ export default function FileUploader({
                     ))}
                 </List>
             )}
+
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onClose={handleCloseDeleteDialog}
+                onConfirm={handleConfirmDelete}
+                title="Delete File"
+                message="Delete this file?"
+                confirmLabel="Delete"
+                confirmColor="error"
+                loading={deleting}
+            />
         </Box>
     );
 }

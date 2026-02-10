@@ -26,6 +26,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import CurriculumTree from '@/components/CurriculumTree';
 import NodeEditor from '@/components/NodeEditor';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }) {
   // Sync nodes from page props (updated after Inertia redirect)
@@ -35,6 +36,9 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
   const [parentForNew, setParentForNew] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteNodeId, setPendingDeleteNodeId] = useState(null);
+  const [deletingNode, setDeletingNode] = useState(false);
 
   // Flash messages from Django
   const { flash } = usePage().props;
@@ -105,19 +109,33 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
   };
 
   const handleDeleteNode = (nodeId) => {
-    if (!confirm('Are you sure you want to delete this node and all its children?')) {
-      return;
-    }
+    setPendingDeleteNodeId(nodeId);
+    setDeleteDialogOpen(true);
+  };
 
+  const handleCloseDeleteDialog = () => {
+    if (deletingNode) return;
+    setDeleteDialogOpen(false);
+    setPendingDeleteNodeId(null);
+  };
+
+  const handleConfirmDeleteNode = () => {
+    if (!pendingDeleteNodeId) return;
+    setDeletingNode(true);
     setError(null);
     // Use Inertia router.post() - backend will redirect back with updated tree
-    router.post(`/admin/curriculum/nodes/${nodeId}/delete/`, {}, {
+    router.post(`/admin/curriculum/nodes/${pendingDeleteNodeId}/delete/`, {}, {
       preserveScroll: true,
       onSuccess: () => {
         setSelectedNode(null);
       },
       onError: (errors) => {
         setError(Object.values(errors).flat().join(', ') || 'Failed to delete node');
+      },
+      onFinish: () => {
+        setDeletingNode(false);
+        setDeleteDialogOpen(false);
+        setPendingDeleteNodeId(null);
       },
     });
   };
@@ -269,6 +287,16 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
           </Grid>
         )}
       </Stack>
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleConfirmDeleteNode}
+        title="Delete Node"
+        message="Are you sure you want to delete this node and all its children?"
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deletingNode}
+      />
     </DashboardLayout>
   );
 }

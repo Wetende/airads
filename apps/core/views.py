@@ -1761,6 +1761,7 @@ def _serialize_program(program: Program) -> dict:
         "id": program.id,
         "name": program.name,
         "code": program.code or "",
+        "level": program.level or "",
         "description": program.description or "",
         "blueprintId": program.blueprint_id,
         "blueprintName": program.blueprint.name if program.blueprint else None,

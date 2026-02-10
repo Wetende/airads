@@ -19,6 +19,7 @@ import VideoBlockEditor from './Editors/VideoBlockEditor';
 import RichTextBlockEditor from './Editors/RichTextBlockEditor';
 import QuizBlockSelector from './Editors/QuizBlockSelector';
 import AssignmentBlockSelector from './Editors/AssignmentBlockSelector';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const BlockItem = ({ id, block, index, onChange, onDelete }) => {
     const {
@@ -86,6 +87,8 @@ const BlockItem = ({ id, block, index, onChange, onDelete }) => {
 
 const BlockManager = ({ blocks, onBlocksChange }) => {
     const [anchorEl, setAnchorEl] = useState(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [pendingDeleteBlockId, setPendingDeleteBlockId] = useState(null);
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -119,9 +122,19 @@ const BlockManager = ({ blocks, onBlocksChange }) => {
     };
 
     const handleDeleteBlock = (id) => {
-        if (confirm('Delete this block?')) {
-            onBlocksChange(blocks.filter(b => b.id !== id));
-        }
+        setPendingDeleteBlockId(id);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleCloseDeleteDialog = () => {
+        setDeleteDialogOpen(false);
+        setPendingDeleteBlockId(null);
+    };
+
+    const handleConfirmDelete = () => {
+        if (!pendingDeleteBlockId) return;
+        onBlocksChange(blocks.filter(b => b.id !== pendingDeleteBlockId));
+        handleCloseDeleteDialog();
     };
 
     return (
@@ -171,6 +184,16 @@ const BlockManager = ({ blocks, onBlocksChange }) => {
                     <MenuItem onClick={() => handleAddBlock('DOCUMENT')}>Document / File</MenuItem>
                 </Menu>
             </Box>
+
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onClose={handleCloseDeleteDialog}
+                onConfirm={handleConfirmDelete}
+                title="Delete Block"
+                message="Delete this block?"
+                confirmLabel="Delete"
+                confirmColor="error"
+            />
         </Box>
     );
 };

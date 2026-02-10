@@ -36,6 +36,7 @@ import {
   IconLockOpen,
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const STATUS_CONFIG = {
   draft: { color: 'default', label: 'Draft', icon: IconFileText },
@@ -46,6 +47,8 @@ const STATUS_CONFIG = {
 
 export default function Detail({ application }) {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [unlockDialogOpen, setUnlockDialogOpen] = useState(false);
   const { data, setData, post, processing } = useForm({
     reason: '',
   });
@@ -54,9 +57,13 @@ export default function Detail({ application }) {
   const StatusIcon = statusConfig.icon;
 
   const handleApprove = () => {
-    if (confirm('Are you sure you want to approve this instructor application?')) {
-      router.post(`/admin/instructor-applications/${application.id}/approve/`);
-    }
+    setApproveDialogOpen(true);
+  };
+
+  const handleConfirmApprove = () => {
+    router.post(`/admin/instructor-applications/${application.id}/approve/`, {}, {
+      onFinish: () => setApproveDialogOpen(false),
+    });
   };
 
   const handleReject = () => {
@@ -66,9 +73,13 @@ export default function Detail({ application }) {
   };
 
   const handleUnlock = () => {
-    if (confirm('Allow this user to resubmit their application?')) {
-      router.post(`/admin/instructor-applications/${application.id}/unlock/`);
-    }
+    setUnlockDialogOpen(true);
+  };
+
+  const handleConfirmUnlock = () => {
+    router.post(`/admin/instructor-applications/${application.id}/unlock/`, {}, {
+      onFinish: () => setUnlockDialogOpen(false),
+    });
   };
 
   return (
@@ -308,6 +319,25 @@ export default function Detail({ application }) {
             </Button>
           </DialogActions>
         </Dialog>
+
+        <ConfirmDialog
+          open={approveDialogOpen}
+          onClose={() => setApproveDialogOpen(false)}
+          onConfirm={handleConfirmApprove}
+          title="Approve Application"
+          message="Are you sure you want to approve this instructor application?"
+          confirmLabel="Approve"
+          confirmColor="success"
+        />
+
+        <ConfirmDialog
+          open={unlockDialogOpen}
+          onClose={() => setUnlockDialogOpen(false)}
+          onConfirm={handleConfirmUnlock}
+          title="Unlock Application"
+          message="Allow this user to resubmit their application?"
+          confirmLabel="Unlock"
+        />
       </Container>
     </>
   );

@@ -31,6 +31,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
 import DataTable from '@/components/DataTable';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const roleColors = {
   admin: 'error',
@@ -42,6 +43,14 @@ export default function UsersIndex({ users = [], filters = {}, pagination = {} }
   const [search, setSearch] = useState(filters.search || '');
   const [role, setRole] = useState(filters.role || '');
   const [status, setStatus] = useState(filters.status || '');
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: 'Confirm Action',
+    message: '',
+    confirmLabel: 'Confirm',
+    confirmColor: 'primary',
+    onConfirm: null,
+  });
 
   const handleFilter = () => {
     const params = new URLSearchParams();
@@ -63,6 +72,36 @@ export default function UsersIndex({ users = [], filters = {}, pagination = {} }
       preserveState: true,
       preserveScroll: true,
     });
+  };
+
+  const openConfirmDialog = ({
+    title,
+    message,
+    confirmLabel = 'Confirm',
+    confirmColor = 'primary',
+    onConfirm,
+  }) => {
+    setConfirmDialog({
+      open: true,
+      title,
+      message,
+      confirmLabel,
+      confirmColor,
+      onConfirm,
+    });
+  };
+
+  const closeConfirmDialog = () => {
+    setConfirmDialog((prev) => ({
+      ...prev,
+      open: false,
+      onConfirm: null,
+    }));
+  };
+
+  const handleConfirmAction = () => {
+    confirmDialog.onConfirm?.();
+    closeConfirmDialog();
   };
 
   const columns = [
@@ -124,9 +163,12 @@ export default function UsersIndex({ users = [], filters = {}, pagination = {} }
       label: 'Reset Password',
       icon: <LockResetIcon fontSize="small" />,
       onClick: (row) => {
-        if (confirm(`Send password reset email to ${row.email}?`)) {
-          router.post(`/admin/users/${row.id}/reset-password/`);
-        }
+        openConfirmDialog({
+          title: 'Reset Password',
+          message: `Send password reset email to ${row.email}?`,
+          confirmLabel: 'Send',
+          onConfirm: () => router.post(`/admin/users/${row.id}/reset-password/`),
+        });
       },
     },
     {
@@ -134,9 +176,13 @@ export default function UsersIndex({ users = [], filters = {}, pagination = {} }
       icon: (row) => row.isActive ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />,
       onClick: (row) => {
         const action = row.isActive ? 'deactivate' : 'activate';
-        if (confirm(`Are you sure you want to ${action} ${row.fullName}?`)) {
-          router.post(`/admin/users/${row.id}/deactivate/`);
-        }
+        openConfirmDialog({
+          title: `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
+          message: `Are you sure you want to ${action} ${row.fullName}?`,
+          confirmLabel: action.charAt(0).toUpperCase() + action.slice(1),
+          confirmColor: row.isActive ? 'warning' : 'success',
+          onConfirm: () => router.post(`/admin/users/${row.id}/deactivate/`),
+        });
       },
       color: (row) => row.isActive ? 'warning' : 'success',
     },
@@ -148,9 +194,13 @@ export default function UsersIndex({ users = [], filters = {}, pagination = {} }
           alert('Cannot delete superadmin accounts');
           return;
         }
-        if (confirm(`Are you sure you want to PERMANENTLY DELETE ${row.fullName}? This action cannot be undone.`)) {
-          router.post(`/admin/users/${row.id}/delete/`);
-        }
+        openConfirmDialog({
+          title: 'Delete User',
+          message: `Are you sure you want to PERMANENTLY DELETE ${row.fullName}? This action cannot be undone.`,
+          confirmLabel: 'Delete',
+          confirmColor: 'error',
+          onConfirm: () => router.post(`/admin/users/${row.id}/delete/`),
+        });
       },
       color: 'error',
     },
@@ -249,6 +299,15 @@ export default function UsersIndex({ users = [], filters = {}, pagination = {} }
           />
         </motion.div>
       </Stack>
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onClose={closeConfirmDialog}
+        onConfirm={handleConfirmAction}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmLabel={confirmDialog.confirmLabel}
+        confirmColor={confirmDialog.confirmColor}
+      />
     </DashboardLayout>
   );
 }

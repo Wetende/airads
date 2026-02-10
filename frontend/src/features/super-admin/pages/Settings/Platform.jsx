@@ -22,10 +22,13 @@ import {
   FormControlLabel,
   Divider,
   Alert,
+  IconButton,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import SaveIcon from '@mui/icons-material/Save';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const PRESET_COLORS = [
   { primary: '#3B82F6', secondary: '#1E40AF', name: 'Blue' },
@@ -37,6 +40,10 @@ const PRESET_COLORS = [
 ];
 
 export default function PlatformSettings({ settings, modes, blueprints }) {
+  const initialLevels =
+    Array.isArray(settings?.courseLevels) && settings.courseLevels.length > 0
+      ? settings.courseLevels
+      : [];
   const [formData, setFormData] = useState({
     institutionName: settings?.institutionName === 'My Institution' ? '' : (settings?.institutionName || ''),
     tagline: settings?.tagline || '',
@@ -48,6 +55,7 @@ export default function PlatformSettings({ settings, modes, blueprints }) {
     primaryColor: settings?.primaryColor || '#3B82F6',
     secondaryColor: settings?.secondaryColor || '#1E40AF',
   });
+  const [courseLevels, setCourseLevels] = useState(initialLevels);
   
   const [features, setFeatures] = useState({
     certificates: settings?.features?.certificates ?? true,
@@ -78,6 +86,22 @@ export default function PlatformSettings({ settings, modes, blueprints }) {
     setFeatures((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const handleAddLevel = () => {
+    setCourseLevels((prev) => [...prev, { value: '', label: '' }]);
+  };
+
+  const handleRemoveLevel = (index) => {
+    setCourseLevels((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCourseLevelChange = (index, field, value) => {
+    setCourseLevels((prev) =>
+      prev.map((lvl, i) =>
+        i === index ? { ...lvl, [field]: value } : lvl
+      )
+    );
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
@@ -90,6 +114,17 @@ export default function PlatformSettings({ settings, modes, blueprints }) {
     Object.entries(features).forEach(([key, value]) => {
       data.append(key, value);
     });
+    data.append(
+      'courseLevelsJson',
+      JSON.stringify(
+        courseLevels
+          .map((lvl) => ({
+            value: String(lvl.value || '').trim(),
+            label: String(lvl.label || '').trim(),
+          }))
+          .filter((lvl) => lvl.value && lvl.label)
+      )
+    );
     if (logo) data.append('logo', logo);
     if (favicon) data.append('favicon', favicon);
 
@@ -220,6 +255,53 @@ export default function PlatformSettings({ settings, modes, blueprints }) {
                       <Alert severity="info" sx={{ mt: 2 }}>
                         Changing mode will update default terminology and feature settings.
                       </Alert>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </Grid>
+
+            {/* Course Levels */}
+            <Grid item xs={12} md={6}>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="h6">Course Levels</Typography>
+                      <Button size="small" startIcon={<AddIcon />} onClick={handleAddLevel}>
+                        Add Level
+                      </Button>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      These levels are used in program creation and filtering.
+                    </Typography>
+                    <Stack spacing={1.5}>
+                      {courseLevels.map((lvl, idx) => (
+                        <Stack key={`${idx}-${lvl.value || 'new'}`} direction="row" spacing={1} alignItems="center">
+                          <TextField
+                            label="Value"
+                            size="small"
+                            value={lvl.value || ''}
+                            onChange={(e) => handleCourseLevelChange(idx, 'value', e.target.value)}
+                            placeholder="certificate"
+                            sx={{ flex: 1 }}
+                          />
+                          <TextField
+                            label="Label"
+                            size="small"
+                            value={lvl.label || ''}
+                            onChange={(e) => handleCourseLevelChange(idx, 'label', e.target.value)}
+                            placeholder="Certificate"
+                            sx={{ flex: 1 }}
+                          />
+                          <IconButton color="error" onClick={() => handleRemoveLevel(idx)} aria-label="Remove level">
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Stack>
+                      ))}
+                      {courseLevels.length === 0 && (
+                        <Alert severity="info">No custom levels set. Add at least one level.</Alert>
+                      )}
                     </Stack>
                   </CardContent>
                 </Card>

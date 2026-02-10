@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import SearchMaterialsModal from './SearchMaterialsModal';
 import { router } from '@inertiajs/react';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import {
     DndContext,
     closestCenter,
@@ -228,6 +229,8 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
     const [searchModalOpen, setSearchModalOpen] = useState(false);
     const [searchTargetSectionId, setSearchTargetSectionId] = useState(null);
     const [searchTargetSectionName, setSearchTargetSectionName] = useState('');
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [pendingDeleteNode, setPendingDeleteNode] = useState(null);
     
     const openSearchModal = (sectionId, sectionName) => {
         setSearchTargetSectionId(sectionId);
@@ -377,14 +380,35 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
         });
     };
 
-    const handleDelete = (nodeId) => {
-        if(confirm("Are you sure? This will delete all children nodes and content.")) {
-            router.post(`/instructor/nodes/${nodeId}/delete/`);
-            if (selectedNodeId === nodeId) {
-                setSelectedNodeId(null);
-                if (onNodeSelect) onNodeSelect(null);
-            }
+    const openDeleteDialog = (node) => {
+        setPendingDeleteNode(node);
+        setDeleteDialogOpen(true);
+    };
+
+    const closeDeleteDialog = () => {
+        setDeleteDialogOpen(false);
+        setPendingDeleteNode(null);
+    };
+
+    const handleDeleteConfirm = () => {
+        const nodeId = pendingDeleteNode?.id;
+        if (!nodeId) {
+            closeDeleteDialog();
+            return;
         }
+        router.post(`/instructor/nodes/${nodeId}/delete/`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (selectedNodeId === nodeId) {
+                    setSelectedNodeId(null);
+                    if (onNodeSelect) onNodeSelect(null);
+                }
+                closeDeleteDialog();
+            },
+            onError: () => {
+                closeDeleteDialog();
+            },
+        });
     };
 
     // Render a single leaf item
@@ -435,7 +459,7 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                             primary={node.title} 
                             primaryTypographyProps={{ variant: 'body2', fontSize: '0.9rem' }} 
                         />
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(node.id); }}>
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); openDeleteDialog(node); }}>
                             <DeleteIcon fontSize="small" sx={{ fontSize: 16, color: 'text.disabled' }} />
                         </IconButton>
                     </ListItemButton>
@@ -496,7 +520,7 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                             <IconButton size="small" onClick={(e) => startEditingSection(node, e)}>
                                 <EditIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(node.id); }}>
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openDeleteDialog(node); }}>
                                 <DeleteIcon fontSize="small" />
                             </IconButton>
                             <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleSection(node.id); }}>
@@ -709,6 +733,16 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                     // Refresh the curriculum after import
                     router.reload({ only: ['curriculum'] });
                 }}
+            />
+
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onClose={closeDeleteDialog}
+                onConfirm={handleDeleteConfirm}
+                title="Delete curriculum item?"
+                message={`Are you sure you want to delete "${pendingDeleteNode?.title || 'this item'}"? This will delete all child nodes and content. This action cannot be undone.`}
+                confirmLabel="Delete"
+                confirmColor="error"
             />
         </Box>
     );
