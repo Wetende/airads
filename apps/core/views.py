@@ -120,9 +120,9 @@ def landing_page(request):
             "category": p.category,
             "rating": 4.5,  # Placeholder rating
             "price": p.custom_pricing.get("price", 0) if p.custom_pricing else 0,
-            "original_price": p.custom_pricing.get("original_price")
-            if p.custom_pricing
-            else None,
+            "original_price": (
+                p.custom_pricing.get("original_price") if p.custom_pricing else None
+            ),
             "enrollmentCount": enrollment_counts.get(p.id, 0),
         }
         for p in programs
@@ -219,9 +219,7 @@ def public_programs_list(request):
                 minutes_int = int(minutes) if minutes is not None else 0
             except (TypeError, ValueError):
                 minutes_int = 0
-            stats_by_program_id[program_id]["duration_minutes"] += max(
-                0, minutes_int
-            )
+            stats_by_program_id[program_id]["duration_minutes"] += max(0, minutes_int)
 
     def _minutes_to_hours(total_minutes: int) -> float:
         if not total_minutes:
@@ -403,7 +401,10 @@ def public_program_detail(request, pk: int):
     duration_hours = round(duration_minutes / 60.0, 1) if duration_minutes else 0
 
     # Get total completable nodes count
-    total_nodes_filter = {"program": program, "node_type__in": ["lesson", "quiz", "assignment"]}
+    total_nodes_filter = {
+        "program": program,
+        "node_type__in": ["lesson", "quiz", "assignment"],
+    }
     if not is_preview:
         total_nodes_filter["is_published"] = True
     total_nodes = CurriculumNode.objects.filter(**total_nodes_filter).count()
@@ -1466,7 +1467,7 @@ def admin_program_edit(request, pk: int):
         return redirect("/dashboard/")
 
     from django.shortcuts import get_object_or_404
-    
+
     from apps.platform.models import PlatformSettings
     from apps.progression.models import Enrollment, InstructorAssignment
 
@@ -1543,7 +1544,6 @@ def admin_program_edit(request, pk: int):
             ).exists(),
         },
     )
-
 
 
 @login_required
@@ -2676,9 +2676,9 @@ def instructor_program_gradebook(request, pk: int):
                 {
                     "quizId": q.id,
                     "title": q.title,
-                    "score": float(attempt.score)
-                    if attempt and attempt.score
-                    else None,
+                    "score": (
+                        float(attempt.score) if attempt and attempt.score else None
+                    ),
                     "passed": attempt.passed if attempt else None,
                     "attemptCount": QuizAttempt.objects.filter(
                         enrollment=e, quiz=q
@@ -3527,9 +3527,9 @@ def student_quiz_results(request, quiz_id: int):
                     "pointsEarned": a.points_earned,
                     "pointsPossible": a.points_possible,
                     "passed": a.passed,
-                    "submittedAt": a.submitted_at.isoformat()
-                    if a.submitted_at
-                    else None,
+                    "submittedAt": (
+                        a.submitted_at.isoformat() if a.submitted_at else None
+                    ),
                 }
                 for a in attempts
             ],
@@ -3800,9 +3800,9 @@ def instructor_assignment_edit(request, assignment_id: int):
                 "description": assignment.description,
                 "instructions": assignment.instructions,
                 "weight": assignment.weight,
-                "dueDate": assignment.due_date.isoformat()
-                if assignment.due_date
-                else None,
+                "dueDate": (
+                    assignment.due_date.isoformat() if assignment.due_date else None
+                ),
                 "allowLateSubmission": assignment.allow_late_submission,
                 "latePenalty": assignment.late_penalty_percent,
                 "submissionType": assignment.submission_type,
@@ -4007,16 +4007,20 @@ def student_assignments(request, program_id: int):
                     "weight": a.weight,
                     "submissionType": a.submission_type,
                     "submitted": a.id in submissions,
-                    "submission": {
-                        "id": submissions[a.id].id,
-                        "status": submissions[a.id].status,
-                        "score": float(submissions[a.id].score)
-                        if submissions[a.id].score
-                        else None,
-                        "submittedAt": submissions[a.id].submitted_at.isoformat(),
-                    }
-                    if a.id in submissions
-                    else None,
+                    "submission": (
+                        {
+                            "id": submissions[a.id].id,
+                            "status": submissions[a.id].status,
+                            "score": (
+                                float(submissions[a.id].score)
+                                if submissions[a.id].score
+                                else None
+                            ),
+                            "submittedAt": submissions[a.id].submitted_at.isoformat(),
+                        }
+                        if a.id in submissions
+                        else None
+                    ),
                 }
                 for a in assignments
             ],
@@ -4062,9 +4066,9 @@ def student_assignment_view(request, assignment_id: int):
                 "title": assignment.title,
                 "description": assignment.description,
                 "instructions": assignment.instructions,
-                "dueDate": assignment.due_date.isoformat()
-                if assignment.due_date
-                else None,
+                "dueDate": (
+                    assignment.due_date.isoformat() if assignment.due_date else None
+                ),
                 "weight": assignment.weight,
                 "submissionType": assignment.submission_type,
                 "allowedFileTypes": assignment.allowed_file_types,
@@ -4072,18 +4076,20 @@ def student_assignment_view(request, assignment_id: int):
                 "latePenalty": assignment.late_penalty_percent,
                 "programName": assignment.program.name,
             },
-            "submission": {
-                "id": existing.id,
-                "status": existing.status,
-                "submittedAt": existing.submitted_at.isoformat(),
-                "isLate": existing.is_late,
-                "fileName": existing.file_name,
-                "textContent": existing.text_content,
-                "score": float(existing.score) if existing.score else None,
-                "feedback": existing.feedback,
-            }
-            if existing
-            else None,
+            "submission": (
+                {
+                    "id": existing.id,
+                    "status": existing.status,
+                    "submittedAt": existing.submitted_at.isoformat(),
+                    "isLate": existing.is_late,
+                    "fileName": existing.file_name,
+                    "textContent": existing.text_content,
+                    "score": float(existing.score) if existing.score else None,
+                    "feedback": existing.feedback,
+                }
+                if existing
+                else None
+            ),
         },
     )
 
@@ -4260,18 +4266,23 @@ def admin_course_approval_queue(request):
                 {
                     "id": p.id,
                     "name": p.name,
-                    "description": p.description[:200] + "..."
-                    if len(p.description) > 200
-                    else p.description,
-                    "submittedAt": p.submitted_at.isoformat()
-                    if p.submitted_at
-                    else None,
-                    "submittedBy": {
-                        "id": p.submitted_by.id,
-                        "name": p.submitted_by.get_full_name() or p.submitted_by.email,
-                    }
-                    if p.submitted_by
-                    else None,
+                    "description": (
+                        p.description[:200] + "..."
+                        if len(p.description) > 200
+                        else p.description
+                    ),
+                    "submittedAt": (
+                        p.submitted_at.isoformat() if p.submitted_at else None
+                    ),
+                    "submittedBy": (
+                        {
+                            "id": p.submitted_by.id,
+                            "name": p.submitted_by.get_full_name()
+                            or p.submitted_by.email,
+                        }
+                        if p.submitted_by
+                        else None
+                    ),
                     "status": p.submission_status,
                 }
                 for p in programs
@@ -4314,17 +4325,19 @@ def admin_course_review(request, program_id: int):
                 "name": program.name,
                 "description": program.description,
                 "status": program.submission_status,
-                "submittedAt": program.submitted_at.isoformat()
-                if program.submitted_at
-                else None,
-                "submittedBy": {
-                    "id": program.submitted_by.id,
-                    "name": program.submitted_by.get_full_name()
-                    or program.submitted_by.email,
-                    "email": program.submitted_by.email,
-                }
-                if program.submitted_by
-                else None,
+                "submittedAt": (
+                    program.submitted_at.isoformat() if program.submitted_at else None
+                ),
+                "submittedBy": (
+                    {
+                        "id": program.submitted_by.id,
+                        "name": program.submitted_by.get_full_name()
+                        or program.submitted_by.email,
+                        "email": program.submitted_by.email,
+                    }
+                    if program.submitted_by
+                    else None
+                ),
                 "isPublished": program.is_published,
             },
             "curriculum": [
@@ -4525,12 +4538,12 @@ def instructor_program_validate(request, program_id: int):
     from django.http import JsonResponse
     from apps.curriculum.services import CoursePublishValidationService
     from apps.progression.models import InstructorAssignment
-    
+
     try:
         program = Program.objects.get(pk=program_id)
     except Program.DoesNotExist:
-        return JsonResponse({'error': 'Program not found'}, status=404)
-    
+        return JsonResponse({"error": "Program not found"}, status=404)
+
     # Verify instructor access
     if (
         not InstructorAssignment.objects.filter(
@@ -4538,12 +4551,12 @@ def instructor_program_validate(request, program_id: int):
         ).exists()
         and not request.user.is_staff
     ):
-        return JsonResponse({'error': 'Permission denied'}, status=403)
-    
+        return JsonResponse({"error": "Permission denied"}, status=403)
+
     # Run validation
     validator = CoursePublishValidationService()
     result = validator.validate_for_publish(program)
-    
+
     return JsonResponse(result)
 
 
@@ -4616,9 +4629,9 @@ def serialize_program_data(program):
     Reduces code duplication across endpoints.
     """
     from apps.platform.models import PlatformSettings
-    
+
     platform_settings = PlatformSettings.get_settings()
-    
+
     return {
         "program": {
             "id": program.id,
@@ -4642,28 +4655,34 @@ def serialize_program_data(program):
             "faq": program.faq,
             "notices": program.notices,
             "customPricing": program.custom_pricing,
-            "blueprint": {
-                "name": program.blueprint.name if program.blueprint else "Default",
-                "hierarchy": program.blueprint.hierarchy_structure
+            "blueprint": (
+                {
+                    "name": program.blueprint.name if program.blueprint else "Default",
+                    "hierarchy": (
+                        program.blueprint.hierarchy_structure
+                        if program.blueprint
+                        else ["Module", "Lesson"]
+                    ),
+                    "featureFlags": (
+                        program.blueprint.get_effective_feature_flags()
+                        if program.blueprint
+                        else {
+                            "quizzes": True,
+                            "assignments": True,
+                            "practicum": False,
+                            "portfolio": False,
+                            "gamification": False,
+                        }
+                    ),
+                    "gradingType": (
+                        (program.blueprint.grading_logic or {}).get("type", "weighted")
+                        if program.blueprint
+                        else "weighted"
+                    ),
+                }
                 if program.blueprint
-                else ["Module", "Lesson"],
-                "featureFlags": program.blueprint.get_effective_feature_flags()
-                if program.blueprint
-                else {
-                    "quizzes": True,
-                    "assignments": True,
-                    "practicum": False,
-                    "portfolio": False,
-                    "gamification": False,
-                },
-                "gradingType": (program.blueprint.grading_logic or {}).get(
-                    "type", "weighted"
-                )
-                if program.blueprint
-                else "weighted",
-            }
-            if program.blueprint
-            else None,
+                else None
+            ),
         },
         "courseLevels": platform_settings.get_course_levels(),
         "platformFeatures": platform_settings.get_default_features_for_mode(),
@@ -4675,27 +4694,38 @@ def build_curriculum_tree(program):
     """
     Build and serialize the complete curriculum tree for a program.
     Returns a nested tree structure with all descendants.
-    
+
     Performance: O(n) time with 1 database query.
     Fetches all nodes in a single query, then builds tree in memory.
     """
     import logging
+
     logger = logging.getLogger(__name__)
-    
+
     from apps.curriculum.models import CurriculumNode
-    
+
     # Single query to fetch ALL nodes for this program
     all_nodes = list(
         CurriculumNode.objects.filter(program=program)
         .order_by("position")
-        .values("id", "parent_id", "title", "node_type", "description", "properties", "position")
+        .values(
+            "id",
+            "parent_id",
+            "title",
+            "node_type",
+            "description",
+            "properties",
+            "position",
+        )
     )
-    
-    logger.info(f"[CURRICULUM_TREE] Fetched {len(all_nodes)} nodes for program {program.id}")
-    
+
+    logger.info(
+        f"[CURRICULUM_TREE] Fetched {len(all_nodes)} nodes for program {program.id}"
+    )
+
     if not all_nodes:
         return []
-    
+
     # Build parent → children mapping in memory
     children_map = {}  # parent_id → list of child nodes
     for node in all_nodes:
@@ -4703,14 +4733,16 @@ def build_curriculum_tree(program):
         if parent_id not in children_map:
             children_map[parent_id] = []
         children_map[parent_id].append(node)
-    
+
     def serialize_node(node, depth=0):
         """Recursively serialize a node and its children from memory."""
         node_id = node["id"]
         children = children_map.get(node_id, [])
-        
-        logger.debug(f"[CURRICULUM_TREE] {'  ' * depth}Node {node_id}: '{node['title']}' with {len(children)} children")
-        
+
+        logger.debug(
+            f"[CURRICULUM_TREE] {'  ' * depth}Node {node_id}: '{node['title']}' with {len(children)} children"
+        )
+
         return {
             "id": node_id,
             "title": node["title"],
@@ -4720,12 +4752,12 @@ def build_curriculum_tree(program):
             "position": node["position"],
             "children": [serialize_node(child, depth + 1) for child in children],
         }
-    
+
     # Root nodes have parent_id = None
     root_nodes = children_map.get(None, [])
-    
+
     logger.info(f"[CURRICULUM_TREE] Tree complete: {len(root_nodes)} root nodes")
-    
+
     return [serialize_node(n) for n in root_nodes]
 
 
@@ -4760,18 +4792,22 @@ def instructor_program_manage(request, pk: int):
     # Serialize program data using shared helper
     response_data = serialize_program_data(program)
     response_data["curriculum"] = curriculum
-    
+
     # Add question library data as Inertia props (no REST API needed)
     from apps.assessments.models import QuestionBankEntry
     from apps.assessments.serializers import QuestionSerializer
-    library_entries = QuestionBankEntry.objects.filter(
-        bank__program=program
-    ).select_related('bank', 'question').prefetch_related(
-        'question__options',
-        'question__matching_pairs',
-        'question__gap_answers',
-    ).order_by('-created_at')[:100]
-    
+
+    library_entries = (
+        QuestionBankEntry.objects.filter(bank__program=program)
+        .select_related("bank", "question")
+        .prefetch_related(
+            "question__options",
+            "question__matching_pairs",
+            "question__gap_answers",
+        )
+        .order_by("-created_at")[:100]
+    )
+
     response_data["questionLibrary"] = [
         {
             "id": entry.id,
@@ -4782,10 +4818,10 @@ def instructor_program_manage(request, pk: int):
         }
         for entry in library_entries
     ]
-    
+
     # Get unique categories (must query before slicing)
     all_entries_qs = QuestionBankEntry.objects.filter(bank__program=program)
-    categories = list(all_entries_qs.values_list('category', flat=True).distinct())
+    categories = list(all_entries_qs.values_list("category", flat=True).distinct())
     response_data["questionCategories"] = [c for c in categories if c]
 
     return render(request, "Instructor/Program/Manage", response_data)
@@ -4819,21 +4855,23 @@ def instructor_node_create(request, program_id: int):
 
     from django.shortcuts import get_object_or_404
     from django.http import JsonResponse
-    
-    program = get_object_or_404(Program.objects.select_related("blueprint"), pk=program_id)
-    
+
+    program = get_object_or_404(
+        Program.objects.select_related("blueprint"), pk=program_id
+    )
+
     # Error proofing: Validate blueprint configuration at use time
     if not program.blueprint:
         messages.error(request, "Program must have a blueprint configured")
         return redirect("core:instructor.program_manage", pk=program_id)
-    
+
     blueprint_structure = program.blueprint.hierarchy_structure
-    
+
     # Error proofing: Validate blueprint has exactly 2 tiers (Container, Content)
     if len(blueprint_structure) != 2:
         messages.error(
             request,
-            f"Blueprint must define exactly 2 hierarchy levels. Found {len(blueprint_structure)}: {blueprint_structure}"
+            f"Blueprint must define exactly 2 hierarchy levels. Found {len(blueprint_structure)}: {blueprint_structure}",
         )
         return redirect("core:instructor.program_manage", pk=program_id)
 
@@ -4849,7 +4887,7 @@ def instructor_node_create(request, program_id: int):
             current_depth = parent.get_depth()
             if current_depth + 1 >= len(blueprint_structure):
                 raise ValueError("Maximum nesting depth reached")
-            
+
             # All children use the blueprint hierarchy structure
             # Lesson types (video, text, quiz, assignment, live) are differentiated by properties.lesson_type
             node_type = blueprint_structure[current_depth + 1]
@@ -4860,13 +4898,13 @@ def instructor_node_create(request, program_id: int):
         # Enforce two-tier builder taxonomy validation (Level is admin-set, not in tree)
         # Reuse current_depth from line 4728 to avoid redundant get_depth() call
         depth = current_depth + 1 if parent else 0
-        
+
         if depth > 1:
             raise ValueError(
                 f"Cannot create {blueprint_structure[depth]} at depth {depth}. "
                 f"Maximum depth is 1. Hierarchy: {blueprint_structure[0]} → {blueprint_structure[1]}"
             )
-        
+
         # Validate parent-child relationships
         if parent and depth > 0 and parent.get_depth() != 0:
             raise ValueError(
@@ -4892,24 +4930,24 @@ def instructor_node_create(request, program_id: int):
         )
 
         messages.success(request, f"{node_type} '{title}' created successfully")
-        
+
         # Build updated curriculum tree and return as Inertia response
         curriculum = build_curriculum_tree(program)
-        
+
         # Serialize program data using shared helper
         response_data = serialize_program_data(program)
         response_data["curriculum"] = curriculum
-        
+
         return render(request, "Instructor/Program/Manage", response_data)
     except Exception as e:
         import traceback
         import logging
+
         logger = logging.getLogger(__name__)
         logger.error(f"Node creation failed: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         messages.error(request, str(e))
         return redirect("core:instructor.program_manage", pk=program_id)
-
 
 
 def _sync_quiz_questions(node, questions_data: list):
@@ -5036,7 +5074,9 @@ def _sync_quiz_questions(node, questions_data: list):
         elif backend_type == "mcq_multi":
             answer_data = {
                 "options": q_data.get("options", []),
-                "correct_indices": q_data.get("correct_indices", q_data.get("correctAnswers", [])),
+                "correct_indices": q_data.get(
+                    "correct_indices", q_data.get("correctAnswers", [])
+                ),
             }
         elif backend_type == "true_false":
             answer_data = {"correct": q_data.get("correct", True)}
@@ -5079,7 +5119,9 @@ def _sync_quiz_questions(node, questions_data: list):
                         is_correct=(
                             (opt_idx == q_data.get("correct", 0))
                             if backend_type == "mcq"
-                            else (opt_idx in set(answer_data.get("correct_indices", [])))
+                            else (
+                                opt_idx in set(answer_data.get("correct_indices", []))
+                            )
                         ),
                         position=opt_idx,
                     )
@@ -5134,7 +5176,9 @@ def _sync_quiz_questions(node, questions_data: list):
                         is_correct=(
                             (opt_idx == q_data.get("correct", 0))
                             if backend_type == "mcq"
-                            else (opt_idx in set(answer_data.get("correct_indices", [])))
+                            else (
+                                opt_idx in set(answer_data.get("correct_indices", []))
+                            )
                         ),
                         position=opt_idx,
                     )
@@ -5437,7 +5481,11 @@ def instructor_quiz_image_upload(request, node_id: int):
     )
     os.makedirs(upload_dir, exist_ok=True)
 
-    ext = uploaded_file.name.rsplit(".", 1)[-1].lower() if "." in uploaded_file.name else ""
+    ext = (
+        uploaded_file.name.rsplit(".", 1)[-1].lower()
+        if "." in uploaded_file.name
+        else ""
+    )
     unique_name = f"{uuid.uuid4().hex}.{ext}" if ext else uuid.uuid4().hex
     file_path = os.path.join(upload_dir, unique_name)
 
