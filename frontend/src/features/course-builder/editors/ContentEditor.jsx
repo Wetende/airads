@@ -34,11 +34,13 @@ import {
 import RichTextEditor from "@/components/RichTextEditor";
 import FileUploader from "@/components/FileUploader";
 import GamificationSettings from "../components/GamificationSettings";
+import DocumentPrimaryUploader from "../components/DocumentPrimaryUploader";
 import {
     Article as ArticleIcon,
     OndemandVideo as VideoIcon,
     VideoCameraFront as ZoomIcon,
     Assignment as AssignmentIcon,
+    PictureAsPdf as DocumentIcon,
     InfoOutlined as InfoIcon,
     Add as AddIcon,
     PushPin as PinIcon,
@@ -65,6 +67,15 @@ export default function ContentEditor({ node, onSave, blueprint }) {
     const [startDate, setStartDate] = useState("");
     const [startTime, setStartTime] = useState("");
     const [files, setFiles] = useState(node.properties?.files || []);
+    const [documentData, setDocumentData] = useState(
+        node.properties?.document || null,
+    );
+    const [strictCompletion, setStrictCompletion] = useState(
+        typeof node.properties?.document?.strict_completion === "boolean"
+            ? node.properties.document.strict_completion
+            : true,
+    );
+    const [documentUploadError, setDocumentUploadError] = useState("");
 
     // Video specific
     const [videoSource, setVideoSource] = useState(
@@ -115,7 +126,7 @@ export default function ContentEditor({ node, onSave, blueprint }) {
         node.id.toString().startsWith("temp_") ||
         node.title === "Untitled Lesson";
 
-    const lessonType = node.properties?.lesson_type || "text";
+    const lessonType = (node.properties?.lesson_type || "text").toLowerCase();
 
     // Mark a field as touched
     const handleBlur = (fieldName) => {
@@ -124,7 +135,7 @@ export default function ContentEditor({ node, onSave, blueprint }) {
 
     // Mark all fields as touched (used on submit attempt)
     const touchAllFields = () => {
-        setTouched({
+        const nextTouched = {
             title: true,
             duration: true,
             description: true,
@@ -135,7 +146,11 @@ export default function ContentEditor({ node, onSave, blueprint }) {
             startDate: true,
             startTime: true,
             timezone: true,
-        });
+        };
+        if (lessonType === "document") {
+            nextTouched.document = true;
+        }
+        setTouched(nextTouched);
     };
 
     // Get error for a field (only if touched)
@@ -165,7 +180,7 @@ export default function ContentEditor({ node, onSave, blueprint }) {
         }
 
         const contentText = content.replace(/<[^>]*>/g, "");
-        if (!contentText || contentText.length < 200) {
+        if (lessonType !== "document" && (!contentText || contentText.length < 200)) {
             newErrors.content = `Content must be at least 200 characters (${contentText.length}/200)`;
         }
 
@@ -198,6 +213,31 @@ export default function ContentEditor({ node, onSave, blueprint }) {
             }
         }
 
+        if (lessonType === "document") {
+            if (!documentData?.original_url) {
+                newErrors.document =
+                    "Primary document is required (PDF, DOCX, or PPTX)";
+            } else {
+                const conversionStatus = (
+                    documentData?.conversion_status || ""
+                ).toLowerCase();
+                const pageCount = Number(documentData?.page_count || 0);
+                if (
+                    strictCompletion &&
+                    (conversionStatus !== "ready" ||
+                        !documentData?.viewer_pdf_url ||
+                        pageCount <= 0)
+                ) {
+                    newErrors.document =
+                        "Wait for document conversion to finish before saving strict mode.";
+                }
+            }
+        }
+
+        if (documentUploadError) {
+            newErrors.document = documentUploadError;
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -214,7 +254,7 @@ export default function ContentEditor({ node, onSave, blueprint }) {
             return false;
         if (!duration || duration.trim() === "") return false;
         if (descText.length < 50) return false;
-        if (contentText.length < 200) return false;
+        if (lessonType !== "document" && contentText.length < 200) return false;
 
         if (lessonType === "video") {
             if (!videoSource) return false;
@@ -225,6 +265,23 @@ export default function ContentEditor({ node, onSave, blueprint }) {
             if (!meetingPassword || meetingPassword.length < 6) return false;
             if (!startDate || !startTime || !timezone) return false;
         }
+
+        if (lessonType === "document") {
+            if (!documentData?.original_url) return false;
+            if (strictCompletion) {
+                const status = (documentData?.conversion_status || "").toLowerCase();
+                const pageCount = Number(documentData?.page_count || 0);
+                if (
+                    status !== "ready" ||
+                    !documentData?.viewer_pdf_url ||
+                    pageCount <= 0
+                ) {
+                    return false;
+                }
+            }
+        }
+
+        if (documentUploadError) return false;
 
         return true;
     };
@@ -239,6 +296,14 @@ export default function ContentEditor({ node, onSave, blueprint }) {
             });
             return;
         }
+
+        const documentPayload =
+            lessonType === "document"
+                ? {
+                      ...(documentData || {}),
+                      strict_completion: strictCompletion,
+                  }
+                : undefined;
 
         onSave(node.id, {
             title,
@@ -259,6 +324,9 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                 participant_video: participantVideo,
                 mute_upon_entry: muteUponEntry,
                 require_auth: requireAuth,
+                ...(lessonType === "document" && {
+                    document: documentPayload,
+                }),
                 ...(featureFlags.gamification && {
                     gamification: gamificationSettings,
                 }),
@@ -281,6 +349,8 @@ export default function ContentEditor({ node, onSave, blueprint }) {
         switch (lessonType) {
             case "video":
                 return { icon: <VideoIcon />, label: "Video lesson" };
+            case "document":
+                return { icon: <DocumentIcon />, label: "Document lesson" };
             case "live_class":
                 return { icon: <ZoomIcon />, label: "Live class" };
             case "assignment":
@@ -781,33 +851,101 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                         </Typography>
                     </Box>
 
+                    {/* Document Lesson - Primary File */}
+                    {lessonType === "document" && (
+                        <Box sx={{ mt: 2 }}>
+                            <Typography
+                                variant="body2"
+                                color={
+                                    getFieldError("document")
+                                        ? "error"
+                                        : "text.secondary"
+                                }
+                                sx={{ mb: 1, fontWeight: "bold" }}
+                            >
+                                Primary document *
+                            </Typography>
+                            <DocumentPrimaryUploader
+                                nodeId={node.id}
+                                documentData={documentData}
+                                onDocumentChange={(nextDocument) => {
+                                    setDocumentData(nextDocument);
+                                    setDocumentUploadError("");
+                                    setTouched((prev) => ({
+                                        ...prev,
+                                        document: true,
+                                    }));
+                                }}
+                                onError={(message) => {
+                                    setDocumentUploadError(message || "");
+                                    setTouched((prev) => ({
+                                        ...prev,
+                                        document: true,
+                                    }));
+                                }}
+                            />
+                            {getFieldError("document") && (
+                                <FormHelperText error>
+                                    {getFieldError("document")}
+                                </FormHelperText>
+                            )}
+                            <FormControlLabel
+                                sx={{ mt: 1 }}
+                                control={
+                                    <Switch
+                                        checked={strictCompletion}
+                                        onChange={(e) =>
+                                            setStrictCompletion(
+                                                e.target.checked,
+                                            )
+                                        }
+                                    />
+                                }
+                                label={
+                                    <Typography variant="body2">
+                                        Prevent complete until fully read
+                                    </Typography>
+                                }
+                            />
+                        </Box>
+                    )}
+
                     {/* Rich Text Editor - Lesson Content */}
                     <Box sx={{ mt: 2 }} onBlur={() => handleBlur("content")}>
                         <Typography
                             variant="body2"
                             color={
+                                lessonType !== "document" &&
                                 getFieldError("content")
                                     ? "error"
                                     : "text.secondary"
                             }
                             sx={{ mb: 1, fontWeight: "bold" }}
                         >
-                            Lesson content *
+                            {lessonType === "document"
+                                ? "Lesson content (optional)"
+                                : "Lesson content *"}
                         </Typography>
                         <RichTextEditor
                             value={content}
                             onChange={setContent}
-                            placeholder="Write your lesson content here (min 200 characters)..."
+                            placeholder={
+                                lessonType === "document"
+                                    ? "Optional notes for this document lesson..."
+                                    : "Write your lesson content here (min 200 characters)..."
+                            }
                             minHeight={250}
                         />
-                        {getFieldError("content") && (
+                        {lessonType !== "document" &&
+                            getFieldError("content") && (
                             <FormHelperText error>
                                 {getFieldError("content")}
                             </FormHelperText>
-                        )}
+                            )}
                         <Typography variant="caption" color="text.secondary">
-                            {content.replace(/<[^>]*>/g, "").length}/200 minimum
-                            characters
+                            {lessonType === "document"
+                                ? `${content.replace(/<[^>]*>/g, "").length} characters`
+                                : `${content.replace(/<[^>]*>/g, "").length}/200 minimum characters`}
                         </Typography>
                     </Box>
 

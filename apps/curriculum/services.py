@@ -1,6 +1,7 @@
 """
 Curriculum services - Node properties handling and validation.
 """
+import os
 from typing import Dict, Any
 from django.conf import settings
 
@@ -184,6 +185,165 @@ class CoursePublishValidationService:
                 })
         
         details['incomplete_assignments'] = incomplete_assignments
+
+        # Check document lessons (primary document + strict tracking readiness)
+        media_root_abs = os.path.abspath(settings.MEDIA_ROOT)
+        document_lessons = []
+        invalid_document_lessons = []
+        for lesson in nodes:
+            lesson_props = lesson.properties if isinstance(lesson.properties, dict) else {}
+            lesson_type = str(lesson_props.get("lesson_type") or "").lower()
+            if lesson_type != "document":
+                continue
+
+            document_lessons.append({"id": lesson.id, "title": lesson.title})
+            document = lesson_props.get("document")
+            if not isinstance(document, dict):
+                errors.append(
+                    {
+                        "type": "missing_document",
+                        "message": "Document lesson has no primary document uploaded",
+                        "node_id": lesson.id,
+                        "node_title": lesson.title,
+                    }
+                )
+                invalid_document_lessons.append(
+                    {"id": lesson.id, "title": lesson.title, "reason": "missing_document"}
+                )
+                continue
+
+            primary_document_url = str(document.get("original_url") or "").strip()
+            primary_document_path = str(document.get("original_path") or "").strip()
+            if not primary_document_url and not primary_document_path:
+                errors.append(
+                    {
+                        "type": "missing_document",
+                        "message": "Document lesson has no primary document uploaded",
+                        "node_id": lesson.id,
+                        "node_title": lesson.title,
+                    }
+                )
+                invalid_document_lessons.append(
+                    {
+                        "id": lesson.id,
+                        "title": lesson.title,
+                        "reason": "missing_primary_document",
+                    }
+                )
+                continue
+
+            strict_value = document.get("strict_completion", True)
+            if isinstance(strict_value, str):
+                strict_completion = strict_value.strip().lower() in {"true", "1", "yes", "on"}
+            else:
+                strict_completion = bool(strict_value)
+            if not strict_completion:
+                continue
+
+            conversion_status = str(document.get("conversion_status") or "").lower()
+            viewer_pdf_path = str(document.get("viewer_pdf_path") or "").strip()
+            page_count_raw = document.get("page_count")
+            try:
+                page_count = int(page_count_raw)
+            except (TypeError, ValueError):
+                page_count = 0
+
+            if conversion_status != "ready":
+                errors.append(
+                    {
+                        "type": "document_conversion_not_ready",
+                        "message": "Document lesson conversion is not ready for strict completion",
+                        "node_id": lesson.id,
+                        "node_title": lesson.title,
+                    }
+                )
+                invalid_document_lessons.append(
+                    {
+                        "id": lesson.id,
+                        "title": lesson.title,
+                        "reason": "conversion_not_ready",
+                    }
+                )
+
+            if not viewer_pdf_path:
+                errors.append(
+                    {
+                        "type": "document_pdf_missing",
+                        "message": "Document lesson is missing a tracked PDF file",
+                        "node_id": lesson.id,
+                        "node_title": lesson.title,
+                    }
+                )
+                invalid_document_lessons.append(
+                    {
+                        "id": lesson.id,
+                        "title": lesson.title,
+                        "reason": "viewer_pdf_missing",
+                    }
+                )
+            else:
+                pdf_abs_path = os.path.abspath(
+                    os.path.join(settings.MEDIA_ROOT, viewer_pdf_path.lstrip("/"))
+                )
+                try:
+                    pdf_in_media_root = (
+                        os.path.commonpath([media_root_abs, pdf_abs_path]) == media_root_abs
+                    )
+                except ValueError:
+                    pdf_in_media_root = False
+
+                if not pdf_in_media_root:
+                    errors.append(
+                        {
+                            "type": "document_pdf_invalid_path",
+                            "message": "Document lesson tracked PDF path is outside media storage",
+                            "node_id": lesson.id,
+                            "node_title": lesson.title,
+                        }
+                    )
+                    invalid_document_lessons.append(
+                        {
+                            "id": lesson.id,
+                            "title": lesson.title,
+                            "reason": "viewer_pdf_path_outside_media_root",
+                        }
+                    )
+                elif not os.path.exists(pdf_abs_path):
+                    errors.append(
+                        {
+                            "type": "document_pdf_not_found",
+                            "message": "Document lesson tracked PDF file is missing on disk",
+                            "node_id": lesson.id,
+                            "node_title": lesson.title,
+                        }
+                    )
+                    invalid_document_lessons.append(
+                        {
+                            "id": lesson.id,
+                            "title": lesson.title,
+                            "reason": "viewer_pdf_not_found",
+                        }
+                    )
+
+            if page_count <= 0:
+                errors.append(
+                    {
+                        "type": "document_page_count_invalid",
+                        "message": "Document lesson has invalid page count for strict completion",
+                        "node_id": lesson.id,
+                        "node_title": lesson.title,
+                    }
+                )
+                invalid_document_lessons.append(
+                    {
+                        "id": lesson.id,
+                        "title": lesson.title,
+                        "reason": "invalid_page_count",
+                    }
+                )
+
+        details["document_lessons"] = document_lessons
+        details["invalid_document_lessons"] = invalid_document_lessons
         
         return {
             'is_valid': len(errors) == 0,
@@ -203,5 +363,3 @@ class CoursePublishValidationService:
         else:
             first_error = result['errors'][0]
             return f"✗ Not ready: {first_error['message']}"
-
-

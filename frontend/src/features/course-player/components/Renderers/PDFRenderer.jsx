@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import {
     Box,
@@ -57,11 +57,28 @@ export default function PDFRenderer({
     const [error, setError] = useState(null);
 
     // Document loaded callback
-    const onDocumentLoadSuccess = useCallback(({ numPages }) => {
-        setNumPages(numPages);
-        setLoading(false);
-        setError(null);
-    }, []);
+    const onDocumentLoadSuccess = useCallback(
+        ({ numPages }) => {
+            setNumPages(numPages);
+            setLoading(false);
+            setError(null);
+
+            if (onProgress) {
+                onProgress(1, numPages);
+            }
+
+            if (
+                !completionFiredRef.current &&
+                requiredPages > 0 &&
+                requiredPages <= 1 &&
+                onComplete
+            ) {
+                completionFiredRef.current = true;
+                onComplete();
+            }
+        },
+        [onComplete, onProgress, requiredPages],
+    );
 
     // Document load error
     const onDocumentLoadError = useCallback((error) => {
@@ -69,6 +86,16 @@ export default function PDFRenderer({
         setError("Failed to load PDF document");
         setLoading(false);
     }, []);
+
+    useEffect(() => {
+        setNumPages(null);
+        setPageNumber(1);
+        setScale(1.0);
+        setPagesViewed(new Set([1]));
+        completionFiredRef.current = false;
+        setLoading(true);
+        setError(null);
+    }, [url, requiredPages]);
 
     // Track page view
     const trackPageView = useCallback(

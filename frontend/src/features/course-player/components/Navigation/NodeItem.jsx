@@ -14,6 +14,7 @@ import {
     Description as TextIcon,
     Quiz as QuizIcon,
     Assignment as AssignmentIcon,
+    PictureAsPdf as DocumentIcon,
     KeyboardArrowUp,
     KeyboardArrowDown,
     CheckCircle as CheckIcon,
@@ -64,6 +65,10 @@ const NodeItem = ({
             case "assignment":
                 return (
                     <AssignmentIcon sx={{ color: "info.main", fontSize: 20 }} />
+                );
+            case "document":
+                return (
+                    <DocumentIcon sx={{ color: "error.main", fontSize: 20 }} />
                 );
             default:
                 return (

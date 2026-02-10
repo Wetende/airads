@@ -8,6 +8,7 @@ import VideoRenderer from "../Renderers/VideoRenderer";
 import TextRenderer from "../Renderers/TextRenderer";
 import QuizRenderer from "../Renderers/QuizRenderer";
 import AssignmentRenderer from "../Renderers/AssignmentRenderer";
+import DocumentLessonRenderer from "../Renderers/DocumentLessonRenderer";
 
 const Whiteboard = ({
     node,
@@ -19,6 +20,7 @@ const Whiteboard = ({
 }) => {
     const nodeId = node?.id;
     const [videoRequirementMet, setVideoRequirementMet] = useState(false);
+    const [documentRequirementMet, setDocumentRequirementMet] = useState(false);
     const completionInFlightRef = useRef(false);
 
     const handleNavigate = (destination) => {
@@ -51,8 +53,13 @@ const Whiteboard = ({
         setVideoRequirementMet(true);
     }, []);
 
+    const handleDocumentRequirementMet = useCallback(() => {
+        setDocumentRequirementMet(true);
+    }, []);
+
     useEffect(() => {
         setVideoRequirementMet(false);
+        setDocumentRequirementMet(false);
         completionInFlightRef.current = false;
     }, [nodeId]);
 
@@ -92,6 +99,33 @@ const Whiteboard = ({
                 b.data?.required_progress > 0,
         );
         return videoBlock?.data?.required_progress || 0;
+    })();
+
+    const documentRequirement = (() => {
+        if (!node || hasBlocks) {
+            return { enabled: false, pageCount: 0 };
+        }
+
+        const lessonType = (
+            node.properties?.lesson_type ||
+            node.lessonType ||
+            ""
+        ).toLowerCase();
+        if (lessonType !== "document") {
+            return { enabled: false, pageCount: 0 };
+        }
+
+        const document = node.properties?.document || {};
+        const pageCount = Number(document.page_count || 0);
+        const strictCompletion =
+            typeof document.strict_completion === "boolean"
+                ? document.strict_completion
+                : true;
+
+        return {
+            enabled: strictCompletion && pageCount > 0,
+            pageCount,
+        };
     })();
 
     const renderBlocks = () => {
@@ -155,7 +189,17 @@ const Whiteboard = ({
             );
         }
 
-        // 4. Text (Default) - render HTML content
+        // 4. Document lesson
+        if (lessonType === "document") {
+            return (
+                <DocumentLessonRenderer
+                    node={node}
+                    onRequirementMet={handleDocumentRequirementMet}
+                />
+            );
+        }
+
+        // 5. Text (Default) - render HTML content
         return (
             <TextRenderer
                 title={node.title}
@@ -166,11 +210,27 @@ const Whiteboard = ({
 
     // Determine if completion is allowed
     const canComplete =
-        !hasVideoRequirement || videoRequirementMet || isCompleted;
-    const completionTooltip =
-        hasVideoRequirement && !videoRequirementMet && !isCompleted
-            ? `Watch at least ${requiredProgress}% of the video to mark complete`
-            : "";
+        isCompleted ||
+        ((!hasVideoRequirement || videoRequirementMet) &&
+            (!documentRequirement.enabled || documentRequirementMet));
+    const completionTooltip = (() => {
+        if (isCompleted) return "";
+        if (
+            hasVideoRequirement &&
+            !videoRequirementMet &&
+            documentRequirement.enabled &&
+            !documentRequirementMet
+        ) {
+            return `Watch at least ${requiredProgress}% of the video and read all ${documentRequirement.pageCount} pages before marking complete`;
+        }
+        if (hasVideoRequirement && !videoRequirementMet) {
+            return `Watch at least ${requiredProgress}% of the video to mark complete`;
+        }
+        if (documentRequirement.enabled && !documentRequirementMet) {
+            return `Read all ${documentRequirement.pageCount} pages before marking complete`;
+        }
+        return "";
+    })();
 
     if (!node) return null;
 

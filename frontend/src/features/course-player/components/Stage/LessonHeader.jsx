@@ -15,6 +15,8 @@ const LessonHeader = ({ title, type, node }) => {
                 return 'Assignment';
             case 'practicum':
                 return 'Practicum';
+            case 'document':
+                return 'Document lesson';
             default:
                 return 'Text lesson';
         }

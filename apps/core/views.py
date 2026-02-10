@@ -5315,9 +5315,42 @@ def instructor_node_update(request, node_id: int):
     # Handle properties update (e.g. video URL, duration) if passed
     if "properties" in data:
         # Shallow merge
-        props = node.properties or {}
-        props.update(data["properties"])
+        props = node.properties.copy() if isinstance(node.properties, dict) else {}
+        incoming_props = data.get("properties") or {}
+        if isinstance(incoming_props, dict):
+            props.update(incoming_props)
         node.properties = props
+
+    node_props = node.properties if isinstance(node.properties, dict) else {}
+    updated_lesson_type = str(node_props.get("lesson_type") or "").lower()
+    if updated_lesson_type == "document":
+        document = node_props.get("document")
+        if not isinstance(document, dict):
+            document = {}
+
+        if not str(document.get("original_url") or "").strip():
+            messages.error(
+                request,
+                "Document lesson requires a primary document upload before saving.",
+            )
+            return redirect("core:instructor.program_manage", pk=node.program_id)
+
+        strict_completion = _coerce_bool(document.get("strict_completion"), True)
+        if strict_completion:
+            status = str(document.get("conversion_status") or "").lower()
+            viewer_pdf_url = str(document.get("viewer_pdf_url") or "").strip()
+            page_count = document.get("page_count")
+            try:
+                page_count = int(page_count)
+            except (TypeError, ValueError):
+                page_count = 0
+
+            if status != "ready" or not viewer_pdf_url or page_count <= 0:
+                messages.error(
+                    request,
+                    "Document lesson strict mode requires a converted document before saving.",
+                )
+                return redirect("core:instructor.program_manage", pk=node.program_id)
 
     node.save()
 
@@ -5635,6 +5668,301 @@ def instructor_lesson_file_delete(request, node_id: int):
 
     # Update node
     node.properties["files"] = updated_files
+    node.save(update_fields=["properties"])
+
+    return JsonResponse({"success": True})
+
+
+def _delete_lesson_document_files(document: dict, exclude_paths=None):
+    """Delete stored primary lesson document files (original and converted)."""
+    import os
+
+    from django.conf import settings
+
+    exclude = set(exclude_paths or [])
+    media_root = os.path.abspath(settings.MEDIA_ROOT)
+
+    for key in ("original_path", "viewer_pdf_path"):
+        rel_path = str((document or {}).get(key) or "").strip().lstrip("/")
+        if not rel_path or rel_path in exclude:
+            continue
+
+        abs_path = os.path.abspath(os.path.join(media_root, rel_path))
+        if not abs_path.startswith(media_root + os.sep):
+            continue
+
+        if os.path.exists(abs_path):
+            os.remove(abs_path)
+
+
+def _coerce_bool(value, default=False):
+    """Coerce mixed bool/string values to boolean."""
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off", ""}:
+            return False
+    return bool(value)
+
+
+def _extract_pdf_page_count(pdf_path: str) -> int:
+    """Return total page count for a PDF file."""
+    import fitz
+
+    doc = fitz.open(pdf_path)
+    try:
+        return int(doc.page_count or 0)
+    finally:
+        doc.close()
+
+
+def _convert_office_document_to_pdf(
+    input_path: str, output_dir: str, timeout_seconds: int = 120
+):
+    """Convert DOCX/PPTX to PDF using headless LibreOffice."""
+    import os
+    import subprocess
+    import time
+
+    started = time.monotonic()
+    command = [
+        "soffice",
+        "--headless",
+        "--convert-to",
+        "pdf",
+        "--outdir",
+        output_dir,
+        input_path,
+    ]
+    result = subprocess.run(
+        command,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=timeout_seconds,
+    )
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "").strip()
+        raise RuntimeError(detail or "LibreOffice conversion failed")
+
+    stem = os.path.splitext(os.path.basename(input_path))[0]
+    converted_path = os.path.join(output_dir, f"{stem}.pdf")
+    if not os.path.exists(converted_path):
+        raise RuntimeError("Converted PDF file was not produced")
+
+    return converted_path, time.monotonic() - started
+
+
+@login_required
+def instructor_lesson_document_upload(request, node_id: int):
+    """
+    Upload/replace the primary document for a document lesson.
+    Supports PDF, DOCX, PPTX; DOCX/PPTX are converted to tracked PDF.
+    """
+    import logging
+    import os
+    import uuid
+
+    from django.conf import settings
+    from django.db import transaction
+    from django.http import JsonResponse
+
+    logger = logging.getLogger(__name__)
+
+    if not is_instructor(request.user) or request.method != "POST":
+        return JsonResponse({"error": "Permission denied"}, status=403)
+
+    from apps.curriculum.models import CurriculumNode
+
+    program_ids = get_instructor_program_ids(request.user)
+    try:
+        node = CurriculumNode.objects.get(pk=node_id, program_id__in=program_ids)
+    except CurriculumNode.DoesNotExist:
+        return JsonResponse({"error": "Node not found"}, status=404)
+
+    lesson_type = str((node.properties or {}).get("lesson_type") or "").lower()
+    if lesson_type != "document":
+        return JsonResponse(
+            {"error": "Primary document uploads are only allowed for Document lessons"},
+            status=400,
+        )
+
+    if "file" not in request.FILES:
+        return JsonResponse({"error": "No file provided"}, status=400)
+
+    uploaded_file = request.FILES["file"]
+    file_name = uploaded_file.name or ""
+    ext = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
+
+    allowed_extensions = {"pdf", "docx", "pptx"}
+    if ext not in allowed_extensions:
+        return JsonResponse(
+            {"error": "Only PDF, DOCX, and PPTX files are supported"},
+            status=400,
+        )
+
+    mime = str(uploaded_file.content_type or "").lower()
+    allowed_mimes = {
+        "pdf": {"application/pdf"},
+        "docx": {
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword",
+        },
+        "pptx": {
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.ms-powerpoint",
+        },
+    }
+    if (
+        mime
+        and mime not in allowed_mimes.get(ext, set())
+        and mime not in {"application/octet-stream", "binary/octet-stream"}
+    ):
+        return JsonResponse(
+            {"error": f"Unexpected content type '{mime}' for .{ext} file"},
+            status=400,
+        )
+
+    upload_dir = os.path.join(
+        settings.MEDIA_ROOT, "lesson_documents", str(node.program_id), str(node_id)
+    )
+    os.makedirs(upload_dir, exist_ok=True)
+
+    unique_name = f"{uuid.uuid4().hex}.{ext}"
+    original_abs_path = os.path.join(upload_dir, unique_name)
+    with open(original_abs_path, "wb+") as dest:
+        for chunk in uploaded_file.chunks():
+            dest.write(chunk)
+
+    relative_original_path = (
+        f"lesson_documents/{node.program_id}/{node_id}/{unique_name}"
+    )
+    original_url = f"{settings.MEDIA_URL}{relative_original_path}"
+
+    old_document = (
+        node.properties.get("document")
+        if isinstance(node.properties, dict)
+        and isinstance(node.properties.get("document"), dict)
+        else None
+    )
+    strict_completion = _coerce_bool(
+        (old_document or {}).get("strict_completion"),
+        True,
+    )
+
+    viewer_abs_path = original_abs_path
+    viewer_relative_path = relative_original_path
+    viewer_url = original_url
+    converted_at = timezone.now()
+
+    try:
+        if ext in {"docx", "pptx"}:
+            converted_abs_path, duration_seconds = _convert_office_document_to_pdf(
+                original_abs_path,
+                upload_dir,
+            )
+            viewer_abs_path = converted_abs_path
+            viewer_name = os.path.basename(converted_abs_path)
+            viewer_relative_path = (
+                f"lesson_documents/{node.program_id}/{node_id}/{viewer_name}"
+            )
+            viewer_url = f"{settings.MEDIA_URL}{viewer_relative_path}"
+            converted_at = timezone.now()
+            logger.info(
+                "Document conversion succeeded for node_id=%s in %.2fs",
+                node_id,
+                duration_seconds,
+            )
+
+        page_count = _extract_pdf_page_count(viewer_abs_path)
+        if page_count <= 0:
+            raise RuntimeError("Converted PDF has no readable pages")
+
+        fallback_mimes = {
+            "pdf": "application/pdf",
+            "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        }
+        document_entry = {
+            "id": uuid.uuid4().hex[:12],
+            "original_name": uploaded_file.name,
+            "original_ext": ext,
+            "original_mime": uploaded_file.content_type or fallback_mimes.get(ext),
+            "size": uploaded_file.size,
+            "original_url": original_url,
+            "original_path": relative_original_path,
+            "viewer_pdf_url": viewer_url,
+            "viewer_pdf_path": viewer_relative_path,
+            "page_count": page_count,
+            "conversion_status": "ready",
+            "conversion_error": "",
+            "strict_completion": strict_completion,
+            "converted_at": converted_at.isoformat(),
+        }
+    except Exception as exc:
+        logger.exception("Document processing failed for node_id=%s", node_id)
+        _delete_lesson_document_files(
+            {
+                "original_path": relative_original_path,
+                "viewer_pdf_path": viewer_relative_path,
+            }
+        )
+        return JsonResponse(
+            {"error": f"Document processing failed: {str(exc)}"},
+            status=400,
+        )
+
+    with transaction.atomic():
+        props = node.properties.copy() if isinstance(node.properties, dict) else {}
+        props["document"] = document_entry
+        node.properties = props
+        node.save(update_fields=["properties"])
+
+    if old_document:
+        _delete_lesson_document_files(
+            old_document,
+            exclude_paths={relative_original_path, viewer_relative_path},
+        )
+
+    return JsonResponse({"success": True, "document": document_entry})
+
+
+@login_required
+def instructor_lesson_document_delete(request, node_id: int):
+    """Delete the primary document from a document lesson."""
+    from django.http import JsonResponse
+
+    if not is_instructor(request.user) or request.method != "POST":
+        return JsonResponse({"error": "Permission denied"}, status=403)
+
+    from apps.curriculum.models import CurriculumNode
+
+    program_ids = get_instructor_program_ids(request.user)
+    try:
+        node = CurriculumNode.objects.get(pk=node_id, program_id__in=program_ids)
+    except CurriculumNode.DoesNotExist:
+        return JsonResponse({"error": "Node not found"}, status=404)
+
+    document = (
+        node.properties.get("document")
+        if isinstance(node.properties, dict)
+        and isinstance(node.properties.get("document"), dict)
+        else None
+    )
+
+    if document:
+        _delete_lesson_document_files(document)
+
+    props = node.properties.copy() if isinstance(node.properties, dict) else {}
+    props.pop("document", None)
+    node.properties = props
     node.save(update_fields=["properties"])
 
     return JsonResponse({"success": True})

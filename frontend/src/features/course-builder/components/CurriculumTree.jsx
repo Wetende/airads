@@ -54,6 +54,7 @@ import {
     Cast as StreamIcon,
     Quiz as QuizIcon,
     AssignmentTurnedIn as AssignmentIcon,
+    PictureAsPdf as DocumentIcon,
     Close as CloseIcon,
 } from '@mui/icons-material';
 
@@ -423,6 +424,9 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
         if (lessonType === 'video') {
             Icon = VideoIcon;
             iconColor = '#9c27b0'; // Purple for video
+        } else if (lessonType === 'document') {
+            Icon = DocumentIcon;
+            iconColor = '#ef5350'; // Red for document
         } else if (lessonType === 'live_class') {
             Icon = ZoomIcon;
             iconColor = '#2196f3'; // Blue for live class
@@ -643,6 +647,7 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                                 <List disablePadding>
                                     {[
                                         { id: 'text', icon: <ArticleIcon />, label: 'Text Lesson' },
+                                        { id: 'document', icon: <DocumentIcon />, label: 'Document Lesson' },
                                         { id: 'video', icon: <VideoIcon />, label: 'Video Lesson' },
                                         { id: 'live_class', icon: <ZoomIcon />, label: 'Live Class' },
                                     ].map(type => (

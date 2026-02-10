@@ -124,6 +124,16 @@ urlpatterns = [
     path("instructor/nodes/<int:node_id>/files/upload/", views.instructor_lesson_file_upload, name="instructor.lesson_file_upload"),
     path("instructor/nodes/<int:node_id>/files/delete/", views.instructor_lesson_file_delete, name="instructor.lesson_file_delete"),
     path(
+        "instructor/nodes/<int:node_id>/document/upload/",
+        views.instructor_lesson_document_upload,
+        name="instructor.lesson_document_upload",
+    ),
+    path(
+        "instructor/nodes/<int:node_id>/document/delete/",
+        views.instructor_lesson_document_delete,
+        name="instructor.lesson_document_delete",
+    ),
+    path(
         "instructor/nodes/<int:node_id>/quiz/images/upload/",
         views.instructor_quiz_image_upload,
         name="instructor.quiz_image_upload",
