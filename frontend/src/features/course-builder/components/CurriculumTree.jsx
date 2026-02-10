@@ -123,6 +123,12 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
     const featureFlags = blueprint?.featureFlags || {
         quizzes: true, assignments: true, practicum: false, portfolio: false, gamification: false
     };
+    const programLevel = program?.taxonomy?.levelValue || program?.level || 'Unassigned';
+    const containerLabel =
+        program?.taxonomy?.builderHierarchy?.[0] ||
+        program?.blueprint?.hierarchy_structure?.[0] ||
+        program?.blueprint?.hierarchy?.[0] ||
+        'Section';
     const [selectedNodeId, setSelectedNodeId] = useState(null);
     const [localNodes, setLocalNodes] = useState(nodes);
     const oldIdsRef = useRef(new Set());
@@ -564,7 +570,8 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                      {!localNodes || localNodes.length === 0 ? (
                          <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
                              <Typography variant="body2">No curriculum yet.</Typography>
-                             <Typography variant="caption">Start by adding a {program.blueprint?.hierarchy_structure?.[0] || 'Section'}.</Typography>
+                             <Typography variant="caption" display="block">Program level: {programLevel}</Typography>
+                             <Typography variant="caption">Start by adding a {containerLabel}.</Typography>
                          </Box>
                      ) : (
                          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

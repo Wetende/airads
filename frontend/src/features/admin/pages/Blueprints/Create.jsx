@@ -38,7 +38,7 @@ export default function BlueprintCreate({ presets = [], errors = {}, formData = 
   const { data, setData, post, processing } = useForm({
     name: formData.name || '',
     description: formData.description || '',
-    hierarchyLabels: formData.hierarchyLabels || ['Year', 'Unit', 'Session'],
+    hierarchyLabels: formData.hierarchyLabels || ['Module', 'Lesson'],
     gradingConfig: formData.gradingConfig || { mode: 'summative', passingScore: 50 },
     progressionRules: formData.progressionRules || {},
     certificateEnabled: formData.certificateEnabled || false,
@@ -58,7 +58,7 @@ export default function BlueprintCreate({ presets = [], errors = {}, formData = 
           ...data,
           name: `${preset.name} (Copy)`,
           description: preset.description || '',
-          hierarchyLabels: preset.hierarchyLabels || [],
+          hierarchyLabels: (preset.hierarchyLabels || []).slice(0, 2),
           gradingConfig: preset.gradingConfig || { mode: 'summative' },
         });
       }
@@ -71,6 +71,7 @@ export default function BlueprintCreate({ presets = [], errors = {}, formData = 
   };
 
   const addHierarchyLabel = () => {
+    if (data.hierarchyLabels.length >= 2) return;
     if (newLabel.trim() && !data.hierarchyLabels.includes(newLabel.trim())) {
       setData('hierarchyLabels', [...data.hierarchyLabels, newLabel.trim()]);
       setNewLabel('');
@@ -210,7 +211,7 @@ export default function BlueprintCreate({ presets = [], errors = {}, formData = 
                       Hierarchy Structure
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Define the levels of your curriculum (e.g., Year → Unit → Session)
+                      Define exactly 2 builder levels: Container → Content. Program Level is set on the Program form.
                     </Typography>
 
                     {errors.hierarchyLabels && (
@@ -259,7 +260,7 @@ export default function BlueprintCreate({ presets = [], errors = {}, formData = 
                             size="small"
                             color="error"
                             onClick={() => removeHierarchyLabel(index)}
-                            disabled={data.hierarchyLabels.length <= 1}
+                            disabled={data.hierarchyLabels.length <= 2}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -274,12 +275,14 @@ export default function BlueprintCreate({ presets = [], errors = {}, formData = 
                         value={newLabel}
                         onChange={(e) => setNewLabel(e.target.value)}
                         size="small"
+                        disabled={data.hierarchyLabels.length >= 2}
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addHierarchyLabel())}
                       />
                       <Button
                         variant="outlined"
                         startIcon={<AddIcon />}
                         onClick={addHierarchyLabel}
+                        disabled={data.hierarchyLabels.length >= 2}
                       >
                         Add
                       </Button>

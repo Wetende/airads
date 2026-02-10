@@ -165,9 +165,17 @@ def admin_blueprint_create(request):
         if not name:
             errors["name"] = "Name is required"
 
-        hierarchy_labels = data.get("hierarchyLabels", [])
-        if not hierarchy_labels or len(hierarchy_labels) < 1:
-            errors["hierarchyLabels"] = "At least one hierarchy level is required"
+        raw_hierarchy_labels = data.get("hierarchyLabels", [])
+        if not isinstance(raw_hierarchy_labels, list):
+            raw_hierarchy_labels = []
+        hierarchy_labels = [
+            str(label).strip() for label in raw_hierarchy_labels if str(label).strip()
+        ]
+        if len(hierarchy_labels) != 2:
+            errors["hierarchyLabels"] = (
+                "Blueprint must define exactly 2 levels: Container and Content. "
+                "Program Level is configured separately on the Program."
+            )
 
         grading_config = data.get("gradingConfig", {})
         if not grading_config.get("mode"):
@@ -250,9 +258,17 @@ def admin_blueprint_edit(request, pk: int):
         if not name:
             errors["name"] = "Name is required"
 
-        hierarchy_labels = data.get("hierarchyLabels", [])
-        if not hierarchy_labels or len(hierarchy_labels) < 1:
-            errors["hierarchyLabels"] = "At least one hierarchy level is required"
+        raw_hierarchy_labels = data.get("hierarchyLabels", [])
+        if not isinstance(raw_hierarchy_labels, list):
+            raw_hierarchy_labels = []
+        hierarchy_labels = [
+            str(label).strip() for label in raw_hierarchy_labels if str(label).strip()
+        ]
+        if len(hierarchy_labels) != 2:
+            errors["hierarchyLabels"] = (
+                "Blueprint must define exactly 2 levels: Container and Content. "
+                "Program Level is configured separately on the Program."
+            )
 
         if errors:
             return render(

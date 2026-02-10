@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Box, AppBar, Toolbar, Typography, Button, Tabs, Tab, Stack } from '@mui/material';
+import { useMemo } from 'react';
+import { Alert, AppBar, Box, Button, Stack, Tab, Tabs, Toolbar, Typography } from '@mui/material';
 import { Link, usePage } from '@inertiajs/react';
 import {
   IconArrowLeft,
@@ -7,6 +7,12 @@ import {
 } from '@tabler/icons-react';
 
 const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', platformFeatures = {}, deploymentMode = 'custom', ...props }) => {
+    const { flash = [] } = usePage().props;
+    const levelValue = program?.taxonomy?.levelValue || program?.level || 'Unassigned';
+    const taxonomyPath = program?.taxonomy?.fullHierarchy || [
+        levelValue,
+        ...((program?.blueprint?.hierarchy_structure || program?.blueprint?.hierarchy || []).slice(0, 2)),
+    ];
     // Mode-aware tabs: conditionally show tabs based on platform features and blueprint flags
     const blueprintFlags = program?.blueprint?.featureFlags || {};
     
@@ -73,9 +79,14 @@ const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', plat
                         >
                             Back to programs
                         </Button>
-                        <Typography variant="h6" fontWeight={600} sx={{ borderLeft: '1px solid', borderColor: 'divider', pl: 2, ml: 2 }}>
-                            {program.name}
-                        </Typography>
+                        <Box sx={{ borderLeft: '1px solid', borderColor: 'divider', pl: 2, ml: 2 }}>
+                            <Typography variant="h6" fontWeight={600}>
+                                {program.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                {taxonomyPath.filter(Boolean).join(' -> ')}
+                            </Typography>
+                        </Box>
                     </Stack>
 
                     {/* Center Tabs - Support both URL and Client-side switching */}
@@ -165,6 +176,18 @@ const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', plat
                     </Stack>
                 </Toolbar>
             </AppBar>
+
+            {flash.length > 0 && (
+                <Box sx={{ position: 'fixed', top: 56, right: 16, zIndex: 1300 }}>
+                    <Stack spacing={1}>
+                        {flash.map((msg, idx) => (
+                            <Alert key={idx} severity={getFlashSeverity(msg.type)}>
+                                {msg.message}
+                            </Alert>
+                        ))}
+                    </Stack>
+                </Box>
+            )}
             
             {/* Main Content Area */}
             <Box sx={{ display: 'flex', flexGrow: 1, mt: '48px', overflow: 'hidden' }}>
@@ -173,5 +196,13 @@ const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', plat
         </Box>
     );
 };
+
+function getFlashSeverity(type) {
+    const normalized = String(type || '').split(' ')[0].toLowerCase();
+    if (normalized === 'success') return 'success';
+    if (normalized === 'error' || normalized === 'danger') return 'error';
+    if (normalized === 'warning') return 'warning';
+    return 'info';
+}
 
 export default CourseBuilderLayout;

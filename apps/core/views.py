@@ -4631,6 +4631,14 @@ def serialize_program_data(program):
     from apps.platform.models import PlatformSettings
 
     platform_settings = PlatformSettings.get_settings()
+    builder_hierarchy = (
+        list((program.blueprint.hierarchy_structure or [])[:2])
+        if program.blueprint and isinstance(program.blueprint.hierarchy_structure, list)
+        else ["Module", "Lesson"]
+    )
+    if len(builder_hierarchy) < 2:
+        builder_hierarchy = (builder_hierarchy + ["Lesson"])[:2]
+    level_value = (program.level or "").strip()
 
     return {
         "program": {
@@ -4655,14 +4663,16 @@ def serialize_program_data(program):
             "faq": program.faq,
             "notices": program.notices,
             "customPricing": program.custom_pricing,
+            "taxonomy": {
+                "levelValue": level_value,
+                "builderHierarchy": builder_hierarchy,
+                "fullHierarchy": [level_value, builder_hierarchy[0], builder_hierarchy[1]],
+            },
             "blueprint": (
                 {
                     "name": program.blueprint.name if program.blueprint else "Default",
-                    "hierarchy": (
-                        program.blueprint.hierarchy_structure
-                        if program.blueprint
-                        else ["Module", "Lesson"]
-                    ),
+                    "hierarchy": builder_hierarchy,
+                    "hierarchy_structure": builder_hierarchy,
                     "featureFlags": (
                         program.blueprint.get_effective_feature_flags()
                         if program.blueprint
@@ -4865,15 +4875,17 @@ def instructor_node_create(request, program_id: int):
         messages.error(request, "Program must have a blueprint configured")
         return redirect("core:instructor.program_manage", pk=program_id)
 
-    blueprint_structure = program.blueprint.hierarchy_structure
+    blueprint_structure = program.blueprint.hierarchy_structure or []
 
-    # Error proofing: Validate blueprint has exactly 2 tiers (Container, Content)
+    # Course Builder taxonomy requires exactly two tiers:
+    # Container (depth 0) -> Content/Lesson (depth 1)
     if len(blueprint_structure) != 2:
         messages.error(
             request,
             f"Blueprint must define exactly 2 hierarchy levels. Found {len(blueprint_structure)}: {blueprint_structure}",
         )
         return redirect("core:instructor.program_manage", pk=program_id)
+    builder_structure = blueprint_structure
 
     try:
         parent = None
@@ -4885,15 +4897,15 @@ def instructor_node_create(request, program_id: int):
                 raise ValueError("Invalid parent node")
 
             current_depth = parent.get_depth()
-            if current_depth + 1 >= len(blueprint_structure):
+            if current_depth + 1 >= len(builder_structure):
                 raise ValueError("Maximum nesting depth reached")
 
             # All children use the blueprint hierarchy structure
             # Lesson types (video, text, quiz, assignment, live) are differentiated by properties.lesson_type
-            node_type = blueprint_structure[current_depth + 1]
+            node_type = builder_structure[current_depth + 1]
         else:
             # Root level nodes (containers) use the first item in blueprint structure
-            node_type = blueprint_structure[0]
+            node_type = builder_structure[0]
 
         # Enforce two-tier builder taxonomy validation (Level is admin-set, not in tree)
         # Reuse current_depth from line 4728 to avoid redundant get_depth() call
@@ -4901,15 +4913,15 @@ def instructor_node_create(request, program_id: int):
 
         if depth > 1:
             raise ValueError(
-                f"Cannot create {blueprint_structure[depth]} at depth {depth}. "
-                f"Maximum depth is 1. Hierarchy: {blueprint_structure[0]} → {blueprint_structure[1]}"
+                f"Cannot create node at depth {depth}. "
+                f"Maximum depth is 1. Hierarchy: {builder_structure[0]} → {builder_structure[1]}"
             )
 
         # Validate parent-child relationships
         if parent and depth > 0 and parent.get_depth() != 0:
             raise ValueError(
-                f"Invalid parent. {blueprint_structure[1]} nodes must be children of "
-                f"{blueprint_structure[0]} nodes (depth 0), not depth {parent.get_depth()} nodes."
+                f"Invalid parent. {builder_structure[1]} nodes must be children of "
+                f"{builder_structure[0]} nodes (depth 0), not depth {parent.get_depth()} nodes."
             )
 
         position = CurriculumNode.objects.filter(program=program, parent=parent).count()

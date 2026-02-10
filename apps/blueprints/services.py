@@ -10,9 +10,14 @@ class BlueprintValidationService:
     """Service for validating blueprint configurations."""
 
     def validate_hierarchy_structure(self, structure: List[str]) -> bool:
-        """Validate that hierarchy_structure is a non-empty list of strings."""
+        """Validate that hierarchy_structure has exactly two labels (container, content)."""
         if not structure or not isinstance(structure, list):
             raise InvalidHierarchyStructureException("Hierarchy structure must be a non-empty list")
+
+        if len(structure) != 2:
+            raise InvalidHierarchyStructureException(
+                "Hierarchy structure must contain exactly 2 levels: Container and Content"
+            )
         
         for item in structure:
             if not isinstance(item, str) or not item.strip():
