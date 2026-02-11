@@ -135,14 +135,14 @@ export default function FeaturesSection({ platform }) {
                 <Stack spacing={2} textAlign="center" sx={{ mb: 8 }}>
                     <motion.div {...fadeInUp}>
                         <SectionLabel color={primaryColor}>
-                            Why Choose Us
+                            Our Features
                         </SectionLabel>
                         <Typography
                             variant="h2"
                             fontWeight={700}
                             sx={{ mb: 2, color: "text.primary" }}
                         >
-                            Why Join this Program?
+                            What Makes Us Different
                         </Typography>
                     </motion.div>
                 </Stack>

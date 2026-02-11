@@ -90,18 +90,18 @@ function StatsHighlightCard({ primaryColor, stats = {} }) {
     const statItems = [
         {
             icon: IconUsers,
-            value: stats?.studentCount ?? "500+",
-            label: "Students Enrolled",
+            value: "Growing",
+            label: "Learning Community",
         },
         {
             icon: IconSchool,
-            value: stats?.programCount ?? "20+",
-            label: "Programs",
+            value: "Diverse",
+            label: "Course Offerings",
         },
         {
             icon: IconCertificate,
-            value: "100%",
-            label: "Verified Certificates",
+            value: "Verified",
+            label: "Upon Completion",
         },
     ];
 
@@ -130,10 +130,10 @@ function StatsHighlightCard({ primaryColor, stats = {} }) {
                 mb={1}
                 sx={{ color: "#1F2937" }}
             >
-                Why Choose Us?
+                What We Offer
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                Join our growing community of learners.
+                Quality education designed for your success.
             </Typography>
 
             <Stack spacing={3}>
