@@ -32,6 +32,61 @@ import {
 import InstructorLayout from "@/layouts/InstructorLayout";
 import QuizAnswerReview from "../components/QuizAnswerReview";
 
+const normalizeAssignmentMode = (properties = {}) => {
+    const normalizedMode = String(
+        properties?.assignment_mode || "",
+    ).toLowerCase();
+    const hasQuestionList =
+        Array.isArray(properties?.questions) && properties.questions.length > 0;
+
+    if (
+        normalizedMode === "submission_only" ||
+        normalizedMode === "question_only" ||
+        normalizedMode === "mixed"
+    ) {
+        return normalizedMode;
+    }
+
+    return hasQuestionList ? "mixed" : "submission_only";
+};
+
+const normalizeTypedResponseMode = (rawValue) => {
+    const normalized = String(rawValue || "").trim().toLowerCase();
+    if (
+        normalized === "short_answer_question" ||
+        normalized === "short_answer" ||
+        normalized === "question"
+    ) {
+        return "short_answer_question";
+    }
+    return "submission_text";
+};
+
+const assignmentRequiresQuestions = (properties = {}) => {
+    const assignmentMode = normalizeAssignmentMode(properties);
+    const typedResponseMode = normalizeTypedResponseMode(
+        properties?.typed_response_mode,
+    );
+    return (
+        assignmentMode === "question_only" ||
+        assignmentMode === "mixed" ||
+        (assignmentMode === "submission_only" &&
+            typedResponseMode === "short_answer_question")
+    );
+};
+
+const assignmentRequiresSubmission = (properties = {}) => {
+    const assignmentMode = normalizeAssignmentMode(properties);
+    const typedResponseMode = normalizeTypedResponseMode(
+        properties?.typed_response_mode,
+    );
+    return (
+        assignmentMode === "mixed" ||
+        (assignmentMode === "submission_only" &&
+            typedResponseMode === "submission_text")
+    );
+};
+
 // Icon mapping for node types
 const getNodeIcon = (type) => {
     const icons = {
@@ -50,6 +105,7 @@ export default function StudentProgress({
     student,
     curriculum = [],
     quizAttempts = {},
+    assignmentSubmissions = {},
 }) {
     const breadcrumbs = [
         { label: "Programs", href: "/instructor/programs/" },
@@ -64,13 +120,21 @@ export default function StudentProgress({
     const renderCurriculumNode = (node, depth = 0) => {
         const nodeType = node.type || node.nodeType;
         const lessonType = node.lessonType || node.properties?.lesson_type;
+        const nodeProperties = node.properties || {};
 
         const isSection =
             nodeType === "section" || nodeType === "module" || node.hasChildren;
         const isQuiz = nodeType === "quiz" || lessonType === "quiz";
+        const isAssignment =
+            nodeType === "assignment" || lessonType === "assignment";
+        const includesQuestionReview =
+            isQuiz || (isAssignment && assignmentRequiresQuestions(nodeProperties));
+        const includesSubmissionReview =
+            isAssignment && assignmentRequiresSubmission(nodeProperties);
         const isCompleted = node.isCompleted;
         const attempts = quizAttempts[node.id] || [];
         const hasAttempts = attempts.length > 0;
+        const submission = assignmentSubmissions[node.id];
 
         if (isSection) {
             const childCount = (node.children || []).length;
@@ -163,8 +227,8 @@ export default function StudentProgress({
                             />
                         </Stack>
 
-                        {/* Quiz-specific: Show attempts with answer review */}
-                        {isQuiz && (
+                        {/* Question attempt review for quizzes and question-enabled assignments */}
+                        {includesQuestionReview && (
                             <Box sx={{ mt: 2 }}>
                                 {hasAttempts ? (
                                     <Stack spacing={1}>
@@ -172,14 +236,18 @@ export default function StudentProgress({
                                             variant="caption"
                                             color="text.secondary"
                                         >
-                                            {attempts.length} attempt
+                                            Question attempts: {attempts.length} attempt
                                             {attempts.length > 1 ? "s" : ""}
                                         </Typography>
                                         {attempts.map((attempt, idx) => (
                                             <QuizAnswerReview
                                                 key={attempt.id || idx}
                                                 attempt={attempt}
-                                                questions={node.questions || []}
+                                                questions={
+                                                    node.questions ||
+                                                    nodeProperties.questions ||
+                                                    []
+                                                }
                                                 defaultExpanded={idx === 0}
                                             />
                                         ))}
@@ -191,6 +259,64 @@ export default function StudentProgress({
                                         fontStyle="italic"
                                     >
                                         No attempts yet
+                                    </Typography>
+                                )}
+                            </Box>
+                        )}
+
+                        {/* Assignment submission review */}
+                        {includesSubmissionReview && (
+                            <Box sx={{ mt: 2 }}>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ display: "block", mb: 1 }}
+                                >
+                                    Submission
+                                </Typography>
+                                {submission?.submitted ? (
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        alignItems="center"
+                                        sx={{ flexWrap: "wrap" }}
+                                    >
+                                        <Chip
+                                            size="small"
+                                            color={
+                                                submission.status === "graded"
+                                                    ? "success"
+                                                    : "default"
+                                            }
+                                            label={submission.status || "submitted"}
+                                        />
+                                        {typeof submission.score === "number" && (
+                                            <Chip
+                                                size="small"
+                                                variant="outlined"
+                                                label={`Score ${submission.score}%`}
+                                            />
+                                        )}
+                                        {submission.fileName && (
+                                            <Chip
+                                                size="small"
+                                                variant="outlined"
+                                                label={submission.fileName}
+                                            />
+                                        )}
+                                        {submission.submittedAt && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                {new Date(submission.submittedAt).toLocaleString()}
+                                            </Typography>
+                                        )}
+                                    </Stack>
+                                ) : (
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                        fontStyle="italic"
+                                    >
+                                        No submission yet
                                     </Typography>
                                 )}
                             </Box>

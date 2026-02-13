@@ -745,7 +745,7 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                 onClose={closeDeleteDialog}
                 onConfirm={handleDeleteConfirm}
                 title="Delete curriculum item?"
-                message={`Are you sure you want to delete "${pendingDeleteNode?.title || 'this item'}"? This will delete all child nodes and content. This action cannot be undone.`}
+                message={`Are you sure you want to delete "${pendingDeleteNode?.title || 'this item'}"? This will delete all items under it and their content. This action cannot be undone.`}
                 confirmLabel="Delete"
                 confirmColor="error"
             />

@@ -77,21 +77,72 @@ class CoursePublishValidationService:
         errors = []
         warnings = []
         details = {}
+
+        def _normalize_assignment_mode(props):
+            if not isinstance(props, dict):
+                return "submission_only"
+            explicit_mode = str(props.get("assignment_mode") or "").strip().lower()
+            if explicit_mode in {"submission_only", "question_only", "mixed"}:
+                return explicit_mode
+            questions = props.get("questions", [])
+            has_questions = isinstance(questions, list) and len(questions) > 0
+            return "mixed" if has_questions else "submission_only"
+
+        def _normalize_submission_type(raw_value):
+            normalized = str(raw_value or "").strip().lower()
+            mapping = {
+                "file": "file",
+                "file_upload": "file",
+                "text": "text",
+                "text_entry": "text",
+                "both": "both",
+                "external_link": "text",
+                "media_recording": "text",
+            }
+            return mapping.get(normalized, "file")
+
+        def _normalize_typed_response_mode(raw_value):
+            normalized = str(raw_value or "").strip().lower()
+            if normalized == "short_answer_question":
+                return "short_answer_question"
+            return "submission_text"
+
+        def _assignment_requires_questions(mode, typed_response_mode):
+            return mode in {"question_only", "mixed"} or (
+                mode == "submission_only"
+                and typed_response_mode == "short_answer_question"
+            )
+
+        def _assignment_requires_submission(mode, typed_response_mode):
+            return mode == "mixed" or (
+                mode == "submission_only"
+                and typed_response_mode == "submission_text"
+            )
         
         # Get all curriculum nodes for this program
-        nodes = CurriculumNode.objects.filter(program=program)
-        
-        # Count node types
-        lessons = nodes.filter(node_type='lesson')
-        quizzes = nodes.filter(node_type='quiz')
-        assignments = nodes.filter(node_type='assignment')
-        
-        details['lesson_count'] = lessons.count()
-        details['quiz_count'] = quizzes.count()
-        details['assignment_count'] = assignments.count()
+        nodes = list(CurriculumNode.objects.filter(program=program))
+
+        # Count node types (supports both explicit node_type and lesson_type payloads)
+        lessons = [n for n in nodes if str(n.node_type or "").lower() == 'lesson']
+        quizzes = [
+            n
+            for n in nodes
+            if str(n.node_type or "").lower() == 'quiz'
+            or str((n.properties or {}).get("lesson_type") or "").lower() == 'quiz'
+        ]
+        assignments = [
+            n
+            for n in nodes
+            if str(n.node_type or "").lower() == 'assignment'
+            or str((n.properties or {}).get("lesson_type") or "").lower() == 'assignment'
+        ]
+
+        details['lesson_count'] = len(lessons)
+        details['quiz_count'] = len(quizzes)
+        details['assignment_count'] = len(assignments)
         
         # Basic content check
-        if lessons.count() == 0:
+        if len(lessons) == 0:
             errors.append({
                 'type': 'missing_content',
                 'message': 'Course must have at least 1 lesson',
@@ -100,7 +151,7 @@ class CoursePublishValidationService:
             })
         
         # Assessment requirements
-        total_assessments = quizzes.count() + assignments.count()
+        total_assessments = len(quizzes) + len(assignments)
         details['total_assessments'] = total_assessments
         
         if total_assessments == 0:
@@ -114,7 +165,8 @@ class CoursePublishValidationService:
         # Weight validation for assignments (theology mode requirement)
         assignment_weights = []
         for assignment in assignments:
-            weight = (assignment.properties or {}).get('weight', 0)
+            props = assignment.properties if isinstance(assignment.properties, dict) else {}
+            weight = props.get('weight', 0)
             assignment_weights.append({
                 'id': assignment.id,
                 'title': assignment.title,
@@ -128,6 +180,85 @@ class CoursePublishValidationService:
                     'node_id': assignment.id,
                     'node_title': assignment.title
                 })
+
+            assignment_mode = _normalize_assignment_mode(props)
+            typed_response_mode = _normalize_typed_response_mode(
+                props.get("typed_response_mode")
+            )
+            questions = props.get("questions", [])
+            has_questions = isinstance(questions, list) and len(questions) > 0
+            quiz_id = props.get("quiz_id")
+            assignment_id = props.get("assignment_id")
+            assessment_prompt = str(props.get("assessment_prompt") or "").strip()
+
+            if not assessment_prompt:
+                errors.append(
+                    {
+                        "type": "missing_assessment_prompt",
+                        "message": "Assignment requires an assessment prompt",
+                        "node_id": assignment.id,
+                        "node_title": assignment.title,
+                    }
+                )
+
+            raw_submission_type = str(props.get("submission_type") or "").strip().lower()
+            normalized_submission_type = _normalize_submission_type(raw_submission_type)
+            if (
+                _assignment_requires_submission(assignment_mode, typed_response_mode)
+                and raw_submission_type
+                and raw_submission_type != normalized_submission_type
+            ):
+                errors.append(
+                    {
+                        "type": "invalid_submission_type_mapping",
+                        "message": (
+                            f"Assignment submission type '{raw_submission_type}' must be canonical "
+                            f"({normalized_submission_type})"
+                        ),
+                        "node_id": assignment.id,
+                        "node_title": assignment.title,
+                    }
+                )
+
+            if _assignment_requires_questions(assignment_mode, typed_response_mode):
+                if not has_questions:
+                    errors.append(
+                        {
+                            "type": "invalid_assignment_mode_config",
+                            "message": "Assignment mode requires questions, but no questions were found",
+                            "node_id": assignment.id,
+                            "node_title": assignment.title,
+                        }
+                    )
+                if not quiz_id:
+                    errors.append(
+                        {
+                            "type": "missing_assignment_question_link",
+                            "message": "Assignment has questions but no linked question engine record",
+                            "node_id": assignment.id,
+                            "node_title": assignment.title,
+                        }
+                    )
+
+            if _assignment_requires_submission(assignment_mode, typed_response_mode):
+                if not assignment_id:
+                    errors.append(
+                        {
+                            "type": "invalid_assignment_mode_config",
+                            "message": "Assignment mode requires assignment submission settings, but assignment link is missing",
+                            "node_id": assignment.id,
+                            "node_title": assignment.title,
+                        }
+                    )
+                if normalized_submission_type not in {"file", "text", "both"}:
+                    errors.append(
+                        {
+                            "type": "invalid_submission_type_mapping",
+                            "message": "Assignment submission type must be one of file/text/both",
+                            "node_id": assignment.id,
+                            "node_title": assignment.title,
+                        }
+                    )
         
         total_weight = sum(a['weight'] for a in assignment_weights)
         details['assignment_weights'] = assignment_weights
@@ -139,7 +270,7 @@ class CoursePublishValidationService:
         
         if mode in ('theology', 'tvet'):
             # Theology/TVET modes require weights to sum to 100%
-            if assignments.count() > 0 and total_weight != 100:
+            if len(assignments) > 0 and total_weight != 100:
                 errors.append({
                     'type': 'invalid_weight_sum',
                     'message': f'Assignment weights must sum to 100% (currently {total_weight}%)',
@@ -148,7 +279,7 @@ class CoursePublishValidationService:
                 })
         else:
             # Online mode - just warn if weights don't sum to 100
-            if assignments.count() > 0 and total_weight != 100:
+            if len(assignments) > 0 and total_weight != 100:
                 warnings.append({
                     'type': 'weight_recommendation',
                     'message': f'Assignment weights total {total_weight}% (recommended: 100%)',
@@ -158,8 +289,11 @@ class CoursePublishValidationService:
         
         # Check for incomplete quizzes (no questions)
         incomplete_quizzes = []
+        unlinked_quizzes = []
         for quiz in quizzes:
-            questions = (quiz.properties or {}).get('questions', [])
+            quiz_props = quiz.properties or {}
+            questions = quiz_props.get('questions', [])
+            quiz_id = quiz_props.get('quiz_id')
             if len(questions) == 0:
                 incomplete_quizzes.append({'id': quiz.id, 'title': quiz.title})
                 errors.append({
@@ -168,8 +302,17 @@ class CoursePublishValidationService:
                     'node_id': quiz.id,
                     'node_title': quiz.title
                 })
+            elif not quiz_id:
+                unlinked_quizzes.append({'id': quiz.id, 'title': quiz.title})
+                errors.append({
+                    'type': 'missing_quiz_link',
+                    'message': 'Quiz has questions but no linked assessment record',
+                    'node_id': quiz.id,
+                    'node_title': quiz.title
+                })
         
         details['incomplete_quizzes'] = incomplete_quizzes
+        details['unlinked_quizzes'] = unlinked_quizzes
         
         # Check for incomplete assignments (no instructions)
         incomplete_assignments = []

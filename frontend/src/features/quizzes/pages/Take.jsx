@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Head, router } from "@inertiajs/react";
 import {
     Box,
@@ -19,7 +19,6 @@ import {
 } from "@mui/material";
 import {
     IconClock,
-    IconCheck,
     IconChevronLeft,
     IconChevronRight,
     IconSend,
@@ -30,7 +29,13 @@ import OrderingQuestion from "@/features/quizzes/components/OrderingQuestion";
 import FillBlankQuestion from "@/features/quizzes/components/FillBlankQuestion";
 import ImageMatchingQuestion from "@/features/quizzes/components/ImageMatchingQuestion";
 
-export default function Take({ quiz, attempt, questions, attemptsRemaining }) {
+export default function Take({
+    quiz,
+    attempt,
+    questions,
+    attemptsRemaining,
+    coursePlayer,
+}) {
     const [answers, setAnswers] = useState(attempt.answers || {});
     const [currentIdx, setCurrentIdx] = useState(0);
     const [timeRemaining, setTimeRemaining] = useState(
@@ -38,6 +43,29 @@ export default function Take({ quiz, attempt, questions, attemptsRemaining }) {
     );
     const [submitting, setSubmitting] = useState(false);
     const timerRef = useRef(null);
+
+    const handleAnswerChange = (questionId, value) => {
+        setAnswers((prev) => ({
+            ...prev,
+            [questionId]: value,
+        }));
+    };
+
+    const handleSubmit = useCallback(() => {
+        setSubmitting(true);
+        const payload = { answers };
+        if (coursePlayer?.enrollmentId && coursePlayer?.nodeId) {
+            payload.enrollment_id = coursePlayer.enrollmentId;
+            payload.node_id = coursePlayer.nodeId;
+        }
+        router.post(
+            `/student/quiz/${quiz.id}/submit/`,
+            payload,
+            {
+                onFinish: () => setSubmitting(false),
+            },
+        );
+    }, [answers, coursePlayer?.enrollmentId, coursePlayer?.nodeId, quiz.id]);
 
     // Calculate elapsed time for resuming
     useEffect(() => {
@@ -47,7 +75,7 @@ export default function Take({ quiz, attempt, questions, attemptsRemaining }) {
             const remaining = quiz.timeLimit * 60 - elapsed;
             setTimeRemaining(Math.max(0, remaining));
         }
-    }, []);
+    }, [attempt.startedAt, quiz.timeLimit]);
 
     // Timer countdown
     useEffect(() => {
@@ -64,25 +92,7 @@ export default function Take({ quiz, attempt, questions, attemptsRemaining }) {
             }, 1000);
         }
         return () => clearInterval(timerRef.current);
-    }, [timeRemaining !== null]);
-
-    const handleAnswerChange = (questionId, value) => {
-        setAnswers((prev) => ({
-            ...prev,
-            [questionId]: value,
-        }));
-    };
-
-    const handleSubmit = () => {
-        setSubmitting(true);
-        router.post(
-            `/student/quiz/${quiz.id}/submit/`,
-            { answers },
-            {
-                onFinish: () => setSubmitting(false),
-            },
-        );
-    };
+    }, [handleSubmit, timeRemaining]);
 
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);

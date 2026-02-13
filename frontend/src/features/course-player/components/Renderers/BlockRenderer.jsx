@@ -1,8 +1,7 @@
 import DOMPurify from "dompurify";
 import VideoRenderer from "./VideoRenderer";
 import TextRenderer from "./TextRenderer";
-import QuizRenderer from "./QuizRenderer";
-import AssignmentRenderer from "./AssignmentRenderer";
+import AssessmentRenderer from "./AssessmentRenderer";
 import PDFRenderer from "./PDFRenderer";
 import { Box, Paper, Typography } from "@mui/material";
 import {
@@ -93,14 +92,36 @@ const BlockRenderer = ({
             );
 
         case "QUIZ":
-            // Quiz blocks reference a quiz by ID - for inline quizzes
-            // If questions are embedded directly, render them
+            // Prefer dedicated quiz flow when a quiz reference exists.
+            if (data?.quiz_id) {
+                return (
+                    <Box sx={{ mb: 3 }}>
+                        <AssessmentRenderer
+                            node={{
+                                id: nodeId,
+                                title: data?.quiz_title || "Quiz",
+                                node_type: "quiz",
+                                properties: {
+                                    quiz_id: data.quiz_id,
+                                    questions: data.questions,
+                                },
+                            }}
+                            enrollmentId={enrollmentId}
+                            onComplete={onComplete}
+                        />
+                    </Box>
+                );
+            }
+
+            // Legacy inline fallback for embedded questions.
             if (data?.questions) {
                 return (
                     <Box sx={{ mb: 3 }}>
-                        <QuizRenderer
+                        <AssessmentRenderer
                             node={{
                                 id: nodeId,
+                                title: data?.quiz_title || "Quiz",
+                                node_type: "quiz",
                                 properties: { questions: data.questions },
                             }}
                             enrollmentId={enrollmentId}
@@ -109,11 +130,12 @@ const BlockRenderer = ({
                     </Box>
                 );
             }
-            // Otherwise show a link to the quiz
+
+            // Missing quiz configuration.
             return (
                 <Paper sx={{ p: 3, mb: 3, textAlign: "center" }}>
                     <Typography color="text.secondary">
-                        Quiz ID: {data?.quiz_id} (Launch quiz to complete)
+                        Quiz block is not configured.
                     </Typography>
                 </Paper>
             );
@@ -121,14 +143,15 @@ const BlockRenderer = ({
         case "ASSIGNMENT":
             return (
                 <Box sx={{ mb: 3 }}>
-                    <AssignmentRenderer
+                    <AssessmentRenderer
                         node={{
                             id: nodeId,
                             title: data?.title || "Assignment",
+                            node_type: "assignment",
                             properties: data,
                         }}
                         enrollmentId={enrollmentId}
-                        onSubmit={onComplete}
+                        onComplete={onComplete}
                     />
                 </Box>
             );

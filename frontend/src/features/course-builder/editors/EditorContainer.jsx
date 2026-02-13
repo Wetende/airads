@@ -27,7 +27,15 @@ function DisabledFeatureMessage({ feature }) {
     );
 }
 
-export default function EditorContainer({ node, onSave, blueprint, programId, questionLibrary = [], categories = [] }) {
+export default function EditorContainer({
+    node,
+    onSave,
+    blueprint,
+    programId,
+    questionLibrary = [],
+    categories = [],
+    quizEditorComponent: QuizEditorComponent = AssessmentEditor,
+}) {
     // Determine the type of the node/lesson to choose the correct editor
     // Normalize type string: 'Quiz' -> 'quiz', 'Assignment' -> 'assignment'
     const type = (node.type || node.node_type || '').toLowerCase();
@@ -47,10 +55,11 @@ export default function EditorContainer({ node, onSave, blueprint, programId, qu
         return null;
     }
 
-    // Quiz and Assignment both use the unified AssessmentEditor
+    // Quiz and Assignment currently use the unified AssessmentEditor.
+    // Rewire point: pass `quizEditorComponent` to switch quiz-only editor behavior.
     if (type === 'quiz' || lessonType === 'quiz') {
         return (
-            <AssessmentEditor 
+            <QuizEditorComponent
                 node={node} 
                 onSave={onSave} 
                 type="quiz"

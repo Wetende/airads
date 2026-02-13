@@ -23,6 +23,107 @@ from apps.core.utils import serialize_user
 from apps.notifications.services import NotificationService
 
 
+def _normalize_assignment_mode(props: dict) -> str:
+    if not isinstance(props, dict):
+        return "submission_only"
+
+    explicit_mode = str(props.get("assignment_mode") or "").strip().lower()
+    if explicit_mode in {"submission_only", "question_only", "mixed"}:
+        return explicit_mode
+
+    questions = props.get("questions", [])
+    return "mixed" if isinstance(questions, list) and len(questions) > 0 else "submission_only"
+
+
+def _safe_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _assignment_mode_requires_questions(mode: str) -> bool:
+    return mode in {"question_only", "mixed"}
+
+
+def _assignment_mode_requires_submission(mode: str) -> bool:
+    return mode in {"submission_only", "mixed"}
+
+
+def _normalize_typed_response_mode(raw_value) -> str:
+    normalized = str(raw_value or "").strip().lower()
+    if normalized == "short_answer_question":
+        return "short_answer_question"
+    return "submission_text"
+
+
+def _assignment_requires_questions(props: dict) -> bool:
+    mode = _normalize_assignment_mode(props)
+    typed = _normalize_typed_response_mode((props or {}).get("typed_response_mode"))
+    return mode in {"question_only", "mixed"} or (
+        mode == "submission_only" and typed == "short_answer_question"
+    )
+
+
+def _assignment_requires_submission(props: dict) -> bool:
+    mode = _normalize_assignment_mode(props)
+    typed = _normalize_typed_response_mode((props or {}).get("typed_response_mode"))
+    return mode == "mixed" or (
+        mode == "submission_only" and typed == "submission_text"
+    )
+
+
+def _record_inline_quiz_attempt(enrollment: Enrollment, node: CurriculumNode, answers) -> Optional[int]:
+    """
+    Persist inline quiz answers into QuizAttempt so instructor review has a full trail.
+    Returns attempt id when recorded, else None.
+    """
+    from apps.assessments.models import Quiz, QuizAttempt
+
+    props = node.properties if isinstance(node.properties, dict) else {}
+    quiz_id = props.get("quiz_id")
+    if not quiz_id or not isinstance(answers, dict):
+        return None
+
+    try:
+        quiz = Quiz.objects.get(pk=quiz_id)
+    except Quiz.DoesNotExist:
+        return None
+
+    in_progress = QuizAttempt.objects.filter(
+        enrollment=enrollment,
+        quiz=quiz,
+        submitted_at__isnull=True,
+    ).first()
+
+    if in_progress:
+        attempt = in_progress
+    else:
+        existing_attempts = QuizAttempt.objects.filter(
+            enrollment=enrollment,
+            quiz=quiz,
+        ).count()
+        if existing_attempts >= quiz.max_attempts:
+            return None
+        attempt = QuizAttempt.objects.create(
+            enrollment=enrollment,
+            quiz=quiz,
+            attempt_number=existing_attempts + 1,
+            started_at=timezone.now(),
+        )
+
+    attempt.answers = answers
+    attempt.submitted_at = timezone.now()
+    points_earned, points_possible, percentage, passed = attempt.calculate_score()
+    attempt.points_earned = points_earned
+    attempt.points_possible = points_possible
+    attempt.score = percentage
+    attempt.passed = passed
+    attempt.save()
+
+    return attempt.id
+
+
 # =============================================================================
 # Dashboard View
 # =============================================================================
@@ -362,14 +463,74 @@ def session_viewer(request, pk: int, node_id: int):
     if request.method == "POST":
         data = _get_post_data(request)
         if data.get("mark_complete"):
-            NodeCompletion.objects.get_or_create(
-                enrollment=enrollment,
-                node=node,
-                defaults={
-                    "completion_type": "view",
-                    "completed_at": timezone.now(),
-                },
-            )
+            props = node.properties if isinstance(node.properties, dict) else {}
+            node_type = str(node.node_type or "").lower()
+            lesson_type = str(props.get("lesson_type") or "").lower()
+            is_assignment = node_type == "assignment" or lesson_type == "assignment"
+            is_quiz = node_type == "quiz" or lesson_type == "quiz"
+
+            quiz_answers = data.get("quiz_answers")
+            if isinstance(quiz_answers, dict):
+                _record_inline_quiz_attempt(enrollment, node, quiz_answers)
+
+            should_mark_complete = True
+            completion_type = "view"
+
+            if is_assignment:
+                from apps.assessments.models import AssignmentSubmission, QuizAttempt
+
+                assignment_id = _safe_int(props.get("assignment_id"))
+                quiz_id = _safe_int(props.get("quiz_id"))
+                has_submission = bool(
+                    assignment_id
+                    and AssignmentSubmission.objects.filter(
+                        enrollment=enrollment,
+                        assignment_id=assignment_id,
+                    ).exists()
+                )
+                has_question_attempt = bool(
+                    (quiz_id and QuizAttempt.objects.filter(
+                        enrollment=enrollment,
+                        quiz_id=quiz_id,
+                        submitted_at__isnull=False,
+                    ).exists())
+                    or isinstance(quiz_answers, dict)
+                )
+
+                if _assignment_requires_submission(props) and _assignment_requires_questions(props):
+                    should_mark_complete = has_submission and has_question_attempt
+                    completion_type = "manual"
+                elif _assignment_requires_submission(props):
+                    should_mark_complete = has_submission
+                    completion_type = "upload"
+                else:
+                    should_mark_complete = has_question_attempt
+                    completion_type = "quiz_pass"
+            elif is_quiz and isinstance(quiz_answers, dict):
+                completion_type = "quiz_pass"
+            elif is_quiz:
+                from apps.assessments.models import QuizAttempt
+
+                quiz_id = _safe_int(props.get("quiz_id"))
+                should_mark_complete = bool(
+                    quiz_id
+                    and QuizAttempt.objects.filter(
+                        enrollment=enrollment,
+                        quiz_id=quiz_id,
+                        submitted_at__isnull=False,
+                    ).exists()
+                )
+                completion_type = "quiz_pass"
+
+            if should_mark_complete:
+                NodeCompletion.objects.get_or_create(
+                    enrollment=enrollment,
+                    node=node,
+                    defaults={
+                        "completion_type": completion_type,
+                        "completed_at": timezone.now(),
+                    },
+                )
 
     # Check if completed
     is_completed = NodeCompletion.objects.filter(
@@ -639,13 +800,26 @@ def _build_curriculum_tree(
         from apps.assessments.models import QuizAttempt
 
         quiz_ids = set()
-        for props in CurriculumNode.objects.filter(
-            program=enrollment.program, node_type="quiz", is_published=True
-        ).values_list("properties", flat=True):
-            if isinstance(props, dict):
-                quiz_id = props.get("quiz_id")
-                if quiz_id:
-                    quiz_ids.add(quiz_id)
+        for node_type, props in CurriculumNode.objects.filter(
+            program=enrollment.program,
+            is_published=True,
+        ).values_list("node_type", "properties"):
+            if not isinstance(props, dict):
+                continue
+            normalized_node_type = str(node_type or "").lower()
+            lesson_type = str(props.get("lesson_type") or "").lower()
+            is_assignment = (
+                normalized_node_type == "assignment" or lesson_type == "assignment"
+            )
+            is_quiz = normalized_node_type == "quiz" or lesson_type == "quiz"
+            includes_questions = is_quiz or (
+                is_assignment and _assignment_requires_questions(props)
+            )
+            if not includes_questions:
+                continue
+            quiz_id = _safe_int(props.get("quiz_id"))
+            if quiz_id:
+                quiz_ids.add(quiz_id)
 
         last_attempts_by_quiz_id = {}
         if quiz_ids:
@@ -717,9 +891,17 @@ def _build_curriculum_tree(
             "properties": node.properties or {},
         }
         
-        # Add lastAttempt for quiz nodes
-        if node.node_type == 'quiz':
-            quiz_id = node.properties.get('quiz_id') if node.properties else None
+        # Add lastAttempt for question-enabled assessment nodes
+        node_props = node.properties if isinstance(node.properties, dict) else {}
+        node_type_normalized = str(node.node_type or "").lower()
+        lesson_type = str(node_props.get("lesson_type") or "").lower()
+        is_assignment = node_type_normalized == "assignment" or lesson_type == "assignment"
+        is_quiz = node_type_normalized == "quiz" or lesson_type == "quiz"
+        includes_questions = is_quiz or (
+            is_assignment and _assignment_requires_questions(node_props)
+        )
+        if includes_questions:
+            quiz_id = _safe_int(node_props.get("quiz_id"))
             if quiz_id and quiz_id in last_attempts_by_quiz_id:
                 node_data["lastAttempt"] = last_attempts_by_quiz_id[quiz_id]
         
@@ -1973,23 +2155,39 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
     status_map = {}  # Instructors see everything as accessible
     curriculum_tree = _build_curriculum_tree(root_nodes, completions, enrollment, status_map)
 
-    # Get all quiz attempts for this student in this program
-    from apps.assessments.models import QuizAttempt, Quiz
+    # Get all assessment attempts/submissions for this student in this program
+    from apps.assessments.models import AssignmentSubmission, QuizAttempt
 
     quiz_attempts_data = {}
-    
-    # Find all quiz nodes in the curriculum
-    quiz_nodes = CurriculumNode.objects.filter(
-        program=program,
-        node_type='quiz',
-        is_published=True
-    ).values_list('id', 'properties')
+    assignment_submissions_data = {}
 
-    for node_id, properties in quiz_nodes:
-        quiz_id = properties.get('quiz_id') if properties else None
+    question_nodes = []
+    assignment_submission_nodes = {}
+    assessment_nodes = CurriculumNode.objects.filter(
+        program=program,
+        is_published=True,
+    ).only("id", "node_type", "properties")
+
+    for assessment_node in assessment_nodes:
+        props = assessment_node.properties if isinstance(assessment_node.properties, dict) else {}
+        node_type = str(assessment_node.node_type or "").lower()
+        lesson_type = str(props.get("lesson_type") or "").lower()
+        is_assignment = node_type == "assignment" or lesson_type == "assignment"
+        is_quiz = node_type == "quiz" or lesson_type == "quiz"
+        quiz_id = _safe_int(props.get("quiz_id"))
+        assignment_id = _safe_int(props.get("assignment_id"))
+
+        if is_quiz or (is_assignment and _assignment_requires_questions(props)):
+            if quiz_id:
+                question_nodes.append((assessment_node.id, quiz_id))
+
+        if is_assignment and _assignment_requires_submission(props) and assignment_id:
+            assignment_submission_nodes[assessment_node.id] = assignment_id
+
+    for node_id, quiz_id in question_nodes:
         if not quiz_id:
             continue
-        
+
         attempts = QuizAttempt.objects.filter(
             enrollment=enrollment,
             quiz_id=quiz_id
@@ -2095,11 +2293,45 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                 'questionResults': question_results,
             })
         
-        if attempts_list:
-            quiz_attempts_data[node_id] = attempts_list
+            if attempts_list:
+                quiz_attempts_data[node_id] = attempts_list
             # Also include questions data with first attempt for display
             if attempts_list:
                 quiz_attempts_data[f'{node_id}_questions'] = questions_data
+
+    assignment_ids = list(set(assignment_submission_nodes.values()))
+    if assignment_ids:
+        submissions_by_assignment_id = {
+            submission.assignment_id: submission
+            for submission in AssignmentSubmission.objects.filter(
+                enrollment=enrollment,
+                assignment_id__in=assignment_ids,
+            )
+        }
+        for node_id, assignment_id in assignment_submission_nodes.items():
+            submission = submissions_by_assignment_id.get(assignment_id)
+            if submission is None:
+                assignment_submissions_data[node_id] = {
+                    "assignmentId": assignment_id,
+                    "submitted": False,
+                }
+                continue
+
+            assignment_submissions_data[node_id] = {
+                "assignmentId": assignment_id,
+                "submitted": True,
+                "status": submission.status,
+                "submittedAt": (
+                    submission.submitted_at.isoformat()
+                    if submission.submitted_at
+                    else None
+                ),
+                "isLate": bool(submission.is_late),
+                "fileName": submission.file_name,
+                "hasText": bool((submission.text_content or "").strip()),
+                "score": float(submission.score) if submission.score is not None else None,
+                "feedback": submission.feedback or "",
+            }
 
     # Flatten questions into the attempts dict with node ID as key
     # Add questions to each node in curriculum for display
@@ -2120,12 +2352,27 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
     progress = (completed_count / total_nodes * 100) if total_nodes > 0 else 0
 
     # Get quiz/assignment stats
-    quiz_count = CurriculumNode.objects.filter(program=program, node_type='quiz', is_published=True).count()
-    assignment_count = CurriculumNode.objects.filter(program=program, node_type='assignment', is_published=True).count()
-    
+    quiz_count = CurriculumNode.objects.filter(
+        program=program,
+        is_published=True,
+    ).filter(
+        Q(node_type="quiz") | Q(properties__lesson_type="quiz")
+    ).count()
+    assignment_count = CurriculumNode.objects.filter(
+        program=program,
+        is_published=True,
+    ).filter(
+        Q(node_type="assignment") | Q(properties__lesson_type="assignment")
+    ).count()
+
     quizzes_passed = QuizAttempt.objects.filter(
         enrollment=enrollment, passed=True
     ).values('quiz_id').distinct().count()
+    assignments_submitted = sum(
+        1
+        for data in assignment_submissions_data.values()
+        if data.get("submitted")
+    )
     
     return render(
         request,
@@ -2144,11 +2391,12 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                 "totalNodes": total_nodes,
                 "quizzesPassed": quizzes_passed,
                 "quizzesTotal": quiz_count,
-                "assignmentsPassed": 0,  # TODO: Calculate from submissions
+                "assignmentsPassed": assignments_submitted,
                 "assignmentsTotal": assignment_count,
             },
             "curriculum": curriculum_tree,
             "quizAttempts": quiz_attempts_data,
+            "assignmentSubmissions": assignment_submissions_data,
         },
     )
 

@@ -3311,12 +3311,91 @@ def admin_instructor_application_unlock(request, pk: int):
 
 # Note: instructor_quizzes, instructor_quiz_create, instructor_quiz_edit, and
 # instructor_quiz_delete functions removed. Quiz management is now handled by
-# Course Builder via QuizEditor component and instructor_node_update.
+# Course Builder via AssessmentEditor and instructor_node_update.
 
 
 # =============================================================================
 # Quiz Taking Views (Student)
 # =============================================================================
+
+
+def _safe_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+ASSIGNMENT_MODES = {"submission_only", "question_only", "mixed"}
+ASSIGNMENT_TYPED_RESPONSE_MODES = {"submission_text", "short_answer_question"}
+
+
+def _normalize_submission_type(raw_value):
+    normalized = str(raw_value or "").strip().lower()
+    mapping = {
+        "file": "file",
+        "file_upload": "file",
+        "text": "text",
+        "text_entry": "text",
+        "both": "both",
+        "external_link": "text",
+        "media_recording": "text",
+    }
+    return mapping.get(normalized, "file")
+
+
+def _normalize_typed_response_mode(raw_value):
+    normalized = str(raw_value or "").strip().lower()
+    mapping = {
+        "submission_text": "submission_text",
+        "submission": "submission_text",
+        "text_submission": "submission_text",
+        "short_answer_question": "short_answer_question",
+        "short_answer": "short_answer_question",
+        "question": "short_answer_question",
+    }
+    return mapping.get(normalized, "submission_text")
+
+
+def _normalize_assignment_mode(props):
+    if not isinstance(props, dict):
+        return "submission_only"
+
+    explicit_mode = str(props.get("assignment_mode") or "").strip().lower()
+    if explicit_mode in ASSIGNMENT_MODES:
+        return explicit_mode
+
+    questions = props.get("questions", [])
+    has_questions = isinstance(questions, list) and len(questions) > 0
+    return "mixed" if has_questions else "submission_only"
+
+
+def _assignment_mode_requires_questions(mode):
+    return mode in {"question_only", "mixed"}
+
+
+def _assignment_mode_requires_submission(mode):
+    return mode in {"submission_only", "mixed"}
+
+
+def _assignment_requires_questions(props):
+    mode = _normalize_assignment_mode(props)
+    typed_response_mode = _normalize_typed_response_mode(
+        (props or {}).get("typed_response_mode")
+    )
+    return mode in {"question_only", "mixed"} or (
+        mode == "submission_only" and typed_response_mode == "short_answer_question"
+    )
+
+
+def _assignment_requires_submission(props):
+    mode = _normalize_assignment_mode(props)
+    typed_response_mode = _normalize_typed_response_mode(
+        (props or {}).get("typed_response_mode")
+    )
+    return mode == "mixed" or (
+        mode == "submission_only" and typed_response_mode == "submission_text"
+    )
 
 
 @login_required
@@ -3346,12 +3425,22 @@ def student_quiz_start(request, quiz_id: int):
         messages.error(request, "You are not enrolled in this program")
         return redirect("/dashboard/")
 
+    requested_enrollment_id = _safe_int(request.GET.get("enrollment_id"))
+    requested_node_id = _safe_int(request.GET.get("node_id"))
+    in_course_player_context = (
+        requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
+    )
+
     # Check attempts remaining
     existing_attempts = QuizAttempt.objects.filter(
         enrollment=enrollment, quiz=quiz
     ).count()
     if existing_attempts >= quiz.max_attempts:
         messages.error(request, "You have used all your attempts for this quiz")
+        if in_course_player_context:
+            return redirect(
+                f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
+            )
         return redirect("core:student.quiz_results", quiz_id=quiz_id)
 
     # Check for in-progress attempt
@@ -3454,6 +3543,17 @@ def student_quiz_start(request, quiz_id: int):
             "attemptsRemaining": quiz.max_attempts
             - existing_attempts
             - (0 if in_progress else 1),
+            "coursePlayer": (
+                {
+                    "sessionUrl": (
+                        f"/student/programs/{enrollment.id}/session/{quiz.node_id}/"
+                    ),
+                    "enrollmentId": enrollment.id,
+                    "nodeId": quiz.node_id,
+                }
+                if in_course_player_context
+                else None
+            ),
         },
     )
 
@@ -3464,7 +3564,7 @@ def student_quiz_submit(request, quiz_id: int):
     Submit quiz answers and calculate score.
     """
     from apps.assessments.models import Quiz, QuizAttempt
-    from apps.progression.models import Enrollment
+    from apps.progression.models import Enrollment, NodeCompletion
     from apps.notifications.services import NotificationService
 
     if request.method != "POST":
@@ -3497,6 +3597,12 @@ def student_quiz_submit(request, quiz_id: int):
     attempt.answers = data.get("answers", {})
     attempt.submitted_at = timezone.now()
 
+    requested_enrollment_id = _safe_int(data.get("enrollment_id"))
+    requested_node_id = _safe_int(data.get("node_id"))
+    in_course_player_context = (
+        requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
+    )
+
     # Calculate score
     points_earned, points_possible, percentage, passed = attempt.calculate_score()
     attempt.points_earned = points_earned
@@ -3516,6 +3622,47 @@ def student_quiz_submit(request, quiz_id: int):
         )
     else:
         messages.info(request, "Your quiz has been submitted for review.")
+
+    if in_course_player_context:
+        lesson_type = str((quiz.node.properties or {}).get("lesson_type") or "").lower()
+        node_type = str(quiz.node.node_type or "").lower()
+        is_assignment_node = node_type == "assignment" or lesson_type == "assignment"
+        assignment_mode = _normalize_assignment_mode(quiz.node.properties or {})
+
+        should_mark_complete = True
+        if is_assignment_node:
+            from apps.assessments.models import AssignmentSubmission
+
+            typed_response_mode = _normalize_typed_response_mode(
+                (quiz.node.properties or {}).get("typed_response_mode")
+            )
+            if assignment_mode == "mixed":
+                assignment_id = _safe_int((quiz.node.properties or {}).get("assignment_id"))
+                should_mark_complete = (
+                    bool(assignment_id)
+                    and AssignmentSubmission.objects.filter(
+                        enrollment=enrollment,
+                        assignment_id=assignment_id,
+                    ).exists()
+                )
+            elif assignment_mode == "question_only":
+                should_mark_complete = True
+            else:
+                should_mark_complete = typed_response_mode == "short_answer_question"
+
+        if should_mark_complete:
+            NodeCompletion.objects.get_or_create(
+                enrollment=enrollment,
+                node=quiz.node,
+                defaults={
+                    "completion_type": "quiz_pass",
+                    "completed_at": timezone.now(),
+                },
+            )
+
+        return redirect(
+            f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
+        )
 
     return redirect("core:student.quiz_results", quiz_id=quiz_id)
 
@@ -3541,6 +3688,22 @@ def student_quiz_results(request, quiz_id: int):
     except Enrollment.DoesNotExist:
         return redirect("/dashboard/")
 
+    requested_enrollment_id = _safe_int(request.GET.get("enrollment_id"))
+    requested_node_id = _safe_int(request.GET.get("node_id"))
+    in_course_player_context = (
+        requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
+    )
+
+    next_node = None
+    if in_course_player_context:
+        try:
+            from apps.progression.views import _get_sibling_navigation
+
+            siblings = _get_sibling_navigation(quiz.node, enrollment.id)
+            next_node = siblings.get("next")
+        except Exception:
+            next_node = None
+
     attempts = QuizAttempt.objects.filter(
         enrollment=enrollment, quiz=quiz, submitted_at__isnull=False
     ).order_by("-attempt_number")
@@ -3555,6 +3718,11 @@ def student_quiz_results(request, quiz_id: int):
                 "passThreshold": quiz.pass_threshold,
                 "maxAttempts": quiz.max_attempts,
                 "nodeTitle": quiz.node.title,
+                "retryUrl": (
+                    f"/student/quiz/{quiz.id}/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
+                    if in_course_player_context
+                    else f"/student/quiz/{quiz.id}/"
+                ),
             },
             "attempts": [
                 {
@@ -3571,6 +3739,16 @@ def student_quiz_results(request, quiz_id: int):
                 for a in attempts
             ],
             "canRetry": attempts.count() < quiz.max_attempts,
+            "coursePlayer": (
+                {
+                    "sessionUrl": (
+                        f"/student/programs/{enrollment.id}/session/{quiz.node_id}/"
+                    ),
+                    "nextNode": next_node,
+                }
+                if in_course_player_context
+                else None
+            ),
         },
     )
 
@@ -4073,6 +4251,7 @@ def student_assignment_view(request, assignment_id: int):
     View assignment details and submit.
     """
     from apps.assessments.models import Assignment, AssignmentSubmission
+    from apps.curriculum.models import CurriculumNode
     from apps.progression.models import Enrollment
 
     try:
@@ -4091,6 +4270,57 @@ def student_assignment_view(request, assignment_id: int):
         messages.error(request, "You are not enrolled in this program")
         return redirect("/dashboard/")
 
+    requested_enrollment_id = _safe_int(request.GET.get("enrollment_id"))
+    requested_node_id = _safe_int(request.GET.get("node_id"))
+
+    course_player = None
+    source_node = None
+    if requested_enrollment_id == enrollment.id and requested_node_id:
+        node = CurriculumNode.objects.filter(
+            pk=requested_node_id,
+            program=assignment.program,
+        ).first()
+        if node and _safe_int((node.properties or {}).get("assignment_id")) == assignment.id:
+            source_node = node
+            next_node = None
+            try:
+                from apps.progression.views import _get_sibling_navigation
+
+                siblings = _get_sibling_navigation(node, enrollment.id)
+                next_node = siblings.get("next")
+            except Exception:
+                next_node = None
+            course_player = {
+                "sessionUrl": f"/student/programs/{enrollment.id}/session/{node.id}/",
+                "enrollmentId": enrollment.id,
+                "nodeId": node.id,
+                "nextNode": next_node,
+            }
+
+    if source_node is None:
+        candidate_nodes = CurriculumNode.objects.filter(
+            program=assignment.program,
+            is_published=True,
+        ).only("id", "node_type", "properties")
+        for candidate in candidate_nodes:
+            props = candidate.properties if isinstance(candidate.properties, dict) else {}
+            if _safe_int(props.get("assignment_id")) == assignment.id:
+                source_node = candidate
+                break
+
+    source_props = source_node.properties if isinstance(getattr(source_node, "properties", None), dict) else {}
+    assessment_prompt = str(source_props.get("assessment_prompt") or "").strip()
+    if not assessment_prompt:
+        assessment_prompt = str(assignment.instructions or "").strip() or assignment.title
+    typed_response_mode = _normalize_typed_response_mode(
+        source_props.get("typed_response_mode")
+    )
+    assignment_mode = _normalize_assignment_mode(source_props)
+    files = source_props.get("files", [])
+    if not isinstance(files, list):
+        files = []
+    quiz_id = _safe_int(source_props.get("quiz_id"))
+
     # Get existing submission
     existing = AssignmentSubmission.objects.filter(
         enrollment=enrollment, assignment=assignment
@@ -4104,12 +4334,17 @@ def student_assignment_view(request, assignment_id: int):
                 "id": assignment.id,
                 "title": assignment.title,
                 "description": assignment.description,
+                "assessmentPrompt": assessment_prompt,
                 "instructions": assignment.instructions,
                 "dueDate": (
                     assignment.due_date.isoformat() if assignment.due_date else None
                 ),
                 "weight": assignment.weight,
                 "submissionType": assignment.submission_type,
+                "typedResponseMode": typed_response_mode,
+                "assignmentMode": assignment_mode,
+                "quizId": quiz_id,
+                "materials": files,
                 "allowedFileTypes": assignment.allowed_file_types,
                 "allowLateSubmission": assignment.allow_late_submission,
                 "latePenalty": assignment.late_penalty_percent,
@@ -4129,6 +4364,7 @@ def student_assignment_view(request, assignment_id: int):
                 if existing
                 else None
             ),
+            "coursePlayer": course_player,
         },
     )
 
@@ -4141,8 +4377,9 @@ def student_assignment_submit(request, assignment_id: int):
     import os
     import uuid
 
-    from apps.assessments.models import Assignment, AssignmentSubmission
-    from apps.progression.models import Enrollment
+    from apps.assessments.models import Assignment, AssignmentSubmission, QuizAttempt
+    from apps.curriculum.models import CurriculumNode
+    from apps.progression.models import Enrollment, NodeCompletion
 
     if request.method != "POST":
         return redirect("core:student.assignment", assignment_id=assignment_id)
@@ -4162,12 +4399,33 @@ def student_assignment_submit(request, assignment_id: int):
     except Enrollment.DoesNotExist:
         return redirect("/dashboard/")
 
+    requested_enrollment_id = _safe_int(request.POST.get("enrollment_id"))
+    requested_node_id = _safe_int(request.POST.get("node_id"))
+    context_node = None
+    in_course_player_context = requested_enrollment_id == enrollment.id and bool(
+        requested_node_id
+    )
+    if in_course_player_context:
+        context_node = CurriculumNode.objects.filter(
+            pk=requested_node_id,
+            program=assignment.program,
+        ).first()
+        if context_node is None:
+            in_course_player_context = False
+        elif _safe_int((context_node.properties or {}).get("assignment_id")) != assignment.id:
+            in_course_player_context = False
+            context_node = None
+
     # Check for existing submission
     existing = AssignmentSubmission.objects.filter(
         enrollment=enrollment, assignment=assignment
     ).first()
     if existing and existing.status == "graded":
         messages.error(request, "This assignment has already been graded")
+        if in_course_player_context and context_node:
+            return redirect(
+                f"/student/programs/{enrollment.id}/session/{context_node.id}/"
+            )
         return redirect("core:student.assignment", assignment_id=assignment_id)
 
     # Check due date
@@ -4175,6 +4433,10 @@ def student_assignment_submit(request, assignment_id: int):
     if assignment.due_date and timezone.now() > assignment.due_date:
         if not assignment.allow_late_submission:
             messages.error(request, "The submission deadline has passed")
+            if in_course_player_context and context_node:
+                return redirect(
+                    f"/student/programs/{enrollment.id}/session/{context_node.id}/"
+                )
             return redirect("core:student.assignment", assignment_id=assignment_id)
         is_late = True
 
@@ -4189,6 +4451,10 @@ def student_assignment_submit(request, assignment_id: int):
         ext = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
         if assignment.allowed_file_types and ext not in assignment.allowed_file_types:
             messages.error(request, f"File type .{ext} is not allowed")
+            if in_course_player_context and context_node:
+                return redirect(
+                    f"/student/programs/{enrollment.id}/session/{context_node.id}/"
+                )
             return redirect("core:student.assignment", assignment_id=assignment_id)
 
         # Save file
@@ -4230,6 +4496,62 @@ def student_assignment_submit(request, assignment_id: int):
             is_late=is_late,
         )
         messages.success(request, "Assignment submitted!")
+    if in_course_player_context and context_node:
+        assignment_props = context_node.properties if isinstance(context_node.properties, dict) else {}
+        assignment_mode = _normalize_assignment_mode(assignment_props)
+        typed_response_mode = _normalize_typed_response_mode(
+            assignment_props.get("typed_response_mode")
+        )
+        should_mark_complete = (
+            assignment_mode == "submission_only"
+            and typed_response_mode == "submission_text"
+        )
+
+        if assignment_mode == "mixed":
+            quiz_id = _safe_int(assignment_props.get("quiz_id"))
+            should_mark_complete = bool(
+                quiz_id
+                and QuizAttempt.objects.filter(
+                    enrollment=enrollment,
+                    quiz_id=quiz_id,
+                    submitted_at__isnull=False,
+                ).exists()
+            )
+        elif assignment_mode == "question_only":
+            quiz_id = _safe_int(assignment_props.get("quiz_id"))
+            should_mark_complete = bool(
+                quiz_id
+                and QuizAttempt.objects.filter(
+                    enrollment=enrollment,
+                    quiz_id=quiz_id,
+                    submitted_at__isnull=False,
+                ).exists()
+            )
+        elif (
+            assignment_mode == "submission_only"
+            and typed_response_mode == "short_answer_question"
+        ):
+            quiz_id = _safe_int(assignment_props.get("quiz_id"))
+            should_mark_complete = bool(
+                quiz_id
+                and QuizAttempt.objects.filter(
+                    enrollment=enrollment,
+                    quiz_id=quiz_id,
+                    submitted_at__isnull=False,
+                ).exists()
+            )
+
+        if should_mark_complete:
+            NodeCompletion.objects.get_or_create(
+                enrollment=enrollment,
+                node=context_node,
+                defaults={
+                    "completion_type": "upload",
+                    "completed_at": timezone.now(),
+                },
+            )
+
+        return redirect(f"/student/programs/{enrollment.id}/session/{context_node.id}/")
 
     return redirect("core:student.assignment", assignment_id=assignment_id)
 
@@ -5001,6 +5323,24 @@ def instructor_node_create(request, program_id: int):
             is_published=auto_publish,
         )
 
+        # Sync quiz payload immediately on creation so quiz_id exists for student flow.
+        node_type_normalized = (node.node_type or "").lower()
+        lesson_type_normalized = (
+            (node.properties.get("lesson_type") or "").lower()
+            if isinstance(node.properties, dict)
+            else ""
+        )
+        if node_type_normalized == "quiz" or lesson_type_normalized == "quiz":
+            questions_data = (
+                node.properties.get("questions", [])
+                if isinstance(node.properties, dict)
+                else []
+            )
+            if questions_data:
+                _sync_quiz_questions(node, questions_data)
+        if node_type_normalized == "assignment" or lesson_type_normalized == "assignment":
+            _sync_assignment(node)
+
         messages.success(request, f"{node_type} '{title}' created successfully")
 
         # Build updated curriculum tree and return as Inertia response
@@ -5307,39 +5647,74 @@ def _sync_assignment(node):
     """
     from apps.assessments.models import Assignment
 
-    props = node.properties or {}
+    props = node.properties.copy() if isinstance(node.properties, dict) else {}
 
-    # Get or create Assignment for this node's program
-    assignment, created = Assignment.objects.get_or_create(
-        program=node.program,
-        title=node.title,
-        defaults={
-            "description": node.description or "",
-            "instructions": props.get("instructions", ""),
-            "weight": props.get("weight", 10),
-            "due_date": props.get("due_date"),
-            "allow_late_submission": props.get("allow_late_submission", False),
-            "late_penalty_percent": props.get("late_penalty", 0),
-            "submission_type": props.get("submission_type", "file"),
-            "allowed_file_types": props.get("allowed_file_types", ["pdf", "docx"]),
-            "max_file_size_mb": props.get("max_file_size_mb", 10),
-        },
+    assignment_mode = _normalize_assignment_mode(props)
+    typed_response_mode = _normalize_typed_response_mode(
+        props.get("typed_response_mode")
     )
+    submission_type = _normalize_submission_type(props.get("submission_type"))
+    assessment_prompt = str(props.get("assessment_prompt") or "").strip()
+    if not assessment_prompt:
+        from django.utils.html import strip_tags
 
-    if not created:
+        assessment_prompt = strip_tags(props.get("instructions", "") or "").strip()
+    if not assessment_prompt:
+        assessment_prompt = node.title
+
+    if assignment_mode != "submission_only":
+        typed_response_mode = "submission_text"
+
+    allow_late_submission = (
+        props.get("allow_late_submission")
+        if "allow_late_submission" in props
+        else props.get("allow_late", False)
+    )
+    allow_late_submission = bool(allow_late_submission)
+
+    props["assignment_mode"] = assignment_mode
+    props["typed_response_mode"] = typed_response_mode
+    props["assessment_prompt"] = assessment_prompt
+    props["submission_type"] = submission_type
+    props["allow_late_submission"] = allow_late_submission
+
+    assignment_id = _safe_int(props.get("assignment_id"))
+    assignment = None
+    if assignment_id:
+        assignment = Assignment.objects.filter(
+            pk=assignment_id, program=node.program
+        ).first()
+    if assignment is None:
+        assignment = Assignment.objects.filter(
+            program=node.program,
+            title=node.title,
+        ).first()
+
+    if assignment is None:
+        assignment = Assignment.objects.create(
+            program=node.program,
+            title=node.title,
+            description=node.description or "",
+            instructions=props.get("instructions", ""),
+            weight=props.get("weight", 10),
+            due_date=props.get("due_date"),
+            allow_late_submission=allow_late_submission,
+            late_penalty_percent=props.get("late_penalty", 0),
+            submission_type=submission_type,
+            allowed_file_types=props.get("allowed_file_types", ["pdf", "docx"]),
+            max_file_size_mb=props.get("max_file_size_mb", 10),
+        )
+    else:
+        assignment.title = node.title
         assignment.description = node.description or assignment.description
         assignment.instructions = props.get("instructions", assignment.instructions)
         assignment.weight = props.get("weight", assignment.weight)
         assignment.due_date = props.get("due_date", assignment.due_date)
-        assignment.allow_late_submission = props.get(
-            "allow_late_submission", assignment.allow_late_submission
-        )
+        assignment.allow_late_submission = allow_late_submission
         assignment.late_penalty_percent = props.get(
             "late_penalty", assignment.late_penalty_percent
         )
-        assignment.submission_type = props.get(
-            "submission_type", assignment.submission_type
-        )
+        assignment.submission_type = submission_type
         assignment.allowed_file_types = props.get(
             "allowed_file_types", assignment.allowed_file_types
         )
@@ -5348,9 +5723,59 @@ def _sync_assignment(node):
         )
         assignment.save()
 
-    # Store assignment_id in node properties for reference
-    node.properties["assignment_id"] = assignment.id
+    # Store assignment link and canonical values in node properties.
+    props["assignment_id"] = assignment.id
+    # Auto-manage a single short-answer question when submission-only uses prompt typing.
+    if (
+        assignment_mode == "submission_only"
+        and typed_response_mode == "short_answer_question"
+    ):
+        from django.utils.html import strip_tags
+
+        prompt_text = strip_tags(assessment_prompt).strip() or node.title
+        existing_generated = None
+        raw_questions = props.get("questions", [])
+        if isinstance(raw_questions, list):
+            for question in raw_questions:
+                if (
+                    isinstance(question, dict)
+                    and question.get("generated_from_assessment_prompt") is True
+                    and str(question.get("type") or "").lower() == "short_answer"
+                ):
+                    existing_generated = question
+                    break
+
+        generated_question = {
+            "id": (
+                existing_generated.get("id")
+                if isinstance(existing_generated, dict)
+                else f"auto_prompt_{node.id}"
+            ),
+            "type": "short_answer",
+            "text": prompt_text,
+            "points": props.get("points", 1) or 1,
+            "keywords": [],
+            "manual_grading": True,
+            "generated_from_assessment_prompt": True,
+        }
+        if isinstance(existing_generated, dict) and existing_generated.get("db_id"):
+            generated_question["db_id"] = existing_generated.get("db_id")
+
+        props["questions"] = [generated_question]
+        props["question_banks"] = []
+    elif assignment_mode == "submission_only":
+        props["questions"] = []
+        props["question_banks"] = []
+        props.pop("quiz_id", None)
+
+    node.properties = props
     node.save(update_fields=["properties"])
+
+    # Question-enabled assignments use the same question engine as quizzes.
+    questions_data = props.get("questions", [])
+    has_questions = isinstance(questions_data, list) and len(questions_data) > 0
+    if _assignment_requires_questions(props) and has_questions:
+        _sync_quiz_questions(node, questions_data)
 
 
 @login_required

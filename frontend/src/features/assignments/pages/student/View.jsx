@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import DOMPurify from "dompurify";
 import {
   Box,
   Container,
@@ -23,12 +24,24 @@ import {
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
 
-export default function View({ assignment, submission }) {
+export default function View({ assignment, submission, coursePlayer = null }) {
   const [file, setFile] = useState(null);
   const [textContent, setTextContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const isPastDue = assignment.dueDate && new Date(assignment.dueDate) < new Date();
+  const backUrl = coursePlayer?.sessionUrl || "/dashboard/";
+  const backLabel = coursePlayer?.sessionUrl ? "Back to Lesson" : "Back";
+  const typedResponseMode = assignment.typedResponseMode || "submission_text";
+  const assignmentMode = assignment.assignmentMode || "submission_only";
+  const allowsSubmission =
+    assignmentMode === "mixed" ||
+    (assignmentMode === "submission_only" && typedResponseMode === "submission_text");
+  const usesShortAnswerPrompt =
+    assignmentMode === "submission_only" &&
+    typedResponseMode === "short_answer_question";
+  const promptHtml = DOMPurify.sanitize(assignment.assessmentPrompt || "");
+  const instructionsHtml = DOMPurify.sanitize(assignment.instructions || "");
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -37,11 +50,30 @@ export default function View({ assignment, submission }) {
     const formData = new FormData();
     if (file) formData.append('file', file);
     if (textContent) formData.append('text_content', textContent);
+    if (coursePlayer?.enrollmentId) {
+      formData.append("enrollment_id", String(coursePlayer.enrollmentId));
+    }
+    if (coursePlayer?.nodeId) {
+      formData.append("node_id", String(coursePlayer.nodeId));
+    }
 
     router.post(`/student/assignment/${assignment.id}/submit/`, formData, {
       forceFormData: true,
       onFinish: () => setSubmitting(false),
     });
+  };
+
+  const handleStartPrompt = () => {
+    if (!assignment.quizId) return;
+    const params = new URLSearchParams();
+    if (coursePlayer?.enrollmentId) {
+      params.set("enrollment_id", String(coursePlayer.enrollmentId));
+    }
+    if (coursePlayer?.nodeId) {
+      params.set("node_id", String(coursePlayer.nodeId));
+    }
+    const query = params.toString();
+    router.visit(`/student/quiz/${assignment.quizId}/${query ? `?${query}` : ""}`);
   };
 
   return (
@@ -57,12 +89,17 @@ export default function View({ assignment, submission }) {
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
             <Button
               component={Link}
-              href="/dashboard/"
+              href={backUrl}
               startIcon={<IconArrowLeft />}
               variant="outlined"
             >
-              Back
+              {backLabel}
             </Button>
+            {coursePlayer?.nextNode?.url && (
+              <Button component={Link} href={coursePlayer.nextNode.url} variant="contained">
+                Continue to Next Lesson
+              </Button>
+            )}
           </Stack>
 
           <Grid container spacing={3}>
@@ -86,18 +123,41 @@ export default function View({ assignment, submission }) {
                 )}
 
                 <Typography variant="h6" sx={{ mt: 3 }}>
-                  Description
+                  Assignment Question
                 </Typography>
-                <Typography paragraph sx={{ whiteSpace: 'pre-wrap' }}>
-                  {assignment.description}
-                </Typography>
+                <Box
+                  sx={{ color: "text.secondary" }}
+                  dangerouslySetInnerHTML={{ __html: promptHtml }}
+                />
 
                 <Typography variant="h6" sx={{ mt: 3 }}>
                   Instructions
                 </Typography>
-                <Typography paragraph sx={{ whiteSpace: 'pre-wrap' }}>
-                  {assignment.instructions}
+                <Box
+                  sx={{ color: "text.secondary" }}
+                  dangerouslySetInnerHTML={{ __html: instructionsHtml }}
+                />
+
+                <Typography variant="h6" sx={{ mt: 3 }}>
+                  Materials
                 </Typography>
+                {(assignment.materials || []).length === 0 ? (
+                  <Typography color="text.secondary">No materials attached.</Typography>
+                ) : (
+                  <Stack spacing={1}>
+                    {(assignment.materials || []).map((material, idx) => {
+                      const url = material?.url || material?.path;
+                      if (!url) return null;
+                      return (
+                        <Stack key={material?.id || `${url}-${idx}`} direction="row" spacing={2}>
+                          <Typography>{material?.name || `Material ${idx + 1}`}</Typography>
+                          <Button component="a" href={url} download size="small">Download</Button>
+                          <Button component="a" href={url} target="_blank" rel="noopener noreferrer" size="small">Open</Button>
+                        </Stack>
+                      );
+                    })}
+                  </Stack>
+                )}
 
                 {assignment.allowLateSubmission && assignment.latePenalty > 0 && (
                   <Alert severity="warning" sx={{ mt: 2 }}>
@@ -157,7 +217,27 @@ export default function View({ assignment, submission }) {
               ) : null}
 
               {/* Submit Form */}
-              {(!submission || submission.status !== 'graded') && (
+              {usesShortAnswerPrompt && (
+                <Card sx={{ mb: 3 }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Answer Question
+                    </Typography>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      Answer this assignment using a typed response.
+                    </Alert>
+                    <Button
+                      variant="contained"
+                      onClick={handleStartPrompt}
+                      disabled={!assignment.quizId}
+                    >
+                      Answer Question
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {allowsSubmission && (!submission || submission.status !== 'graded') && (
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>

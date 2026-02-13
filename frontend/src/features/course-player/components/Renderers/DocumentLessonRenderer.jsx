@@ -1,18 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
     Alert,
     Box,
     Button,
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    IconButton,
     Paper,
     Stack,
     Typography,
 } from "@mui/material";
 import {
-    Close as CloseIcon,
     Download as DownloadIcon,
     OpenInNew as OpenInNewIcon,
     PictureAsPdf as PdfIcon,
@@ -23,14 +18,23 @@ const toAbsoluteUrl = (url) => {
     if (!url) return "";
     try {
         return new URL(url, window.location.origin).toString();
-    } catch (err) {
+    } catch {
         return url;
     }
 };
 
-export default function DocumentLessonRenderer({ node, onRequirementMet }) {
-    const [officePreviewOpen, setOfficePreviewOpen] = useState(false);
+const downloadWithFilename = (url, filename) => {
+    if (!url) return;
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename || "";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
+export default function DocumentLessonRenderer({ node, onRequirementMet }) {
     const documentData = node?.properties?.document || {};
     const viewerPdfUrl = documentData.viewer_pdf_url || "";
     const originalUrl = documentData.original_url || "";
@@ -41,9 +45,7 @@ export default function DocumentLessonRenderer({ node, onRequirementMet }) {
             ? documentData.strict_completion
             : true;
     const requiredPages = strictCompletion ? pageCount : 0;
-    const hasDistinctConvertedPdf =
-        Boolean(documentData.viewer_pdf_url) &&
-        documentData.viewer_pdf_url !== originalUrl;
+    const originalFilename = documentData.original_name || "document";
 
     const officeViewerUrl = useMemo(() => {
         if (!originalUrl || !["docx", "pptx"].includes(originalExt)) return "";
@@ -81,36 +83,25 @@ export default function DocumentLessonRenderer({ node, onRequirementMet }) {
                                 size="small"
                                 startIcon={<DownloadIcon />}
                                 onClick={() =>
-                                    window.open(originalUrl, "_blank", "noopener,noreferrer")
+                                    downloadWithFilename(originalUrl, originalFilename)
                                 }
                             >
-                                {originalExt === "pdf"
-                                    ? "Download PDF"
-                                    : "Download original"}
-                            </Button>
-                        )}
-                        {hasDistinctConvertedPdf && (
-                            <Button
-                                size="small"
-                                startIcon={<DownloadIcon />}
-                                onClick={() =>
-                                    window.open(
-                                        documentData.viewer_pdf_url,
-                                        "_blank",
-                                        "noopener,noreferrer",
-                                    )
-                                }
-                            >
-                                Download PDF
+                                Download
                             </Button>
                         )}
                         {officeViewerUrl && (
                             <Button
                                 size="small"
                                 startIcon={<OpenInNewIcon />}
-                                onClick={() => setOfficePreviewOpen(true)}
+                                onClick={() =>
+                                    window.open(
+                                        officeViewerUrl,
+                                        "_blank",
+                                        "noopener,noreferrer",
+                                    )
+                                }
                             >
-                                Open original
+                                Open
                             </Button>
                         )}
                     </Stack>
@@ -122,41 +113,6 @@ export default function DocumentLessonRenderer({ node, onRequirementMet }) {
                 requiredPages={requiredPages}
                 onComplete={onRequirementMet}
             />
-
-            {officeViewerUrl && (
-                <Dialog
-                    open={officePreviewOpen}
-                    onClose={() => setOfficePreviewOpen(false)}
-                    fullWidth
-                    maxWidth="lg"
-                >
-                    <DialogTitle sx={{ pr: 6 }}>
-                        Original document preview
-                        <IconButton
-                            aria-label="close"
-                            onClick={() => setOfficePreviewOpen(false)}
-                            sx={{
-                                position: "absolute",
-                                right: 8,
-                                top: 8,
-                            }}
-                        >
-                            <CloseIcon />
-                        </IconButton>
-                    </DialogTitle>
-                    <DialogContent sx={{ height: "80vh", p: 0 }}>
-                        <iframe
-                            title="Office document preview"
-                            src={officeViewerUrl}
-                            style={{
-                                border: 0,
-                                width: "100%",
-                                height: "100%",
-                            }}
-                        />
-                    </DialogContent>
-                </Dialog>
-            )}
         </Stack>
     );
 }

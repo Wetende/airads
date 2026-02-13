@@ -23,11 +23,14 @@ import {
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
 
-export default function Results({ quiz, attempts, canRetry }) {
+export default function Results({ quiz, attempts, canRetry, coursePlayer }) {
   const bestAttempt = attempts.reduce(
     (best, a) => (!best || (a.score && a.score > best.score) ? a : best),
     null
   );
+  const backUrl = coursePlayer?.sessionUrl || '/dashboard/';
+  const backLabel = coursePlayer?.sessionUrl ? 'Back to Lesson' : 'Back to Dashboard';
+  const retryUrl = quiz.retryUrl || `/student/quiz/${quiz.id}/`;
 
   return (
     <>
@@ -42,12 +45,17 @@ export default function Results({ quiz, attempts, canRetry }) {
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
             <Button
               component={Link}
-              href="/dashboard/"
+              href={backUrl}
               startIcon={<IconArrowLeft />}
               variant="outlined"
             >
-              Back to Dashboard
+              {backLabel}
             </Button>
+            {coursePlayer?.nextNode?.url && (
+              <Button component={Link} href={coursePlayer.nextNode.url} variant="contained">
+                Continue to Next Lesson
+              </Button>
+            )}
           </Stack>
 
           <Typography variant="h4" gutterBottom>
@@ -101,7 +109,7 @@ export default function Results({ quiz, attempts, canRetry }) {
               action={
                 <Button
                   component={Link}
-                  href={`/student/quiz/${quiz.id}/`}
+                  href={retryUrl}
                   color="inherit"
                   startIcon={<IconRefresh />}
                 >

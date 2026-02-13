@@ -15,6 +15,7 @@ import {
     Switch,
     Stack,
     Checkbox,
+    Radio,
     OutlinedInput,
     Collapse,
     Tooltip,
@@ -30,8 +31,7 @@ import {
     Add as AddIcon,
     Help as HelpIcon,
 } from "@mui/icons-material";
-import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
+import RichTextEditor from "@/components/RichTextEditor";
 
 // Import specialized editors
 import MatchingPairsEditor from "@/features/quizzes/components/MatchingPairsEditor";
@@ -42,34 +42,10 @@ const QUESTION_TYPES = [
     { value: "mcq", label: "Single choice", color: "#1976d2" },
     { value: "mcq_multi", label: "Multiple choice", color: "#7b1fa2" },
     { value: "true_false", label: "True-False", color: "#388e3c" },
-    { value: "short_answer", label: "Keywords", color: "#f57c00" },
+    { value: "short_answer", label: "Short Answer (Typed)", color: "#f57c00" },
     { value: "matching", label: "Matching", color: "#0288d1" },
     { value: "fill_blank", label: "Fill in the Gap", color: "#5d4037" },
     { value: "ordering", label: "Ordering", color: "#455a64" },
-];
-
-// Quill toolbar modules
-const quillModules = {
-    toolbar: [
-        [{ header: [1, 2, 3, false] }],
-        ["bold", "italic", "underline", "strike"],
-        [{ align: [] }],
-        ["link"],
-        [{ list: "ordered" }, { list: "bullet" }],
-        ["clean"],
-    ],
-};
-
-// Quill 2.0 formats - 'list' covers both ordered and bullet
-const quillFormats = [
-    "header",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "align",
-    "link",
-    "list",
 ];
 
 const normalizeFillBlankText = (text, type) => {
@@ -361,15 +337,7 @@ export default function QuestionEditorCard({
                         </Tooltip>
 
                         {/* Rich Text Editor */}
-                        <Box
-                            sx={{
-                                flex: 1,
-                                "& .ql-editor": {
-                                    minHeight: "200px",
-                                    fontSize: "1rem",
-                                },
-                            }}
-                        >
+                        <Box sx={{ flex: 1 }}>
                             <Typography
                                 variant="caption"
                                 color="text.secondary"
@@ -387,17 +355,11 @@ export default function QuestionEditorCard({
                                     enter text with {"{{blank}}"} placeholders.
                                 </Typography>
                             ) : (
-                                <ReactQuill
-                                    theme="snow"
+                                <RichTextEditor
                                     value={localData.text}
-                                    onChange={(value) =>
-                                        updateField("text", value)
-                                    }
-                                    modules={quillModules}
-                                    formats={quillFormats}
-                                    style={{
-                                        backgroundColor: "white",
-                                    }}
+                                    onChange={(value) => updateField("text", value)}
+                                    placeholder="Enter your question"
+                                    minHeight={200}
                                 />
                             )}
                             <Typography
@@ -560,6 +522,14 @@ export default function QuestionEditorCard({
                                 <Typography variant="subtitle2">
                                     Answers
                                 </Typography>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                    {localData.type === "mcq"
+                                        ? "Single choice: select one correct answer"
+                                        : "Multiple choice: select all correct answers"}
+                                </Typography>
                             </Box>
 
                             <Stack spacing={1}>
@@ -619,14 +589,33 @@ export default function QuestionEditorCard({
                                             >
                                                 Correct
                                             </Typography>
-                                            <Checkbox
-                                                checked={isAnswerCorrect(idx)}
-                                                onChange={() =>
-                                                    handleToggleCorrect(idx)
-                                                }
-                                                size="small"
-                                                color="success"
-                                            />
+                                            {localData.type === "mcq" ? (
+                                                <Radio
+                                                    checked={isAnswerCorrect(
+                                                        idx,
+                                                    )}
+                                                    onChange={() =>
+                                                        handleToggleCorrect(
+                                                            idx,
+                                                        )
+                                                    }
+                                                    size="small"
+                                                    color="success"
+                                                />
+                                            ) : (
+                                                <Checkbox
+                                                    checked={isAnswerCorrect(
+                                                        idx,
+                                                    )}
+                                                    onChange={() =>
+                                                        handleToggleCorrect(
+                                                            idx,
+                                                        )
+                                                    }
+                                                    size="small"
+                                                    color="success"
+                                                />
+                                            )}
                                         </Box>
                                         {localData.options.length > 2 && (
                                             <IconButton
@@ -769,7 +758,7 @@ export default function QuestionEditorCard({
                     {localData.type === "short_answer" && (
                         <Box>
                             <Typography variant="subtitle2" gutterBottom>
-                                Accepted Keywords
+                                Typed Answer Keywords (Optional)
                             </Typography>
                             <TextField
                                 fullWidth
@@ -785,7 +774,7 @@ export default function QuestionEditorCard({
                                     )
                                 }
                                 size="small"
-                                helperText="Student answers must contain at least one of these keywords"
+                                helperText="Use this for auto-checking typed answers. Leave empty for manual review."
                             />
                         </Box>
                     )}

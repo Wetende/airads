@@ -6,8 +6,7 @@ import SessionControl from "./SessionControl";
 import BlockRenderer from "../Renderers/BlockRenderer";
 import VideoRenderer from "../Renderers/VideoRenderer";
 import TextRenderer from "../Renderers/TextRenderer";
-import QuizRenderer from "../Renderers/QuizRenderer";
-import AssignmentRenderer from "../Renderers/AssignmentRenderer";
+import AssessmentRenderer from "../Renderers/AssessmentRenderer";
 import DocumentLessonRenderer from "../Renderers/DocumentLessonRenderer";
 
 const Whiteboard = ({
@@ -154,7 +153,7 @@ const Whiteboard = ({
         // 1. Quiz
         if (type === "quiz" || lessonType === "quiz") {
             return (
-                <QuizRenderer
+                <AssessmentRenderer
                     node={node}
                     enrollmentId={courseId}
                     onComplete={handleComplete}
@@ -165,10 +164,10 @@ const Whiteboard = ({
         // 2. Assignment
         if (type === "assignment" || lessonType === "assignment") {
             return (
-                <AssignmentRenderer
+                <AssessmentRenderer
                     node={node}
                     enrollmentId={courseId}
-                    onSubmit={handleComplete}
+                    onComplete={handleComplete}
                 />
             );
         }

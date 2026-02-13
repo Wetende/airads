@@ -289,12 +289,12 @@
     "file": "vendor-hls-Cp2x8l1r.js",
     "name": "vendor-hls"
   },
-  "_vendor-icons-9x6hTl6J.js": {
-    "file": "vendor-icons-9x6hTl6J.js",
+  "_vendor-icons-DZEKU6sz.js": {
+    "file": "vendor-icons-DZEKU6sz.js",
     "name": "vendor-icons",
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
-      "_vendor-mui-CKIIKOhb.js",
+      "_vendor-mui-IfvyTGCv.js",
       "_vendor-dnd-BbkTYtbq.js"
     ]
   },
@@ -313,8 +313,8 @@
       "_vendor-dnd-BbkTYtbq.js"
     ]
   },
-  "_vendor-mui-CKIIKOhb.js": {
-    "file": "vendor-mui-CKIIKOhb.js",
+  "_vendor-mui-IfvyTGCv.js": {
+    "file": "vendor-mui-IfvyTGCv.js",
     "name": "vendor-mui",
     "imports": [
       "_vendor-dnd-BbkTYtbq.js",
@@ -322,13 +322,13 @@
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
-  "_vendor-pdf-BaJQzAkj.js": {
-    "file": "vendor-pdf-BaJQzAkj.js",
+  "_vendor-pdf-BSy95WHr.js": {
+    "file": "vendor-pdf-BSy95WHr.js",
     "name": "vendor-pdf",
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
       "_vendor-dnd-BbkTYtbq.js",
-      "_vendor-mui-CKIIKOhb.js"
+      "_vendor-mui-IfvyTGCv.js"
     ]
   },
   "_vendor-player-AW3MFJiD.js": {
@@ -388,63 +388,63 @@
     "src": "src/assets/images/learning.jpg"
   },
   "src/components/sections/landing/FAQSection.jsx": {
-    "file": "FAQSection-CF0yonAt.js",
+    "file": "FAQSection-i-8PFUd2.js",
     "name": "FAQSection",
     "src": "src/components/sections/landing/FAQSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
       "_vendor-dnd-BbkTYtbq.js",
-      "_vendor-mui-CKIIKOhb.js",
+      "_vendor-mui-IfvyTGCv.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-9x6hTl6J.js",
+      "_vendor-icons-DZEKU6sz.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/FeaturesSection.jsx": {
-    "file": "FeaturesSection-DXZzFnnF.js",
+    "file": "FeaturesSection-BxMdQZex.js",
     "name": "FeaturesSection",
     "src": "src/components/sections/landing/FeaturesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
-      "_vendor-mui-CKIIKOhb.js",
+      "_vendor-mui-IfvyTGCv.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-9x6hTl6J.js",
+      "_vendor-icons-DZEKU6sz.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/InstructorsSection.jsx": {
-    "file": "InstructorsSection-D9h_W6Ua.js",
+    "file": "InstructorsSection-B3jnRtQu.js",
     "name": "InstructorsSection",
     "src": "src/components/sections/landing/InstructorsSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
-      "_vendor-mui-CKIIKOhb.js",
+      "_vendor-mui-IfvyTGCv.js",
       "_vendor-motion-BNO2tkJK.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/LearningModesSection.jsx": {
-    "file": "LearningModesSection-DybvwMSm.js",
+    "file": "LearningModesSection-Dn2mgKas.js",
     "name": "LearningModesSection",
     "src": "src/components/sections/landing/LearningModesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
       "src/main.jsx",
-      "_vendor-mui-CKIIKOhb.js",
+      "_vendor-mui-IfvyTGCv.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-9x6hTl6J.js",
+      "_vendor-icons-DZEKU6sz.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-CDLuBejv.js",
       "_vendor-player-AW3MFJiD.js",
       "_vendor-quill-C1CzkRsG.js",
-      "_vendor-pdf-BaJQzAkj.js",
+      "_vendor-pdf-BSy95WHr.js",
       "_vendor-date-D5ebMS61.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ],
@@ -453,57 +453,57 @@
     ]
   },
   "src/components/sections/landing/ProgramsSection.jsx": {
-    "file": "ProgramsSection-B2JvAcLy.js",
+    "file": "ProgramsSection-z-tVldAd.js",
     "name": "ProgramsSection",
     "src": "src/components/sections/landing/ProgramsSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
       "src/main.jsx",
-      "_vendor-mui-CKIIKOhb.js",
+      "_vendor-mui-IfvyTGCv.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-9x6hTl6J.js",
+      "_vendor-icons-DZEKU6sz.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-CDLuBejv.js",
       "_vendor-player-AW3MFJiD.js",
       "_vendor-quill-C1CzkRsG.js",
-      "_vendor-pdf-BaJQzAkj.js",
+      "_vendor-pdf-BSy95WHr.js",
       "_vendor-date-D5ebMS61.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/TestimonialsSection.jsx": {
-    "file": "TestimonialsSection-BZnQF9yz.js",
+    "file": "TestimonialsSection-tveYhdSJ.js",
     "name": "TestimonialsSection",
     "src": "src/components/sections/landing/TestimonialsSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
       "_vendor-swiper-gFbsDU59.js",
-      "_vendor-mui-CKIIKOhb.js",
+      "_vendor-mui-IfvyTGCv.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-9x6hTl6J.js",
+      "_vendor-icons-DZEKU6sz.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/TrustBadgesSection.jsx": {
-    "file": "TrustBadgesSection-CEXBheco.js",
+    "file": "TrustBadgesSection-BvlWWMg4.js",
     "name": "TrustBadgesSection",
     "src": "src/components/sections/landing/TrustBadgesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
-      "_vendor-mui-CKIIKOhb.js",
+      "_vendor-mui-IfvyTGCv.js",
       "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-9x6hTl6J.js",
+      "_vendor-icons-DZEKU6sz.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/main.jsx": {
-    "file": "main-5aSEXdal.js",
+    "file": "main-CQ6A90Q4.js",
     "name": "main",
     "src": "src/main.jsx",
     "isEntry": true,
@@ -512,12 +512,12 @@
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-CDLuBejv.js",
-      "_vendor-icons-9x6hTl6J.js",
-      "_vendor-mui-CKIIKOhb.js",
+      "_vendor-icons-DZEKU6sz.js",
+      "_vendor-mui-IfvyTGCv.js",
       "_vendor-motion-BNO2tkJK.js",
       "_vendor-player-AW3MFJiD.js",
       "_vendor-quill-C1CzkRsG.js",
-      "_vendor-pdf-BaJQzAkj.js",
+      "_vendor-pdf-BSy95WHr.js",
       "_vendor-date-D5ebMS61.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ],
