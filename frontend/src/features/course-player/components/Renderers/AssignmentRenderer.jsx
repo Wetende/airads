@@ -57,14 +57,14 @@ const AssignmentRenderer = ({ node, enrollmentId, onSubmit }) => {
 
     const handleSubmit = () => {
         if (!uploadedFile || isSubmitting) return;
-        
+
         setIsSubmitting(true);
-        
+
         // Create FormData for file upload
         const formData = new FormData();
         formData.append('file', uploadedFile);
         formData.append('mark_complete', 'true');
-        
+
         if (node?.id && enrollmentId) {
             router.post(`/student/programs/${enrollmentId}/session/${node.id}/`, formData, {
                 preserveScroll: true,
@@ -98,8 +98,8 @@ const AssignmentRenderer = ({ node, enrollmentId, onSubmit }) => {
                     Your assignment has been successfully uploaded and is pending review by the instructor. You will be notified once it is graded.
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-                    <Button 
-                        variant="contained" 
+                    <Button
+                        variant="contained"
                         href={`/student/assignment/${node?.id}/`}
                         sx={{ minWidth: 180 }}
                     >
@@ -120,11 +120,11 @@ const AssignmentRenderer = ({ node, enrollmentId, onSubmit }) => {
                 <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
                     <Chip label="Assignment" size="small" color="primary" variant="outlined" />
                     {assignment.dueDate && (
-                        <Chip 
-                            icon={<TimeIcon />} 
-                            label={`Due: ${new Date(assignment.dueDate).toLocaleDateString()}`} 
-                            size="small" 
-                            variant="outlined" 
+                        <Chip
+                            icon={<TimeIcon />}
+                            label={`Due: ${new Date(assignment.dueDate).toLocaleDateString()}`}
+                            size="small"
+                            variant="outlined"
                         />
                     )}
                 </Box>
@@ -141,12 +141,12 @@ const AssignmentRenderer = ({ node, enrollmentId, onSubmit }) => {
             <Divider sx={{ mb: 4 }} />
 
             {/* Upload Area */}
-            <Box 
-                sx={{ 
-                    border: '2px dashed', 
-                    borderColor: 'grey.300', 
-                    borderRadius: 3, 
-                    p: 6, 
+            <Box
+                sx={{
+                    border: '2px dashed',
+                    borderColor: 'grey.300',
+                    borderRadius: 3,
+                    p: 6,
                     textAlign: 'center',
                     bgcolor: 'grey.50',
                     transition: 'all 0.2s',
@@ -163,7 +163,7 @@ const AssignmentRenderer = ({ node, enrollmentId, onSubmit }) => {
                     type="file"
                     onChange={handleFileChange}
                 />
-                
+
                 {uploadedFile ? (
                     <Box sx={{ mb: 2 }}>
                         <FileIcon color="primary" sx={{ fontSize: 48, mb: 1 }} />
@@ -195,8 +195,8 @@ const AssignmentRenderer = ({ node, enrollmentId, onSubmit }) => {
 
             {/* Actions */}
             <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button 
-                    variant="contained" 
+                <Button
+                    variant="contained"
                     size="large"
                     disabled={!uploadedFile || isSubmitting}
                     onClick={handleSubmit}

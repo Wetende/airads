@@ -39,10 +39,10 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
             </Paper>
         );
     }
-    
+
     // Get questions from node properties
     const questions = node?.properties?.questions || [];
-    
+
     // If no questions, show empty state
     if (!questions || questions.length === 0) {
         return (
@@ -78,7 +78,7 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
 
     const handleSubmitQuiz = () => {
         setIsSubmitting(true);
-        
+
         // Calculate score locally for immediate feedback
         let correctCount = 0;
         questions.forEach(q => {
@@ -91,7 +91,7 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
         const calculatedScore = Math.round((correctCount / questions.length) * 100);
         setScore(calculatedScore);
         setShowResults(true);
-        
+
         // Submit to backend
         if (node?.id && enrollmentId) {
             router.post(`/student/programs/${enrollmentId}/session/${node.id}/`, {
@@ -126,7 +126,7 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
                     <Typography variant="h4" fontWeight={700} gutterBottom>
                         Quiz Completed!
                     </Typography>
-                    
+
                     <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
                         <Typography variant="h2" color={score >= 70 ? 'success.main' : 'warning.main'} fontWeight={800}>
                             {score}%
@@ -134,42 +134,42 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
                     </Box>
 
                     <Typography color="text.secondary" paragraph>
-                        {score >= 70 
-                            ? "Great job! You've mastered this topic." 
+                        {score >= 70
+                            ? "Great job! You've mastered this topic."
                             : "Review the answers below and try again to improve your score."}
                     </Typography>
                 </Box>
-                
+
                 {/* Detailed Review Section */}
                 <Box sx={{ mb: 4 }}>
                     <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
                         Review Your Answers
                     </Typography>
-                    
+
                     {questions.map((question, index) => {
                         const selectedOptionId = answers[question.id];
                         const correctOption = question.options?.find(opt => opt.isCorrect);
                         const selectedOption = question.options?.find(opt => String(opt.id) === selectedOptionId);
                         const isCorrect = correctOption && selectedOptionId === String(correctOption.id);
-                        
+
                         return (
-                            <Paper 
-                                key={question.id} 
-                                variant="outlined" 
-                                sx={{ 
-                                    p: 2, 
-                                    mb: 2, 
+                            <Paper
+                                key={question.id}
+                                variant="outlined"
+                                sx={{
+                                    p: 2,
+                                    mb: 2,
                                     borderRadius: 2,
                                     borderColor: isCorrect ? 'success.main' : 'error.light',
                                     borderWidth: 2
                                 }}
                             >
                                 <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
-                                    <Typography 
-                                        variant="caption" 
-                                        sx={{ 
-                                            px: 1, 
-                                            py: 0.25, 
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            px: 1,
+                                            py: 0.25,
                                             borderRadius: 1,
                                             bgcolor: isCorrect ? 'success.lighter' : 'error.lighter',
                                             color: isCorrect ? 'success.dark' : 'error.dark',
@@ -182,11 +182,11 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
                                         Question {index + 1}
                                     </Typography>
                                 </Box>
-                                
+
                                 <Typography variant="body1" fontWeight={500} sx={{ mb: 1 }}>
                                     {question.text || question.question}
                                 </Typography>
-                                
+
                                 <Box sx={{ pl: 2, borderLeft: '3px solid', borderColor: 'divider' }}>
                                     {!isCorrect && selectedOption && (
                                         <Typography variant="body2" color="error.main" sx={{ mb: 0.5 }}>
@@ -208,7 +208,7 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
                         );
                     })}
                 </Box>
-                
+
                 <Box sx={{ textAlign: 'center' }}>
                     <Button variant="contained" onClick={handleRetake} sx={{ px: 4 }}>
                         Retake Quiz
@@ -247,11 +247,11 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
                     onChange={handleOptionChange}
                 >
                     {(currentQuestion.options || []).map((option) => (
-                        <Paper 
-                            key={option.id} 
-                            variant="outlined" 
-                            sx={{ 
-                                mb: 2, 
+                        <Paper
+                            key={option.id}
+                            variant="outlined"
+                            sx={{
+                                mb: 2,
                                 borderRadius: 2,
                                 border: answers[currentQuestion.id] === String(option.id) ? '2px solid' : '1px solid',
                                 borderColor: answers[currentQuestion.id] === String(option.id) ? 'primary.main' : 'divider',
@@ -272,15 +272,15 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
 
             {/* Footer */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button 
-                    variant="contained" 
+                <Button
+                    variant="contained"
                     size="large"
                     onClick={handleNext}
                     disabled={!answers[currentQuestion.id] || isSubmitting}
                     sx={{ px: 4, borderRadius: 8 }}
                 >
-                    {currentQuestionIndex === questions.length - 1 
-                        ? (isSubmitting ? 'Submitting...' : 'Finish Quiz') 
+                    {currentQuestionIndex === questions.length - 1
+                        ? (isSubmitting ? 'Submitting...' : 'Finish Quiz')
                         : 'Next Question'}
                 </Button>
             </Box>
