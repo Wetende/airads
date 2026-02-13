@@ -36,6 +36,7 @@ import DoneAllIcon from "@mui/icons-material/DoneAll";
 
 // Map notification types to icons
 const notificationIcons = {
+    enrollment_confirmed: <CheckCircleIcon color="success" />,
     enrollment_approved: <CheckCircleIcon color="success" />,
     enrollment_rejected: <CancelIcon color="error" />,
     grade_published: <GradeIcon color="primary" />,

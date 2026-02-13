@@ -4,7 +4,11 @@ Tests for notification services.
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.core import mail
+from apps.core.models import Program
+from apps.progression.models import Enrollment
 from apps.notifications.models import Notification
+from apps.notifications.models import NotificationPreference
 from apps.notifications.services import NotificationService
 
 User = get_user_model()
@@ -18,6 +22,11 @@ class NotificationServiceTests(TestCase):
             username='testuser',
             email='test@example.com',
             password='testpass123'
+        )
+        self.program = Program.objects.create(
+            name="Notification Test Program",
+            code="NOTIF-TEST-1",
+            level="beginner",
         )
 
     def test_create_notification(self):
@@ -142,3 +151,43 @@ class NotificationServiceTests(TestCase):
         NotificationService.mark_all_as_read(self.user)
         count = NotificationService.get_unread_count(self.user)
         self.assertEqual(count, 0)
+
+    def test_notify_enrollment_confirmed_creates_in_app_and_email(self):
+        """Enrollment confirmation should create in-app notification and send email."""
+        enrollment = Enrollment.objects.create(
+            user=self.user,
+            program=self.program,
+            status="active",
+        )
+
+        notification = NotificationService.notify_enrollment_confirmed(enrollment)
+
+        self.assertEqual(notification.notification_type, "enrollment_confirmed")
+        self.assertEqual(notification.recipient, self.user)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(self.user.email, mail.outbox[0].to)
+        self.assertIn(self.program.name, mail.outbox[0].subject)
+
+    def test_notify_enrollment_approved_respects_email_preference(self):
+        """Email should not be sent when user has email notifications disabled."""
+        NotificationPreference.objects.create(
+            user=self.user,
+            email_enabled=False,
+        )
+        enrollment = Enrollment.objects.create(
+            user=self.user,
+            program=self.program,
+            status="active",
+        )
+
+        notification = NotificationService.notify_enrollment_approved(enrollment)
+
+        self.assertEqual(notification.notification_type, "enrollment_approved")
+        self.assertEqual(
+            Notification.objects.filter(
+                recipient=self.user,
+                notification_type="enrollment_approved",
+            ).count(),
+            1,
+        )
+        self.assertEqual(len(mail.outbox), 0)

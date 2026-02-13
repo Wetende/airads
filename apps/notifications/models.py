@@ -10,6 +10,7 @@ class Notification(TimeStampedModel):
     """Individual notification record for a user."""
     
     NOTIFICATION_TYPES = [
+        ('enrollment_confirmed', 'Enrollment Confirmed'),
         ('enrollment_approved', 'Enrollment Approved'),
         ('enrollment_rejected', 'Enrollment Rejected'),
         ('grade_published', 'Grade Published'),

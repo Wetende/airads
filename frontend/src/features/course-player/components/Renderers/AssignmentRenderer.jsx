@@ -8,6 +8,37 @@ const AssignmentRenderer = ({ node, enrollmentId, onSubmit }) => {
     const [uploadedFile, setUploadedFile] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // If this assignment is backed by the Assignments flow, launch the dedicated page.
+    const assignmentId = node?.properties?.assignment_id;
+    if (assignmentId) {
+        return (
+            <Paper
+                elevation={0}
+                sx={{
+                    p: { xs: 2, md: 5 },
+                    borderRadius: 2,
+                    bgcolor: "background.paper",
+                    textAlign: "center",
+                }}
+            >
+                <Typography variant="h5" fontWeight={700} gutterBottom>
+                    {node?.title || "Assignment"}
+                </Typography>
+                <Typography color="text.secondary" sx={{ mb: 3 }}>
+                    Open the assignment to view instructions and submit your work.
+                </Typography>
+                <Button
+                    variant="contained"
+                    size="large"
+                    href={`/student/assignment/${assignmentId}/`}
+                    sx={{ px: 4, borderRadius: 8 }}
+                >
+                    Open Assignment
+                </Button>
+            </Paper>
+        );
+    }
+
     // Get assignment details from node properties
     const assignment = {
         title: node?.title || 'Assignment',

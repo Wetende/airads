@@ -102,6 +102,8 @@ createInertiaApp({
                 "./features/practicum/pages/instructor/Review.jsx",
 
             "Instructor/Apply": "./features/auth/pages/InstructorApply.jsx",
+            "Notifications/Index":
+                "./features/notifications/pages/Index.jsx",
 
             // Student Features (Extensions)
             "Student/Assignments/View":

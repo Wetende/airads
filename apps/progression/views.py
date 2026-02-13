@@ -20,6 +20,7 @@ from apps.practicum.models import PracticumSubmission, SubmissionReview
 from apps.certifications.models import Certificate
 from apps.progression.services import ProgressionEngine
 from apps.core.utils import serialize_user
+from apps.notifications.services import NotificationService
 
 
 # =============================================================================
@@ -1918,10 +1919,24 @@ def instructor_gradebook_publish(request, pk: int):
     assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
     program = assignment.program
 
+    # Collect enrollments whose grades are about to be published
+    enrollment_ids = list(
+        AssessmentResult.objects.filter(
+            enrollment__program=program, is_published=False
+        ).values_list("enrollment_id", flat=True).distinct()
+    )
+
     # Publish all unpublished results
     AssessmentResult.objects.filter(
         enrollment__program=program, is_published=False
     ).update(is_published=True, published_at=timezone.now())
+
+    if enrollment_ids:
+        enrollments = Enrollment.objects.filter(
+            id__in=enrollment_ids
+        ).select_related("user", "program")
+        for enrollment in enrollments:
+            NotificationService.notify_grade_published(enrollment)
 
     return redirect("progression:instructor.gradebook", pk=pk)
 
@@ -2535,6 +2550,7 @@ def admin_enrollment_create(request):
             status="active",
             enrolled_at=timezone.now(),
         )
+        NotificationService.notify_enrollment_confirmed(enrollment)
 
         return redirect("progression:admin.enrollments")
 
@@ -2580,12 +2596,13 @@ def admin_enrollment_bulk(request):
             if not Enrollment.objects.filter(
                 user_id=user_id, program_id=program_id
             ).exists():
-                Enrollment.objects.create(
+                enrollment = Enrollment.objects.create(
                     user_id=user_id,
                     program_id=program_id,
                     status="active",
                     enrolled_at=timezone.now(),
                 )
+                NotificationService.notify_enrollment_confirmed(enrollment)
                 created += 1
             else:
                 skipped += 1
@@ -2618,6 +2635,7 @@ def admin_enrollment_withdraw(request, pk: int):
 
     enrollment.status = "withdrawn"
     enrollment.save()
+    NotificationService.notify_enrollment_status_changed(enrollment, "withdrawn")
 
     return redirect("progression:admin.enrollments")
 
@@ -2696,22 +2714,45 @@ def student_enroll_request(request, pk: int):
         
         if enrollment_mode == "open":
             # Direct enrollment
-            Enrollment.objects.create(
+            enrollment = Enrollment.objects.create(
                 user=user,
                 program=program,
                 status="active",
                 enrolled_at=timezone.now(),
             )
+            NotificationService.notify_enrollment_confirmed(enrollment)
             messages.success(request, f"Successfully enrolled in {program.name}!")
             return redirect("progression:student.program", pk=pk)
         else:
             # Create pending request
-            EnrollmentRequest.objects.create(
+            enrollment_request = EnrollmentRequest.objects.create(
                 user=user,
                 program=program,
                 status="pending",
                 message=message,
             )
+
+            # Notify reviewers of the new request
+            if enrollment_mode == "instructor_approval":
+                reviewers = User.objects.filter(
+                    id__in=InstructorAssignment.objects.filter(
+                        program=program
+                    ).values_list("instructor_id", flat=True)
+                )
+                review_action_url = (
+                    f"/instructor/programs/{program.id}/enrollment-requests/"
+                )
+            else:
+                # admin_approval mode
+                reviewers = User.objects.filter(is_staff=True, is_active=True)
+                review_action_url = "/admin/enrollments/"
+
+            if reviewers.exists():
+                NotificationService.notify_enrollment_requested(
+                    enrollment_request,
+                    reviewers,
+                    action_url=review_action_url,
+                )
             messages.success(
                 request,
                 f"Your enrollment request for {program.name} has been submitted for approval."
@@ -2827,12 +2868,13 @@ def instructor_enrollment_request_approve(request, pk: int, request_id: int):
     )
     
     # Create enrollment
-    Enrollment.objects.create(
+    enrollment = Enrollment.objects.create(
         user=enrollment_request.user,
         program=enrollment_request.program,
         status="active",
         enrolled_at=timezone.now(),
     )
+    NotificationService.notify_enrollment_approved(enrollment)
     
     # Update request
     enrollment_request.status = "approved"
@@ -2884,6 +2926,11 @@ def instructor_enrollment_request_reject(request, pk: int, request_id: int):
     enrollment_request.reviewed_at = timezone.now()
     enrollment_request.reviewer_notes = data.get("notes", "")
     enrollment_request.save()
+
+    NotificationService.notify_enrollment_rejected(
+        enrollment_request,
+        reason=enrollment_request.reviewer_notes,
+    )
     
     messages.info(request, f"Rejected enrollment for {enrollment_request.user.get_full_name() or enrollment_request.user.email}")
     

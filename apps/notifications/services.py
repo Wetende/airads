@@ -2,8 +2,10 @@
 Notification service - Helper methods for creating notifications.
 """
 
+from django.conf import settings
+from django.core.mail import send_mail
 from django.utils import timezone
-from .models import Notification
+from .models import Notification, NotificationPreference
 
 
 class NotificationService:
@@ -38,6 +40,9 @@ class NotificationService:
         Returns:
             Created Notification instance
         """
+        if not NotificationService._should_send_in_app(recipient, notification_type):
+            return None
+
         return Notification.objects.create(
             recipient=recipient,
             notification_type=notification_type,
@@ -75,6 +80,13 @@ class NotificationService:
         Returns:
             List of created Notification instances
         """
+        recipients = list(recipients)
+        eligible_recipients = [
+            recipient
+            for recipient in recipients
+            if NotificationService._should_send_in_app(recipient, notification_type)
+        ]
+
         notifications = [
             Notification(
                 recipient=recipient,
@@ -85,8 +97,10 @@ class NotificationService:
                 action_url=action_url,
                 related_program_id=related_program_id,
             )
-            for recipient in recipients
+            for recipient in eligible_recipients
         ]
+        if not notifications:
+            return []
         return Notification.objects.bulk_create(notifications)
     
     @staticmethod
@@ -144,15 +158,139 @@ class NotificationService:
             }
             for n in notifications
         ]
+
+    @staticmethod
+    def _should_send_email(user, notification_type):
+        """
+        Check if email notifications are enabled for this user/type.
+        Defaults to enabled when no preference exists.
+        """
+        try:
+            preferences = user.notification_preferences
+        except NotificationPreference.DoesNotExist:
+            return True
+
+        if not preferences.email_enabled or preferences.email_digest == "never":
+            return False
+
+        type_preference = preferences.type_preferences.get(notification_type, {})
+        if isinstance(type_preference, dict) and "email" in type_preference:
+            return bool(type_preference.get("email"))
+
+        return True
+
+    @staticmethod
+    def _should_send_in_app(user, notification_type):
+        """
+        Check if in-app notifications are enabled for this user/type.
+        Defaults to enabled when no preference exists.
+        """
+        try:
+            preferences = user.notification_preferences
+        except NotificationPreference.DoesNotExist:
+            return True
+
+        if not preferences.in_app_enabled:
+            return False
+
+        type_preference = preferences.type_preferences.get(notification_type, {})
+        if isinstance(type_preference, dict) and "in_app" in type_preference:
+            return bool(type_preference.get("in_app"))
+
+        return True
+
+    @staticmethod
+    def send_email_notification(recipient, notification_type, subject, message):
+        """
+        Send an email notification when recipient preferences allow it.
+        Returns True if email was sent, False otherwise.
+        """
+        if not recipient.email:
+            return False
+
+        if not NotificationService._should_send_email(recipient, notification_type):
+            return False
+
+        sent = send_mail(
+            subject=subject,
+            message=message,
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            recipient_list=[recipient.email],
+            fail_silently=True,
+        )
+        return sent > 0
+
+    @staticmethod
+    def notify_enrollment_requested(enrollment_request, reviewers, action_url=None):
+        """
+        Notify reviewers (instructors/admins) that a student requested enrollment.
+        """
+        student_name = (
+            enrollment_request.user.get_full_name() or enrollment_request.user.email
+        )
+        notifications = NotificationService.bulk_create(
+            recipients=reviewers,
+            notification_type="system",
+            title="New Enrollment Request",
+            message=(
+                f'{student_name} requested enrollment in '
+                f'"{enrollment_request.program.name}".'
+            ),
+            action_url=action_url
+            or f"/instructor/programs/{enrollment_request.program.id}/enrollment-requests/",
+            related_program_id=enrollment_request.program.id,
+        )
+
+        for reviewer in reviewers:
+            NotificationService.send_email_notification(
+                recipient=reviewer,
+                notification_type="system",
+                subject=f"New Enrollment Request: {enrollment_request.program.name}",
+                message=(
+                    f'Hello {reviewer.get_full_name() or reviewer.email},\n\n'
+                    f'{student_name} requested enrollment in '
+                    f'"{enrollment_request.program.name}".\n'
+                    "Please review the request in your dashboard."
+                ),
+            )
+
+        return notifications
     
     # =========================================================================
     # Convenience methods for specific notification types
     # =========================================================================
+
+    @staticmethod
+    def notify_enrollment_confirmed(enrollment):
+        """Send notification when a student is directly enrolled."""
+        notification = NotificationService.create(
+            recipient=enrollment.user,
+            notification_type='enrollment_confirmed',
+            title='Enrollment Confirmed',
+            message=f'You have been enrolled in "{enrollment.program.name}".',
+            action_url=f'/student/programs/{enrollment.program.id}/',
+            related_program_id=enrollment.program.id,
+            related_enrollment_id=enrollment.id,
+        )
+
+        NotificationService.send_email_notification(
+            recipient=enrollment.user,
+            notification_type='enrollment_confirmed',
+            subject=f'Enrollment Confirmed: {enrollment.program.name}',
+            message=(
+                f'Hello {enrollment.user.get_full_name() or enrollment.user.email},\n\n'
+                f'You have been enrolled in "{enrollment.program.name}".\n'
+                'You can now access the program from your student dashboard.\n\n'
+                'If you did not expect this enrollment, please contact support.'
+            ),
+        )
+
+        return notification
     
     @staticmethod
     def notify_enrollment_approved(enrollment):
         """Send notification when enrollment is approved."""
-        return NotificationService.create(
+        notification = NotificationService.create(
             recipient=enrollment.user,
             notification_type='enrollment_approved',
             title='Enrollment Approved',
@@ -161,6 +299,49 @@ class NotificationService:
             related_program_id=enrollment.program.id,
             related_enrollment_id=enrollment.id,
         )
+
+        NotificationService.send_email_notification(
+            recipient=enrollment.user,
+            notification_type='enrollment_approved',
+            subject=f'Enrollment Approved: {enrollment.program.name}',
+            message=(
+                f'Hello {enrollment.user.get_full_name() or enrollment.user.email},\n\n'
+                f'Your enrollment request for "{enrollment.program.name}" has been approved.\n'
+                'You can now access the program from your student dashboard.\n\n'
+                'If you did not request this enrollment, please contact support.'
+            ),
+        )
+
+        return notification
+
+    @staticmethod
+    def notify_enrollment_status_changed(enrollment, status_label):
+        """
+        Send notification when enrollment status changes after activation.
+        """
+        notification = NotificationService.create(
+            recipient=enrollment.user,
+            notification_type='system',
+            title='Enrollment Status Updated',
+            message=(
+                f'Your enrollment in "{enrollment.program.name}" is now '
+                f'"{status_label}".'
+            ),
+            action_url=f'/student/programs/{enrollment.program.id}/',
+            related_program_id=enrollment.program.id,
+            related_enrollment_id=enrollment.id,
+        )
+        NotificationService.send_email_notification(
+            recipient=enrollment.user,
+            notification_type='system',
+            subject=f'Enrollment Status Updated: {enrollment.program.name}',
+            message=(
+                f'Hello {enrollment.user.get_full_name() or enrollment.user.email},\n\n'
+                f'Your enrollment status for "{enrollment.program.name}" is now '
+                f'"{status_label}".'
+            ),
+        )
+        return notification
     
     @staticmethod
     def notify_enrollment_rejected(enrollment, reason=''):
@@ -168,20 +349,33 @@ class NotificationService:
         message = f'Your enrollment request for "{enrollment.program.name}" was not approved.'
         if reason:
             message += f' Reason: {reason}'
-        
-        return NotificationService.create(
+
+        notification = NotificationService.create(
             recipient=enrollment.user,
             notification_type='enrollment_rejected',
             title='Enrollment Request Update',
             message=message,
             related_program_id=enrollment.program.id,
-            related_enrollment_id=enrollment.id,
+            related_enrollment_id=getattr(enrollment, "id", None),
         )
+
+        NotificationService.send_email_notification(
+            recipient=enrollment.user,
+            notification_type='enrollment_rejected',
+            subject=f'Enrollment Request Update: {enrollment.program.name}',
+            message=(
+                f'Hello {enrollment.user.get_full_name() or enrollment.user.email},\n\n'
+                f'Your enrollment request for "{enrollment.program.name}" was not approved.\n'
+                + (f"Reason: {reason}\n" if reason else "")
+                + "\nYou can contact your instructor or administrator for details."
+            ),
+        )
+        return notification
     
     @staticmethod
     def notify_grade_published(enrollment):
         """Send notification when grades are published for an enrollment."""
-        return NotificationService.create(
+        notification = NotificationService.create(
             recipient=enrollment.user,
             notification_type='grade_published',
             title='Grades Published',
@@ -191,11 +385,22 @@ class NotificationService:
             related_enrollment_id=enrollment.id,
             priority='high',
         )
+
+        NotificationService.send_email_notification(
+            recipient=enrollment.user,
+            notification_type='grade_published',
+            subject=f'Grades Published: {enrollment.program.name}',
+            message=(
+                f'Hello {enrollment.user.get_full_name() or enrollment.user.email},\n\n'
+                f'Your grades for "{enrollment.program.name}" are now available.'
+            ),
+        )
+        return notification
     
     @staticmethod
     def notify_assignment_graded(submission):
         """Send notification when an assignment is graded."""
-        return NotificationService.create(
+        notification = NotificationService.create(
             recipient=submission.enrollment.user,
             notification_type='assignment_graded',
             title='Assignment Graded',
@@ -203,11 +408,22 @@ class NotificationService:
             action_url=f'/student/assignments/{submission.id}/',
             related_assessment_id=submission.id,
         )
+
+        NotificationService.send_email_notification(
+            recipient=submission.enrollment.user,
+            notification_type='assignment_graded',
+            subject='Assignment Graded',
+            message=(
+                f'Hello {submission.enrollment.user.get_full_name() or submission.enrollment.user.email},\n\n'
+                "Your assignment has been graded. Log in to view feedback."
+            ),
+        )
+        return notification
     
     @staticmethod
     def notify_quiz_graded(attempt):
         """Send notification when a quiz is graded."""
-        return NotificationService.create(
+        notification = NotificationService.create(
             recipient=attempt.enrollment.user,
             notification_type='quiz_graded',
             title='Quiz Results Available',
@@ -215,6 +431,17 @@ class NotificationService:
             action_url=f'/student/quizzes/{attempt.id}/',
             related_assessment_id=attempt.id,
         )
+
+        NotificationService.send_email_notification(
+            recipient=attempt.enrollment.user,
+            notification_type='quiz_graded',
+            subject='Quiz Results Available',
+            message=(
+                f'Hello {attempt.enrollment.user.get_full_name() or attempt.enrollment.user.email},\n\n'
+                "Your quiz results are now available. Log in to review them."
+            ),
+        )
+        return notification
     
     @staticmethod
     def notify_announcement(announcement, enrolled_users):
@@ -225,7 +452,7 @@ class NotificationService:
             announcement: Announcement instance
             enrolled_users: QuerySet of User instances enrolled in the program
         """
-        return NotificationService.bulk_create(
+        notifications = NotificationService.bulk_create(
             recipients=enrolled_users,
             notification_type='announcement',
             title=f'New Announcement: {announcement.title}',
@@ -233,11 +460,20 @@ class NotificationService:
             action_url=f'/student/programs/{announcement.program.id}/announcements/',
             related_program_id=announcement.program.id,
         )
+
+        for user in enrolled_users:
+            NotificationService.send_email_notification(
+                recipient=user,
+                notification_type='announcement',
+                subject=f'New Announcement: {announcement.title}',
+                message=announcement.content[:500],
+            )
+        return notifications
     
     @staticmethod
     def notify_instructor_approved(user):
         """Send notification when instructor application is approved."""
-        return NotificationService.create(
+        notification = NotificationService.create(
             recipient=user,
             notification_type='instructor_approved',
             title='Instructor Application Approved',
@@ -245,6 +481,18 @@ class NotificationService:
             action_url='/instructor/programs/',
             priority='high',
         )
+
+        NotificationService.send_email_notification(
+            recipient=user,
+            notification_type='instructor_approved',
+            subject='Instructor Application Approved',
+            message=(
+                f'Hello {user.get_full_name() or user.email},\n\n'
+                "Your instructor application has been approved. "
+                "You can now create and manage programs."
+            ),
+        )
+        return notification
     
     @staticmethod
     def notify_instructor_rejected(user, reason=''):
@@ -252,13 +500,46 @@ class NotificationService:
         message = 'Your instructor application was not approved at this time.'
         if reason:
             message += f' Reason: {reason}'
-        
-        return NotificationService.create(
+
+        notification = NotificationService.create(
             recipient=user,
             notification_type='instructor_rejected',
             title='Instructor Application Update',
             message=message,
         )
+
+        NotificationService.send_email_notification(
+            recipient=user,
+            notification_type='instructor_rejected',
+            subject='Instructor Application Update',
+            message=(
+                f'Hello {user.get_full_name() or user.email},\n\n'
+                + message
+            ),
+        )
+        return notification
+
+    @staticmethod
+    def notify_instructor_unlocked(user):
+        """Send notification when a rejected instructor application is unlocked."""
+        notification = NotificationService.create(
+            recipient=user,
+            notification_type='system',
+            title='Instructor Application Unlocked',
+            message='Your instructor application has been unlocked. You can now update and resubmit it.',
+            action_url='/instructor/apply/',
+        )
+        NotificationService.send_email_notification(
+            recipient=user,
+            notification_type='system',
+            subject='Instructor Application Unlocked',
+            message=(
+                f'Hello {user.get_full_name() or user.email},\n\n'
+                'Your instructor application has been unlocked. '
+                'You can now update your details and resubmit.'
+            ),
+        )
+        return notification
     
     @staticmethod
     def notify_program_approved(program):
@@ -266,8 +547,7 @@ class NotificationService:
         # Notify all instructors assigned to the program
         notifications = []
         for instructor in program.instructors.all():
-            notifications.append(
-                NotificationService.create(
+            notification = NotificationService.create(
                     recipient=instructor,
                     notification_type='program_approved',
                     title='Program Approved',
@@ -276,6 +556,16 @@ class NotificationService:
                     related_program_id=program.id,
                     priority='high',
                 )
+            if notification:
+                notifications.append(notification)
+            NotificationService.send_email_notification(
+                recipient=instructor,
+                notification_type='program_approved',
+                subject=f'Program Approved: {program.name}',
+                message=(
+                    f'Hello {instructor.get_full_name() or instructor.email},\n\n'
+                    f'Your program "{program.name}" has been approved.'
+                ),
             )
         return notifications
     
@@ -288,8 +578,7 @@ class NotificationService:
         
         notifications = []
         for instructor in program.instructors.all():
-            notifications.append(
-                NotificationService.create(
+            notification = NotificationService.create(
                     recipient=instructor,
                     notification_type='program_changes_requested',
                     title='Program Changes Requested',
@@ -297,5 +586,16 @@ class NotificationService:
                     action_url=f'/instructor/programs/{program.id}/edit/',
                     related_program_id=program.id,
                 )
+            if notification:
+                notifications.append(notification)
+            NotificationService.send_email_notification(
+                recipient=instructor,
+                notification_type='program_changes_requested',
+                subject=f'Changes Requested: {program.name}',
+                message=(
+                    f'Hello {instructor.get_full_name() or instructor.email},\n\n'
+                    f'Changes were requested for "{program.name}".\n'
+                    + (f"Feedback: {feedback}" if feedback else "")
+                ),
             )
         return notifications

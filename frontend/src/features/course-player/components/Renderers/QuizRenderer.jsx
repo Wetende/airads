@@ -8,6 +8,37 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
     const [showResults, setShowResults] = useState(false);
     const [score, setScore] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // If this quiz is backed by the Assessments app, launch the dedicated quiz page.
+    const quizId = node?.properties?.quiz_id;
+    if (quizId) {
+        return (
+            <Paper
+                elevation={0}
+                sx={{
+                    p: { xs: 2, md: 5 },
+                    borderRadius: 2,
+                    bgcolor: "background.paper",
+                    textAlign: "center",
+                }}
+            >
+                <Typography variant="h5" fontWeight={600} gutterBottom>
+                    {node?.title || "Quiz"}
+                </Typography>
+                <Typography color="text.secondary" sx={{ mb: 3 }}>
+                    Start the quiz to answer questions and submit your attempt.
+                </Typography>
+                <Button
+                    variant="contained"
+                    size="large"
+                    onClick={() => router.visit(`/student/quiz/${quizId}/`)}
+                    sx={{ px: 4, borderRadius: 8 }}
+                >
+                    Start Quiz
+                </Button>
+            </Paper>
+        );
+    }
     
     // Get questions from node properties
     const questions = node?.properties?.questions || [];

@@ -2365,6 +2365,7 @@ def instructor_enrollment_status(request, enrollment_id: int):
     from django.shortcuts import get_object_or_404
 
     from apps.progression.models import Enrollment
+    from apps.notifications.services import NotificationService
 
     program_ids = get_instructor_program_ids(request.user)
     enrollment = get_object_or_404(
@@ -2378,6 +2379,7 @@ def instructor_enrollment_status(request, enrollment_id: int):
     if new_status in valid_statuses:
         enrollment.status = new_status
         enrollment.save(update_fields=["status"])
+        NotificationService.notify_enrollment_status_changed(enrollment, new_status)
         messages.success(request, f"Enrollment status updated to {new_status}")
     else:
         messages.error(request, "Invalid status")
@@ -2878,6 +2880,33 @@ def instructor_announcement_create(request):
         program.notices = notices
         program.save(update_fields=["notices"])
 
+        # Notify all actively enrolled students in-app
+        from apps.notifications.services import NotificationService
+        from apps.progression.models import Enrollment
+
+        enrolled_users = User.objects.filter(
+            id__in=Enrollment.objects.filter(
+                program=program,
+                status="active",
+            ).values_list("user_id", flat=True)
+        )
+        if enrolled_users.exists():
+            NotificationService.bulk_create(
+                recipients=enrolled_users,
+                notification_type="announcement",
+                title="New Announcement",
+                message=message[:200] + ("..." if len(message) > 200 else ""),
+                action_url=f"/student/programs/{program.id}/",
+                related_program_id=program.id,
+            )
+            for enrolled_user in enrolled_users:
+                NotificationService.send_email_notification(
+                    recipient=enrolled_user,
+                    notification_type="announcement",
+                    subject=f"New Announcement: {program.name}",
+                    message=message[:500],
+                )
+
         messages.success(request, "Announcement created successfully")
         return redirect("core:instructor.announcements")
 
@@ -3152,6 +3181,7 @@ def admin_instructor_application_approve(request, pk: int):
     from django.contrib.auth.models import Group
 
     from apps.core.models import InstructorProfile
+    from apps.notifications.services import NotificationService
 
     if not _require_admin(request.user):
         return redirect("/dashboard/")
@@ -3177,7 +3207,7 @@ def admin_instructor_application_approve(request, pk: int):
     profile.user.is_active = True
     profile.user.save()
 
-    # TODO: Send approval email notification
+    NotificationService.notify_instructor_approved(profile.user)
 
     messages.success(
         request, f"Instructor application for {profile.user.email} has been approved!"
@@ -3194,6 +3224,7 @@ def admin_instructor_application_reject(request, pk: int):
     import os
 
     from apps.core.models import InstructorCertification, InstructorProfile
+    from apps.notifications.services import NotificationService
 
     if not _require_admin(request.user):
         return redirect("/dashboard/")
@@ -3239,7 +3270,7 @@ def admin_instructor_application_reject(request, pk: int):
 
     profile.save()
 
-    # TODO: Send rejection email notification with reason
+    NotificationService.notify_instructor_rejected(profile.user, reason=reason)
 
     messages.success(
         request, f"Instructor application for {profile.user.email} has been rejected."
@@ -3253,6 +3284,7 @@ def admin_instructor_application_unlock(request, pk: int):
     Unlock a rejected application for re-submission.
     """
     from apps.core.models import InstructorProfile
+    from apps.notifications.services import NotificationService
 
     if not _require_admin(request.user):
         return redirect("/dashboard/")
@@ -3271,7 +3303,7 @@ def admin_instructor_application_unlock(request, pk: int):
     profile.rejection_reason = ""
     profile.save()
 
-    # TODO: Send unlock notification email
+    NotificationService.notify_instructor_unlocked(profile.user)
 
     messages.success(request, f"Application unlocked. The user can now resubmit.")
     return redirect("core:admin.instructor_applications")
@@ -3433,6 +3465,7 @@ def student_quiz_submit(request, quiz_id: int):
     """
     from apps.assessments.models import Quiz, QuizAttempt
     from apps.progression.models import Enrollment
+    from apps.notifications.services import NotificationService
 
     if request.method != "POST":
         return redirect("core:student.quiz_start", quiz_id=quiz_id)
@@ -3471,6 +3504,9 @@ def student_quiz_submit(request, quiz_id: int):
     attempt.score = percentage
     attempt.passed = passed
     attempt.save()
+
+    if passed is not None:
+        NotificationService.notify_quiz_graded(attempt)
 
     if passed is True:
         messages.success(request, f"Congratulations! You passed with {percentage}%!")
@@ -3888,6 +3924,7 @@ def instructor_assignment_grade(request, submission_id: int):
     """
     from apps.assessments.models import AssignmentSubmission
     from apps.progression.models import InstructorAssignment
+    from apps.notifications.services import NotificationService
 
     try:
         submission = AssignmentSubmission.objects.select_related(
@@ -3923,6 +3960,7 @@ def instructor_assignment_grade(request, submission_id: int):
 
         engine = ProgressionEngine()
         engine.handle_assignment_grading(submission)
+        NotificationService.notify_assignment_graded(submission)
 
         messages.success(request, "Submission graded")
         return redirect(
@@ -4237,6 +4275,23 @@ def instructor_program_submit_for_review(request, program_id: int):
     program.submitted_by = request.user
     program.save()
 
+    from apps.notifications.services import NotificationService
+
+    admin_users = User.objects.filter(is_staff=True, is_active=True)
+    if admin_users.exists():
+        NotificationService.bulk_create(
+            recipients=admin_users,
+            notification_type="system",
+            title="Program Submitted For Review",
+            message=(
+                f'"{program.name}" was submitted by '
+                f'{request.user.get_full_name() or request.user.email}.'
+            ),
+            action_url=f"/admin/course-approval/{program.id}/",
+            related_program_id=program.id,
+            priority="high",
+        )
+
     messages.success(
         request, "Program submitted for review! You'll be notified when it's reviewed."
     )
@@ -4387,7 +4442,9 @@ def admin_course_approve(request, program_id: int):
     program.submission_status = "approved"
     program.save()
 
-    # TODO: Send approval notification email to instructor
+    from apps.notifications.services import NotificationService
+
+    NotificationService.notify_program_approved(program)
 
     messages.success(request, f"Program '{program.name}' has been approved!")
     return redirect("core:admin.course_approval")
@@ -4436,7 +4493,9 @@ def admin_course_request_changes(request, program_id: int):
         program.submission_status = "changes_requested"
         program.save()
 
-    # TODO: Send notification email to instructor
+    from apps.notifications.services import NotificationService
+
+    NotificationService.notify_program_changes_requested(program, feedback=message)
 
     messages.success(request, "Change request added")
     return redirect("core:admin.course_review", program_id=program_id)

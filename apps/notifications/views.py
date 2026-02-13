@@ -6,8 +6,12 @@ from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from inertia import render
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status as drf_status
 
-from .models import Notification
+from .models import Notification, NotificationPreference
 from .services import NotificationService
 
 
@@ -86,3 +90,119 @@ def mark_all_read(request):
     if referer:
         return redirect(referer)
     return redirect('/')
+
+
+# =============================================================================
+# REST API endpoints
+# =============================================================================
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def api_list_notifications(request):
+    """
+    API: list notifications for the authenticated user.
+    """
+    page = max(int(request.GET.get("page", 1)), 1)
+    per_page = max(int(request.GET.get("per_page", 20)), 1)
+
+    queryset = Notification.objects.filter(recipient=request.user).order_by("-created_at")
+    total = queryset.count()
+    offset = (page - 1) * per_page
+    rows = queryset[offset : offset + per_page]
+
+    notifications = [
+        {
+            "id": n.id,
+            "type": n.notification_type,
+            "title": n.title,
+            "message": n.message,
+            "priority": n.priority,
+            "is_read": n.is_read,
+            "action_url": n.action_url,
+            "created_at": n.created_at.isoformat(),
+            "read_at": n.read_at.isoformat() if n.read_at else None,
+        }
+        for n in rows
+    ]
+
+    return Response(
+        {
+            "notifications": notifications,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "has_more": offset + per_page < total,
+        }
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def api_unread_count(request):
+    """
+    API: get unread notification count.
+    """
+    return Response({"count": NotificationService.get_unread_count(request.user)})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def api_mark_read(request, pk):
+    """
+    API: mark one notification as read.
+    """
+    updated = NotificationService.mark_as_read(pk, request.user)
+    return Response({"updated": updated})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def api_mark_all_read(request):
+    """
+    API: mark all notifications as read.
+    """
+    updated = NotificationService.mark_all_as_read(request.user)
+    return Response({"updated": updated})
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def api_delete_notification(request, pk):
+    """
+    API: delete a notification belonging to the authenticated user.
+    """
+    deleted, _ = Notification.objects.filter(id=pk, recipient=request.user).delete()
+    if deleted == 0:
+        return Response({"detail": "Not found."}, status=drf_status.HTTP_404_NOT_FOUND)
+    return Response({"deleted": True})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def api_preferences(request):
+    """
+    API: get or update notification preferences for the current user.
+    """
+    preferences, _ = NotificationPreference.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        data = request.data or {}
+        if "in_app_enabled" in data:
+            preferences.in_app_enabled = bool(data.get("in_app_enabled"))
+        if "email_enabled" in data:
+            preferences.email_enabled = bool(data.get("email_enabled"))
+        if data.get("email_digest"):
+            preferences.email_digest = data.get("email_digest")
+        if "type_preferences" in data and isinstance(data.get("type_preferences"), dict):
+            preferences.type_preferences = data.get("type_preferences")
+        preferences.save()
+
+    return Response(
+        {
+            "in_app_enabled": preferences.in_app_enabled,
+            "email_enabled": preferences.email_enabled,
+            "email_digest": preferences.email_digest,
+            "type_preferences": preferences.type_preferences or {},
+        }
+    )
