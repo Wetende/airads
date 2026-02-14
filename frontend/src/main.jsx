@@ -25,9 +25,10 @@ createInertiaApp({
     resolve: (name) => {
         // Import from both old Pages and new features structure
         const pages = import.meta.glob("./Pages/**/*.jsx", { eager: true });
-        const features = import.meta.glob("./features/**/pages/**/*.jsx", {
-            eager: true,
-        });
+        const features = import.meta.glob(
+            ["./features/**/pages/**/*.jsx", "!**/*.test.jsx", "!**/*.spec.jsx"],
+            { eager: true },
+        );
         const publicPages = import.meta.glob("./pages/public/*.jsx", {
             eager: true,
         });

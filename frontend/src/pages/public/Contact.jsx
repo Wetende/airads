@@ -1,167 +1,378 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, usePage } from "@inertiajs/react";
 import {
     Box,
     Container,
     Typography,
     Grid,
     Stack,
-    Card,
-    useTheme,
+    Button,
+    TextField,
+    ThemeProvider,
+    createTheme,
+    CssBaseline,
 } from "@mui/material";
-import {
-    IconBrandTabler,
-    IconMapPin,
-    IconPhone,
-    IconMail,
-} from "@tabler/icons-react";
 import { motion } from "framer-motion";
-import { getBackgroundDots } from "../../utils/getBackgroundDots";
+import { useState } from "react";
 import PublicNavbar from "../../components/common/PublicNavbar";
+import FooterSection from "../../components/sections/landing/FooterSection";
 
-// --- Helper Components ---
-function GraphicsCard({ children, sx = {} }) {
-    return (
-        <Card
-            sx={{
-                borderRadius: { xs: 6, sm: 8 },
-                border: "1px solid",
-                borderColor: "grey.200",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                overflow: "hidden",
-                ...sx,
-            }}
-        >
-            {children}
-        </Card>
-    );
-}
+// ─── Unsplash hero image ──────────────────────────────────────────
+const HERO_IMAGE =
+    "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=800&q=80";
 
+// ─── Animation variants ───────────────────────────────────────────
 const fadeInUp = {
-    initial: { opacity: 0, y: 30 },
+    initial: { opacity: 0, y: 40 },
     whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.6, ease: [0.215, 0.61, 0.355, 1] },
+    viewport: { once: true, margin: "-80px" },
+    transition: { duration: 0.7, ease: [0.215, 0.61, 0.355, 1] },
 };
 
+// Force light theme for public pages
+const lightTheme = createTheme({
+    palette: {
+        mode: "light",
+        background: { default: "#FAFAFA", paper: "#FFFFFF" },
+        text: { primary: "#1F2937", secondary: "#6B7280" },
+    },
+});
+
 export default function Contact() {
-    const theme = useTheme();
+    const { platform, auth } = usePage().props;
+
+    const primaryColor = platform?.primaryColor || "#2563EB";
+    const secondaryColor = platform?.secondaryColor || "#1E40AF";
+    const institutionName = platform?.institutionName || "Our Institution";
+
+    const [form, setForm] = useState({ name: "", email: "", message: "" });
+    const [submitted, setSubmitted] = useState(false);
+
+    const handleChange = (e) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        // TODO: integrate with backend contact endpoint
+        setSubmitted(true);
+        setTimeout(() => setSubmitted(false), 4000);
+        setForm({ name: "", email: "", message: "" });
+    };
 
     return (
-        <>
-            <Head title="Contact Us - Crossview LMS" />
+        <ThemeProvider theme={lightTheme}>
+            <CssBaseline />
+            <Head title={`Contact - ${institutionName}`} />
 
-            <Box sx={{ minHeight: "100vh", bgcolor: "background.default", overflowX: "hidden" }}>
-                {/* Navbar */}
-                <PublicNavbar activeLink="/contact/" />
+            <Box sx={{ minHeight: "100vh", bgcolor: "#FAFAFA", overflowX: "hidden" }}>
+                {/* ═══════ NAVBAR ═══════ */}
+                <PublicNavbar activeLink="/contact/" auth={auth} />
 
-                {/* Hero Section */}
-                <Box sx={{ position: "relative", pt: { xs: 16, md: 20 }, pb: { xs: 8, md: 12 } }}>
-                    <Box
-                        sx={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            backgroundImage: getBackgroundDots(theme.palette.grey[300], 2, 30),
-                            zIndex: -1,
-                            maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
-                        }}
-                    />
+                {/* ═══════ SECTION 1: Hero Banner ═══════ */}
+                <Box
+                    sx={{
+                        position: "relative",
+                        pt: { xs: 14, md: 16 },
+                        pb: { xs: 8, md: 12 },
+                        bgcolor: primaryColor,
+                        overflow: "hidden",
+                    }}
+                >
                     <Container maxWidth="lg">
-                        <motion.div {...fadeInUp}>
-                            <Typography variant="h1" textAlign="center" gutterBottom>
-                                Contact Us
-                            </Typography>
-                            <Typography variant="h5" color="text.secondary" textAlign="center" sx={{ maxWidth: 600, mx: "auto", mb: 8 }}>
-                                Have questions? Reach out to us through any of the channels below. Our AI assistant is also available to help you 24/7.
-                            </Typography>
-                        </motion.div>
-                    </Container>
-                </Box>
-
-                {/* Content Section */}
-                <Container maxWidth="md" sx={{ pb: 16 }}>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                        <GraphicsCard sx={{ p: { xs: 4, md: 6 } }}>
-                            <Grid container spacing={4}>
-                                <Grid item xs={12} md={4}>
-                                    <Stack direction="row" spacing={2} alignItems="flex-start">
-                                        <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "primary.lighter", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                            <IconMail size={24} />
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="subtitle1" fontWeight={700}>Email</Typography>
-                                            <Typography variant="body2" color="text.secondary">Our friendly team is here to help.</Typography>
-                                            <Typography variant="body1" color="primary.main" fontWeight={600} sx={{ mt: 0.5 }}>hello@crossview.co.ke</Typography>
-                                        </Box>
-                                    </Stack>
-                                </Grid>
-
-                                <Grid item xs={12} md={4}>
-                                    <Stack direction="row" spacing={2} alignItems="flex-start">
-                                        <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "primary.lighter", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                            <IconMapPin size={24} />
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="subtitle1" fontWeight={700}>Office</Typography>
-                                            <Typography variant="body2" color="text.secondary">Come say hello at our office.</Typography>
-                                            <Typography variant="body1" sx={{ mt: 0.5 }}>Westlands, Nairobi, Kenya</Typography>
-                                        </Box>
-                                    </Stack>
-                                </Grid>
-
-                                <Grid item xs={12} md={4}>
-                                    <Stack direction="row" spacing={2} alignItems="flex-start">
-                                        <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "primary.lighter", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                            <IconPhone size={24} />
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="subtitle1" fontWeight={700}>Phone</Typography>
-                                            <Typography variant="body2" color="text.secondary">Mon-Fri from 8am to 5pm.</Typography>
-                                            <Typography variant="body1" sx={{ mt: 0.5 }}>+254 700 000 000</Typography>
-                                        </Box>
-                                    </Stack>
-                                </Grid>
+                        <Grid container spacing={6} alignItems="center" justifyContent="space-between">
+                            {/* Title Side */}
+                            <Grid size={{ xs: 12, md: 4 }}>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 30 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.7, delay: 0.1 }}
+                                >
+                                    <Typography
+                                        variant="h1"
+                                        sx={{
+                                            color: "white",
+                                            fontSize: { xs: 42, md: 56 },
+                                            fontWeight: 700,
+                                            mb: 2,
+                                        }}
+                                    >
+                                        Contact
+                                    </Typography>
+                                    <Box
+                                        sx={{
+                                            width: 60,
+                                            height: 4,
+                                            bgcolor: "white",
+                                            borderRadius: 2,
+                                            opacity: 0.7,
+                                        }}
+                                    />
+                                </motion.div>
                             </Grid>
-                        </GraphicsCard>
-                    </motion.div>
-                </Container>
 
-                {/* Footer */}
-                <Box sx={{ bgcolor: "grey.900", color: "grey.400", py: 8 }}>
-                    <Container maxWidth="lg">
-                        <Grid container spacing={8}>
-                            <Grid item xs={12} md={4}>
-                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2, color: "white" }}>
-                                    <IconBrandTabler size={32} />
-                                    <Typography variant="h5" fontWeight={700}>Crossview</Typography>
-                                </Stack>
-                                <Typography variant="body2" sx={{ maxWidth: 300 }}>
-                                    Empowering Kenyan institutions with modern, flexible, and reliable educational technology.
-                                </Typography>
-                            </Grid>
-                            <Grid item xs={6} md={2}>
-                                <Typography variant="subtitle2" color="white" gutterBottom>Platform</Typography>
-                                <Stack spacing={1}>
-                                    <Link href="/programs/" style={{ color: "inherit", textDecoration: "none" }}>Programs</Link>
-                                    <Link href="/about/" style={{ color: "inherit", textDecoration: "none" }}>About</Link>
-                                </Stack>
-                            </Grid>
-                            <Grid item xs={6} md={2}>
-                                <Typography variant="subtitle2" color="white" gutterBottom>Support</Typography>
-                                <Stack spacing={1}>
-                                    <Link href="/contact/" style={{ color: "inherit", textDecoration: "none" }}>Contact</Link>
-                                    <Link href="/verify-certificate/" style={{ color: "inherit", textDecoration: "none" }}>Verify Certificate</Link>
-                                </Stack>
+                            {/* Image Side — pushed right */}
+                            <Grid size={{ xs: 12, md: 7 }} sx={{ display: "flex", justifyContent: "flex-end" }}>
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.8, delay: 0.3 }}
+                                    style={{ width: "100%", maxWidth: 520 }}
+                                >
+                                    <Box
+                                        component="img"
+                                        src={HERO_IMAGE}
+                                        alt="Contact us"
+                                        sx={{
+                                            width: "100%",
+                                            height: { xs: 250, md: 320 },
+                                            objectFit: "cover",
+                                            borderRadius: 3,
+                                            boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                                        }}
+                                    />
+                                </motion.div>
                             </Grid>
                         </Grid>
-                        <Box sx={{ mt: 8, pt: 4, borderTop: 1, borderColor: "grey.800", textAlign: "center" }}>
-                            <Typography variant="caption">© 2025 Crossview LMS. All rights reserved.</Typography>
-                        </Box>
                     </Container>
                 </Box>
+
+                {/* ═══════ SECTION 2: Contact Us — Info + Form ═══════ */}
+                <Box sx={{ py: { xs: 8, md: 14 }, bgcolor: "white" }}>
+                    <Container maxWidth="lg">
+                        {/* Section Heading — centered */}
+                        <motion.div {...fadeInUp}>
+                            <Stack spacing={1.5} textAlign="center" alignItems="center" sx={{ mb: { xs: 6, md: 10 } }}>
+                                <Typography
+                                    variant="h2"
+                                    sx={{ color: primaryColor, fontWeight: 700 }}
+                                >
+                                    Contact Us
+                                </Typography>
+                                <Box
+                                    sx={{
+                                        width: 50,
+                                        height: 4,
+                                        bgcolor: primaryColor,
+                                        borderRadius: 2,
+                                    }}
+                                />
+                            </Stack>
+                        </motion.div>
+
+                        {/* Two-column grid: info left, form right */}
+                        <Grid container spacing={{ xs: 6, md: 10 }}>
+                            {/* LEFT — Contact Info */}
+                            <Grid size={{ xs: 12, md: 5 }}>
+                                <motion.div {...fadeInUp}>
+                                    <Typography
+                                        variant="h5"
+                                        sx={{
+                                            fontStyle: "italic",
+                                            color: "text.secondary",
+                                            mb: 5,
+                                            lineHeight: 1.6,
+                                        }}
+                                    >
+                                        If you have any questions, feel free to reach out to us. We&apos;d love to hear from you.
+                                    </Typography>
+
+                                    {/* Address */}
+                                    <Box sx={{ mb: 4 }}>
+                                        <Typography
+                                            variant="subtitle1"
+                                            sx={{ fontWeight: 700, color: primaryColor, mb: 0.5 }}
+                                        >
+                                            Address
+                                        </Typography>
+                                        <Typography variant="body1" color="text.secondary">
+                                            Westlands, Nairobi
+                                        </Typography>
+                                        <Typography variant="body1" color="text.secondary">
+                                            Kenya
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Phone */}
+                                    <Box sx={{ mb: 4 }}>
+                                        <Typography
+                                            variant="subtitle1"
+                                            sx={{ fontWeight: 700, color: primaryColor, mb: 0.5 }}
+                                        >
+                                            Phone
+                                        </Typography>
+                                        <Typography variant="body1" color="text.secondary">
+                                            +254 700 000 000
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Email */}
+                                    <Box>
+                                        <Typography
+                                            variant="subtitle1"
+                                            sx={{ fontWeight: 700, color: primaryColor, mb: 0.5 }}
+                                        >
+                                            Email
+                                        </Typography>
+                                        <Typography variant="body1" color="text.secondary">
+                                            hello@crossview.co.ke
+                                        </Typography>
+                                    </Box>
+                                </motion.div>
+                            </Grid>
+
+                            {/* RIGHT — Contact Form */}
+                            <Grid size={{ xs: 12, md: 7 }}>
+                                <motion.div {...fadeInUp}>
+                                    <Typography
+                                        variant="h4"
+                                        sx={{ fontWeight: 700, mb: 4, color: "text.primary" }}
+                                    >
+                                        Leave A Message
+                                    </Typography>
+
+                                    <Box
+                                        component="form"
+                                        onSubmit={handleSubmit}
+                                        sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+                                    >
+                                        <TextField
+                                            name="name"
+                                            label="Name"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            value={form.name}
+                                            onChange={handleChange}
+                                            sx={{
+                                                "& .MuiOutlinedInput-root": {
+                                                    borderRadius: 1,
+                                                    bgcolor: "#F9FAFB",
+                                                },
+                                            }}
+                                        />
+                                        <TextField
+                                            name="email"
+                                            label="Email"
+                                            type="email"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            value={form.email}
+                                            onChange={handleChange}
+                                            sx={{
+                                                "& .MuiOutlinedInput-root": {
+                                                    borderRadius: 1,
+                                                    bgcolor: "#F9FAFB",
+                                                },
+                                            }}
+                                        />
+                                        <TextField
+                                            name="message"
+                                            label="Message"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            multiline
+                                            rows={5}
+                                            value={form.message}
+                                            onChange={handleChange}
+                                            sx={{
+                                                "& .MuiOutlinedInput-root": {
+                                                    borderRadius: 1,
+                                                    bgcolor: "#F9FAFB",
+                                                },
+                                            }}
+                                        />
+
+                                        <Box>
+                                            <Button
+                                                type="submit"
+                                                variant="contained"
+                                                size="large"
+                                                sx={{
+                                                    px: 5,
+                                                    py: 1.5,
+                                                    borderRadius: 1,
+                                                    bgcolor: primaryColor,
+                                                    fontSize: 14,
+                                                    fontWeight: 700,
+                                                    letterSpacing: 1,
+                                                    textTransform: "uppercase",
+                                                    "&:hover": {
+                                                        bgcolor: secondaryColor,
+                                                        transform: "translateY(-2px)",
+                                                    },
+                                                    transition: "all 0.3s ease",
+                                                }}
+                                            >
+                                                Send Message
+                                            </Button>
+                                        </Box>
+
+                                        {submitted && (
+                                            <Typography
+                                                variant="body2"
+                                                sx={{ color: "success.main", fontWeight: 600 }}
+                                            >
+                                                ✓ Message sent! We&apos;ll get back to you soon.
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </motion.div>
+                            </Grid>
+                        </Grid>
+                    </Container>
+                </Box>
+
+                {/* ═══════ SECTION 3: Map ═══════ */}
+                <Box sx={{ width: "100%", height: { xs: 300, md: 450 } }}>
+                    <iframe
+                        title="Location Map"
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15955.277444357954!2d36.8049!3d-1.2641!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f17366e0f5b3d%3A0x27e6e78eb6bf4ecc!2sWestlands%2C%20Nairobi!5e0!3m2!1sen!2ske!4v1700000000000!5m2!1sen!2ske"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen=""
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                    />
+                </Box>
+
+                {/* ═══════ SECTION 4: Footer ═══════ */}
+                {platform && <FooterSection platform={platform} />}
+
+                {/* Fallback footer */}
+                {!platform && (
+                    <Box sx={{ bgcolor: "#1F2937", color: "white", py: 6 }}>
+                        <Container maxWidth="lg">
+                            <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                justifyContent="space-between"
+                                alignItems="center"
+                                spacing={2}
+                            >
+                                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.6)" }}>
+                                    © {new Date().getFullYear()} Crossview LMS. All rights reserved.
+                                </Typography>
+                                <Stack direction="row" spacing={3}>
+                                    <Link
+                                        href="/programs/"
+                                        style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "0.9rem" }}
+                                    >
+                                        Programs
+                                    </Link>
+                                    <Link
+                                        href="/about/"
+                                        style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "0.9rem" }}
+                                    >
+                                        About
+                                    </Link>
+                                </Stack>
+                            </Stack>
+                        </Container>
+                    </Box>
+                )}
             </Box>
-        </>
+        </ThemeProvider>
     );
 }
