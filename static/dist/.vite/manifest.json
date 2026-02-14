@@ -289,8 +289,8 @@
     "file": "vendor-hls-Cp2x8l1r.js",
     "name": "vendor-hls"
   },
-  "_vendor-icons-DZEKU6sz.js": {
-    "file": "vendor-icons-DZEKU6sz.js",
+  "_vendor-icons-Mdx6IRUh.js": {
+    "file": "vendor-icons-Mdx6IRUh.js",
     "name": "vendor-icons",
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
@@ -305,8 +305,8 @@
       "_vendor-dnd-BbkTYtbq.js"
     ]
   },
-  "_vendor-motion-BNO2tkJK.js": {
-    "file": "vendor-motion-BNO2tkJK.js",
+  "_vendor-motion-xC-aVuHl.js": {
+    "file": "vendor-motion-xC-aVuHl.js",
     "name": "vendor-motion",
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
@@ -388,7 +388,7 @@
     "src": "src/assets/images/learning.jpg"
   },
   "src/components/sections/landing/FAQSection.jsx": {
-    "file": "FAQSection-i-8PFUd2.js",
+    "file": "FAQSection-BvorrQG0.js",
     "name": "FAQSection",
     "src": "src/components/sections/landing/FAQSection.jsx",
     "isDynamicEntry": true,
@@ -396,40 +396,40 @@
       "_vendor-editor-WHHSXeeu.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-mui-IfvyTGCv.js",
-      "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-DZEKU6sz.js",
+      "_vendor-motion-xC-aVuHl.js",
+      "_vendor-icons-Mdx6IRUh.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/FeaturesSection.jsx": {
-    "file": "FeaturesSection-BxMdQZex.js",
+    "file": "FeaturesSection-DzRJYuF0.js",
     "name": "FeaturesSection",
     "src": "src/components/sections/landing/FeaturesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
       "_vendor-mui-IfvyTGCv.js",
-      "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-DZEKU6sz.js",
+      "_vendor-motion-xC-aVuHl.js",
+      "_vendor-icons-Mdx6IRUh.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/InstructorsSection.jsx": {
-    "file": "InstructorsSection-B3jnRtQu.js",
+    "file": "InstructorsSection-C0YiCMOP.js",
     "name": "InstructorsSection",
     "src": "src/components/sections/landing/InstructorsSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
       "_vendor-mui-IfvyTGCv.js",
-      "_vendor-motion-BNO2tkJK.js",
+      "_vendor-motion-xC-aVuHl.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/LearningModesSection.jsx": {
-    "file": "LearningModesSection-Dn2mgKas.js",
+    "file": "LearningModesSection-Bl4nraJF.js",
     "name": "LearningModesSection",
     "src": "src/components/sections/landing/LearningModesSection.jsx",
     "isDynamicEntry": true,
@@ -437,8 +437,8 @@
       "_vendor-editor-WHHSXeeu.js",
       "src/main.jsx",
       "_vendor-mui-IfvyTGCv.js",
-      "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-DZEKU6sz.js",
+      "_vendor-motion-xC-aVuHl.js",
+      "_vendor-icons-Mdx6IRUh.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-CDLuBejv.js",
@@ -453,7 +453,7 @@
     ]
   },
   "src/components/sections/landing/ProgramsSection.jsx": {
-    "file": "ProgramsSection-z-tVldAd.js",
+    "file": "ProgramsSection-BQzq1yan.js",
     "name": "ProgramsSection",
     "src": "src/components/sections/landing/ProgramsSection.jsx",
     "isDynamicEntry": true,
@@ -461,8 +461,8 @@
       "_vendor-editor-WHHSXeeu.js",
       "src/main.jsx",
       "_vendor-mui-IfvyTGCv.js",
-      "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-DZEKU6sz.js",
+      "_vendor-motion-xC-aVuHl.js",
+      "_vendor-icons-Mdx6IRUh.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-CDLuBejv.js",
@@ -474,7 +474,7 @@
     ]
   },
   "src/components/sections/landing/TestimonialsSection.jsx": {
-    "file": "TestimonialsSection-tveYhdSJ.js",
+    "file": "TestimonialsSection-BVUOu95q.js",
     "name": "TestimonialsSection",
     "src": "src/components/sections/landing/TestimonialsSection.jsx",
     "isDynamicEntry": true,
@@ -482,28 +482,28 @@
       "_vendor-editor-WHHSXeeu.js",
       "_vendor-swiper-gFbsDU59.js",
       "_vendor-mui-IfvyTGCv.js",
-      "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-DZEKU6sz.js",
+      "_vendor-motion-xC-aVuHl.js",
+      "_vendor-icons-Mdx6IRUh.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/components/sections/landing/TrustBadgesSection.jsx": {
-    "file": "TrustBadgesSection-BvlWWMg4.js",
+    "file": "TrustBadgesSection-CDZk9WgB.js",
     "name": "TrustBadgesSection",
     "src": "src/components/sections/landing/TrustBadgesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-WHHSXeeu.js",
       "_vendor-mui-IfvyTGCv.js",
-      "_vendor-motion-BNO2tkJK.js",
-      "_vendor-icons-DZEKU6sz.js",
+      "_vendor-motion-xC-aVuHl.js",
+      "_vendor-icons-Mdx6IRUh.js",
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-emotion-iqQZ7t0F.js"
     ]
   },
   "src/main.jsx": {
-    "file": "main-CQ6A90Q4.js",
+    "file": "main-FrueIi7Y.js",
     "name": "main",
     "src": "src/main.jsx",
     "isEntry": true,
@@ -512,9 +512,9 @@
       "_vendor-dnd-BbkTYtbq.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-CDLuBejv.js",
-      "_vendor-icons-DZEKU6sz.js",
+      "_vendor-icons-Mdx6IRUh.js",
       "_vendor-mui-IfvyTGCv.js",
-      "_vendor-motion-BNO2tkJK.js",
+      "_vendor-motion-xC-aVuHl.js",
       "_vendor-player-AW3MFJiD.js",
       "_vendor-quill-C1CzkRsG.js",
       "_vendor-pdf-BSy95WHr.js",

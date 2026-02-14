@@ -110,6 +110,7 @@ urlpatterns = [
     path("admin/course-approval/<int:program_id>/request-changes/", views.admin_course_request_changes, name="admin.course_request_changes"),
     path("admin/course-approval/<int:program_id>/preview/", views.admin_preview_as_student, name="admin.preview_as_student"),
     # Instructor Views
+    path("instructor/", views.instructor_landing, name="instructor.landing"),
     path("instructor/apply/", views.instructor_apply, name="instructor.apply"),
     path("instructor/programs/", views.instructor_programs, name="instructor.programs"),
     path("instructor/programs/<int:pk>/", views.instructor_program_detail, name="instructor.program"),

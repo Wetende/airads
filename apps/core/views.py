@@ -2143,6 +2143,14 @@ def _serialize_user(user: User) -> dict:
 
 
 @login_required
+def instructor_landing(request):
+    """Instructor landing page - redirects to programs."""
+    if not is_instructor(request.user):
+        return redirect("/dashboard/")
+    return redirect("/instructor/programs/")
+
+
+@login_required
 def instructor_programs(request):
     """List programs assigned to this instructor."""
     if not is_instructor(request.user):
