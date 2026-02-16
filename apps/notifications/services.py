@@ -10,7 +10,7 @@ from .models import Notification, NotificationPreference
 
 class NotificationService:
     """Service class for creating and managing notifications."""
-    
+
     @staticmethod
     def create(
         recipient,
@@ -25,7 +25,7 @@ class NotificationService:
     ):
         """
         Create a single notification for a user.
-        
+
         Args:
             recipient: User instance to receive the notification
             notification_type: One of Notification.NOTIFICATION_TYPES
@@ -36,7 +36,7 @@ class NotificationService:
             related_program_id: Optional related program ID
             related_enrollment_id: Optional related enrollment ID
             related_assessment_id: Optional related assessment ID
-            
+
         Returns:
             Created Notification instance
         """
@@ -54,7 +54,7 @@ class NotificationService:
             related_enrollment_id=related_enrollment_id,
             related_assessment_id=related_assessment_id,
         )
-    
+
     @staticmethod
     def bulk_create(
         recipients,
@@ -67,7 +67,7 @@ class NotificationService:
     ):
         """
         Create notifications for multiple users (e.g., announcements).
-        
+
         Args:
             recipients: QuerySet or list of User instances
             notification_type: One of Notification.NOTIFICATION_TYPES
@@ -76,7 +76,7 @@ class NotificationService:
             priority: 'low', 'normal', or 'high'
             action_url: Optional URL to navigate to when clicked
             related_program_id: Optional related program ID
-            
+
         Returns:
             List of created Notification instances
         """
@@ -102,7 +102,7 @@ class NotificationService:
         if not notifications:
             return []
         return Notification.objects.bulk_create(notifications)
-    
+
     @staticmethod
     def mark_as_read(notification_id, user):
         """Mark a single notification as read."""
@@ -111,7 +111,7 @@ class NotificationService:
             recipient=user,
             is_read=False
         ).update(is_read=True, read_at=timezone.now())
-    
+
     @staticmethod
     def mark_all_as_read(user):
         """Mark all notifications for a user as read."""
@@ -119,7 +119,7 @@ class NotificationService:
             recipient=user,
             is_read=False
         ).update(is_read=True, read_at=timezone.now())
-    
+
     @staticmethod
     def get_unread_count(user):
         """Get count of unread notifications for a user."""
@@ -132,18 +132,18 @@ class NotificationService:
     def get_recent(user, limit=10):
         """
         Get recent notifications for a user.
-        
+
         Args:
             user: User instance
             limit: Maximum number of notifications to return
-            
+
         Returns:
             List of notification dicts ready for frontend
         """
         notifications = Notification.objects.filter(
             recipient=user
         ).order_by('-created_at')[:limit]
-        
+
         return [
             {
                 'id': n.id,
@@ -381,7 +381,7 @@ class NotificationService:
         )
 
         return notification
-    
+
     # =========================================================================
     # Convenience methods for specific notification types
     # =========================================================================
@@ -412,7 +412,7 @@ class NotificationService:
         )
 
         return notification
-    
+
     @staticmethod
     def notify_enrollment_approved(enrollment):
         """Send notification when enrollment is approved."""
@@ -468,7 +468,7 @@ class NotificationService:
             ),
         )
         return notification
-    
+
     @staticmethod
     def notify_enrollment_rejected(enrollment, reason=''):
         """Send notification when enrollment is rejected."""
@@ -497,7 +497,7 @@ class NotificationService:
             ),
         )
         return notification
-    
+
     @staticmethod
     def notify_grade_published(enrollment):
         """Send notification when grades are published for an enrollment."""
@@ -522,7 +522,7 @@ class NotificationService:
             ),
         )
         return notification
-    
+
     @staticmethod
     def notify_assignment_graded(submission):
         """Send notification when an assignment is graded."""
@@ -545,7 +545,7 @@ class NotificationService:
             ),
         )
         return notification
-    
+
     @staticmethod
     def notify_quiz_graded(attempt):
         """Send notification when a quiz is graded."""
@@ -568,12 +568,12 @@ class NotificationService:
             ),
         )
         return notification
-    
+
     @staticmethod
     def notify_announcement(announcement, enrolled_users):
         """
         Notify all enrolled students of a new announcement.
-        
+
         Args:
             announcement: Announcement instance
             enrolled_users: QuerySet of User instances enrolled in the program
@@ -595,7 +595,7 @@ class NotificationService:
                 message=announcement.content[:500],
             )
         return notifications
-    
+
     @staticmethod
     def notify_instructor_approved(user):
         """Send notification when instructor application is approved."""
@@ -619,7 +619,7 @@ class NotificationService:
             ),
         )
         return notification
-    
+
     @staticmethod
     def notify_instructor_rejected(user, reason=''):
         """Send notification when instructor application is rejected."""
@@ -666,7 +666,7 @@ class NotificationService:
             ),
         )
         return notification
-    
+
     @staticmethod
     def notify_program_approved(program):
         """Send notification when a program is approved for publication."""
@@ -694,14 +694,14 @@ class NotificationService:
                 ),
             )
         return notifications
-    
+
     @staticmethod
     def notify_program_changes_requested(program, feedback=''):
         """Send notification when changes are requested for a program."""
         message = f'Changes have been requested for your program "{program.name}".'
         if feedback:
             message += f' Feedback: {feedback}'
-        
+
         notifications = []
         for instructor in program.instructors.all():
             notification = NotificationService.create(

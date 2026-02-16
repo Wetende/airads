@@ -8,7 +8,7 @@ from apps.core.models import TimeStampedModel
 
 class Notification(TimeStampedModel):
     """Individual notification record for a user."""
-    
+
     NOTIFICATION_TYPES = [
         ('enrollment_confirmed', 'Enrollment Confirmed'),
         ('enrollment_approved', 'Enrollment Approved'),
@@ -25,13 +25,13 @@ class Notification(TimeStampedModel):
         ('program_changes_requested', 'Program Changes Requested'),
         ('system', 'System Notification'),
     ]
-    
+
     PRIORITY_LEVELS = [
         ('low', 'Low'),
         ('normal', 'Normal'),
         ('high', 'High'),
     ]
-    
+
     recipient = models.ForeignKey(
         'core.User',
         on_delete=models.CASCADE,
@@ -43,15 +43,15 @@ class Notification(TimeStampedModel):
     priority = models.CharField(max_length=10, choices=PRIORITY_LEVELS, default='normal')
     is_read = models.BooleanField(default=False)
     read_at = models.DateTimeField(null=True, blank=True)
-    
+
     # Optional link for navigation when notification is clicked
     action_url = models.CharField(max_length=500, blank=True, null=True)
-    
+
     # Related object IDs (for filtering and grouping)
     related_program_id = models.IntegerField(null=True, blank=True)
     related_enrollment_id = models.IntegerField(null=True, blank=True)
     related_assessment_id = models.IntegerField(null=True, blank=True)
-    
+
     class Meta:
         db_table = 'notifications'
         ordering = ['-created_at']
@@ -66,23 +66,23 @@ class Notification(TimeStampedModel):
 
 class NotificationPreference(TimeStampedModel):
     """User notification preferences and settings."""
-    
+
     EMAIL_DIGEST_CHOICES = [
         ('instant', 'Instant'),
         ('daily', 'Daily Digest'),
         ('weekly', 'Weekly Digest'),
         ('never', 'Never'),
     ]
-    
+
     user = models.OneToOneField(
         'core.User',
         on_delete=models.CASCADE,
         related_name='notification_preferences'
     )
-    
+
     # In-app notifications
     in_app_enabled = models.BooleanField(default=True)
-    
+
     # Email notifications (for future implementation)
     email_enabled = models.BooleanField(default=True)
     email_digest = models.CharField(
@@ -90,11 +90,11 @@ class NotificationPreference(TimeStampedModel):
         choices=EMAIL_DIGEST_CHOICES,
         default='instant'
     )
-    
+
     # Per-type preferences stored as JSON for flexibility
     # Example: {"announcement": {"in_app": true, "email": false}}
     type_preferences = models.JSONField(default=dict, blank=True)
-    
+
     class Meta:
         db_table = 'notification_preferences'
 

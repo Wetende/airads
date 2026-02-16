@@ -314,7 +314,7 @@ def program_list(request):
         total_nodes = _get_completable_nodes_count(enrollment.program)
         completed_nodes = enrollment.completions.count()
         progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
-        
+
         # Get thumbnail URL
         thumbnail_url = enrollment.program.thumbnail.url if enrollment.program.thumbnail else None
 
@@ -389,7 +389,7 @@ def program_view(request, pk: int):
                 node_status = status_map.get(node.id, {})
                 is_locked = node_status.get('status') == 'locked'
                 is_completed = node.id in completions_set
-                
+
                 # Return first unlocked node (preferring incomplete)
                 if not is_locked and not is_completed:
                     return node
@@ -425,10 +425,10 @@ def program_view(request, pk: int):
     if target_node:
         # Reuse session_viewer logic to render course player
         return _render_course_player(request, enrollment, target_node, completions, status_map)
-    
+
     # Fallback: If no lessons exist, show an empty state in course player
     curriculum_tree = _build_curriculum_tree(root_nodes, completions, enrollment, status_map)
-    
+
     total_nodes = _get_completable_nodes_count(program)
     progress = (len(completions) / total_nodes * 100) if total_nodes > 0 else 0
 
@@ -462,7 +462,7 @@ def _render_course_player(request, enrollment, node, completions, status_map):
     Extracted to share logic between program_view and session_viewer.
     """
     program = enrollment.program
-    
+
     # Check if completed
     is_completed = node.id in completions
 
@@ -483,7 +483,7 @@ def _render_course_player(request, enrollment, node, completions, status_map):
         .prefetch_related("children")
         .order_by("position")
     )
-    
+
     curriculum_tree = _build_curriculum_tree(root_nodes, completions, enrollment, status_map)
 
     # Get content blocks
@@ -664,7 +664,7 @@ def session_viewer(request, pk: int, node_id: int):
     engine = ProgressionEngine()
     unlock_statuses = engine.get_unlock_status(enrollment)
     status_map = {s['node_id']: s for s in unlock_statuses}
-    
+
     curriculum_tree = _build_curriculum_tree(root_nodes, completions, enrollment, status_map)
 
     # Calculate progress
@@ -772,28 +772,28 @@ def session_discussion_post(request, pk: int, node_id: int):
     """
     if request.method != "POST":
         return redirect("progression:student.session", pk=pk, node_id=node_id)
-    
+
     from apps.discussions.models import DiscussionPost, DiscussionThread
     from apps.notifications.services import NotificationService
-    
+
     enrollment = get_object_or_404(
         Enrollment.objects.select_related("program"),
         id=pk,
         user=request.user,
         status="active",
     )
-    
+
     node = get_object_or_404(
         CurriculumNode,
         id=node_id,
         program=enrollment.program,
         is_published=True,
     )
-    
+
     content = request.POST.get("content", "").strip()
     if not content:
         return redirect("progression:student.session", pk=pk, node_id=node_id)
-    
+
     thread_id = request.POST.get("thread_id") or request.POST.get("thread")
     parent_id = request.POST.get("parent_id")
 
@@ -833,7 +833,7 @@ def session_discussion_post(request, pk: int, node_id: int):
             thread=thread,
             actor=request.user,
         )
-    
+
     return redirect("progression:student.session", pk=pk, node_id=node_id)
 
 
@@ -844,38 +844,38 @@ def session_note_create(request, pk: int, node_id: int):
     """
     if request.method != "POST":
         return redirect("progression:student.session", pk=pk, node_id=node_id)
-    
+
     from .models import StudentNote
-    
+
     enrollment = get_object_or_404(
         Enrollment.objects.select_related("program"),
         id=pk,
         user=request.user,
         status="active",
     )
-    
+
     node = get_object_or_404(
         CurriculumNode,
         id=node_id,
         program=enrollment.program,
         is_published=True,
     )
-    
+
     content = request.POST.get("content", "").strip()
     if not content:
         return redirect("progression:student.session", pk=pk, node_id=node_id)
-    
+
     # Get optional video timestamp
     timestamp = request.POST.get("video_timestamp")
     video_timestamp = int(timestamp) if timestamp and timestamp.isdigit() else None
-    
+
     StudentNote.objects.create(
         enrollment=enrollment,
         node=node,
         content=content,
         video_timestamp=video_timestamp,
     )
-    
+
     return redirect("progression:student.session", pk=pk, node_id=node_id)
 
 
@@ -885,23 +885,23 @@ def session_note_delete(request, pk: int, node_id: int, note_id: int):
     POST/DELETE: Delete a student note.
     """
     from .models import StudentNote
-    
+
     enrollment = get_object_or_404(
         Enrollment,
         id=pk,
         user=request.user,
         status="active",
     )
-    
+
     note = get_object_or_404(
         StudentNote,
         id=note_id,
         enrollment=enrollment,
         node_id=node_id,
     )
-    
+
     note.delete()
-    
+
     return redirect("progression:student.session", pk=pk, node_id=node_id)
 
 
@@ -919,9 +919,9 @@ def _get_completable_nodes_count(program: Program) -> int:
 
 
 def _build_curriculum_tree(
-    nodes, 
-    completions: list, 
-    enrollment: Enrollment, 
+    nodes,
+    completions: list,
+    enrollment: Enrollment,
     status_map: dict = None,
     last_attempts_by_quiz_id: dict = None,
 ) -> list:
@@ -987,16 +987,16 @@ def _build_curriculum_tree(
                         else None
                     ),
                 }
-    
+
     for node in nodes:
         children_qs = node.children.filter(is_published=True).order_by("position")
         children = list(children_qs)
         has_children = len(children) > 0
-        
+
         node_status = status_map.get(node.id, {})
         status_key = node_status.get('status', 'locked') # default locked if unknown
         is_locked = status_key == 'locked'
-        
+
         # Override isLocked if completed (safeguard)
         is_completed = node.id in completions
         if is_completed:
@@ -1026,7 +1026,7 @@ def _build_curriculum_tree(
             "url": f"/student/programs/{enrollment.id}/session/{node.id}/",
             "properties": node.properties or {},
         }
-        
+
         # Add lastAttempt for question-enabled assessment nodes
         node_props = node.properties if isinstance(node.properties, dict) else {}
         node_type_normalized = str(node.node_type or "").lower()
@@ -1040,7 +1040,7 @@ def _build_curriculum_tree(
             quiz_id = _safe_int(node_props.get("quiz_id"))
             if quiz_id and quiz_id in last_attempts_by_quiz_id:
                 node_data["lastAttempt"] = last_attempts_by_quiz_id[quiz_id]
-        
+
         result.append(node_data)
 
     return result
@@ -1678,10 +1678,10 @@ def instructor_programs(request):
         active = enrollments.filter(status="active").count()
         completed = enrollments.filter(status="completed").count()
         completion_rate = (completed / total * 100) if total > 0 else 0
-        
+
         # Get thumbnail URL
         thumbnail_url = program.thumbnail.url if program.thumbnail else None
-        
+
         # Get price from custom_pricing
         price_data = program.custom_pricing or {}
 
@@ -1963,7 +1963,7 @@ def instructor_student_detail(request, pk: int, enrollment_id: int):
     )
 
     completions = list(enrollment.completions.values_list("node_id", flat=True))
-    
+
     # Using the standard curriculum tree builder for detailed view
     # This might need a specialized builder if instructor needs to see more details
     # For now, reusing the student-facing one but could be adapted
@@ -2362,7 +2362,7 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
             'quiz__questions__gap_answers',
             'quiz__questions__image_matching_pairs',
         ).order_by('-attempt_number')
-        
+
         attempts_list = []
         for attempt in attempts:
             # Build per-question results
@@ -2418,7 +2418,7 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                     }
 
                 return None
-                
+
             for question in attempt.quiz.questions.all().order_by('position'):
                 student_answer = attempt.answers.get(str(question.id))
                 is_correct, points = (
@@ -2427,14 +2427,14 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                     else (False, 0)
                 )
                 correct_answer = _serialize_correct_answer(question)
-                
+
                 question_results.append({
                     'questionId': question.id,
                     'isCorrect': is_correct if is_correct is not None else False,
                     'correctAnswer': correct_answer,
                     'pointsEarned': points or 0,
                 })
-                
+
                 questions_data.append({
                     'id': question.id,
                     'text': question.text,
@@ -2446,7 +2446,7 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                     'explanation': (question.answer_data or {}).get("explanation", ""),
                     'correctAnswer': correct_answer,
                 })
-            
+
             attempts_list.append({
                 'id': attempt.id,
                 'attemptNumber': attempt.attempt_number,
@@ -2456,7 +2456,7 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                 'answers': attempt.answers,
                 'questionResults': question_results,
             })
-        
+
             if attempts_list:
                 quiz_attempts_data[node_id] = attempts_list
             # Also include questions data with first attempt for display
@@ -2507,7 +2507,7 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                 node['questions'] = quiz_attempts_data.pop(questions_key)
             if node.get('children'):
                 attach_questions_to_curriculum(node['children'])
-    
+
     attach_questions_to_curriculum(curriculum_tree)
 
     # Calculate progress stats
@@ -2537,7 +2537,7 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
         for data in assignment_submissions_data.values()
         if data.get("submitted")
     )
-    
+
     return render(
         request,
         "Gradebook/StudentProgress",
@@ -3092,27 +3092,27 @@ def student_enroll_request(request, pk: int):
     from apps.platform.models import PlatformSettings
     from apps.progression.models import EnrollmentRequest
     from django.contrib import messages
-    
+
     user = request.user
     program = get_object_or_404(Program, pk=pk, is_published=True)
-    
+
     # Check if already enrolled
     if Enrollment.objects.filter(user=user, program=program).exists():
         messages.info(request, "You are already enrolled in this program.")
         return redirect("progression:student.program", pk=pk)
-    
+
     # Check if pending request exists
     if EnrollmentRequest.objects.filter(user=user, program=program, status="pending").exists():
         messages.info(request, "Your enrollment request is pending approval.")
         return redirect("core:programs")
-    
+
     # Get enrollment mode from platform settings
     settings = PlatformSettings.get_settings()
     enrollment_mode = settings.features.get(
         "enrollment_mode",
         settings.get_default_features_for_mode().get("enrollment_mode", "instructor_approval")
     )
-    
+
     if request.method == "POST":
         import json
         data = {}
@@ -3121,9 +3121,9 @@ def student_enroll_request(request, pk: int):
                 data = json.loads(request.body)
             except (json.JSONDecodeError, ValueError):
                 data = request.POST.dict()
-        
+
         message = data.get("message", "")
-        
+
         if enrollment_mode == "open":
             # Direct enrollment
             enrollment = Enrollment.objects.create(
@@ -3170,7 +3170,7 @@ def student_enroll_request(request, pk: int):
                 f"Your enrollment request for {program.name} has been submitted for approval."
             )
             return redirect("core:programs")
-    
+
     # GET - show enrollment form (for approval modes)
     return render(
         request,
@@ -3193,32 +3193,32 @@ def instructor_enrollment_requests(request, pk: int):
     List pending enrollment requests for a program.
     """
     from apps.progression.models import EnrollmentRequest, InstructorAssignment
-    
+
     user = request.user
-    
+
     # Verify instructor has access
     assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
     program = assignment.program
-    
+
     # Get filter params
     status_filter = request.GET.get("status", "pending")
     page = int(request.GET.get("page", 1))
     per_page = 20
-    
+
     # Query requests
     requests_query = EnrollmentRequest.objects.filter(program=program).select_related("user")
-    
+
     if status_filter:
         requests_query = requests_query.filter(status=status_filter)
-    
+
     requests_query = requests_query.order_by("-created_at")
-    
+
     # Pagination
     total_count = requests_query.count()
     total_pages = (total_count + per_page - 1) // per_page
     offset = (page - 1) * per_page
     requests = requests_query[offset : offset + per_page]
-    
+
     requests_data = [
         {
             "id": r.id,
@@ -3231,7 +3231,7 @@ def instructor_enrollment_requests(request, pk: int):
         }
         for r in requests
     ]
-    
+
     return render(
         request,
         "Instructor/EnrollmentRequests/Index",
@@ -3262,15 +3262,15 @@ def instructor_enrollment_request_approve(request, pk: int, request_id: int):
     """
     from apps.progression.models import EnrollmentRequest, InstructorAssignment
     from django.contrib import messages
-    
+
     if request.method != "POST":
         return redirect("progression:instructor.enrollment_requests", pk=pk)
-    
+
     user = request.user
-    
+
     # Verify instructor has access
     assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
-    
+
     # Get request
     enrollment_request = get_object_or_404(
         EnrollmentRequest,
@@ -3278,7 +3278,7 @@ def instructor_enrollment_request_approve(request, pk: int, request_id: int):
         program_id=pk,
         status="pending"
     )
-    
+
     # Create enrollment
     enrollment = Enrollment.objects.create(
         user=enrollment_request.user,
@@ -3287,15 +3287,15 @@ def instructor_enrollment_request_approve(request, pk: int, request_id: int):
         enrolled_at=timezone.now(),
     )
     NotificationService.notify_enrollment_approved(enrollment)
-    
+
     # Update request
     enrollment_request.status = "approved"
     enrollment_request.reviewed_by = user
     enrollment_request.reviewed_at = timezone.now()
     enrollment_request.save()
-    
+
     messages.success(request, f"Approved enrollment for {enrollment_request.user.get_full_name() or enrollment_request.user.email}")
-    
+
     return redirect("progression:instructor.enrollment_requests", pk=pk)
 
 
@@ -3307,15 +3307,15 @@ def instructor_enrollment_request_reject(request, pk: int, request_id: int):
     from apps.progression.models import EnrollmentRequest, InstructorAssignment
     from django.contrib import messages
     import json
-    
+
     if request.method != "POST":
         return redirect("progression:instructor.enrollment_requests", pk=pk)
-    
+
     user = request.user
-    
+
     # Verify instructor has access
     assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
-    
+
     # Get request
     enrollment_request = get_object_or_404(
         EnrollmentRequest,
@@ -3323,7 +3323,7 @@ def instructor_enrollment_request_reject(request, pk: int, request_id: int):
         program_id=pk,
         status="pending"
     )
-    
+
     # Get rejection notes
     data = {}
     if request.body:
@@ -3331,7 +3331,7 @@ def instructor_enrollment_request_reject(request, pk: int, request_id: int):
             data = json.loads(request.body)
         except (json.JSONDecodeError, ValueError):
             data = request.POST.dict()
-    
+
     # Update request
     enrollment_request.status = "rejected"
     enrollment_request.reviewed_by = user
@@ -3343,7 +3343,7 @@ def instructor_enrollment_request_reject(request, pk: int, request_id: int):
         enrollment_request,
         reason=enrollment_request.reviewer_notes,
     )
-    
+
     messages.info(request, f"Rejected enrollment for {enrollment_request.user.get_full_name() or enrollment_request.user.email}")
-    
+
     return redirect("progression:instructor.enrollment_requests", pk=pk)
