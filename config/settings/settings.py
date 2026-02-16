@@ -63,6 +63,8 @@ INSTALLED_APPS = [
     "apps.content",
     "apps.notifications",
     "apps.events",
+    "apps.reviews",
+    "apps.commerce",
 ]
 
 MIDDLEWARE = [
@@ -254,6 +256,12 @@ CURRICULUM_NODE_REQUIRED_PROPERTIES = {
 # =============================================================================
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG" if DEBUG else "WARNING")
+
+# Payments
+PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY", "")
+PAYSTACK_PUBLIC_KEY = os.getenv("PAYSTACK_PUBLIC_KEY", "")
+PAYSTACK_WEBHOOK_SECRET = os.getenv("PAYSTACK_WEBHOOK_SECRET", "")
+PAYSTACK_CALLBACK_URL = os.getenv("PAYSTACK_CALLBACK_URL", "")
 
 LOGGING = {
     "version": 1,

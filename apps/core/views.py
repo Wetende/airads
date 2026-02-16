@@ -11,7 +11,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db import transaction
 from django.shortcuts import redirect
+from django.utils.html import strip_tags
+from django.utils.dateparse import parse_date, parse_datetime
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -257,11 +260,11 @@ def public_programs_list(request):
                 "video_hours": p.video_hours,
                 "price": price,
                 "original_price": original_price,
-                "rating": 4.5,  # TODO: Calculate from reviews when implemented
+                "rating": float(p.rating_average or 0),
+                "review_count": p.rating_count,
             }
         )
 
-    # Get unique categories for filtering
     categories = list(
         Program.objects.filter(is_published=True, category__isnull=False)
         .exclude(category="")
@@ -449,6 +452,27 @@ def public_program_detail(request, pk: int):
                 }
             )
 
+    from apps.reviews.models import ProgramReview
+
+    approved_reviews_qs = ProgramReview.objects.filter(
+        program=program,
+        status="approved",
+    ).select_related("user").order_by("-moderated_at", "-updated_at")[:20]
+
+    approved_reviews = [
+        {
+            "id": review.id,
+            "rating": review.rating,
+            "reviewText": review.review_html,
+            "user": {
+                "id": review.user_id,
+                "name": review.user.get_full_name() or review.user.username or review.user.email,
+            },
+            "updatedAt": review.updated_at.isoformat() if review.updated_at else None,
+        }
+        for review in approved_reviews_qs
+    ]
+
     # Get user enrollment status and progress
     enrollment_status = None
     enrollment_data = None
@@ -482,6 +506,16 @@ def public_program_detail(request, pk: int):
         ).exists():
             enrollment_status = "pending"
 
+    pending_payment = False
+    if request.user.is_authenticated:
+        from apps.commerce.models import Order
+
+        pending_payment = Order.objects.filter(
+            user=request.user,
+            program=program,
+            status__in=["created", "pending_payment"],
+        ).exists()
+
     # Calculate price display and enrollment mode
     price_data = program.custom_pricing or {}
     price = price_data.get("price", 0)
@@ -493,6 +527,17 @@ def public_program_detail(request, pk: int):
         enrollment_mode = "approval"
     else:
         enrollment_mode = "free"
+
+    if enrollment_status == "enrolled":
+        cta_state = "enrolled"
+    elif pending_payment:
+        cta_state = "pending_payment"
+    elif enrollment_mode == "paid":
+        cta_state = "not_enrolled_paid"
+    elif enrollment_status == "pending":
+        cta_state = "pending"
+    else:
+        cta_state = "not_enrolled"
 
     # Build program data
     program_data = {
@@ -524,8 +569,9 @@ def public_program_detail(request, pk: int):
             }
             for r in program.resources.all()
         ],
-        "rating": 4.5,  # TODO: Calculate from reviews
-        "review_count": 0,  # TODO: Count reviews
+        "rating": float(program.rating_average or 0),
+        "review_count": program.rating_count,
+        "reviews": approved_reviews,
     }
 
     # Get course levels for displaying label
@@ -545,9 +591,191 @@ def public_program_detail(request, pk: int):
             "enrollmentStatus": enrollment_status,
             "enrollmentData": enrollment_data,
             "enrollmentMode": enrollment_mode,
+            "ctaState": cta_state,
             "courseLevels": course_levels,
         },
     )
+
+
+def _recompute_program_rating(program_id: int):
+    from django.db.models import Avg, Count
+
+    from apps.reviews.models import ProgramReview
+
+    aggregates = ProgramReview.objects.filter(
+        program_id=program_id,
+        status="approved",
+    ).aggregate(avg_rating=Avg("rating"), count_rating=Count("id"))
+
+    avg_rating = aggregates.get("avg_rating") or 0
+    count_rating = aggregates.get("count_rating") or 0
+
+    Program.objects.filter(pk=program_id).update(
+        rating_average=round(float(avg_rating), 2),
+        rating_count=int(count_rating),
+    )
+
+
+@login_required
+def program_review_submit(request, pk: int):
+    from apps.progression.models import Enrollment
+    from apps.reviews.models import ProgramReview
+
+    if request.method != "POST":
+        return redirect("core:program_detail", pk=pk)
+
+    program = Program.objects.filter(pk=pk, is_published=True).first()
+    if not program:
+        messages.error(request, "Program not found.")
+        return redirect("core:programs")
+
+    enrollment = Enrollment.objects.filter(user=request.user, program=program).first()
+    if not enrollment or enrollment.status != "completed":
+        messages.error(request, "You can only review courses after completing them.")
+        return redirect("core:program_detail", pk=pk)
+
+    data = get_post_data(request)
+    try:
+        rating = int(data.get("rating") or 0)
+    except (TypeError, ValueError):
+        rating = 0
+
+    if rating < 1 or rating > 5:
+        messages.error(request, "Rating must be between 1 and 5.")
+        return redirect("core:program_detail", pk=pk)
+
+    raw_review = str(data.get("review_html") or data.get("review") or "").strip()
+    review_html = strip_tags(raw_review).strip()
+
+    if review_html and len(review_html) > 5000:
+        messages.error(request, "Review is too long (max 5000 characters).")
+        return redirect("core:program_detail", pk=pk)
+
+    review, created = ProgramReview.objects.get_or_create(
+        program=program,
+        user=request.user,
+        defaults={
+            "enrollment": enrollment,
+            "rating": rating,
+            "review_html": review_html,
+            "status": "pending",
+        },
+    )
+
+    if not created:
+        review.enrollment = enrollment
+        review.rating = rating
+        review.review_html = review_html
+        review.status = "pending"
+        review.moderated_by = None
+        review.moderated_at = None
+        review.moderation_note = ""
+        review.save()
+
+    messages.success(request, "Review submitted and awaiting moderation.")
+    return redirect("core:program_detail", pk=pk)
+
+
+@login_required
+def admin_reviews(request):
+    if not request.user.is_staff:
+        return redirect("/dashboard/")
+
+    from apps.reviews.models import ProgramReview
+
+    status_filter = request.GET.get("status", "pending")
+    valid_statuses = {"pending", "approved", "rejected"}
+    if status_filter not in valid_statuses:
+        status_filter = "pending"
+
+    reviews_qs = ProgramReview.objects.select_related(
+        "program",
+        "user",
+        "moderated_by",
+    )
+    if status_filter:
+        reviews_qs = reviews_qs.filter(status=status_filter)
+
+    reviews = [
+        {
+            "id": review.id,
+            "program": {"id": review.program_id, "name": review.program.name},
+            "user": {
+                "id": review.user_id,
+                "name": review.user.get_full_name() or review.user.username or review.user.email,
+            },
+            "rating": review.rating,
+            "reviewText": review.review_html,
+            "status": review.status,
+            "moderationNote": review.moderation_note,
+            "moderatedAt": review.moderated_at.isoformat() if review.moderated_at else None,
+            "moderatedBy": (
+                review.moderated_by.get_full_name() or review.moderated_by.username or review.moderated_by.email
+            ) if review.moderated_by else None,
+            "updatedAt": review.updated_at.isoformat() if review.updated_at else None,
+        }
+        for review in reviews_qs.order_by("-updated_at")[:200]
+    ]
+
+    return render(
+        request,
+        "Admin/Reviews",
+        {
+            "reviews": reviews,
+            "filters": {"status": status_filter},
+            "statusOptions": [
+                {"value": "pending", "label": "Pending"},
+                {"value": "approved", "label": "Approved"},
+                {"value": "rejected", "label": "Rejected"},
+            ],
+        },
+    )
+
+
+@login_required
+def admin_review_approve(request, review_id: int):
+    if not request.user.is_staff or request.method != "POST":
+        return redirect("/dashboard/")
+
+    from apps.reviews.models import ProgramReview
+
+    review = ProgramReview.objects.select_related("program").filter(pk=review_id).first()
+    if not review:
+        messages.error(request, "Review not found.")
+        return redirect("core:admin.reviews")
+
+    review.status = "approved"
+    review.moderated_by = request.user
+    review.moderated_at = timezone.now()
+    review.moderation_note = str(get_post_data(request).get("moderation_note") or "").strip()
+    review.save()
+
+    _recompute_program_rating(review.program_id)
+    messages.success(request, "Review approved.")
+    return redirect("core:admin.reviews")
+
+
+@login_required
+def admin_review_reject(request, review_id: int):
+    if not request.user.is_staff or request.method != "POST":
+        return redirect("/dashboard/")
+
+    from apps.reviews.models import ProgramReview
+
+    review = ProgramReview.objects.select_related("program").filter(pk=review_id).first()
+    if not review:
+        messages.error(request, "Review not found.")
+        return redirect("core:admin.reviews")
+
+    review.status = "rejected"
+    review.moderated_by = request.user
+    review.moderated_at = timezone.now()
+    review.moderation_note = str(get_post_data(request).get("moderation_note") or "").strip()
+    review.save()
+
+    _recompute_program_rating(review.program_id)
+    messages.success(request, "Review rejected.")
+    return redirect("core:admin.reviews")
 
 
 def verify_certificate_page(request):
@@ -568,7 +796,6 @@ def verify_certificate_page(request):
                 .select_related("enrollment")
                 .first()
             )
-
             # Determine result
             if certificate:
                 result = {
@@ -3433,13 +3660,12 @@ def student_quiz_submit(request, quiz_id: int):
                 should_mark_complete = typed_response_mode == "short_answer_question"
 
         if should_mark_complete:
-            NodeCompletion.objects.get_or_create(
+            from apps.progression.services import ProgressionEngine
+
+            ProgressionEngine().mark_complete(
                 enrollment=enrollment,
                 node=quiz.node,
-                defaults={
-                    "completion_type": "quiz_pass",
-                    "completed_at": timezone.now(),
-                },
+                completion_type="quiz_pass",
             )
 
         return redirect(
@@ -4324,13 +4550,12 @@ def student_assignment_submit(request, assignment_id: int):
             )
 
         if should_mark_complete:
-            NodeCompletion.objects.get_or_create(
+            from apps.progression.services import ProgressionEngine
+
+            ProgressionEngine().mark_complete(
                 enrollment=enrollment,
                 node=context_node,
-                defaults={
-                    "completion_type": "upload",
-                    "completed_at": timezone.now(),
-                },
+                completion_type="upload",
             )
 
         return redirect(f"/student/programs/{enrollment.id}/session/{context_node.id}/")
@@ -4803,6 +5028,18 @@ def serialize_program_data(program):
     if len(builder_hierarchy) < 2:
         builder_hierarchy = (builder_hierarchy + ["Lesson"])[:2]
     level_value = (program.level or "").strip()
+    prerequisite_program_ids = list(
+        program.prerequisite_programs.values_list("id", flat=True)
+    )
+    available_prerequisites = [
+        {
+            "id": p.id,
+            "name": p.name,
+            "code": p.code,
+            "isPublished": p.is_published,
+        }
+        for p in Program.objects.exclude(pk=program.pk).order_by("name")[:200]
+    ]
 
     return {
         "program": {
@@ -4827,6 +5064,13 @@ def serialize_program_data(program):
             "faq": program.faq,
             "notices": program.notices,
             "customPricing": program.custom_pricing,
+            "prerequisitesEnabled": program.prerequisites_enabled,
+            "prerequisiteProgramIds": prerequisite_program_ids,
+            "accessDurationDays": program.access_duration_days,
+            "dripEnabled": program.drip_enabled,
+            "dripMode": program.drip_mode,
+            "ratingAverage": float(program.rating_average or 0),
+            "ratingCount": program.rating_count,
             "taxonomy": {
                 "levelValue": level_value,
                 "builderHierarchy": builder_hierarchy,
@@ -4858,6 +5102,7 @@ def serialize_program_data(program):
                 else None
             ),
         },
+        "availablePrerequisites": available_prerequisites,
         "courseLevels": platform_settings.get_course_levels(),
         "platformFeatures": platform_settings.get_default_features_for_mode(),
         "deploymentMode": platform_settings.deployment_mode,
@@ -4890,6 +5135,8 @@ def build_curriculum_tree(program):
             "description",
             "properties",
             "position",
+            "unlock_date",
+            "unlock_after_days",
         )
     )
 
@@ -4924,6 +5171,8 @@ def build_curriculum_tree(program):
             "description": node["description"],
             "properties": node["properties"],
             "position": node["position"],
+            "unlockDate": node["unlock_date"].isoformat() if node["unlock_date"] else None,
+            "unlockAfterDays": node["unlock_after_days"],
             "children": [serialize_node(child, depth + 1) for child in children],
         }
 
@@ -5725,7 +5974,7 @@ def instructor_node_reorder(request, program_id: int):
 
 @login_required
 def instructor_program_update_settings(request, pk: int):
-    """Update extended settings: FAQ, Pricing, Notices."""
+    """Update extended settings: FAQ, Pricing, Notices, prerequisites, access, and drip."""
     if not is_instructor(request.user) or request.method != "POST":
         return redirect("/dashboard/")
 
@@ -5739,17 +5988,159 @@ def instructor_program_update_settings(request, pk: int):
     ):
         return redirect("/dashboard/")
 
+    from apps.curriculum.models import CurriculumNode
+
     program = Program.objects.get(pk=pk)
     data = get_post_data(request)
 
-    if "faq" in data:
-        program.faq = data["faq"]
-    if "notices" in data:
-        program.notices = data["notices"]
-    if "custom_pricing" in data:
-        program.custom_pricing = data["custom_pricing"]
+    def _to_bool(value):
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "yes", "on"}
+        return bool(value)
 
-    program.save()
+    def _to_int(value):
+        try:
+            if value in (None, ""):
+                return None
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _parse_unlock_date(value):
+        if not value:
+            return None
+        if isinstance(value, datetime):
+            return value if timezone.is_aware(value) else timezone.make_aware(value, timezone.get_current_timezone())
+        parsed = parse_datetime(str(value))
+        if parsed:
+            return parsed if timezone.is_aware(parsed) else timezone.make_aware(parsed, timezone.get_current_timezone())
+        parsed_date = parse_date(str(value))
+        if parsed_date:
+            return datetime.combine(parsed_date, datetime.min.time(), tzinfo=timezone.get_current_timezone())
+        return None
+
+    def _program_depends_on(source_program_id: int, target_program_id: int, seen=None) -> bool:
+        if seen is None:
+            seen = set()
+        if source_program_id in seen:
+            return False
+        seen.add(source_program_id)
+
+        from apps.core.models import Program as ProgramModel
+
+        deps = ProgramModel.objects.filter(pk=source_program_id).values_list(
+            "prerequisite_programs__id", flat=True
+        )
+        dep_ids = [dep_id for dep_id in deps if dep_id]
+        if target_program_id in dep_ids:
+            return True
+        return any(
+            _program_depends_on(dep_id, target_program_id, seen)
+            for dep_id in dep_ids
+        )
+
+    prerequisite_ids = data.get("prerequisite_program_ids", [])
+    if prerequisite_ids is None:
+        prerequisite_ids = []
+    if not isinstance(prerequisite_ids, list):
+        prerequisite_ids = [prerequisite_ids]
+
+    normalized_prerequisite_ids = []
+    for value in prerequisite_ids:
+        parsed = _to_int(value)
+        if parsed:
+            normalized_prerequisite_ids.append(parsed)
+    normalized_prerequisite_ids = list(dict.fromkeys(normalized_prerequisite_ids))
+
+    if pk in normalized_prerequisite_ids:
+        messages.error(request, "A program cannot be a prerequisite of itself.")
+        return redirect("core:instructor.program_manage", pk=pk)
+
+    for dep_id in normalized_prerequisite_ids:
+        if _program_depends_on(dep_id, pk):
+            messages.error(request, "Prerequisite cycle detected. Please remove cyclic dependencies.")
+            return redirect("core:instructor.program_manage", pk=pk)
+
+    drip_mode = (data.get("drip_mode") or "none").strip().lower()
+    valid_drip_modes = {"none", "relative", "absolute", "mixed"}
+    if drip_mode not in valid_drip_modes:
+        messages.error(request, "Invalid drip mode.")
+        return redirect("core:instructor.program_manage", pk=pk)
+
+    access_duration_days = _to_int(data.get("access_duration_days"))
+    if access_duration_days is not None and access_duration_days < 1:
+        messages.error(request, "Access duration must be a positive number of days.")
+        return redirect("core:instructor.program_manage", pk=pk)
+
+    drip_schedule = data.get("drip_schedule", [])
+    if drip_schedule is None:
+        drip_schedule = []
+    if not isinstance(drip_schedule, list):
+        drip_schedule = []
+
+    with transaction.atomic():
+        if "faq" in data:
+            program.faq = data["faq"]
+        if "notices" in data:
+            program.notices = data["notices"]
+        if "custom_pricing" in data:
+            program.custom_pricing = data["custom_pricing"]
+
+        if "prerequisites_enabled" in data:
+            program.prerequisites_enabled = _to_bool(data.get("prerequisites_enabled"))
+        if "access_duration_days" in data:
+            program.access_duration_days = access_duration_days
+        if "drip_enabled" in data:
+            program.drip_enabled = _to_bool(data.get("drip_enabled"))
+        if "drip_mode" in data:
+            program.drip_mode = drip_mode
+
+        program.save()
+
+        if "prerequisite_program_ids" in data:
+            valid_ids = list(
+                Program.objects.filter(pk__in=normalized_prerequisite_ids)
+                .exclude(pk=program.pk)
+                .values_list("id", flat=True)
+            )
+            program.prerequisite_programs.set(valid_ids)
+
+        if "drip_schedule" in data:
+            updates = []
+            for row in drip_schedule:
+                if not isinstance(row, dict):
+                    continue
+                node_id = _to_int(row.get("node_id") or row.get("nodeId"))
+                if not node_id:
+                    continue
+                unlock_after_days = _to_int(
+                    row.get("unlock_after_days")
+                    if "unlock_after_days" in row
+                    else row.get("unlockAfterDays")
+                )
+                unlock_date = _parse_unlock_date(
+                    row.get("unlock_date")
+                    if "unlock_date" in row
+                    else row.get("unlockDate")
+                )
+
+                node = CurriculumNode.objects.filter(pk=node_id, program_id=pk).first()
+                if not node:
+                    continue
+
+                node.unlock_after_days = unlock_after_days if unlock_after_days and unlock_after_days > 0 else None
+                node.unlock_date = unlock_date
+                node.updated_at = timezone.now()
+                updates.append(node)
+
+            if updates:
+                CurriculumNode.objects.bulk_update(
+                    updates,
+                    ["unlock_after_days", "unlock_date", "updated_at"],
+                )
+
     messages.success(request, "Settings updated")
     return redirect("core:instructor.program_manage", pk=pk)
 

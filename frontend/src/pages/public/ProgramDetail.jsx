@@ -53,6 +53,7 @@ function CourseDetailsSidebar({
     enrollmentStatus,
     enrollmentData,
     enrollmentMode,
+    ctaState,
     isAuthenticated,
     onShowDetails,
     courseLevels = [],
@@ -70,8 +71,8 @@ function CourseDetailsSidebar({
 
     // Determine CTA button text based on enrollment mode
     const getCtaText = () => {
-        if (program.price > 0) {
-            return `BUY NOW - $${program.price}`;
+        if (ctaState === "not_enrolled_paid") {
+            return `BUY NOW - ${program.price}`;
         }
         if (enrollmentMode === "approval") {
             return "REQUEST ENROLLMENT";
@@ -188,6 +189,19 @@ function CourseDetailsSidebar({
                             </Button>
                         </Stack>
                     </>
+                ) : ctaState === "pending_payment" ? (
+                    <>
+                        <Button
+                            component={Link}
+                            href={`/programs/${program.id}/checkout/`}
+                            variant="outlined"
+                            fullWidth
+                            size="large"
+                            sx={{ mb: 2, py: 1.5 }}
+                        >
+                            COMPLETE PAYMENT
+                        </Button>
+                    </>
                 ) : enrollmentStatus === "pending" ? (
                     <>
                         <Button
@@ -225,8 +239,16 @@ function CourseDetailsSidebar({
                     <>
                         <Button
                             component={Link}
-                            href={`/programs/${program.id}/enroll/`}
-                            method="post"
+                            href={
+                                ctaState === "not_enrolled_paid"
+                                    ? `/programs/${program.id}/checkout/`
+                                    : `/programs/${program.id}/enroll/`
+                            }
+                            method={
+                                ctaState === "not_enrolled_paid"
+                                    ? undefined
+                                    : "post"
+                            }
                             variant="contained"
                             fullWidth
                             size="large"
@@ -501,6 +523,7 @@ export default function ProgramDetail({
     enrollmentStatus,
     enrollmentData,
     enrollmentMode = "free",
+    ctaState = "not_enrolled",
     courseLevels = [],
 }) {
     const theme = useTheme();
@@ -550,6 +573,7 @@ export default function ProgramDetail({
                                 enrollmentStatus={enrollmentStatus}
                                 enrollmentData={enrollmentData}
                                 enrollmentMode={enrollmentMode}
+                                ctaState={ctaState}
                                 isAuthenticated={!!auth?.user}
                                 onShowDetails={handleShowDetails}
                                 courseLevels={courseLevels}
@@ -889,52 +913,73 @@ export default function ProgramDetail({
 
                                 {/* Reviews Tab */}
                                 <TabPanel value={tabValue} index={5}>
-                                    <Typography color="text.secondary">
-                                        Reviews feature coming soon.
-                                    </Typography>
-                                </TabPanel>
-
-                                {/* Notice Tab */}
-                                <TabPanel value={tabValue} index={3}>
-                                    {!program.notices ||
-                                    program.notices.length === 0 ? (
+                                    {!program.reviews ||
+                                    program.reviews.length === 0 ? (
                                         <Typography color="text.secondary">
-                                            No notices for this course.
+                                            No reviews yet.
                                         </Typography>
                                     ) : (
                                         <Stack spacing={2}>
-                                            {program.notices.map(
-                                                (notice, idx) => (
-                                                    <Card
-                                                        key={idx}
-                                                        variant="outlined"
-                                                    >
-                                                        <CardContent>
-                                                            <Typography
-                                                                variant="subtitle1"
-                                                                fontWeight={600}
+                                            {program.reviews.map((review) => (
+                                                <Card
+                                                    key={review.id}
+                                                    variant="outlined"
+                                                >
+                                                    <CardContent>
+                                                        <Stack spacing={1}>
+                                                            <Stack
+                                                                direction="row"
+                                                                spacing={1}
+                                                                alignItems="center"
                                                             >
-                                                                {notice.title}
-                                                            </Typography>
+                                                                <Rating
+                                                                    value={
+                                                                        review.rating ||
+                                                                        0
+                                                                    }
+                                                                    precision={
+                                                                        1
+                                                                    }
+                                                                    size="small"
+                                                                    readOnly
+                                                                />
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    fontWeight={
+                                                                        600
+                                                                    }
+                                                                >
+                                                                    {review.user
+                                                                        ?.name ||
+                                                                        "Anonymous"}
+                                                                </Typography>
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    color="text.secondary"
+                                                                >
+                                                                    {review.updatedAt
+                                                                        ? new Date(
+                                                                              review.updatedAt,
+                                                                          ).toLocaleDateString()
+                                                                        : ""}
+                                                                </Typography>
+                                                            </Stack>
                                                             <Typography
                                                                 variant="body2"
-                                                                color="text.secondary"
+                                                                sx={{
+                                                                    whiteSpace:
+                                                                        "pre-wrap",
+                                                                }}
                                                             >
-                                                                {notice.content}
+                                                                {review.reviewText ||
+                                                                    ""}
                                                             </Typography>
-                                                        </CardContent>
-                                                    </Card>
-                                                ),
-                                            )}
+                                                        </Stack>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
                                         </Stack>
                                     )}
-                                </TabPanel>
-
-                                {/* Reviews Tab */}
-                                <TabPanel value={tabValue} index={4}>
-                                    <Typography color="text.secondary">
-                                        Reviews feature coming soon.
-                                    </Typography>
                                 </TabPanel>
                             </motion.div>
                         </Grid>

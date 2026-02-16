@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { router } from '@inertiajs/react';
+import React, { useState } from "react";
+import { router } from "@inertiajs/react";
 import {
     Box,
     Typography,
@@ -12,29 +12,39 @@ import {
     List,
     ListItem,
     ListItemText,
-    Divider
-} from '@mui/material';
+    Divider,
+    Alert,
+} from "@mui/material";
 import {
     Close as CloseIcon,
     AddCircleOutline,
     Send as SendIcon,
     Delete as DeleteIcon,
-    NoteAlt as NoteIcon
-} from '@mui/icons-material';
-import DiscussionsList from './DiscussionsList';
+    NoteAlt as NoteIcon,
+} from "@mui/icons-material";
+import DiscussionsList from "./DiscussionsList";
 
-const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], currentVideoTimestamp, onClose }) => {
+const StudyPanel = ({
+    nodeId,
+    enrollmentId,
+    discussions = [],
+    notes = [],
+    currentVideoTimestamp,
+    onClose,
+}) => {
     const [activeTab, setActiveTab] = useState(0); // 0 = Discussions, 1 = Notes
     const [isComposing, setIsComposing] = useState(false);
-    const [message, setMessage] = useState('');
-    const [noteContent, setNoteContent] = useState('');
+    const [message, setMessage] = useState("");
+    const [noteContent, setNoteContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
         setIsComposing(false);
-        setMessage('');
-        setNoteContent('');
+        setMessage("");
+        setNoteContent("");
+        setErrorMessage("");
     };
 
     // --- Discussion Handlers ---
@@ -42,37 +52,57 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
         if (!message.trim() || isSubmitting) return;
 
         setIsSubmitting(true);
+        setErrorMessage("");
 
-        router.post(`/student/programs/${enrollmentId}/session/${nodeId}/discussion/`, {
-            content: message.trim()
-        }, {
-            preserveScroll: true,
-            only: ['discussions'],
-            onSuccess: () => {
-                setMessage('');
-                setIsComposing(false);
+        router.post(
+            `/student/programs/${enrollmentId}/session/${nodeId}/discussion/`,
+            {
+                content: message.trim(),
             },
-            onFinish: () => {
-                setIsSubmitting(false);
-            }
-        });
+            {
+                preserveScroll: true,
+                only: ["discussions"],
+                onSuccess: () => {
+                    setMessage("");
+                    setIsComposing(false);
+                },
+                onError: () => {
+                    setErrorMessage(
+                        "Unable to post discussion right now. Please try again.",
+                    );
+                },
+                onFinish: () => {
+                    setIsSubmitting(false);
+                },
+            },
+        );
     };
 
     const handleSendReply = (threadId, replyContent) => {
         if (!threadId || !replyContent?.trim() || isSubmitting) return;
 
         setIsSubmitting(true);
+        setErrorMessage("");
 
-        router.post(`/student/programs/${enrollmentId}/session/${nodeId}/discussion/`, {
-            content: replyContent.trim(),
-            thread_id: threadId,
-        }, {
-            preserveScroll: true,
-            only: ['discussions'],
-            onFinish: () => {
-                setIsSubmitting(false);
-            }
-        });
+        router.post(
+            `/student/programs/${enrollmentId}/session/${nodeId}/discussion/`,
+            {
+                content: replyContent.trim(),
+                thread_id: threadId,
+            },
+            {
+                preserveScroll: true,
+                only: ["discussions"],
+                onError: () => {
+                    setErrorMessage(
+                        "Unable to post reply right now. Please try again.",
+                    );
+                },
+                onFinish: () => {
+                    setIsSubmitting(false);
+                },
+            },
+        );
     };
 
     // --- Note Handlers ---
@@ -80,66 +110,93 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
         if (!noteContent.trim() || isSubmitting) return;
 
         setIsSubmitting(true);
+        setErrorMessage("");
 
         const noteData = {
-            content: noteContent.trim()
+            content: noteContent.trim(),
         };
 
         // Include video timestamp if available
-        if (currentVideoTimestamp !== null && currentVideoTimestamp !== undefined) {
+        if (
+            currentVideoTimestamp !== null &&
+            currentVideoTimestamp !== undefined
+        ) {
             noteData.video_timestamp = currentVideoTimestamp;
         }
 
-        router.post(`/student/programs/${enrollmentId}/session/${nodeId}/notes/`, noteData, {
-            preserveScroll: true,
-            only: ['notes'],
-            onSuccess: () => {
-                setNoteContent('');
-                setIsComposing(false);
+        router.post(
+            `/student/programs/${enrollmentId}/session/${nodeId}/notes/`,
+            noteData,
+            {
+                preserveScroll: true,
+                only: ["notes"],
+                onSuccess: () => {
+                    setNoteContent("");
+                    setIsComposing(false);
+                },
+                onError: () => {
+                    setErrorMessage(
+                        "Unable to save note right now. Please try again.",
+                    );
+                },
+                onFinish: () => {
+                    setIsSubmitting(false);
+                },
             },
-            onFinish: () => {
-                setIsSubmitting(false);
-            }
-        });
+        );
     };
 
     const handleDeleteNote = (noteId) => {
         if (isSubmitting) return;
 
-        router.delete(`/student/programs/${enrollmentId}/session/${nodeId}/notes/${noteId}/`, {
-            preserveScroll: true,
-            only: ['notes']
-        });
+        router.post(
+            `/student/programs/${enrollmentId}/session/${nodeId}/notes/${noteId}/delete/`,
+            {},
+            {
+                preserveScroll: true,
+                only: ["notes"],
+            },
+        );
     };
 
     const handleCancel = () => {
-        setMessage('');
-        setNoteContent('');
+        setMessage("");
+        setNoteContent("");
         setIsComposing(false);
+        setErrorMessage("");
     };
 
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+        return new Date(dateString).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
         });
     };
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#f8f9fb' }}>
+        <Box
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                bgcolor: "#f8f9fb",
+            }}
+        >
             {/* Header */}
-            <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                px: 1.5,
-                pt: 1,
-                bgcolor: 'background.paper',
-                borderBottom: '1px solid',
-                borderColor: 'divider'
-            }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    px: 1.5,
+                    pt: 1,
+                    bgcolor: "background.paper",
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                }}
+            >
                 <Tabs
                     value={activeTab}
                     onChange={handleTabChange}
@@ -155,12 +212,21 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
             </Box>
 
             {/* Tab Content */}
+            {errorMessage && (
+                <Alert
+                    severity="error"
+                    sx={{ m: 1.5, mb: 0 }}
+                    onClose={() => setErrorMessage("")}
+                >
+                    {errorMessage}
+                </Alert>
+            )}
             {activeTab === 0 ? (
                 /* Discussions Tab */
                 <>
                     {/* Comment Section */}
                     {isComposing ? (
-                        <Box sx={{ p: 2, bgcolor: 'background.paper' }}>
+                        <Box sx={{ p: 2, bgcolor: "background.paper" }}>
                             <TextField
                                 multiline
                                 rows={4}
@@ -171,22 +237,29 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                                 variant="outlined"
                                 disabled={isSubmitting}
                                 sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        bgcolor: 'background.paper',
-                                    }
+                                    "& .MuiOutlinedInput-root": {
+                                        bgcolor: "background.paper",
+                                    },
                                 }}
                             />
 
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1.5 }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    mt: 1.5,
+                                }}
+                            >
                                 <Link
                                     component="button"
                                     variant="body2"
                                     onClick={handleCancel}
                                     disabled={isSubmitting}
                                     sx={{
-                                        color: 'primary.main',
-                                        textDecoration: 'none',
-                                        cursor: 'pointer'
+                                        color: "primary.main",
+                                        textDecoration: "none",
+                                        cursor: "pointer",
                                     }}
                                 >
                                     Cancel
@@ -196,10 +269,13 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                                     onClick={handleSendDiscussion}
                                     disabled={!message.trim() || isSubmitting}
                                     sx={{
-                                        bgcolor: 'primary.main',
-                                        color: 'white',
-                                        '&:hover': { bgcolor: 'primary.dark' },
-                                        '&.Mui-disabled': { bgcolor: 'grey.300', color: 'grey.500' }
+                                        bgcolor: "primary.main",
+                                        color: "white",
+                                        "&:hover": { bgcolor: "primary.dark" },
+                                        "&.Mui-disabled": {
+                                            bgcolor: "grey.300",
+                                            color: "grey.500",
+                                        },
                                     }}
                                 >
                                     <SendIcon fontSize="small" />
@@ -207,19 +283,27 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                             </Box>
                         </Box>
                     ) : (
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1.5 }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                p: 1.5,
+                            }}
+                        >
                             <Button
                                 variant="outlined"
                                 size="small"
-                                startIcon={<AddCircleOutline sx={{ fontSize: 16 }} />}
+                                startIcon={
+                                    <AddCircleOutline sx={{ fontSize: 16 }} />
+                                }
                                 onClick={() => setIsComposing(true)}
                                 sx={{
-                                    textTransform: 'none',
+                                    textTransform: "none",
                                     borderRadius: 5,
                                     px: 2,
                                     py: 0.5,
-                                    fontSize: '0.813rem',
-                                    fontWeight: 500
+                                    fontSize: "0.813rem",
+                                    fontWeight: 500,
                                 }}
                             >
                                 Comment
@@ -227,7 +311,7 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                         </Box>
                     )}
 
-                    <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                    <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
                         <DiscussionsList
                             discussions={discussions}
                             onReply={handleSendReply}
@@ -240,7 +324,7 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                 <>
                     {/* Add Note Section */}
                     {isComposing ? (
-                        <Box sx={{ p: 2, bgcolor: 'background.paper' }}>
+                        <Box sx={{ p: 2, bgcolor: "background.paper" }}>
                             <TextField
                                 multiline
                                 rows={4}
@@ -252,13 +336,24 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                                 disabled={isSubmitting}
                             />
 
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1.5 }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    mt: 1.5,
+                                }}
+                            >
                                 <Link
                                     component="button"
                                     variant="body2"
                                     onClick={handleCancel}
                                     disabled={isSubmitting}
-                                    sx={{ color: 'primary.main', textDecoration: 'none', cursor: 'pointer' }}
+                                    sx={{
+                                        color: "primary.main",
+                                        textDecoration: "none",
+                                        cursor: "pointer",
+                                    }}
                                 >
                                     Cancel
                                 </Link>
@@ -267,26 +362,34 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                                     variant="contained"
                                     size="small"
                                     onClick={handleSaveNote}
-                                    disabled={!noteContent.trim() || isSubmitting}
+                                    disabled={
+                                        !noteContent.trim() || isSubmitting
+                                    }
                                 >
                                     Save Note
                                 </Button>
                             </Box>
                         </Box>
                     ) : (
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1.5 }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                p: 1.5,
+                            }}
+                        >
                             <Button
                                 variant="outlined"
                                 size="small"
                                 startIcon={<NoteIcon sx={{ fontSize: 16 }} />}
                                 onClick={() => setIsComposing(true)}
                                 sx={{
-                                    textTransform: 'none',
+                                    textTransform: "none",
                                     borderRadius: 5,
                                     px: 2,
                                     py: 0.5,
-                                    fontSize: '0.813rem',
-                                    fontWeight: 500
+                                    fontSize: "0.813rem",
+                                    fontWeight: 500,
                                 }}
                             >
                                 Add Note
@@ -295,10 +398,13 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                     )}
 
                     {/* Notes List */}
-                    <Box sx={{ flexGrow: 1, overflow: 'auto', px: 1 }}>
+                    <Box sx={{ flexGrow: 1, overflow: "auto", px: 1 }}>
                         {notes.length === 0 ? (
-                            <Box sx={{ p: 3, textAlign: 'center' }}>
-                                <Typography color="text.secondary" variant="body2">
+                            <Box sx={{ p: 3, textAlign: "center" }}>
+                                <Typography
+                                    color="text.secondary"
+                                    variant="body2"
+                                >
                                     No notes yet. Add your first note!
                                 </Typography>
                             </Box>
@@ -312,19 +418,31 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                                                 <IconButton
                                                     edge="end"
                                                     size="small"
-                                                    onClick={() => handleDeleteNote(note.id)}
-                                                    sx={{ color: 'error.light' }}
+                                                    onClick={() =>
+                                                        handleDeleteNote(
+                                                            note.id,
+                                                        )
+                                                    }
+                                                    sx={{
+                                                        color: "error.light",
+                                                    }}
                                                 >
                                                     <DeleteIcon fontSize="small" />
                                                 </IconButton>
                                             }
-                                            sx={{ bgcolor: 'background.paper', borderRadius: 1, mb: 1 }}
+                                            sx={{
+                                                bgcolor: "background.paper",
+                                                borderRadius: 1,
+                                                mb: 1,
+                                            }}
                                         >
                                             <ListItemText
                                                 primary={note.content}
                                                 secondary={
                                                     <>
-                                                        {formatDate(note.createdAt)}
+                                                        {formatDate(
+                                                            note.createdAt,
+                                                        )}
                                                         {note.videoTimestamp && (
                                                             <Typography
                                                                 component="span"
@@ -332,15 +450,34 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                                                                 color="primary"
                                                                 sx={{ ml: 1 }}
                                                             >
-                                                                @ {Math.floor(note.videoTimestamp / 60)}:{String(note.videoTimestamp % 60).padStart(2, '0')}
+                                                                @{" "}
+                                                                {Math.floor(
+                                                                    note.videoTimestamp /
+                                                                        60,
+                                                                )}
+                                                                :
+                                                                {String(
+                                                                    note.videoTimestamp %
+                                                                        60,
+                                                                ).padStart(
+                                                                    2,
+                                                                    "0",
+                                                                )}
                                                             </Typography>
                                                         )}
                                                     </>
                                                 }
-                                                primaryTypographyProps={{ variant: 'body2', sx: { whiteSpace: 'pre-wrap' } }}
+                                                primaryTypographyProps={{
+                                                    variant: "body2",
+                                                    sx: {
+                                                        whiteSpace: "pre-wrap",
+                                                    },
+                                                }}
                                             />
                                         </ListItem>
-                                        {index < notes.length - 1 && <Divider component="li" />}
+                                        {index < notes.length - 1 && (
+                                            <Divider component="li" />
+                                        )}
                                     </React.Fragment>
                                 ))}
                             </List>
@@ -353,4 +490,3 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
 };
 
 export default StudyPanel;
-

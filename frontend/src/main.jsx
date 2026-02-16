@@ -85,6 +85,8 @@ createInertiaApp({
 
             "Instructor/EnrollmentRequests/Index":
                 "./features/enrollments/pages/Index.jsx",
+            "Payments/Checkout": "./features/enrollments/pages/Checkout.jsx",
+            "Student/Orders": "./features/enrollments/pages/Orders.jsx",
 
             // Note: Instructor Content pages removed - now handled by Course Builder
 

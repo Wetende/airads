@@ -39,6 +39,32 @@ No full page reload. Inertia swaps the component and updates browser history.
 
 ---
 
+## External-Provider Exceptions
+
+Crossview is Inertia-first for internal UX flows. A small set of endpoints remain non-Inertia by design:
+
+1. External payment webhooks (`POST /webhooks/paystack/`) because providers cannot execute Inertia navigation.
+2. Payment gateway redirect callback (`GET /payments/paystack/callback/`) because users return from the provider with query params.
+3. Existing upload/search style JSON handlers where binary uploads or provider callbacks require direct HTTP payload handling.
+
+### Rules
+
+1. Treat webhooks as authoritative for payment state transitions.
+2. Keep callback views user-facing; do not bypass idempotent webhook protections.
+3. Keep all internal pages/actions in Inertia unless there is a strict external integration reason.
+
+### Route ownership and compatibility
+
+1. Instructor course management routes are owned by `apps.core`.
+2. Student progression/player/enrollment routes are owned by `apps.progression`.
+3. During compatibility windows, old conflicting instructor routes should redirect to canonical owners; remove redirects after the window closes.
+
+### Operations reference
+
+For webhook signature verification, replay procedure, and incident triage, see `docs/paystack-webhook-runbook.md`.
+
+---
+
 ## Django Side
 
 ### Installation
@@ -367,6 +393,39 @@ router.visit('/programs/', {
 
 ### The Golden Rule
 > **If it happens in the Browser, try to use Inertia first.** Only use REST if you are building a Native Mobile App or need WebSockets.
+
+## External-provider exceptions
+
+In Crossview, internal dashboard flows remain Inertia-first. A small set of endpoints are intentionally non-Inertia because they are called by external systems or browser redirects from payment providers.
+
+### Allowed exceptions
+
+1. **Webhook endpoint (server-to-server JSON)**
+     - `POST /webhooks/paystack/`
+     - Purpose: authoritative payment event intake from Paystack.
+     - Requirements:
+         - Verify webhook signature.
+         - Enforce idempotency (event key/reference dedupe).
+         - Process safely on retries/out-of-order delivery.
+
+2. **Payment callback endpoint (provider redirect)**
+     - `GET /payments/paystack/callback/`
+     - Purpose: user-facing redirect after Paystack checkout.
+     - Notes:
+         - Callback is not authoritative for final payment truth.
+         - Use callback to show user state, but webhook remains source of truth for activation.
+
+### Boundary rule
+
+- Use **Inertia** for all internal authenticated page actions and navigation.
+- Use **JSON/redirect endpoints** only for external-provider integration points where Inertia is not applicable.
+
+### Route ownership and compatibility
+
+- Keep a single canonical owner for overlapping route families (for example, instructor management pages).
+- Ensure URL include order in Django routing makes canonical ownership deterministic.
+- During migrations of legacy paths, keep temporary redirect wrappers for one release cycle, then remove.
+- Keep operational payment details in [docs/paystack-webhook-runbook.md](docs/paystack-webhook-runbook.md).
 
 ---
 

@@ -148,6 +148,8 @@ class PlatformSettings(TimeStampedModel):
                 'gamification': False,
                 'self_registration': False,
                 'payments': False,
+                'course_reviews': True,
+                'drip_v2': True,
                 'enrollment_mode': 'instructor_approval',  # open, instructor_approval, admin_approval
             },
             'theology': {
@@ -156,6 +158,8 @@ class PlatformSettings(TimeStampedModel):
                 'gamification': False,
                 'self_registration': True,
                 'payments': False,
+                'course_reviews': True,
+                'drip_v2': True,
                 'enrollment_mode': 'instructor_approval',
             },
             'online': {
@@ -164,6 +168,8 @@ class PlatformSettings(TimeStampedModel):
                 'gamification': True,
                 'self_registration': True,
                 'payments': True,
+                'course_reviews': True,
+                'drip_v2': True,
                 'enrollment_mode': 'open',
             },
             'driving': {
@@ -172,6 +178,8 @@ class PlatformSettings(TimeStampedModel):
                 'gamification': True,
                 'self_registration': False,
                 'payments': True,
+                'course_reviews': True,
+                'drip_v2': True,
                 'enrollment_mode': 'admin_approval',
             },
             'nita': {
@@ -180,6 +188,8 @@ class PlatformSettings(TimeStampedModel):
                 'gamification': False,
                 'self_registration': False,
                 'payments': True,
+                'course_reviews': True,
+                'drip_v2': True,
                 'enrollment_mode': 'admin_approval',
             },
             'cbc': {
@@ -188,6 +198,8 @@ class PlatformSettings(TimeStampedModel):
                 'gamification': True,
                 'self_registration': False,
                 'payments': False,
+                'course_reviews': True,
+                'drip_v2': True,
                 'enrollment_mode': 'admin_approval',
             },
             'custom': {
@@ -196,6 +208,8 @@ class PlatformSettings(TimeStampedModel):
                 'gamification': False,
                 'self_registration': True,
                 'payments': False,
+                'course_reviews': True,
+                'drip_v2': True,
                 'enrollment_mode': 'instructor_approval',
             },
         }

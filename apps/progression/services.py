@@ -450,18 +450,38 @@ class ProgressionEngine:
         Returns:
             AccessResult indicating if access is allowed
         """
-        # Phase 2: Check schedule first (absolute lock)
+        if not enrollment:
+            if node.is_preview:
+                return AccessResult(can_access=True, status='preview')
+            return AccessResult(can_access=False, status='locked', lock_reason='enrollment_required')
+
+        # Enrollment status and expiry checks first
+        if enrollment.status in {'withdrawn', 'suspended'}:
+            return AccessResult(can_access=False, status='locked', lock_reason='enrollment_required')
+
+        if enrollment.expires_at and timezone.now() > enrollment.expires_at:
+            return AccessResult(
+                can_access=False,
+                status='locked',
+                lock_reason='expired',
+                unlocks_at=None,
+            )
+
+        # Schedule checks next
         schedule_result = self.schedule_checker.is_unlocked(enrollment, node)
         if not schedule_result.can_access:
             return schedule_result
-
-        # Check if already completed
-        if NodeCompletion.objects.filter(enrollment=enrollment, node=node).exists():
-            return AccessResult(can_access=True, status='completed')
         
         completed_ids = set(NodeCompletion.objects.filter(
             enrollment=enrollment
         ).values_list('node_id', flat=True))
+
+        # Prerequisites before sequential locking
+        prereq_result = self.prerequisite_checker.are_prerequisites_met(
+            node, completed_ids
+        )
+        if not prereq_result.can_access:
+            return prereq_result
         
         # Check sequential lock
         progression_rules = {}
@@ -474,13 +494,10 @@ class ProgressionEngine:
             )
             if not seq_result.can_access:
                 return seq_result
-        
-        # Check prerequisites (always checked, even if sequential is disabled)
-        prereq_result = self.prerequisite_checker.are_prerequisites_met(
-            node, completed_ids
-        )
-        if not prereq_result.can_access:
-            return prereq_result
+
+        # Completion status is evaluated last
+        if node.id in completed_ids:
+            return AccessResult(can_access=True, status='completed')
         
         return AccessResult(can_access=True, status='unlocked')
 
@@ -515,10 +532,10 @@ class ProgressionEngine:
         )
         
         # Check for program completion
-        if self.check_program_completion(enrollment):
+        if self.check_program_completion(enrollment) and enrollment.status != 'completed':
             enrollment.status = 'completed'
             enrollment.completed_at = timezone.now()
-            enrollment.save()
+            enrollment.save(update_fields=['status', 'completed_at', 'updated_at'])
         
         return completion
 

@@ -6,18 +6,37 @@ def get_post_data(request) -> dict:
     Get POST data from request, handling both form-encoded and JSON data.
     Inertia.js sends data as JSON, so we need to parse request.body.
     """
-    # First try request.POST (form-encoded data)
-    if request.POST:
-        return request.POST.dict()
-
-    # If empty, try parsing JSON from request.body (Inertia sends JSON)
+    # Prefer JSON body when present (Inertia commonly sends JSON)
     if request.body:
-        try:
-            return json.loads(request.body)
-        except (json.JSONDecodeError, ValueError):
-            # In a real API we might want to raise a 400 here,
-            # but for now we return empty dict to avoid crashing
-            return {}
+        content_type = str(getattr(request, "content_type", "") or "")
+        body = request.body
+        body_stripped = body.lstrip()
+
+        if "application/json" in content_type or body_stripped.startswith((b"{", b"[")):
+            try:
+                return json.loads(body)
+            except (json.JSONDecodeError, ValueError):
+                pass
+
+    # Fallback: form-encoded POST data (preserve repeated keys)
+    if request.POST:
+        data = {}
+        for key, values in request.POST.lists():
+            if len(values) == 1:
+                value = values[0]
+                # If a value is a JSON string, parse it to preserve arrays/objects
+                if isinstance(value, str):
+                    v = value.strip()
+                    if v.startswith("[") or v.startswith("{"):
+                        try:
+                            data[key] = json.loads(v)
+                            continue
+                        except (json.JSONDecodeError, ValueError):
+                            pass
+                data[key] = value
+            else:
+                data[key] = values
+        return data
 
     return {}
 
@@ -82,4 +101,3 @@ def serialize_user(user: User) -> dict:
         "name": user.get_full_name() or user.email,
         "avatar": None,  # TODO: Add avatar
     }
-

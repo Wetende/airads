@@ -103,6 +103,17 @@ class Enrollment(TimeStampedModel):
     grades = models.JSONField(blank=True, null=True)  # Stores grade components
     grades_published = models.BooleanField(default=False)
     completed_at = models.DateTimeField(blank=True, null=True)
+    expires_at = models.DateTimeField(blank=True, null=True)
+    access_source = models.CharField(
+        max_length=20,
+        choices=[
+            ("free", "Free"),
+            ("approval", "Approval"),
+            ("paid", "Paid"),
+            ("admin", "Admin"),
+        ],
+        default="free",
+    )
 
     class Meta:
         db_table = "enrollments"

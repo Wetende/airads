@@ -151,6 +151,30 @@ class Program(TimeStampedModel):
     notices = models.JSONField(default=list, blank=True)
     custom_pricing = models.JSONField(default=dict, blank=True)
 
+    # Access, progression, and rating fields
+    prerequisites_enabled = models.BooleanField(default=False)
+    prerequisite_programs = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="unlocks_programs",
+    )
+    access_duration_days = models.PositiveIntegerField(null=True, blank=True)
+    drip_enabled = models.BooleanField(default=False)
+    DRIP_MODE_CHOICES = [
+        ("none", "None"),
+        ("relative", "Relative"),
+        ("absolute", "Absolute"),
+        ("mixed", "Mixed"),
+    ]
+    drip_mode = models.CharField(
+        max_length=20,
+        choices=DRIP_MODE_CHOICES,
+        default="none",
+    )
+    rating_average = models.DecimalField(max_digits=3, decimal_places=2, default=0)
+    rating_count = models.PositiveIntegerField(default=0)
+
     # Course Display Fields (for public listing/detail pages)
     thumbnail = models.ImageField(
         upload_to="programs/thumbnails/", blank=True, null=True

@@ -10,10 +10,11 @@ from django.conf.urls.static import static
 urlpatterns = [
     path("django-admin/", admin.site.urls),  # Renamed to avoid conflict with /admin/* app routes
     # App URLs - Inertia pages and REST APIs
-    path("", include("apps.progression.urls")),  # Student portal routes
     path("", include("apps.core.urls")),
+    path("", include("apps.progression.urls")),  # Student portal routes
     path("", include("apps.practicum.urls")),  # Practicum API routes
     path("", include("apps.certifications.urls")),  # Certificate routes
+    path("", include("apps.commerce.urls")),
     path("", include("apps.blueprints.urls")),  # Blueprint admin routes
 
     path("", include("apps.platform.urls")),  # Platform settings routes

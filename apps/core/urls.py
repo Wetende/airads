@@ -18,6 +18,7 @@ urlpatterns = [
     path("contact/", views.contact_page, name="contact"),
     path("programs/", views.public_programs_list, name="programs"),
     path("programs/<int:pk>/", views.public_program_detail, name="program_detail"),
+    path("programs/<int:pk>/review/", views.program_review_submit, name="program_review_submit"),
     # Authentication
     path("login/", views.login_page, name="login"),
     path("register/", views.register_page, name="register"),
@@ -109,6 +110,9 @@ urlpatterns = [
     path("admin/course-approval/<int:program_id>/approve/", views.admin_course_approve, name="admin.course_approve"),
     path("admin/course-approval/<int:program_id>/request-changes/", views.admin_course_request_changes, name="admin.course_request_changes"),
     path("admin/course-approval/<int:program_id>/preview/", views.admin_preview_as_student, name="admin.preview_as_student"),
+    path("admin/reviews/", views.admin_reviews, name="admin.reviews"),
+    path("admin/reviews/<int:review_id>/approve/", views.admin_review_approve, name="admin.review.approve"),
+    path("admin/reviews/<int:review_id>/reject/", views.admin_review_reject, name="admin.review.reject"),
     # Instructor Views
     path("instructor/", views.instructor_landing, name="instructor.landing"),
     path("instructor/apply/", views.instructor_apply, name="instructor.apply"),

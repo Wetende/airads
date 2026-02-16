@@ -4,6 +4,7 @@ Requirements: 1.1-1.6, 2.1-2.5, 3.1-3.7, 4.1-4.7
 """
 
 from typing import Optional
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect
@@ -452,6 +453,8 @@ def program_view(request, pk: int):
             "isCompleted": False,
             "isLocked": False,
             "lockReason": None,
+            "status": "unlocked",
+            "unlocksAt": None,
         },
     )
 
@@ -531,7 +534,10 @@ def _render_course_player(request, enrollment, node, completions, status_map):
             "progress": round(progress, 1),
             "isCompleted": is_completed,
             "isLocked": not unlock_status["is_unlocked"],
-            "lockReason": unlock_status.get("reason"),
+            "status": "completed" if is_completed else ("unlocked" if unlock_status.get("is_unlocked") else "locked"),
+            "lockReason": unlock_status.get("lock_reason"),
+            "lockReasonText": unlock_status.get("reason"),
+            "unlocksAt": unlock_status.get("unlocks_at"),
         },
     )
 
@@ -551,6 +557,7 @@ def session_viewer(request, pk: int, node_id: int):
         Enrollment.objects.select_related("program"), pk=pk, user=request.user
     )
     node = get_object_or_404(CurriculumNode, pk=node_id, program=enrollment.program)
+    engine = ProgressionEngine()
 
     # Check if node is unlocked before allowing access
     unlock_status = _check_unlock_status(enrollment, node)
@@ -622,13 +629,10 @@ def session_viewer(request, pk: int, node_id: int):
                 completion_type = "quiz_pass"
 
             if should_mark_complete:
-                NodeCompletion.objects.get_or_create(
+                engine.mark_complete(
                     enrollment=enrollment,
                     node=node,
-                    defaults={
-                        "completion_type": completion_type,
-                        "completed_at": timezone.now(),
-                    },
+                    completion_type=completion_type,
                 )
 
     # Check if completed
@@ -661,7 +665,6 @@ def session_viewer(request, pk: int, node_id: int):
     )
     completions = list(enrollment.completions.values_list("node_id", flat=True))
     # Get unlock status map for sidebar
-    engine = ProgressionEngine()
     unlock_statuses = engine.get_unlock_status(enrollment)
     status_map = {s['node_id']: s for s in unlock_statuses}
 
@@ -754,7 +757,10 @@ def session_viewer(request, pk: int, node_id: int):
             "progress": round(progress, 1),
             "isCompleted": is_completed,
             "isLocked": not unlock_status["is_unlocked"],
-            "lockReason": unlock_status.get("reason"),
+            "status": "completed" if is_completed else ("unlocked" if unlock_status.get("is_unlocked") else "locked"),
+            "lockReason": unlock_status.get("lock_reason"),
+            "lockReasonText": unlock_status.get("reason"),
+            "unlocksAt": unlock_status.get("unlocks_at"),
             "discussions": discussions_data,
             "notes": notes_data,
         },
@@ -792,6 +798,11 @@ def session_discussion_post(request, pk: int, node_id: int):
 
     content = request.POST.get("content", "").strip()
     if not content:
+        messages.error(request, "Discussion content cannot be empty.")
+        return redirect("progression:student.session", pk=pk, node_id=node_id)
+
+    if len(content) > 5000:
+        messages.error(request, "Discussion content is too long (max 5000 characters).")
         return redirect("progression:student.session", pk=pk, node_id=node_id)
 
     thread_id = request.POST.get("thread_id") or request.POST.get("thread")
@@ -805,6 +816,7 @@ def session_discussion_post(request, pk: int, node_id: int):
         )
 
         if thread.is_locked:
+            messages.error(request, "This discussion is locked.")
             return redirect("progression:student.session", pk=pk, node_id=node_id)
 
         parent = None
@@ -863,6 +875,11 @@ def session_note_create(request, pk: int, node_id: int):
 
     content = request.POST.get("content", "").strip()
     if not content:
+        messages.error(request, "Note content cannot be empty.")
+        return redirect("progression:student.session", pk=pk, node_id=node_id)
+
+    if len(content) > 3000:
+        messages.error(request, "Note content is too long (max 3000 characters).")
         return redirect("progression:student.session", pk=pk, node_id=node_id)
 
     # Get optional video timestamp
@@ -922,8 +939,8 @@ def _build_curriculum_tree(
     nodes,
     completions: list,
     enrollment: Enrollment,
-    status_map: dict = None,
-    last_attempts_by_quiz_id: dict = None,
+    status_map: Optional[dict] = None,
+    last_attempts_by_quiz_id: Optional[dict] = None,
 ) -> list:
     """Build curriculum tree with completion and unlock status."""
     result = []
@@ -1007,6 +1024,7 @@ def _build_curriculum_tree(
             "title": node.title,
             "nodeType": node.node_type,
             "code": node.code or "",
+            "status": "completed" if is_completed else status_key,
             "isCompleted": is_completed,
             "isLocked": is_locked,
             "lockReason": node_status.get('lock_reason'),
@@ -1047,34 +1065,25 @@ def _build_curriculum_tree(
 
 
 def _check_unlock_status(enrollment: Enrollment, node: CurriculumNode) -> dict:
-    """Check if a node is unlocked based on prerequisites and sequential rules."""
-    completion_rules = node.completion_rules or {}
+    """Compatibility wrapper backed by ProgressionEngine access decisions."""
+    engine = ProgressionEngine()
+    result = engine.can_access(enrollment, node)
 
-    # Check prerequisites
-    prerequisites = completion_rules.get("prerequisites", [])
-    if prerequisites:
-        completed_ids = set(enrollment.completions.values_list("node_id", flat=True))
-        missing = [p for p in prerequisites if p not in completed_ids]
-        if missing:
-            return {
-                "is_unlocked": False,
-                "reason": "Complete prerequisites first",
-            }
+    lock_reason_map = {
+        "sequential": "Complete earlier content first",
+        "prerequisite": "Complete prerequisites first",
+        "scheduled": "Scheduled content is not yet available",
+        "drip": "This content unlocks later",
+        "expired": "Enrollment access has expired",
+        "enrollment_required": "Enrollment is required to access this content",
+    }
 
-    # Check sequential completion (default to True for sequential locking)
-    if completion_rules.get("sequential", True) and node.parent:
-        siblings = node.parent.children.filter(
-            is_published=True, position__lt=node.position
-        )
-        completed_ids = set(enrollment.completions.values_list("node_id", flat=True))
-        for sibling in siblings:
-            if sibling.id not in completed_ids:
-                return {
-                    "is_unlocked": False,
-                    "reason": f'Complete "{sibling.title}" first',
-                }
-
-    return {"is_unlocked": True}
+    return {
+        "is_unlocked": result.can_access,
+        "reason": lock_reason_map.get(result.lock_reason),
+        "lock_reason": result.lock_reason,
+        "unlocks_at": result.unlocks_at.isoformat() if result.unlocks_at else None,
+    }
 
 
 def _get_breadcrumbs(node: CurriculumNode, enrollment_id: int) -> list:
@@ -2687,7 +2696,7 @@ def instructor_practicum_review(request, pk: int):
                 pass
 
         # Create review
-        SubmissionReview.objects.create(
+        review = SubmissionReview.objects.create(
             submission=submission,
             reviewer=user,
             status=status,
@@ -2703,12 +2712,13 @@ def instructor_practicum_review(request, pk: int):
 
         # If approved, mark node as complete
         if status == "approved":
-            NodeCompletion.objects.get_or_create(
+            ProgressionEngine().mark_complete(
                 enrollment=submission.enrollment,
                 node=submission.node,
-                defaults={
-                    "completion_type": "upload",
-                    "completed_at": timezone.now(),
+                completion_type="upload",
+                metadata={
+                    "source": "instructor_practicum_review",
+                    "review_id": review.id,
                 },
             )
 
