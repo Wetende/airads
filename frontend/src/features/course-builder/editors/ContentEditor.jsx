@@ -1031,16 +1031,40 @@ function QATab({ nodeId, discussions: initialDiscussions = [] }) {
     const [newTitle, setNewTitle] = useState("");
     const [newContent, setNewContent] = useState("");
     const [creating, setCreating] = useState(false);
+    const [replyDrafts, setReplyDrafts] = useState({});
+    const [replyingById, setReplyingById] = useState({});
 
-    // Update discussions when prop changes
-    useEffect(() => {
-        setDiscussions(initialDiscussions);
-    }, [initialDiscussions]);
+    const loadDiscussions = async () => {
+        if (!nodeId || String(nodeId).startsWith("temp_")) {
+            setDiscussions([]);
+            return;
+        }
 
-    // Refresh discussions via Inertia partial reload
-    const refreshDiscussions = () => {
-        router.reload({ only: ["node"], preserveScroll: true });
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch(`/instructor/nodes/${nodeId}/discussions/`, {
+                credentials: "same-origin",
+                headers: {
+                    Accept: "application/json",
+                },
+            });
+            if (!response.ok) {
+                throw new Error("Failed to load discussions");
+            }
+            const data = await response.json();
+            setDiscussions(Array.isArray(data.discussions) ? data.discussions : []);
+        } catch (err) {
+            setError(err?.message || "Failed to load discussions");
+        } finally {
+            setLoading(false);
+        }
     };
+
+    useEffect(() => {
+        loadDiscussions();
+    }, [nodeId]);
 
     const handleCreate = () => {
         if (!newTitle.trim()) return;
@@ -1059,6 +1083,7 @@ function QATab({ nodeId, discussions: initialDiscussions = [] }) {
                     setCreateOpen(false);
                     setNewTitle("");
                     setNewContent("");
+                    loadDiscussions();
                 },
                 onFinish: () => setCreating(false),
             },
@@ -1072,6 +1097,7 @@ function QATab({ nodeId, discussions: initialDiscussions = [] }) {
             {},
             {
                 preserveScroll: true,
+                onSuccess: () => loadDiscussions(),
             },
         );
     };
@@ -1083,6 +1109,31 @@ function QATab({ nodeId, discussions: initialDiscussions = [] }) {
             {},
             {
                 preserveScroll: true,
+                onSuccess: () => loadDiscussions(),
+            },
+        );
+    };
+
+    const handleReply = (discussionId) => {
+        const content = (replyDrafts[discussionId] || "").trim();
+        if (!content) return;
+
+        setReplyingById((prev) => ({ ...prev, [discussionId]: true }));
+        router.post(
+            "/instructor/discussions/reply/",
+            {
+                thread: discussionId,
+                content,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setReplyDrafts((prev) => ({ ...prev, [discussionId]: "" }));
+                    loadDiscussions();
+                },
+                onFinish: () => {
+                    setReplyingById((prev) => ({ ...prev, [discussionId]: false }));
+                },
             },
         );
     };
@@ -1218,6 +1269,35 @@ function QATab({ nodeId, discussions: initialDiscussions = [] }) {
                                     </Box>
                                 }
                             />
+                            <Box sx={{ minWidth: 300, ml: 2 }}>
+                                <Box sx={{ display: "flex", gap: 1 }}>
+                                    <TextField
+                                        size="small"
+                                        fullWidth
+                                        placeholder="Write a reply..."
+                                        value={replyDrafts[d.id] || ""}
+                                        disabled={!!d.is_locked || !!replyingById[d.id]}
+                                        onChange={(event) =>
+                                            setReplyDrafts((prev) => ({
+                                                ...prev,
+                                                [d.id]: event.target.value,
+                                            }))
+                                        }
+                                    />
+                                    <Button
+                                        variant="contained"
+                                        size="small"
+                                        disabled={
+                                            !!d.is_locked ||
+                                            !!replyingById[d.id] ||
+                                            !(replyDrafts[d.id] || "").trim()
+                                        }
+                                        onClick={() => handleReply(d.id)}
+                                    >
+                                        Reply
+                                    </Button>
+                                </Box>
+                            </Box>
                             <ListItemSecondaryAction>
                                 <Tooltip title={d.is_pinned ? "Unpin" : "Pin"}>
                                     <IconButton

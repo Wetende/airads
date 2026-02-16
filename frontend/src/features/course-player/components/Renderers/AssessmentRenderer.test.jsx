@@ -109,7 +109,8 @@ describe("AssessmentRenderer", () => {
             />,
         );
 
-        expect(html).toContain("Answer Questions");
+        expect(html).toContain("QUESTION 1 OF 1");
+        expect(html).toContain("Finish Quiz");
         expect(html).not.toContain("Upload File");
     });
 
@@ -132,7 +133,8 @@ describe("AssessmentRenderer", () => {
             />,
         );
 
-        expect(html).toContain("Answer Questions");
+        expect(html).toContain("QUESTION 1 OF 1");
+        expect(html).toContain("Finish Quiz");
         expect(html).toContain("Submit");
     });
 });

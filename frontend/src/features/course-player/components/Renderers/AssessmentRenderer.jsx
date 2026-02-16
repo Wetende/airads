@@ -148,6 +148,22 @@ const AssessmentRenderer = ({
             );
         }
 
+        if (hasQuestions) {
+            return (
+                <QuizRenderer
+                    node={{
+                        ...node,
+                        properties: {
+                            ...properties,
+                            questions: properties.questions,
+                        },
+                    }}
+                    enrollmentId={enrollmentId}
+                    onComplete={onComplete}
+                />
+            );
+        }
+
         if (hasQuizLink) {
             const startQuizUrl = buildQuizStartUrl({
                 quizId: properties.quiz_id,
@@ -183,23 +199,6 @@ const AssessmentRenderer = ({
                         </Box>
                     </Stack>
                 </Paper>
-            );
-        }
-
-        if (hasQuestions) {
-            return (
-                <QuizRenderer
-                    node={{
-                        ...node,
-                        properties: {
-                            ...properties,
-                            quiz_id: null,
-                            questions: properties.questions,
-                        },
-                    }}
-                    enrollmentId={enrollmentId}
-                    onComplete={onComplete}
-                />
             );
         }
 

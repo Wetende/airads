@@ -58,6 +58,23 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
         });
     };
 
+    const handleSendReply = (threadId, replyContent) => {
+        if (!threadId || !replyContent?.trim() || isSubmitting) return;
+
+        setIsSubmitting(true);
+
+        router.post(`/student/programs/${enrollmentId}/session/${nodeId}/discussion/`, {
+            content: replyContent.trim(),
+            thread_id: threadId,
+        }, {
+            preserveScroll: true,
+            only: ['discussions'],
+            onFinish: () => {
+                setIsSubmitting(false);
+            }
+        });
+    };
+
     // --- Note Handlers ---
     const handleSaveNote = () => {
         if (!noteContent.trim() || isSubmitting) return;
@@ -211,7 +228,11 @@ const StudyPanel = ({ nodeId, enrollmentId, discussions = [], notes = [], curren
                     )}
 
                     <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-                        <DiscussionsList discussions={discussions} />
+                        <DiscussionsList
+                            discussions={discussions}
+                            onReply={handleSendReply}
+                            disabled={isSubmitting}
+                        />
                     </Box>
                 </>
             ) : (
