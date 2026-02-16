@@ -13,6 +13,8 @@ class Notification(TimeStampedModel):
         ('enrollment_confirmed', 'Enrollment Confirmed'),
         ('enrollment_approved', 'Enrollment Approved'),
         ('enrollment_rejected', 'Enrollment Rejected'),
+        ('discussion_comment', 'Lesson Discussion Comment'),
+        ('discussion_reply', 'Lesson Discussion Reply'),
         ('grade_published', 'Grade Published'),
         ('assignment_graded', 'Assignment Graded'),
         ('quiz_graded', 'Quiz Graded'),

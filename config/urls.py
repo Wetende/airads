@@ -21,6 +21,7 @@ urlpatterns = [
     path("content/", include("apps.content.urls")),
     path("notifications/", include("apps.notifications.urls")),  # Inertia-based notifications
     path("api/notifications/", include("apps.notifications.api_urls")),  # REST notifications API
+    path("api/discussions/", include("apps.discussions.urls")),
     path("events/", include("apps.events.urls")),  # Events app routes
 ]
 if settings.DEBUG:

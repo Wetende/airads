@@ -124,6 +124,102 @@ def _record_inline_quiz_attempt(enrollment: Enrollment, node: CurriculumNode, an
     return attempt.id
 
 
+def _serialize_quiz_questions_for_course_player(quiz) -> list:
+    questions_payload = []
+
+    for question in quiz.questions.all().order_by("position"):
+        answer_data = question.answer_data or {}
+        question_payload = {
+            "id": question.id,
+            "question_type": question.question_type,
+            "text": question.text,
+            "points": question.points,
+            "answer_data": answer_data,
+        }
+
+        if question.question_type in {"mcq", "mcq_multi"}:
+            question_payload["options"] = [
+                {
+                    "id": option.id,
+                    "text": option.text,
+                    "is_correct": option.is_correct,
+                    "position": option.position,
+                }
+                for option in question.options.all().order_by("position")
+            ]
+
+        if question.question_type == "matching":
+            question_payload["pairs"] = [
+                {
+                    "left_text": pair.left_text,
+                    "right_text": pair.right_text,
+                }
+                for pair in question.matching_pairs.all().order_by("position")
+            ]
+
+        if question.question_type == "fill_blank":
+            question_payload["gaps"] = [
+                {
+                    "gap_index": gap.gap_index,
+                    "accepted_answers": gap.accepted_answers,
+                }
+                for gap in question.gap_answers.all().order_by("gap_index")
+            ]
+
+        if question.question_type == "image_matching":
+            question_payload["image_pairs"] = [
+                {
+                    "left_id": f"left_{pair.id}",
+                    "right_id": f"right_{pair.id}",
+                    "question_text": pair.question_text,
+                    "question_image": pair.question_image,
+                    "answer_text": pair.answer_text,
+                    "answer_image": pair.answer_image,
+                }
+                for pair in question.image_matching_pairs.all().order_by("position")
+            ]
+
+        questions_payload.append(question_payload)
+
+    return questions_payload
+
+
+def _hydrate_assessment_node_properties(node: CurriculumNode) -> dict:
+    props = node.properties.copy() if isinstance(node.properties, dict) else {}
+
+    node_type = str(node.node_type or "").lower()
+    lesson_type = str(props.get("lesson_type") or "").lower()
+    is_assignment = node_type == "assignment" or lesson_type == "assignment"
+    is_quiz = node_type == "quiz" or lesson_type == "quiz"
+    includes_questions = is_quiz or (is_assignment and _assignment_requires_questions(props))
+
+    if not includes_questions:
+        return props
+
+    existing_questions = props.get("questions")
+    if isinstance(existing_questions, list) and len(existing_questions) > 0:
+        return props
+
+    quiz_id = _safe_int(props.get("quiz_id"))
+    if not quiz_id:
+        return props
+
+    from apps.assessments.models import Quiz
+
+    try:
+        quiz = Quiz.objects.prefetch_related(
+            "questions__options",
+            "questions__matching_pairs",
+            "questions__gap_answers",
+            "questions__image_matching_pairs",
+        ).get(pk=quiz_id)
+    except Quiz.DoesNotExist:
+        return props
+
+    props["questions"] = _serialize_quiz_questions_for_course_player(quiz)
+    return props
+
+
 # =============================================================================
 # Dashboard View
 # =============================================================================
@@ -373,8 +469,11 @@ def _render_course_player(request, enrollment, node, completions, status_map):
     # Check unlock status
     unlock_status = _check_unlock_status(enrollment, node)
 
+    # Hydrate properties for assessment nodes so quiz/assignment question paths render inline.
+    node_properties = _hydrate_assessment_node_properties(node)
+
     # Get content from properties
-    content_html = node.properties.get("content_html", "")
+    content_html = node_properties.get("content_html", "")
 
     # Get curriculum tree for Sidebar
     root_nodes = (
@@ -413,7 +512,7 @@ def _render_course_player(request, enrollment, node, completions, status_map):
                 "id": node.id,
                 "title": node.title,
                 "type": node.node_type,
-                "properties": node.properties,
+                "properties": node_properties,
                 "contentHtml": content_html,
                 "description": node.description or "",
                 "blocks": blocks_data,
@@ -546,8 +645,11 @@ def session_viewer(request, pk: int, node_id: int):
     # Get siblings for navigation
     siblings = _get_sibling_navigation(node, enrollment.id)
 
+    # Hydrate properties for assessment nodes so quiz/assignment question paths render inline.
+    node_properties = _hydrate_assessment_node_properties(node)
+
     # Get content from properties
-    content_html = node.properties.get("content_html", "")
+    content_html = node_properties.get("content_html", "")
 
     # Get curriculum tree for Sidebar
     root_nodes = (
@@ -633,8 +735,8 @@ def session_viewer(request, pk: int, node_id: int):
                 "id": node.id,
                 "title": node.title,
                 "type": node.node_type,
-                "properties": node.properties,
-                "contentHtml": content_html,
+            "properties": node_properties,
+            "contentHtml": content_html,
                 "description": node.description or "",
                 "blocks": blocks_data,
             },
@@ -664,13 +766,15 @@ def session_viewer(request, pk: int, node_id: int):
 @login_required
 def session_discussion_post(request, pk: int, node_id: int):
     """
-    POST: Create a new discussion thread or post for a node.
-    Creates a new thread with the content as the initial post.
+    POST: Create a new discussion thread or reply for a node.
+    If thread_id is provided, creates a reply post in that thread.
+    Otherwise creates a new top-level thread.
     """
     if request.method != "POST":
         return redirect("progression:student.session", pk=pk, node_id=node_id)
     
-    from apps.discussions.models import DiscussionThread
+    from apps.discussions.models import DiscussionPost, DiscussionThread
+    from apps.notifications.services import NotificationService
     
     enrollment = get_object_or_404(
         Enrollment.objects.select_related("program"),
@@ -690,13 +794,45 @@ def session_discussion_post(request, pk: int, node_id: int):
     if not content:
         return redirect("progression:student.session", pk=pk, node_id=node_id)
     
-    # Create a new discussion thread
-    DiscussionThread.objects.create(
-        node=node,
-        user=request.user,
-        title="",  # No title for simple comments
-        content=content,
-    )
+    thread_id = request.POST.get("thread_id") or request.POST.get("thread")
+    parent_id = request.POST.get("parent_id")
+
+    if thread_id:
+        thread = get_object_or_404(
+            DiscussionThread.objects.select_related("node", "user"),
+            id=thread_id,
+            node=node,
+        )
+
+        if thread.is_locked:
+            return redirect("progression:student.session", pk=pk, node_id=node_id)
+
+        parent = None
+        if parent_id:
+            parent = DiscussionPost.objects.filter(
+                id=parent_id,
+                thread=thread,
+            ).first()
+
+        post = DiscussionPost.objects.create(
+            thread=thread,
+            user=request.user,
+            content=content,
+            parent=parent,
+        )
+        NotificationService.notify_lesson_discussion_reply(post)
+    else:
+        # Create a new discussion thread
+        thread = DiscussionThread.objects.create(
+            node=node,
+            user=request.user,
+            title="",  # No title for simple comments
+            content=content,
+        )
+        NotificationService.notify_lesson_discussion_comment(
+            thread=thread,
+            actor=request.user,
+        )
     
     return redirect("progression:student.session", pk=pk, node_id=node_id)
 
@@ -1953,9 +2089,16 @@ def instructor_gradebook(request, pk: int):
     """
     user = request.user
 
-    # Verify instructor has access
-    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
-    program = assignment.program
+    # Verify instructor/staff has access
+    if user.is_staff:
+        program = get_object_or_404(Program, id=pk)
+    else:
+        assignment = get_object_or_404(
+            InstructorAssignment,
+            instructor=user,
+            program_id=pk,
+        )
+        program = assignment.program
 
     # Get grading config from blueprint
     grading_config = {}
@@ -2018,9 +2161,16 @@ def instructor_gradebook_save(request, pk: int):
 
     user = request.user
 
-    # Verify instructor has access
-    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
-    program = assignment.program
+    # Verify instructor/staff has access
+    if user.is_staff:
+        program = get_object_or_404(Program, id=pk)
+    else:
+        assignment = get_object_or_404(
+            InstructorAssignment,
+            instructor=user,
+            program_id=pk,
+        )
+        program = assignment.program
 
     # Parse grades from request
     data = _get_post_data(request)
@@ -2097,9 +2247,16 @@ def instructor_gradebook_publish(request, pk: int):
 
     user = request.user
 
-    # Verify instructor has access
-    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
-    program = assignment.program
+    # Verify instructor/staff has access
+    if user.is_staff:
+        program = get_object_or_404(Program, id=pk)
+    else:
+        assignment = get_object_or_404(
+            InstructorAssignment,
+            instructor=user,
+            program_id=pk,
+        )
+        program = assignment.program
 
     # Collect enrollments whose grades are about to be published
     enrollment_ids = list(
@@ -2131,9 +2288,16 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
     """
     user = request.user
 
-    # Verify instructor has access
-    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
-    program = assignment.program
+    # Verify instructor/staff has access
+    if user.is_staff:
+        program = get_object_or_404(Program, id=pk)
+    else:
+        assignment = get_object_or_404(
+            InstructorAssignment,
+            instructor=user,
+            program_id=pk,
+        )
+        program = assignment.program
 
     # Get enrollment
     enrollment = get_object_or_404(

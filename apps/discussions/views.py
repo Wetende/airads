@@ -10,7 +10,7 @@ class DiscussionThreadViewSet(viewsets.ModelViewSet):
     """
     queryset = DiscussionThread.objects.all().order_by('-is_pinned', '-created_at')
     serializer_class = DiscussionThreadSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['node', 'user']
     search_fields = ['title', 'content']
@@ -25,7 +25,7 @@ class DiscussionPostViewSet(viewsets.ModelViewSet):
     """
     queryset = DiscussionPost.objects.all().order_by('created_at')
     serializer_class = DiscussionPostSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['thread', 'user']
 

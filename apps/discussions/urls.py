@@ -9,5 +9,5 @@ router.register(r'threads', DiscussionThreadViewSet, basename='discussionthread'
 router.register(r'posts', DiscussionPostViewSet, basename='discussionpost')
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ]

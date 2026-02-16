@@ -2503,302 +2503,76 @@ def _get_students_for_program(program_id: int, user) -> list:
 
 
 def instructor_gradebook(request):
-    """Gradebook for instructor's programs with partial reload for students."""
-    if not is_instructor(request.user):
+    """Bridge legacy global gradebook endpoint to canonical progression route."""
+    if not (is_instructor(request.user) or request.user.is_staff):
         return redirect("/dashboard/")
 
-    from apps.progression.models import Enrollment
+    requested_program_id = _safe_int(request.GET.get("program"))
+    program_id = None
 
-    program_ids = get_instructor_program_ids(request.user)
-    programs = Program.objects.filter(id__in=program_ids).select_related("blueprint")
+    if requested_program_id:
+        if request.user.is_staff:
+            exists = Program.objects.filter(pk=requested_program_id).exists()
+            if exists:
+                program_id = requested_program_id
+        else:
+            if requested_program_id in get_instructor_program_ids(request.user):
+                program_id = requested_program_id
 
-    # Get grading config from blueprint
-    programs_data = []
-    for p in programs:
-        grading_config = p.blueprint.grading_logic if p.blueprint else {}
-        enrollments = Enrollment.objects.filter(
-            program=p, status="active"
-        ).select_related("user")
+    if program_id is None:
+        if request.user.is_staff:
+            first_program = Program.objects.order_by("id").first()
+            if first_program:
+                program_id = first_program.id
+        else:
+            assigned_ids = get_instructor_program_ids(request.user)
+            if assigned_ids:
+                program_id = assigned_ids[0]
 
-        programs_data.append(
-            {
-                "id": p.id,
-                "name": p.name,
-                "thumbnailUrl": p.thumbnail.url if p.thumbnail else None,
-                "gradingType": grading_config.get("type")
-                or grading_config.get("mode", "percentage"),
-                "gradingConfig": grading_config,
-                "studentCount": enrollments.count(),
-            }
-        )
+    if not program_id:
+        messages.error(request, "No program available for gradebook")
+        return redirect("/dashboard/")
 
-    # Handle partial reload for expanded program students
-    expand_program_id = request.GET.get("expand_program")
-    expanded_students = None
-    expanded_program_id = None
-
-    if expand_program_id:
-        try:
-            pid = int(expand_program_id)
-            if pid in program_ids:
-                expanded_students = _get_students_for_program(pid, request.user)
-                expanded_program_id = pid
-        except (ValueError, TypeError):
-            pass
-
-    return render(
-        request,
-        "Instructor/Gradebook/Index",
-        {
-            "programs": programs_data,
-            "expandedStudents": expanded_students,
-            "expandedProgramId": expanded_program_id,
-        },
-    )
+    return redirect(f"/instructor/programs/{program_id}/gradebook/")
 
 
 @login_required
 def instructor_grade_entry(request, enrollment_id: int):
-    """Enter grades for a specific enrollment."""
-    if not is_instructor(request.user):
+    """Bridge legacy grade entry endpoint to canonical progression student-gradebook view."""
+    if not (is_instructor(request.user) or request.user.is_staff):
         return redirect("/dashboard/")
 
     from django.shortcuts import get_object_or_404
 
     from apps.progression.models import Enrollment
 
-    program_ids = get_instructor_program_ids(request.user)
-    enrollment = get_object_or_404(
-        Enrollment, pk=enrollment_id, program_id__in=program_ids
-    )
+    enrollment = get_object_or_404(Enrollment.objects.select_related("program"), pk=enrollment_id)
 
-    if request.method == "POST":
-        data = get_post_data(request)
-        # TODO: Save grades based on blueprint grading_type
-        messages.success(request, "Grades saved successfully")
-        return redirect("core:instructor.gradebook")
+    if not request.user.is_staff:
+        program_ids = get_instructor_program_ids(request.user)
+        if enrollment.program_id not in program_ids:
+            messages.error(request, "Permission denied")
+            return redirect("/dashboard/")
 
-    grading_config = (
-        enrollment.program.blueprint.grading_logic
-        if enrollment.program.blueprint
-        else {}
-    )
-
-    return render(
-        request,
-        "Instructor/GradeEntry",
-        {
-            "enrollment": {
-                "id": enrollment.id,
-                "studentName": enrollment.user.get_full_name() or enrollment.user.email,
-                "programName": enrollment.program.name,
-            },
-            "gradingType": grading_config.get("type", "percentage"),
-            "gradingConfig": grading_config,
-        },
+    return redirect(
+        f"/instructor/programs/{enrollment.program_id}/gradebook/student/{enrollment.id}/"
     )
 
 
 @login_required
 def instructor_program_gradebook(request, pk: int):
-    """Gradebook for a specific program with quiz and assignment scores."""
-    if not is_instructor(request.user):
-        return redirect("/dashboard/")
+    """Bridge legacy core program-gradebook endpoint to canonical progression view."""
+    from apps.progression.views import instructor_gradebook as progression_instructor_gradebook
 
-    from django.shortcuts import get_object_or_404
-
-    from apps.assessments.models import (
-        Assignment,
-        AssignmentSubmission,
-        Quiz,
-        QuizAttempt,
-    )
-    from apps.progression.models import Enrollment
-
-    program_ids = get_instructor_program_ids(request.user)
-    program = get_object_or_404(Program, pk=pk, id__in=program_ids)
-
-    grading_config = program.blueprint.grading_logic if program.blueprint else {}
-
-    # Get all quizzes and assignments for the program
-    quizzes = list(
-        Quiz.objects.filter(node__program=program, is_published=True).order_by(
-            "created_at"
-        )
-    )
-    assignments = list(
-        Assignment.objects.filter(program=program, is_published=True).order_by(
-            "created_at"
-        )
-    )
-
-    # Get enrolled students with their grades
-    enrollments = (
-        Enrollment.objects.filter(program=program)
-        .select_related("user")
-        .order_by("user__last_name", "user__first_name")
-    )
-
-    # Prefetch quiz attempts and assignment submissions for all enrollments
-    enrollment_ids = [e.id for e in enrollments]
-
-    quiz_attempts = QuizAttempt.objects.filter(
-        enrollment_id__in=enrollment_ids
-    ).select_related("quiz")
-
-    assignment_submissions = AssignmentSubmission.objects.filter(
-        enrollment_id__in=enrollment_ids
-    ).select_related("assignment")
-
-    # Index attempts/submissions by enrollment
-    quiz_attempts_by_enrollment = {}
-    for attempt in quiz_attempts:
-        if attempt.enrollment_id not in quiz_attempts_by_enrollment:
-            quiz_attempts_by_enrollment[attempt.enrollment_id] = {}
-        quiz_id = attempt.quiz_id
-        # Keep best score per quiz
-        if quiz_id not in quiz_attempts_by_enrollment[attempt.enrollment_id]:
-            quiz_attempts_by_enrollment[attempt.enrollment_id][quiz_id] = attempt
-        elif attempt.score and (
-            quiz_attempts_by_enrollment[attempt.enrollment_id][quiz_id].score is None
-            or attempt.score
-            > quiz_attempts_by_enrollment[attempt.enrollment_id][quiz_id].score
-        ):
-            quiz_attempts_by_enrollment[attempt.enrollment_id][quiz_id] = attempt
-
-    submissions_by_enrollment = {}
-    for sub in assignment_submissions:
-        if sub.enrollment_id not in submissions_by_enrollment:
-            submissions_by_enrollment[sub.enrollment_id] = {}
-        submissions_by_enrollment[sub.enrollment_id][sub.assignment_id] = sub
-
-    students_data = []
-    for e in enrollments:
-        # Get manual grades from enrollment
-        manual_grades = (
-            e.grades if hasattr(e, "grades") and e.grades else {"components": {}}
-        )
-
-        # Build quiz scores
-        quiz_scores = []
-        for q in quizzes:
-            attempt = quiz_attempts_by_enrollment.get(e.id, {}).get(q.id)
-            quiz_scores.append(
-                {
-                    "quizId": q.id,
-                    "title": q.title,
-                    "score": (
-                        float(attempt.score) if attempt and attempt.score else None
-                    ),
-                    "passed": attempt.passed if attempt else None,
-                    "attemptCount": QuizAttempt.objects.filter(
-                        enrollment=e, quiz=q
-                    ).count(),
-                }
-            )
-
-        # Build assignment scores
-        assignment_scores = []
-        for a in assignments:
-            sub = submissions_by_enrollment.get(e.id, {}).get(a.id)
-            assignment_scores.append(
-                {
-                    "assignmentId": a.id,
-                    "title": a.title,
-                    "weight": a.weight,
-                    "score": sub.get_final_score() if sub and sub.score else None,
-                    "status": sub.status if sub else "not_submitted",
-                    "isLate": sub.is_late if sub else False,
-                }
-            )
-
-        # Calculate overall score
-        total_weight = 0
-        weighted_score = 0
-
-        # Quiz component (assume equal weight split)
-        quiz_weight = grading_config.get("quiz_weight", 30)  # Default 30%
-        quiz_total = len(quizzes)
-        quiz_sum = sum(qs["score"] or 0 for qs in quiz_scores)
-        if quiz_total > 0:
-            weighted_score += (quiz_sum / quiz_total) * (quiz_weight / 100)
-            total_weight += quiz_weight
-
-        # Assignment component
-        for asc in assignment_scores:
-            if asc["score"] is not None:
-                weighted_score += asc["score"] * (asc["weight"] / 100)
-            total_weight += asc["weight"]
-
-        overall = (weighted_score / total_weight * 100) if total_weight > 0 else None
-
-        students_data.append(
-            {
-                "enrollmentId": e.id,
-                "name": e.user.get_full_name() or e.user.email,
-                "email": e.user.email,
-                "grades": manual_grades,
-                "quizScores": quiz_scores,
-                "assignmentScores": assignment_scores,
-                "overallScore": round(overall, 1) if overall else None,
-                "isPublished": getattr(e, "grades_published", False),
-            }
-        )
-
-    return render(
-        request,
-        "Instructor/Gradebook",
-        {
-            "program": {
-                "id": program.id,
-                "name": program.name,
-                "code": program.code or "",
-            },
-            "gradingConfig": grading_config,
-            "quizzes": [{"id": q.id, "title": q.title} for q in quizzes],
-            "assignments": [
-                {"id": a.id, "title": a.title, "weight": a.weight} for a in assignments
-            ],
-            "students": students_data,
-        },
-    )
+    return progression_instructor_gradebook(request, pk)
 
 
 @login_required
 def instructor_program_gradebook_save(request, pk: int):
-    """Save grades for a specific program."""
-    if not is_instructor(request.user):
-        return redirect("/dashboard/")
+    """Bridge legacy core grade-save endpoint to canonical progression save view."""
+    from apps.progression.views import instructor_gradebook_save as progression_instructor_gradebook_save
 
-    if request.method != "POST":
-        return redirect("core:instructor.gradebook")
-
-    from django.shortcuts import get_object_or_404
-
-    from apps.progression.models import Enrollment
-
-    program_ids = get_instructor_program_ids(request.user)
-    program = get_object_or_404(Program, pk=pk, id__in=program_ids)
-
-    data = get_post_data(request)
-    grades_data = data.get("grades", {})
-
-    # Update grades for each enrollment
-    for enrollment_id_str, grade_info in grades_data.items():
-        try:
-            enrollment_id = int(enrollment_id_str)
-            enrollment = Enrollment.objects.filter(
-                id=enrollment_id, program=program
-            ).first()
-            if enrollment:
-                # Store grades in enrollment - this may need a JSONField on Enrollment model
-                enrollment.grades = grade_info
-                enrollment.save(update_fields=["grades"])
-        except (ValueError, TypeError):
-            continue
-
-    messages.success(request, "Grades saved successfully")
-    return redirect("core:instructor.program_gradebook", pk=pk)
+    return progression_instructor_gradebook_save(request, pk)
 
 
 # Note: instructor_content and instructor_content_edit functions removed
@@ -6860,6 +6634,7 @@ def instructor_discussion_reply(request):
     Uses Inertia redirect pattern.
     """
     from apps.discussions.models import DiscussionPost, DiscussionThread
+    from apps.notifications.services import NotificationService
 
     referer = request.META.get("HTTP_REFERER", "/instructor/")
 
@@ -6889,11 +6664,12 @@ def instructor_discussion_reply(request):
         messages.error(request, "This discussion is locked")
         return redirect(referer)
 
-    DiscussionPost.objects.create(
+    post = DiscussionPost.objects.create(
         thread=thread,
         user=request.user,
         content=content,
     )
+    NotificationService.notify_lesson_discussion_reply(post)
 
     messages.success(request, "Reply posted")
     return redirect(referer)

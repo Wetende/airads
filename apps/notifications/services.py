@@ -255,6 +255,132 @@ class NotificationService:
             )
 
         return notifications
+
+    @staticmethod
+    def notify_lesson_discussion_comment(thread, actor=None):
+        """
+        Notify instructors when a student creates a new lesson discussion thread.
+        """
+        from apps.progression.models import InstructorAssignment
+
+        if thread is None or thread.node is None or thread.node.program is None:
+            return []
+
+        program = thread.node.program
+        actor = actor or thread.user
+        actor_name = actor.get_full_name() or actor.email
+        lesson_title = thread.node.title
+
+        recipients = list(program.instructors.filter(is_active=True))
+        assigned_instructors = list(
+            InstructorAssignment.objects.filter(program=program)
+            .select_related("instructor")
+            .values_list("instructor", flat=True)
+        )
+        if assigned_instructors:
+            from apps.core.models import User
+
+            assigned_users = list(
+                User.objects.filter(id__in=assigned_instructors, is_active=True)
+            )
+            recipients.extend(assigned_users)
+
+        # Deduplicate and avoid self-notification.
+        dedup = {}
+        for recipient in recipients:
+            if recipient.id != actor.id:
+                dedup[recipient.id] = recipient
+        final_recipients = list(dedup.values())
+
+        if not final_recipients:
+            return []
+
+        action_url = f"/instructor/programs/{program.id}/manage/"
+        notifications = NotificationService.bulk_create(
+            recipients=final_recipients,
+            notification_type="discussion_comment",
+            title="New Lesson Question",
+            message=(
+                f'{actor_name} asked a question on "{lesson_title}".'
+            ),
+            action_url=action_url,
+            related_program_id=program.id,
+        )
+
+        for recipient in final_recipients:
+            NotificationService.send_email_notification(
+                recipient=recipient,
+                notification_type="discussion_comment",
+                subject=f"New Lesson Question: {lesson_title}",
+                message=(
+                    f"Hello {recipient.get_full_name() or recipient.email},\n\n"
+                    f'{actor_name} asked a new question on "{lesson_title}".\n'
+                    "Open your course builder Q&A tab to reply."
+                ),
+            )
+
+        return notifications
+
+    @staticmethod
+    def notify_lesson_discussion_reply(post):
+        """
+        Notify thread owner when someone replies in a lesson discussion thread.
+        """
+        if post is None or post.thread is None:
+            return None
+
+        thread = post.thread
+        recipient = thread.user
+        replier = post.user
+
+        if recipient.id == replier.id:
+            return None
+
+        recipient_name = recipient.get_full_name() or recipient.email
+        replier_name = replier.get_full_name() or replier.email
+        lesson_title = thread.node.title if thread.node else "Lesson"
+
+        action_url = "/student/programs/"
+        try:
+            from apps.progression.models import Enrollment
+
+            enrollment = (
+                Enrollment.objects.filter(
+                    user=recipient,
+                    program=thread.node.program,
+                    status="active",
+                )
+                .order_by("-enrolled_at")
+                .first()
+            )
+            if enrollment:
+                action_url = (
+                    f"/student/programs/{enrollment.id}/session/{thread.node_id}/"
+                )
+        except Exception:
+            pass
+
+        notification = NotificationService.create(
+            recipient=recipient,
+            notification_type="discussion_reply",
+            title="Your Lesson Question Has a Reply",
+            message=f'{replier_name} replied to your discussion on "{lesson_title}".',
+            action_url=action_url,
+            related_program_id=(thread.node.program.id if thread.node else None),
+        )
+
+        NotificationService.send_email_notification(
+            recipient=recipient,
+            notification_type="discussion_reply",
+            subject=f"Discussion Reply: {lesson_title}",
+            message=(
+                f"Hello {recipient_name},\n\n"
+                f'{replier_name} replied to your lesson discussion on "{lesson_title}".\n'
+                "Open the lesson to continue the conversation."
+            ),
+        )
+
+        return notification
     
     # =========================================================================
     # Convenience methods for specific notification types
