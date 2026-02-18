@@ -9,15 +9,14 @@ import {
     Box,
     Paper,
     InputAdornment,
-    Popover,
 } from "@mui/material";
 import {
     Delete as DeleteIcon,
     Edit as EditIcon,
     Add as AddIcon,
     Image as ImageIcon,
-    Close as CloseIcon,
 } from "@mui/icons-material";
+import AnswerExplanationPopover from "./AnswerExplanationPopover";
 
 /**
  * ImageMatchingEditor - STM LMS style image matching question editor
@@ -580,71 +579,25 @@ export default function ImageMatchingEditor({ nodeId, pairs = [], onChange }) {
                 </Button>
             </Box>
 
-            {/* Explanation Popover */}
-            <Popover
+            <AnswerExplanationPopover
                 open={Boolean(explanationAnchor)}
                 anchorEl={explanationAnchor}
                 onClose={handleCloseExplanation}
-                anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "right",
+                value={
+                    activeExplanationIndex !== null
+                        ? safePairs[activeExplanationIndex]?.explanation || ""
+                        : ""
+                }
+                onChange={(value) => {
+                    if (activeExplanationIndex !== null) {
+                        handleUpdate(
+                            activeExplanationIndex,
+                            "explanation",
+                            value,
+                        );
+                    }
                 }}
-                transformOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                }}
-            >
-                <Box sx={{ p: 2, width: 280 }}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            mb: 1,
-                        }}
-                    >
-                        <Box>
-                            <Typography variant="subtitle2" fontWeight={600}>
-                                Answer explanation
-                            </Typography>
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                            >
-                                Will be shown in &quot;Show answer&quot; section
-                            </Typography>
-                        </Box>
-                        <IconButton
-                            size="small"
-                            onClick={handleCloseExplanation}
-                        >
-                            <CloseIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                    </Box>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        placeholder="Enter explanation"
-                        value={
-                            activeExplanationIndex !== null
-                                ? safePairs[activeExplanationIndex]
-                                      ?.explanation || ""
-                                : ""
-                        }
-                        onChange={(e) => {
-                            if (activeExplanationIndex !== null) {
-                                handleUpdate(
-                                    activeExplanationIndex,
-                                    "explanation",
-                                    e.target.value,
-                                );
-                            }
-                        }}
-                        multiline
-                        rows={2}
-                    />
-                </Box>
-            </Popover>
+            />
         </Box>
     );
 }

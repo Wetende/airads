@@ -5,6 +5,8 @@ Core models - Custom User model and base classes.
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from .learning_outcomes import extract_learning_outcome_items_from_html
+
 
 class TimeStampedModel(models.Model):
     """
@@ -196,8 +198,15 @@ class Program(TimeStampedModel):
     badge_type = models.CharField(
         max_length=20, blank=True, null=True, choices=BADGE_CHOICES
     )
-    what_you_learn = models.JSONField(
-        default=list, blank=True, help_text="List of learning outcomes"
+    what_you_learn_items = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Derived plain-text learning outcomes",
+    )
+    what_you_learn_html = models.TextField(
+        blank=True,
+        default="",
+        help_text="Rich text learning outcomes HTML",
     )
 
     class Meta:
@@ -210,6 +219,13 @@ class Program(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        self.what_you_learn_html = str(self.what_you_learn_html or "").strip()
+        self.what_you_learn_items = extract_learning_outcome_items_from_html(
+            self.what_you_learn_html
+        )
+        super().save(*args, **kwargs)
 
 
 class ProgramResource(models.Model):

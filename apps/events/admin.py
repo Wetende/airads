@@ -17,6 +17,7 @@ class EventAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
     ordering = ["-start_datetime"]
     date_hierarchy = "start_datetime"
+    readonly_fields = ["what_you_learn_items"]
     
     fieldsets = (
         (None, {
@@ -29,7 +30,7 @@ class EventAdmin(admin.ModelAdmin):
             'fields': ('image',)
         }),
         ('Content', {
-            'fields': ('tab_content', 'what_you_learn'),
+            'fields': ('tab_content', 'what_you_learn_html', 'what_you_learn_items'),
             'classes': ('collapse',)
         }),
         ('Publishing', {

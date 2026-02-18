@@ -42,6 +42,7 @@ import {
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import DOMPurify from "dompurify";
 import { CourseDetailsModal } from "@/components/modals";
 import PublicNavbar from "@/components/common/PublicNavbar";
 
@@ -729,8 +730,7 @@ export default function ProgramDetail({
                                         {program.description}
                                     </Typography>
 
-                                    {program.what_you_learn &&
-                                        program.what_you_learn.length > 0 && (
+                                    {program.what_you_learn_html && (
                                             <Box sx={{ mt: 4 }}>
                                                 <Typography
                                                     variant="h5"
@@ -739,39 +739,19 @@ export default function ProgramDetail({
                                                 >
                                                     What you'll learn
                                                 </Typography>
-                                                <Grid container spacing={2}>
-                                                    {program.what_you_learn.map(
-                                                        (item, idx) => (
-                                                            <Grid
-                                                                size={{
-                                                                    xs: 12,
-                                                                    sm: 6,
-                                                                }}
-                                                                key={idx}
-                                                            >
-                                                                <Stack
-                                                                    direction="row"
-                                                                    spacing={1}
-                                                                >
-                                                                    <IconCheck
-                                                                        size={
-                                                                            20
-                                                                        }
-                                                                        color={
-                                                                            theme
-                                                                                .palette
-                                                                                .success
-                                                                                .main
-                                                                        }
-                                                                    />
-                                                                    <Typography variant="body2">
-                                                                        {item}
-                                                                    </Typography>
-                                                                </Stack>
-                                                            </Grid>
+                                                <Box
+                                                    sx={{
+                                                        "& ul, & ol": { pl: 3, mb: 2 },
+                                                        "& li": { mb: 0.75 },
+                                                        "& h1, & h2, & h3": { mb: 1.5, mt: 2 },
+                                                        "& p": { mb: 1 },
+                                                    }}
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: DOMPurify.sanitize(
+                                                            program.what_you_learn_html,
                                                         ),
-                                                    )}
-                                                </Grid>
+                                                    }}
+                                                />
                                             </Box>
                                         )}
                                 </TabPanel>
@@ -895,14 +875,22 @@ export default function ProgramDetail({
                                                                 variant="subtitle1"
                                                                 fontWeight={600}
                                                             >
-                                                                {notice.title}
+                                                                {typeof notice === "string"
+                                                                    ? `Notice ${idx + 1}`
+                                                                    : notice.title}
                                                             </Typography>
                                                             <Typography
                                                                 variant="body2"
                                                                 color="text.secondary"
-                                                            >
-                                                                {notice.content}
-                                                            </Typography>
+                                                                component="div"
+                                                                dangerouslySetInnerHTML={{
+                                                                    __html: DOMPurify.sanitize(
+                                                                        (typeof notice === "string"
+                                                                            ? notice
+                                                                            : notice.content) || "",
+                                                                    ),
+                                                                }}
+                                                            />
                                                         </CardContent>
                                                     </Card>
                                                 ),
@@ -966,14 +954,13 @@ export default function ProgramDetail({
                                                             </Stack>
                                                             <Typography
                                                                 variant="body2"
-                                                                sx={{
-                                                                    whiteSpace:
-                                                                        "pre-wrap",
+                                                                component="div"
+                                                                dangerouslySetInnerHTML={{
+                                                                    __html: DOMPurify.sanitize(
+                                                                        review.reviewText || "",
+                                                                    ),
                                                                 }}
-                                                            >
-                                                                {review.reviewText ||
-                                                                    ""}
-                                                            </Typography>
+                                                            />
                                                         </Stack>
                                                     </CardContent>
                                                 </Card>

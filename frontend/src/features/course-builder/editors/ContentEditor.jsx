@@ -64,8 +64,14 @@ export default function ContentEditor({ node, onSave, blueprint }) {
         node.properties?.is_preview || false,
     );
     const [isLocked, setIsLocked] = useState(false);
-    const [startDate, setStartDate] = useState("");
-    const [startTime, setStartTime] = useState("");
+    const [startDate, setStartDate] = useState(
+        node.properties?.start_date || "",
+    );
+    const [startTime, setStartTime] = useState(
+        node.properties?.start_time || "",
+    );
+    const [endDate, setEndDate] = useState(node.properties?.end_date || "");
+    const [endTime, setEndTime] = useState(node.properties?.end_time || "");
     const [files, setFiles] = useState(node.properties?.files || []);
     const [documentData, setDocumentData] = useState(
         node.properties?.document || null,
@@ -145,6 +151,8 @@ export default function ContentEditor({ node, onSave, blueprint }) {
             meetingPassword: true,
             startDate: true,
             startTime: true,
+            endDate: true,
+            endTime: true,
             timezone: true,
         };
         if (lessonType === "document") {
@@ -176,12 +184,13 @@ export default function ContentEditor({ node, onSave, blueprint }) {
         // Strip HTML for character count
         const descText = description.replace(/<[^>]*>/g, "");
         if (!descText || descText.length < 50) {
-            newErrors.description = `Description must be at least 50 characters (${descText.length}/50)`;
+            newErrors.description = "Description must be at least 50 characters";
         }
 
         const contentText = content.replace(/<[^>]*>/g, "");
-        if (lessonType !== "document" && (!contentText || contentText.length < 200)) {
-            newErrors.content = `Content must be at least 200 characters (${contentText.length}/200)`;
+        const requiresLessonContent = !["document", "video", "live_class"].includes(lessonType);
+        if (requiresLessonContent && (!contentText || contentText.length < 200)) {
+            newErrors.content = "Content must be at least 200 characters";
         }
 
         // Video-specific validations
@@ -198,15 +207,33 @@ export default function ContentEditor({ node, onSave, blueprint }) {
 
         // Live class-specific validations
         if (lessonType === "live_class") {
-            if (!meetingPassword || meetingPassword.length < 6) {
+            if (!videoUrl || videoUrl.trim() === "") {
+                newErrors.videoUrl = "Live class URL is required";
+            } else if (videoUrl && !/^https?:\/\/.+/.test(videoUrl)) {
+                newErrors.videoUrl = "Please enter a valid URL";
+            }
+            if (meetingPassword && meetingPassword.length < 6) {
                 newErrors.meetingPassword =
-                    "Password must be at least 6 characters";
+                    "If provided, password must be at least 6 characters";
             }
             if (!startDate) {
                 newErrors.startDate = "Start date is required";
             }
             if (!startTime) {
                 newErrors.startTime = "Start time is required";
+            }
+            if (!endDate) {
+                newErrors.endDate = "End date is required";
+            }
+            if (!endTime) {
+                newErrors.endTime = "End time is required";
+            }
+            if (startDate && startTime && endDate && endTime) {
+                const start = new Date(`${startDate}T${startTime}:00`);
+                const end = new Date(`${endDate}T${endTime}:00`);
+                if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end <= start) {
+                    newErrors.endTime = "End time must be after start time";
+                }
             }
             if (!timezone) {
                 newErrors.timezone = "Please select a timezone";
@@ -245,6 +272,7 @@ export default function ContentEditor({ node, onSave, blueprint }) {
     const isFormValid = () => {
         const descText = description.replace(/<[^>]*>/g, "");
         const contentText = content.replace(/<[^>]*>/g, "");
+        const requiresLessonContent = !["document", "video", "live_class"].includes(lessonType);
 
         if (
             !title ||
@@ -254,7 +282,7 @@ export default function ContentEditor({ node, onSave, blueprint }) {
             return false;
         if (!duration || duration.trim() === "") return false;
         if (descText.length < 50) return false;
-        if (lessonType !== "document" && contentText.length < 200) return false;
+        if (requiresLessonContent && contentText.length < 200) return false;
 
         if (lessonType === "video") {
             if (!videoSource) return false;
@@ -262,8 +290,14 @@ export default function ContentEditor({ node, onSave, blueprint }) {
         }
 
         if (lessonType === "live_class") {
-            if (!meetingPassword || meetingPassword.length < 6) return false;
-            if (!startDate || !startTime || !timezone) return false;
+            if (!videoUrl || !/^https?:\/\/.+/.test(videoUrl)) return false;
+            if (meetingPassword && meetingPassword.length < 6) return false;
+            if (!startDate || !startTime || !endDate || !endTime || !timezone)
+                return false;
+            const start = new Date(`${startDate}T${startTime}:00`);
+            const end = new Date(`${endDate}T${endTime}:00`);
+            if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end <= start)
+                return false;
         }
 
         if (lessonType === "document") {
@@ -315,6 +349,8 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                 is_preview: isPreview,
                 start_date: startDate,
                 start_time: startTime,
+                end_date: endDate,
+                end_time: endTime,
                 video_source: videoSource,
                 video_url: videoUrl,
                 meeting_password: meetingPassword,
@@ -361,6 +397,31 @@ export default function ContentEditor({ node, onSave, blueprint }) {
     };
 
     const { icon, label } = getHeaderInfo();
+    const requiresLessonContent = !["document", "video", "live_class"].includes(lessonType);
+    const trimmedTitleLength = title.trim().length;
+    const descriptionTextLength = description.replace(/<[^>]*>/g, "").length;
+    const contentTextLength = content.replace(/<[^>]*>/g, "").length;
+    const titleMinLengthError =
+        title.length > 0 && trimmedTitleLength < TITLE_MIN_LENGTH
+            ? `Enter at least ${TITLE_MIN_LENGTH} characters.`
+            : undefined;
+    const titleMaxLengthError =
+        title.length > TITLE_MAX_LENGTH
+            ? `Use ${TITLE_MAX_LENGTH} characters or fewer.`
+            : undefined;
+    const titleErrorMessage =
+        getFieldError("title") || titleMinLengthError || titleMaxLengthError;
+    const descriptionMinLengthError =
+        descriptionTextLength > 0 && descriptionTextLength < 50
+            ? "Enter at least 50 characters."
+            : undefined;
+    const contentMinLengthError =
+        requiresLessonContent && contentTextLength > 0 && contentTextLength < 200
+            ? "Enter at least 200 characters."
+            : undefined;
+    const descriptionErrorMessage =
+        getFieldError("description") || descriptionMinLengthError;
+    const contentErrorMessage = getFieldError("content") || contentMinLengthError;
 
     return (
         <Box>
@@ -389,11 +450,8 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                     onChange={(e) => setTitle(e.target.value)}
                     onBlur={() => handleBlur("title")}
                     fullWidth
-                    error={!!getFieldError("title")}
-                    helperText={
-                        getFieldError("title") ||
-                        `${title.length}/${TITLE_MAX_LENGTH} characters (minimum ${TITLE_MIN_LENGTH})`
-                    }
+                    error={!!titleErrorMessage}
+                    helperText={titleErrorMessage}
                     InputProps={{ sx: { fontSize: "1.2rem", fontWeight: 500 } }}
                 />
                 <Button
@@ -496,8 +554,27 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                     {lessonType === "live_class" && (
                         <Stack spacing={2}>
                             <TextField
-                                label="Meeting password *"
-                                placeholder="Enter password (min 6 characters)"
+                                label="Live class URL *"
+                                placeholder="Paste Zoom, Google Meet, or stream URL"
+                                fullWidth
+                                size="small"
+                                value={videoUrl}
+                                onChange={(e) => setVideoUrl(e.target.value)}
+                                onBlur={() => handleBlur("videoUrl")}
+                                error={!!getFieldError("videoUrl")}
+                                helperText={
+                                    getFieldError("videoUrl") ||
+                                    "Use a direct meeting/stream link (https://...)"
+                                }
+                                InputLabelProps={{
+                                    shrink: true,
+                                    sx: { fontWeight: 500 },
+                                }}
+                            />
+
+                            <TextField
+                                label="Meeting password"
+                                placeholder="Optional (for Zoom passcodes)"
                                 fullWidth
                                 size="small"
                                 value={meetingPassword}
@@ -511,7 +588,6 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                                     shrink: true,
                                     sx: { fontWeight: 500 },
                                 }}
-                                required
                             />
 
                             <Box sx={{ display: "flex", gap: 2 }}>
@@ -549,6 +625,45 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                                     onBlur={() => handleBlur("startTime")}
                                     error={!!getFieldError("startTime")}
                                     helperText={getFieldError("startTime")}
+                                    required
+                                />
+                            </Box>
+
+                            <Box sx={{ display: "flex", gap: 2 }}>
+                                <TextField
+                                    label="Select end date *"
+                                    type="date"
+                                    fullWidth
+                                    size="small"
+                                    InputLabelProps={{
+                                        shrink: true,
+                                        sx: { fontWeight: 500 },
+                                    }}
+                                    value={endDate}
+                                    onChange={(e) =>
+                                        setEndDate(e.target.value)
+                                    }
+                                    onBlur={() => handleBlur("endDate")}
+                                    error={!!getFieldError("endDate")}
+                                    helperText={getFieldError("endDate")}
+                                    required
+                                />
+                                <TextField
+                                    label="Select end time *"
+                                    type="time"
+                                    fullWidth
+                                    size="small"
+                                    InputLabelProps={{
+                                        shrink: true,
+                                        sx: { fontWeight: 500 },
+                                    }}
+                                    value={endTime}
+                                    onChange={(e) =>
+                                        setEndTime(e.target.value)
+                                    }
+                                    onBlur={() => handleBlur("endTime")}
+                                    error={!!getFieldError("endTime")}
+                                    helperText={getFieldError("endTime")}
                                     required
                                 />
                             </Box>
@@ -826,7 +941,7 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                         <Typography
                             variant="body2"
                             color={
-                                getFieldError("description")
+                                descriptionErrorMessage
                                     ? "error"
                                     : "text.secondary"
                             }
@@ -840,14 +955,13 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                             placeholder="Enter a brief description of the lesson (min 50 characters)..."
                             minHeight={100}
                         />
-                        {getFieldError("description") && (
+                        {descriptionErrorMessage && (
                             <FormHelperText error>
-                                {getFieldError("description")}
+                                {descriptionErrorMessage}
                             </FormHelperText>
                         )}
                         <Typography variant="caption" color="text.secondary">
-                            {description.replace(/<[^>]*>/g, "").length}/50
-                            minimum characters
+                            {descriptionTextLength} characters
                         </Typography>
                     </Box>
 
@@ -915,14 +1029,14 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                         <Typography
                             variant="body2"
                             color={
-                                lessonType !== "document" &&
-                                getFieldError("content")
+                                requiresLessonContent &&
+                                contentErrorMessage
                                     ? "error"
                                     : "text.secondary"
                             }
                             sx={{ mb: 1, fontWeight: "bold" }}
                         >
-                            {lessonType === "document"
+                            {lessonType === "document" || lessonType === "video"
                                 ? "Lesson content (optional)"
                                 : "Lesson content *"}
                         </Typography>
@@ -932,20 +1046,20 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                             placeholder={
                                 lessonType === "document"
                                     ? "Optional notes for this document lesson..."
-                                    : "Write your lesson content here (min 200 characters)..."
+                                    : lessonType === "video"
+                                      ? "Optional notes for this video lesson..."
+                                      : "Write your lesson content here (min 200 characters)..."
                             }
                             minHeight={250}
                         />
-                        {lessonType !== "document" &&
-                            getFieldError("content") && (
+                        {requiresLessonContent &&
+                            contentErrorMessage && (
                             <FormHelperText error>
-                                {getFieldError("content")}
+                                {contentErrorMessage}
                             </FormHelperText>
                             )}
                         <Typography variant="caption" color="text.secondary">
-                            {lessonType === "document"
-                                ? `${content.replace(/<[^>]*>/g, "").length} characters`
-                                : `${content.replace(/<[^>]*>/g, "").length}/200 minimum characters`}
+                            {contentTextLength} characters
                         </Typography>
                     </Box>
 

@@ -172,9 +172,25 @@ const QuestionReviewCard = ({
                     <Stack spacing={0.5}>
                         {(Array.isArray(answer) ? answer : []).map(
                             (item, idx) => (
-                                <Typography key={idx} variant="body2">
-                                    {idx + 1}. {item}
-                                </Typography>
+                                <Box key={idx}>
+                                    <Typography variant="body2">
+                                        {idx + 1}. {item}
+                                    </Typography>
+                                    {!isStudentAnswer &&
+                                        question.orderingExplanations?.[
+                                            `item_${idx}`
+                                        ] && (
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                                sx={{ ml: 2 }}
+                                            >
+                                                {question.orderingExplanations[
+                                                    `item_${idx}`
+                                                ]}
+                                            </Typography>
+                                        )}
+                                </Box>
                             ),
                         )}
                     </Stack>

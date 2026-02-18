@@ -8,11 +8,6 @@ import {
 
 const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', platformFeatures = {}, deploymentMode = 'custom', ...props }) => {
     const { flash = [] } = usePage().props;
-    const levelValue = program?.taxonomy?.levelValue || program?.level || 'Unassigned';
-    const taxonomyPath = program?.taxonomy?.fullHierarchy || [
-        levelValue,
-        ...((program?.blueprint?.hierarchy_structure || program?.blueprint?.hierarchy || []).slice(0, 2)),
-    ];
     // Mode-aware tabs: conditionally show tabs based on platform features and blueprint flags
     const blueprintFlags = program?.blueprint?.featureFlags || {};
     
@@ -82,9 +77,6 @@ const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', plat
                         <Box sx={{ borderLeft: '1px solid', borderColor: 'divider', pl: 2, ml: 2 }}>
                             <Typography variant="h6" fontWeight={600}>
                                 {program.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                {taxonomyPath.filter(Boolean).join(' -> ')}
                             </Typography>
                         </Box>
                     </Stack>

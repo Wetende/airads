@@ -11,6 +11,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
+import DOMPurify from "dompurify";
 
 export default function Reviews({
     reviews = [],
@@ -72,13 +73,23 @@ export default function Reviews({
                                         borderColor: "divider",
                                         borderRadius: 1,
                                         p: 1.5,
-                                        whiteSpace: "pre-wrap",
                                     }}
                                 >
-                                    <Typography variant="body2">
-                                        {review.reviewText ||
-                                            "No review text provided."}
-                                    </Typography>
+                                    {review.reviewText ? (
+                                        <Typography
+                                            variant="body2"
+                                            component="div"
+                                            dangerouslySetInnerHTML={{
+                                                __html: DOMPurify.sanitize(
+                                                    review.reviewText,
+                                                ),
+                                            }}
+                                        />
+                                    ) : (
+                                        <Typography variant="body2">
+                                            No review text provided.
+                                        </Typography>
+                                    )}
                                 </Box>
                                 <TextField
                                     size="small"

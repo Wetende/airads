@@ -73,6 +73,7 @@ const LectureView = ({
                     nextNode={nextNode}
                     courseId={enrollment?.id}
                     isCompleted={isCompleted}
+                    discussions={discussions}
                     onVideoProgress={handleVideoProgress}
                 />
             ) : (

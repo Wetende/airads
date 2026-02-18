@@ -34,20 +34,20 @@ class SequentialLockChecker:
     """
 
     def is_unlocked(
-        self, 
-        enrollment: Enrollment, 
-        node: CurriculumNode, 
+        self,
+        enrollment: Enrollment,
+        node: CurriculumNode,
         completed_ids: Set[int]
     ) -> AccessResult:
         """
         Check if a node is unlocked under sequential locking rules.
         A node is unlocked if it's the first uncompleted sibling by position.
-        
+
         Args:
             enrollment: The student's enrollment
             node: The node to check access for
             completed_ids: Set of completed node IDs for this enrollment
-            
+
         Returns:
             AccessResult indicating if access is allowed
         """
@@ -56,7 +56,7 @@ class SequentialLockChecker:
             program=node.program,
             parent=node.parent
         ).order_by('position')
-        
+
         for sibling in siblings:
             if sibling.id == node.id:
                 # We reached the target node without finding uncompleted siblings
@@ -69,21 +69,21 @@ class SequentialLockChecker:
                     lock_reason='sequential',
                     blocking_nodes=[sibling.id]
                 )
-        
+
         return AccessResult(can_access=True, status='unlocked')
 
     def get_first_uncompleted_sibling(
-        self, 
-        node: CurriculumNode, 
+        self,
+        node: CurriculumNode,
         completed_ids: Set[int]
     ) -> Optional[CurriculumNode]:
         """
         Get the first uncompleted sibling node by position.
-        
+
         Args:
             node: The reference node
             completed_ids: Set of completed node IDs
-            
+
         Returns:
             The first uncompleted sibling, or None if all are completed
         """
@@ -91,7 +91,7 @@ class SequentialLockChecker:
             program=node.program,
             parent=node.parent
         ).order_by('position')
-        
+
         for sibling in siblings:
             if sibling.id not in completed_ids:
                 return sibling
@@ -103,7 +103,7 @@ class ScheduleLockChecker:
     Checks scheduling locking rules (unlock_date, unlock_after_days).
     Requirements: Phase 2
     """
-    
+
     def is_unlocked(
         self,
         enrollment: Enrollment,
@@ -113,7 +113,7 @@ class ScheduleLockChecker:
         Check if node is unlocked by schedule.
         """
         from datetime import timedelta
-        
+
         # Preview access (Phase 2)
         if hasattr(node, 'is_preview') and node.is_preview and not enrollment:
              # Logic for preview access - simplified for now as service expects enrollment usually
@@ -124,17 +124,17 @@ class ScheduleLockChecker:
              return AccessResult(can_access=False, status='locked', lock_reason='enrollment_required')
 
         now = timezone.now()
-        
+
         # 1. Absolute unlock date
         if node.unlock_date and node.unlock_date > now:
             return AccessResult(
                 can_access=False,
                 status='locked',
                 lock_reason='scheduled',
-                blocking_nodes=[], 
+                blocking_nodes=[],
                 unlocks_at=node.unlock_date
             )
-            
+
         # 2. Relative unlock days
         if node.unlock_after_days:
             unlock_at = enrollment.created_at + timedelta(days=node.unlock_after_days)
@@ -146,7 +146,7 @@ class ScheduleLockChecker:
                     blocking_nodes=[],
                     unlocks_at=unlock_at
                 )
-                
+
         return AccessResult(can_access=True, status='unlocked')
 
 
@@ -163,21 +163,21 @@ class PrerequisiteLockChecker:
     ) -> AccessResult:
         """
         Check if all prerequisites for a node are completed.
-        
+
         Args:
             node: The node to check prerequisites for
             completed_ids: Set of completed node IDs
-            
+
         Returns:
             AccessResult indicating if prerequisites are met
         """
         prerequisites = self._get_prerequisites(node)
-        
+
         if not prerequisites:
             return AccessResult(can_access=True, status='unlocked')
-        
+
         incomplete = [p for p in prerequisites if p not in completed_ids]
-        
+
         if incomplete:
             return AccessResult(
                 can_access=False,
@@ -185,7 +185,7 @@ class PrerequisiteLockChecker:
                 lock_reason='prerequisite',
                 blocking_nodes=incomplete
             )
-        
+
         return AccessResult(can_access=True, status='unlocked')
 
     def get_incomplete_prerequisites(
@@ -195,11 +195,11 @@ class PrerequisiteLockChecker:
     ) -> List[int]:
         """
         Get list of incomplete prerequisite node IDs.
-        
+
         Args:
             node: The node to check prerequisites for
             completed_ids: Set of completed node IDs
-            
+
         Returns:
             List of incomplete prerequisite node IDs
         """
@@ -226,11 +226,11 @@ class ProgressCalculator:
     ) -> float:
         """
         Calculate progress percentage for an enrollment.
-        
+
         Args:
             enrollment: The enrollment to calculate progress for
             subtree_root: Optional root node to scope calculation to subtree
-            
+
         Returns:
             Progress percentage (0.0 to 100.0)
         """
@@ -238,27 +238,27 @@ class ProgressCalculator:
             all_nodes = self.get_subtree_nodes(subtree_root)
         else:
             all_nodes = list(enrollment.program.curriculum_nodes.all())
-        
+
         completable_nodes = self.get_completable_nodes(all_nodes)
-        
+
         if not completable_nodes:
             return 100.0
-        
+
         completable_ids = [n.id for n in completable_nodes]
         completed_count = NodeCompletion.objects.filter(
             enrollment=enrollment,
             node_id__in=completable_ids
         ).count()
-        
+
         return (completed_count / len(completable_nodes)) * 100
 
     def get_completable_nodes(self, nodes: List[CurriculumNode]) -> List[CurriculumNode]:
         """
         Filter nodes to only those that are completable (not containers).
-        
+
         Args:
             nodes: List of nodes to filter
-            
+
         Returns:
             List of completable nodes
         """
@@ -275,10 +275,10 @@ class ProgressCalculator:
     def get_subtree_nodes(self, root: CurriculumNode) -> List[CurriculumNode]:
         """
         Get all nodes in a subtree including the root.
-        
+
         Args:
             root: The root node of the subtree
-            
+
         Returns:
             List of all nodes in the subtree
         """
@@ -302,35 +302,35 @@ class CompletionTriggerHandler:
     ) -> bool:
         """
         Check if a node can be completed based on trigger type.
-        
+
         Args:
             node: The node to check
             trigger_type: The type of trigger ('view', 'quiz_pass', 'upload')
             trigger_data: Additional data for the trigger (e.g., quiz score)
-            
+
         Returns:
             True if the node can be completed
         """
         if not node.completion_rules:
             return False
-        
+
         required_type = node.completion_rules.get('type', 'view')
-        
+
         if trigger_type != required_type:
             return False
-        
+
         if trigger_type == 'view':
             return True
-        
+
         if trigger_type == 'quiz_pass':
             return self._check_quiz_pass(node, trigger_data)
-        
+
         if trigger_type == 'upload':
             return self._check_upload(trigger_data)
 
         if trigger_type == 'assignment_pass':
             return self._check_assignment_pass(node, trigger_data)
-        
+
         return False
 
     def _check_quiz_pass(
@@ -341,17 +341,17 @@ class CompletionTriggerHandler:
         """Check if quiz pass requirements are met."""
         if not trigger_data:
             return False
-        
+
         min_score = node.completion_rules.get('min_score', 0)
         actual_score = trigger_data.get('score', 0)
-        
+
         return actual_score >= min_score
 
     def _check_upload(self, trigger_data: Optional[Dict[str, Any]]) -> bool:
         """Check if upload requirements are met."""
         if not trigger_data:
             return False
-        
+
         return trigger_data.get('file_uploaded', False)
 
     def _check_assignment_pass(
@@ -362,10 +362,10 @@ class CompletionTriggerHandler:
         """Check if assignment pass requirements are met."""
         if not trigger_data:
             return False
-            
+
         min_score = node.completion_rules.get('min_score', 0)
         actual_score = trigger_data.get('score', 0)
-        
+
         return actual_score >= min_score
 
 
@@ -382,32 +382,32 @@ class CompletionRulesValidator:
     ) -> ValidationResult:
         """
         Validate completion rules configuration.
-        
+
         Args:
             completion_rules: The completion rules to validate
             program_node_ids: Set of valid node IDs in the program
-            
+
         Returns:
             ValidationResult with is_valid and errors
         """
         errors = []
-        
+
         if not completion_rules:
             return ValidationResult(is_valid=True, errors=[])
-        
+
         completion_type = completion_rules.get('type')
-        
+
         # Validate quiz_pass type has quiz_id
         if completion_type == 'quiz_pass':
             if 'quiz_id' not in completion_rules:
                 errors.append("quiz_pass type requires quiz_id to be specified")
-        
+
         # Validate prerequisites exist
         prerequisites = completion_rules.get('prerequisites', [])
         for prereq_id in prerequisites:
             if prereq_id not in program_node_ids:
                 errors.append(f"Prerequisite node {prereq_id} does not exist in program")
-        
+
         return ValidationResult(
             is_valid=len(errors) == 0,
             errors=errors
@@ -442,11 +442,11 @@ class ProgressionEngine:
         """
         Check if a student can access a node.
         Combines sequential, prerequisite, and scheduling checks.
-        
+
         Args:
             enrollment: The student's enrollment
             node: The node to check access for
-            
+
         Returns:
             AccessResult indicating if access is allowed
         """
@@ -471,7 +471,7 @@ class ProgressionEngine:
         schedule_result = self.schedule_checker.is_unlocked(enrollment, node)
         if not schedule_result.can_access:
             return schedule_result
-        
+
         completed_ids = set(NodeCompletion.objects.filter(
             enrollment=enrollment
         ).values_list('node_id', flat=True))
@@ -482,12 +482,12 @@ class ProgressionEngine:
         )
         if not prereq_result.can_access:
             return prereq_result
-        
+
         # Check sequential lock
         progression_rules = {}
         if enrollment.program.blueprint:
             progression_rules = enrollment.program.blueprint.progression_rules or {}
-        
+
         if progression_rules.get('sequential', True):
             seq_result = self.sequential_checker.is_unlocked(
                 enrollment, node, completed_ids
@@ -498,7 +498,7 @@ class ProgressionEngine:
         # Completion status is evaluated last
         if node.id in completed_ids:
             return AccessResult(can_access=True, status='completed')
-        
+
         return AccessResult(can_access=True, status='unlocked')
 
     def mark_complete(
@@ -511,13 +511,13 @@ class ProgressionEngine:
         """
         Mark a node as complete for an enrollment.
         Uses get_or_create for idempotency.
-        
+
         Args:
             enrollment: The student's enrollment
             node: The node to mark complete
             completion_type: Type of completion
             metadata: Optional metadata for the completion
-            
+
         Returns:
             The NodeCompletion record
         """
@@ -530,13 +530,13 @@ class ProgressionEngine:
                 'metadata': metadata
             }
         )
-        
+
         # Check for program completion
         if self.check_program_completion(enrollment) and enrollment.status != 'completed':
             enrollment.status = 'completed'
             enrollment.completed_at = timezone.now()
             enrollment.save(update_fields=['status', 'completed_at', 'updated_at'])
-        
+
         return completion
 
     def get_unlock_status(
@@ -545,10 +545,10 @@ class ProgressionEngine:
     ) -> List[Dict[str, Any]]:
         """
         Get unlock status for all nodes in a program.
-        
+
         Args:
             enrollment: The student's enrollment
-            
+
         Returns:
             List of status dicts for each node
         """
@@ -556,7 +556,7 @@ class ProgressionEngine:
         completed_ids = set(NodeCompletion.objects.filter(
             enrollment=enrollment
         ).values_list('node_id', flat=True))
-        
+
         statuses = []
         for node in nodes:
             if node.id in completed_ids:
@@ -575,7 +575,7 @@ class ProgressionEngine:
                     'blocking_nodes': result.blocking_nodes,
                     'unlocks_at': result.unlocks_at.isoformat() if result.unlocks_at else None
                 })
-        
+
         return statuses
 
     def calculate_progress(
@@ -585,11 +585,11 @@ class ProgressionEngine:
     ) -> float:
         """
         Calculate progress percentage for an enrollment.
-        
+
         Args:
             enrollment: The enrollment to calculate progress for
             subtree_root: Optional root node to scope calculation
-            
+
         Returns:
             Progress percentage (0.0 to 100.0)
         """
@@ -598,10 +598,10 @@ class ProgressionEngine:
     def check_program_completion(self, enrollment: Enrollment) -> bool:
         """
         Check if a program is complete (100% progress).
-        
+
         Args:
             enrollment: The enrollment to check
-            
+
         Returns:
             True if program is complete
         """
@@ -611,10 +611,10 @@ class ProgressionEngine:
         """
         Handle assignment grading event.
         Finds nodes that require this assignment and checks completion.
-        
+
         Args:
             submission: The graded AssignmentSubmission
-            
+
         Returns:
             List of newly created NodeCompletion records
         """
@@ -623,16 +623,16 @@ class ProgressionEngine:
             program=submission.assignment.program,
             completion_rules__assignment_id=submission.assignment.id
         )
-        
+
         completions = []
         for node in nodes:
             # Check if this grade satisfies the rule
             can_complete = self.completion_handler.can_complete(
-                node, 
+                node,
                 'assignment_pass',
                 {'score': submission.get_final_score()}
             )
-            
+
             if can_complete:
                 completion = self.mark_complete(
                     submission.enrollment,
@@ -641,5 +641,5 @@ class ProgressionEngine:
                     {'submission_id': submission.id, 'score': submission.get_final_score()}
                 )
                 completions.append(completion)
-                
+
         return completions

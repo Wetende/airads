@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
+import RichTextEditor from '@/components/RichTextEditor';
 
 const RichTextBlockEditor = ({ data, onChange }) => {
     const [html, setHtml] = useState(data.html || '');
@@ -16,11 +15,11 @@ const RichTextBlockEditor = ({ data, onChange }) => {
     return (
         <Box sx={{ p: 2, border: '1px solid #eee', borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>Content</Typography>
-            <ReactQuill 
-                theme="snow"
+            <RichTextEditor
                 value={html}
                 onChange={setHtml}
-                style={{ height: 200, marginBottom: 50 }} 
+                minHeight={220}
+                placeholder="Write lesson content..."
             />
         </Box>
     );

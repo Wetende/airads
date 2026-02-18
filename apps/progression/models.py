@@ -131,7 +131,7 @@ class Announcement(TimeStampedModel):
     """
     Instructor announcements to program students.
     """
-    
+
     program = models.ForeignKey(
         "core.Program", on_delete=models.CASCADE, related_name="announcements"
     )
@@ -141,14 +141,14 @@ class Announcement(TimeStampedModel):
     title = models.CharField(max_length=255)
     content = models.TextField()
     is_pinned = models.BooleanField(default=False)
-    
+
     class Meta:
         db_table = "announcements"
         ordering = ["-is_pinned", "-created_at"]
         indexes = [
             models.Index(fields=["program", "-created_at"]),
         ]
-    
+
     def __str__(self):
         return f"{self.title} - {self.program}"
 
@@ -212,7 +212,7 @@ class Badge(models.Model):
     Badge definition for gamification system.
     Badges can be awarded for various achievements (lesson completion, quiz scores, etc.)
     """
-    
+
     BADGE_TRIGGERS = [
         ('lesson_complete', 'Lesson Complete'),
         ('quiz_pass', 'Quiz Pass'),
@@ -223,7 +223,7 @@ class Badge(models.Model):
         ('module_complete', 'Module Complete'),
         ('course_complete', 'Course Complete'),
     ]
-    
+
     code = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, default='')
@@ -232,11 +232,11 @@ class Badge(models.Model):
     trigger = models.CharField(max_length=50, choices=BADGE_TRIGGERS, blank=True, default='')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         db_table = 'badges'
         ordering = ['name']
-    
+
     def __str__(self):
         return self.name
 
@@ -246,7 +246,7 @@ class StudentBadge(models.Model):
     Badge earned by a student.
     Tracks when and why each badge was awarded.
     """
-    
+
     enrollment = models.ForeignKey(
         'Enrollment',
         on_delete=models.CASCADE,
@@ -265,14 +265,14 @@ class StudentBadge(models.Model):
         blank=True,
         help_text='The curriculum node that triggered this badge'
     )
-    
+
     class Meta:
         db_table = 'student_badges'
         unique_together = ['enrollment', 'badge']
         indexes = [
             models.Index(fields=['enrollment', 'earned_at']),
         ]
-    
+
     def __str__(self):
         return f"{self.enrollment.user} earned {self.badge.name}"
 
@@ -282,7 +282,7 @@ class StudentXP(models.Model):
     XP (experience points) earned by a student.
     Tracks individual XP gains for leaderboards and progress display.
     """
-    
+
     XP_REASONS = [
         ('lesson_complete', 'Lesson Complete'),
         ('quiz_pass', 'Quiz Pass'),
@@ -293,7 +293,7 @@ class StudentXP(models.Model):
         ('badge_earned', 'Badge Earned'),
         ('manual', 'Manual Award'),
     ]
-    
+
     enrollment = models.ForeignKey(
         'Enrollment',
         on_delete=models.CASCADE,
@@ -309,14 +309,14 @@ class StudentXP(models.Model):
     xp_amount = models.PositiveIntegerField()
     reason = models.CharField(max_length=50, choices=XP_REASONS)
     earned_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         db_table = 'student_xp'
         indexes = [
             models.Index(fields=['enrollment', 'earned_at']),
             models.Index(fields=['source_node']),
         ]
-    
+
     def __str__(self):
         return f"{self.enrollment.user}: +{self.xp_amount} XP ({self.reason})"
 

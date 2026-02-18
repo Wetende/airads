@@ -23,6 +23,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 
 import DashboardLayout from "@/layouts/DashboardLayout";
+import RichTextEditor from "@/components/RichTextEditor";
 import { useState } from "react";
 
 export default function ProgramContent({
@@ -281,19 +282,15 @@ export default function ProgramContent({
                         color="text.secondary"
                         gutterBottom
                       >
-                        Paste your learning outcomes here, one per line. They
-                        will be formatted as a list automatically.
+                        Use headings, numbered lists, or bullet points to
+                        present outcomes exactly how learners should read them.
                       </Typography>
 
-                      <TextField
+                      <RichTextEditor
                         value={data.whatYouLearn}
-                        onChange={(e) =>
-                          setData("whatYouLearn", e.target.value)
-                        }
-                        multiline
-                        rows={8}
-                        fullWidth
-                        placeholder={`• Understand the basics of...\n• Learn how to apply...\n• Master the core concepts...`}
+                        onChange={(value) => setData("whatYouLearn", value)}
+                        minHeight={220}
+                        placeholder="Add learning outcomes with bullets, numbered steps, and headings..."
                       />
                     </CardContent>
                   </Card>

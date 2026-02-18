@@ -69,7 +69,14 @@ const normalizePairs = (rawPairs) => {
                 '',
             );
             if (!right) return null;
-            return { left_text: left, right_text: right };
+            return {
+                left_text: left,
+                right_text: right,
+                explanation: normalizeText(
+                    pair.explanation ?? pair.note,
+                    '',
+                ),
+            };
         })
         .filter(Boolean);
 };
@@ -96,6 +103,10 @@ const normalizeGaps = (rawGaps) => {
             return {
                 gap_index: gapIndex ?? index,
                 accepted_answers: accepted,
+                explanation: normalizeText(
+                    gap.explanation ?? gap.note,
+                    '',
+                ),
             };
         })
         .sort((a, b) => a.gap_index - b.gap_index);
@@ -254,6 +265,11 @@ export const normalizeQuestions = (rawQuestions = []) => {
             const pairs = normalizePairs(
                 rawQuestion?.pairs ?? rawQuestion?.matching_pairs,
             );
+            const matchingExplanations = Object.fromEntries(
+                pairs
+                    .filter((pair) => pair.explanation)
+                    .map((pair) => [pair.left_text, pair.explanation]),
+            );
 
             const orderingItemsRaw =
                 rawQuestion?.items ??
@@ -264,9 +280,23 @@ export const normalizeQuestions = (rawQuestions = []) => {
             const items = Array.isArray(orderingItemsRaw)
                 ? orderingItemsRaw.map((item) => normalizeText(item)).filter(Boolean)
                 : [];
+            const orderingExplanationsRaw =
+                rawQuestion?.orderingExplanations ??
+                rawQuestion?.explanations ??
+                rawQuestion?.answer_data?.explanations ??
+                {};
+            const orderingExplanations =
+                orderingExplanationsRaw && typeof orderingExplanationsRaw === 'object'
+                    ? orderingExplanationsRaw
+                    : {};
 
             const gaps = normalizeGaps(
                 rawQuestion?.gaps ?? rawQuestion?.gap_answers,
+            );
+            const fillBlankExplanations = Object.fromEntries(
+                gaps
+                    .filter((gap) => gap.explanation)
+                    .map((gap) => [String(gap.gap_index), gap.explanation]),
             );
 
             const keywordsRaw =
@@ -311,7 +341,10 @@ export const normalizeQuestions = (rawQuestions = []) => {
                 correctMatchingMap: Object.fromEntries(
                     pairs.map((pair) => [pair.left_text, pair.right_text]),
                 ),
+                matchingExplanations,
                 correctOrdering: items,
+                orderingExplanations,
+                fillBlankExplanations,
                 correctImageMatchingMap,
             };
         })
@@ -335,6 +368,11 @@ const scoreByRatio = (points, correctCount, totalCount) => {
     if (!totalCount || totalCount <= 0) return 0;
     return Math.floor(points * (correctCount / totalCount));
 };
+
+const normalizeFillBlankAnswer = (value) =>
+    normalizeText(value)
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
 
 export const isQuestionAnswered = (question, answer) => {
     if (answer === null || answer === undefined) return false;
@@ -451,10 +489,10 @@ const evaluateQuestion = (question, answer) => {
 
         let correctCount = 0;
         entries.forEach((gap) => {
-            const submitted = normalizeText(
+            const submitted = normalizeFillBlankAnswer(
                 selections[String(gap.gap_index)] ?? selections[gap.gap_index],
-            ).toLowerCase();
-            const accepted = (gap.accepted_answers || []).map((item) => normalizeText(item).toLowerCase());
+            );
+            const accepted = (gap.accepted_answers || []).map((item) => normalizeFillBlankAnswer(item));
             if (submitted && accepted.includes(submitted)) {
                 correctCount += 1;
             }
@@ -572,22 +610,52 @@ export const formatAnswer = (question, answer, isCorrectAnswer = false) => {
 
     if (question.type === 'matching') {
         const map = typeof answer === 'object' ? answer : {};
+        const explanations = question.matchingExplanations || {};
         const lines = Object.entries(map)
-            .map(([left, right]) => `${left} -> ${right}`)
+            .map(([left, right]) => {
+                const explanation = isCorrectAnswer
+                    ? normalizeText(explanations[left], '')
+                    : '';
+                return explanation
+                    ? `${left} -> ${right} (${explanation})`
+                    : `${left} -> ${right}`;
+            })
             .filter((line) => line.endsWith('-> ') === false);
         return lines.length > 0 ? lines.join(' | ') : 'No answer';
     }
 
     if (question.type === 'fill_blank') {
         const map = typeof answer === 'object' ? answer : {};
+        const explanations = question.fillBlankExplanations || {};
         const lines = Object.entries(map)
-            .map(([key, value]) => `Blank ${Number(key) + 1}: ${normalizeText(value)}`)
+            .map(([key, value]) => {
+                const explanation = isCorrectAnswer
+                    ? normalizeText(
+                          explanations[String(key)] ?? explanations[key],
+                          '',
+                      )
+                    : '';
+                const base = `Blank ${Number(key) + 1}: ${normalizeText(value)}`;
+                return explanation ? `${base} (${explanation})` : base;
+            })
             .filter((line) => !line.endsWith(': '));
         return lines.length > 0 ? lines.join(' | ') : 'No answer';
     }
 
     if (question.type === 'ordering') {
-        return Array.isArray(answer) && answer.length > 0 ? answer.join(' > ') : 'No answer';
+        if (!Array.isArray(answer) || answer.length === 0) return 'No answer';
+        if (!isCorrectAnswer) return answer.join(' > ');
+
+        const explanations = question.orderingExplanations || {};
+        return answer
+            .map((item, idx) => {
+                const explanation = normalizeText(
+                    explanations[`item_${idx}`] ?? explanations[String(idx)],
+                    '',
+                );
+                return explanation ? `${item} (${explanation})` : item;
+            })
+            .join(' > ');
     }
 
     if (question.type === 'image_matching') {

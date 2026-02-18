@@ -10,6 +10,7 @@ import {
     IconButton 
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import RichTextEditor from '@/components/RichTextEditor';
 
 // --- Pricing Editor ---
 export const PricingEditor = ({ data, onChange }) => {
@@ -177,14 +178,11 @@ export const NoticeEditor = ({ data, onChange }) => {
                             value={item.title} 
                             onChange={e => handleUpdate(index, 'title', e.target.value)} 
                         />
-                        <TextField 
-                            label="Content" 
-                            fullWidth 
-                            multiline 
-                            rows={2} 
-                            size="small" 
-                            value={item.content} 
-                            onChange={e => handleUpdate(index, 'content', e.target.value)} 
+                        <RichTextEditor
+                            value={item.content || ''}
+                            onChange={(value) => handleUpdate(index, 'content', value)}
+                            minHeight={140}
+                            placeholder="Write notice content..."
                         />
                     </Stack>
                 </Paper>

@@ -22,9 +22,9 @@ import {
     RadioGroup,
     Snackbar,
     Alert,
-    InputAdornment,
     Menu,
     Tooltip,
+    CircularProgress,
 } from "@mui/material";
 import {
     Add as AddIcon,
@@ -49,7 +49,6 @@ import QuestionBankDialog from "../components/QuestionBankDialog";
 import QuestionEditorCard from "../components/QuestionEditorCard";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import RichTextEditor from "@/components/RichTextEditor";
-import FileUploader from "@/components/FileUploader";
 
 const QUESTION_TYPES = [
     { value: "mcq", label: "Single Choice", color: "#1976d2" },
@@ -67,44 +66,9 @@ const QUIZ_STYLES = [
     { value: "global", label: "Global" },
 ];
 
-const normalizeSubmissionType = (value) => {
-    const normalized = String(value || "").trim().toLowerCase();
-    const mapping = {
-        file: "file",
-        file_upload: "file",
-        text: "text",
-        text_entry: "text",
-        both: "both",
-        external_link: "text",
-        media_recording: "text",
-    };
-    return mapping[normalized] || "file";
-};
-
-const normalizeAssignmentMode = (properties) => {
-    const explicit = String(properties?.assignment_mode || "")
-        .trim()
-        .toLowerCase();
-    if (["submission_only", "question_only", "mixed"].includes(explicit)) {
-        return explicit;
-    }
-    const hasQuestions =
-        Array.isArray(properties?.questions) &&
-        properties.questions.length > 0;
-    return hasQuestions ? "mixed" : "submission_only";
-};
-
-const normalizeTypedResponseMode = (value) => {
-    const normalized = String(value || "").trim().toLowerCase();
-    if (normalized === "short_answer_question") return "short_answer_question";
-    return "submission_text";
-};
-
 const getPlainTextLength = (value) => {
     return String(value || "").replace(/<[^>]*>/g, "").trim().length;
 };
-
-const stripHtml = (value) => String(value || "").replace(/<[^>]*>/g, "").trim();
 
 // Pill-style tab component
 function PillTabs({ value, onChange, tabs, questionCount }) {
@@ -173,6 +137,7 @@ export default function AssessmentEditor({
     const normalizeQuestion = (question) => {
         if (!question) return question;
         const normalized = { ...question };
+        normalized.required = normalized.required ?? true;
 
         if (normalized.type === "ordering") {
             const candidate = normalized.items || normalized.correct_order;
@@ -187,7 +152,10 @@ export default function AssessmentEditor({
             normalized.type === "fill_blank" &&
             typeof normalized.text === "string"
         ) {
-            normalized.text = normalized.text.replace(/<[^>]*>/g, "");
+            normalized.text = normalized.text
+                .replace(/<[^>]*>/g, "")
+                .replace(/_{3,}/g, "{{blank}}")
+                .replace(/\{\{\s*blank\s*\}\}/gi, "{{blank}}");
         }
 
         return normalized;
@@ -209,7 +177,7 @@ export default function AssessmentEditor({
 
     // Quiz-specific state
     const [description, setDescription] = useState(
-        node.properties?.description || "",
+        node.properties?.description || node.properties?.lesson_content || "",
     );
     const [quizDuration, setQuizDuration] = useState(
         node.properties?.quiz_duration || 30,
@@ -256,33 +224,26 @@ export default function AssessmentEditor({
     const [questionBanks, setQuestionBanks] = useState(
         node.properties?.question_banks || [],
     );
-    const [lessonContent, setLessonContent] = useState(
-        node.properties?.lesson_content || "",
-    );
-
-    // Q&A state
-    const [qaQuestions, setQaQuestions] = useState(
-        node.properties?.qa_questions || [],
-    );
+    // Q&A state (backed by discussion threads)
+    const [qaThreads, setQaThreads] = useState([]);
+    const [qaLoading, setQaLoading] = useState(false);
+    const [qaError, setQaError] = useState("");
     const [newQAQuestion, setNewQAQuestion] = useState("");
+    const [creatingQuestion, setCreatingQuestion] = useState(false);
+    const [replyDrafts, setReplyDrafts] = useState({});
+    const [replyingByThreadId, setReplyingByThreadId] = useState({});
+    const [togglingByThreadId, setTogglingByThreadId] = useState({});
 
     // Assignment-specific state
-    const [assignmentMode, setAssignmentMode] = useState(
-        normalizeAssignmentMode(node.properties),
-    );
     const [assessmentPrompt, setAssessmentPrompt] = useState(
         node.properties?.assessment_prompt || "",
     );
-    const [typedResponseMode, setTypedResponseMode] = useState(
-        normalizeTypedResponseMode(node.properties?.typed_response_mode),
-    );
-    const [instructions, setInstructions] = useState(
-        node.properties?.instructions || "",
+    const [assignmentAttempts, setAssignmentAttempts] = useState(
+        node.properties?.assignment_attempts ?? "",
     );
     const [points, setPoints] = useState(node.properties?.points || 100);
-    const [weight, setWeight] = useState(node.properties?.weight || 20);
-    const [submissionType, setSubmissionType] = useState(
-        normalizeSubmissionType(node.properties?.submission_type),
+    const [weight, setWeight] = useState(
+        node.properties?.weight ?? (isQuiz ? 0 : 20),
     );
     const [allowLate, setAllowLate] = useState(
         node.properties?.allow_late_submission ?? node.properties?.allow_late ?? false,
@@ -342,24 +303,9 @@ export default function AssessmentEditor({
             return false;
         if (isAssignment && getPlainTextLength(assessmentPrompt) === 0)
             return false;
-        const hasQuestionContent =
-            questions.length > 0 || questionBanks.length > 0;
-        const submissionOnlyUsesShortAnswerQuestion =
-            isAssignment &&
-            assignmentMode === "submission_only" &&
-            typedResponseMode === "short_answer_question";
-        const requiresQuestions =
-            isQuiz ||
-            (isAssignment &&
-                (assignmentMode === "question_only" ||
-                    assignmentMode === "mixed"));
+        const hasQuestionContent = questions.length > 0 || questionBanks.length > 0;
+        const requiresQuestions = isQuiz;
         if (requiresQuestions && !hasQuestionContent) return false;
-        if (
-            submissionOnlyUsesShortAnswerQuestion &&
-            getPlainTextLength(assessmentPrompt) === 0
-        ) {
-            return false;
-        }
         return true;
     };
 
@@ -375,13 +321,13 @@ export default function AssessmentEditor({
 
         const properties = {
             ...node.properties,
-            qa_questions: qaQuestions,
         };
 
         const questionSettings = {
             questions,
             question_banks: questionBanks,
             description,
+            weight,
             quiz_duration: quizDuration,
             quiz_time_unit: quizTimeUnit,
             quiz_style: quizStyle,
@@ -395,78 +341,29 @@ export default function AssessmentEditor({
             limited_retake_attempts: limitedRetakeAttempts,
             retake_penalty: retakePenalty,
             points_cut_after_retake: pointsCutAfterRetake,
-            lesson_content: lessonContent,
         };
 
         if (isQuiz) {
             Object.assign(properties, questionSettings);
         } else {
-            const promptText = stripHtml(assessmentPrompt);
-            const generatedShortAnswerQuestion = {
-                id: `auto_prompt_${node.id || Date.now()}`,
-                type: "short_answer",
-                text: promptText || title || "Assignment prompt",
-                points: points || 1,
-                keywords: [],
-                manual_grading: true,
-                generated_from_assessment_prompt: true,
-            };
-
-            properties.assignment_mode = assignmentMode;
-            properties.typed_response_mode =
-                assignmentMode === "submission_only"
-                    ? normalizeTypedResponseMode(typedResponseMode)
-                    : "submission_text";
+            const parsedAttempts = parseInt(String(assignmentAttempts).trim(), 10);
+            properties.assignment_mode = "submission_only";
+            properties.typed_response_mode = "submission_text";
             properties.assessment_prompt = assessmentPrompt;
-            properties.instructions = instructions;
+            properties.instructions = assessmentPrompt;
             properties.points = points;
             properties.weight = weight;
+            properties.assignment_attempts =
+                Number.isFinite(parsedAttempts) && parsedAttempts > 0
+                    ? parsedAttempts
+                    : null;
             properties.files = materialFiles;
             properties.allow_late_submission = allowLate;
             properties.allow_late = allowLate;
-
-            if (
-                assignmentMode === "mixed" ||
-                (assignmentMode === "submission_only" &&
-                    normalizeTypedResponseMode(typedResponseMode) ===
-                        "submission_text")
-            ) {
-                properties.submission_type = normalizeSubmissionType(submissionType);
-            }
-
-            if (assignmentMode === "question_only" || assignmentMode === "mixed") {
-                Object.assign(properties, questionSettings);
-            } else if (
-                assignmentMode === "submission_only" &&
-                normalizeTypedResponseMode(typedResponseMode) ===
-                    "short_answer_question"
-            ) {
-                const existingGeneratedQuestion = Array.isArray(
-                    properties.questions,
-                )
-                    ? properties.questions.find(
-                          (question) =>
-                              question &&
-                              question.generated_from_assessment_prompt ===
-                                  true &&
-                              question.type === "short_answer",
-                      )
-                    : null;
-
-                properties.questions = [
-                    existingGeneratedQuestion
-                        ? {
-                              ...generatedShortAnswerQuestion,
-                              db_id: existingGeneratedQuestion.db_id,
-                          }
-                        : generatedShortAnswerQuestion,
-                ];
-                properties.question_banks = [];
-            } else {
-                properties.questions = [];
-                properties.question_banks = [];
-                delete properties.quiz_id;
-            }
+            properties.submission_type = "text";
+            properties.questions = [];
+            properties.question_banks = [];
+            delete properties.quiz_id;
         }
 
         onSave(node.id, { title, properties });
@@ -498,7 +395,7 @@ export default function AssessmentEditor({
             correct: 0,
             correctAnswers: [],
             categories: [],
-            required: false,
+            required: true,
             keywords: [],
             pairs: [],
             gaps: [],
@@ -523,6 +420,7 @@ export default function AssessmentEditor({
             pairs: newQuestion.pairs,
             gaps: newQuestion.gaps,
             items: newQuestion.items.filter((i) => i && i.trim() !== ""),
+            required: true,
         };
 
         setQuestions([...questions, questionToAdd]);
@@ -578,12 +476,6 @@ export default function AssessmentEditor({
         if (confirmDialog.actionType === "questionBank") {
             setQuestionBanks(
                 questionBanks.filter((b) => b.id !== confirmDialog.actionId),
-            );
-        }
-
-        if (confirmDialog.actionType === "qaQuestion") {
-            setQaQuestions(
-                qaQuestions.filter((q) => q.id !== confirmDialog.actionId),
             );
         }
 
@@ -687,6 +579,111 @@ export default function AssessmentEditor({
         });
     };
 
+    const loadQaThreads = async () => {
+        if (!node?.id || String(node.id).startsWith("temp_")) {
+            setQaThreads([]);
+            return;
+        }
+
+        setQaLoading(true);
+        setQaError("");
+        try {
+            const response = await fetch(
+                `/instructor/nodes/${node.id}/discussions/`,
+                {
+                    credentials: "same-origin",
+                    headers: { Accept: "application/json" },
+                },
+            );
+            if (!response.ok) {
+                throw new Error("Failed to load Q&A threads");
+            }
+            const data = await response.json();
+            setQaThreads(Array.isArray(data?.discussions) ? data.discussions : []);
+        } catch (error) {
+            setQaError(error?.message || "Failed to load Q&A threads");
+        } finally {
+            setQaLoading(false);
+        }
+    };
+
+    const handleCreateQaQuestion = () => {
+        const content = newQAQuestion.trim();
+        if (!content || !node?.id || String(node.id).startsWith("temp_")) return;
+
+        setCreatingQuestion(true);
+        const title = content.slice(0, 80);
+        router.post(
+            `/instructor/nodes/${node.id}/discussions/create/`,
+            { title, content },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setNewQAQuestion("");
+                    loadQaThreads();
+                },
+                onFinish: () => setCreatingQuestion(false),
+            },
+        );
+    };
+
+    const handleReplyToQaThread = (threadId) => {
+        const content = (replyDrafts[threadId] || "").trim();
+        if (!content) return;
+
+        setReplyingByThreadId((prev) => ({ ...prev, [threadId]: true }));
+        router.post(
+            "/instructor/discussions/reply/",
+            { thread: threadId, content },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setReplyDrafts((prev) => ({ ...prev, [threadId]: "" }));
+                    loadQaThreads();
+                },
+                onFinish: () =>
+                    setReplyingByThreadId((prev) => ({
+                        ...prev,
+                        [threadId]: false,
+                    })),
+            },
+        );
+    };
+
+    const handleToggleThreadPin = (threadId) => {
+        setTogglingByThreadId((prev) => ({ ...prev, [threadId]: true }));
+        router.post(
+            `/instructor/discussions/${threadId}/toggle-pin/`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => loadQaThreads(),
+                onFinish: () =>
+                    setTogglingByThreadId((prev) => ({
+                        ...prev,
+                        [threadId]: false,
+                    })),
+            },
+        );
+    };
+
+    const handleToggleThreadLock = (threadId) => {
+        setTogglingByThreadId((prev) => ({ ...prev, [threadId]: true }));
+        router.post(
+            `/instructor/discussions/${threadId}/toggle-lock/`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => loadQaThreads(),
+                onFinish: () =>
+                    setTogglingByThreadId((prev) => ({
+                        ...prev,
+                        [threadId]: false,
+                    })),
+            },
+        );
+    };
+
     const getQuestionTypeInfo = (typeValue) => {
         return (
             QUESTION_TYPES.find((t) => t.value === typeValue) || {
@@ -696,8 +693,7 @@ export default function AssessmentEditor({
         );
     };
 
-    const assignmentHasQuestionSection =
-        assignmentMode === "question_only" || assignmentMode === "mixed";
+    const assignmentHasQuestionSection = false;
     const tabs = [
         ...(isQuiz || assignmentHasQuestionSection
             ? [{ value: "questions", label: "Questions" }]
@@ -712,6 +708,12 @@ export default function AssessmentEditor({
             setActiveTab("settings");
         }
     }, [activeTab, tabs]);
+
+    useEffect(() => {
+        if (activeTab === "qa") {
+            loadQaThreads();
+        }
+    }, [activeTab, node?.id]);
 
     return (
         <Box>
@@ -955,46 +957,32 @@ export default function AssessmentEditor({
                 <Stack spacing={3}>
                     {isAssignment && (
                         <>
-                            <FormControl fullWidth>
-                                <InputLabel>Assignment Setup</InputLabel>
-                                <Select
-                                    value={assignmentMode}
-                                    label="Assignment Setup"
-                                    onChange={(e) =>
-                                        setAssignmentMode(e.target.value)
-                                    }
-                                >
-                                    <MenuItem value="submission_only">
-                                        Submission Only
-                                    </MenuItem>
-                                    <MenuItem value="question_only">
-                                        Questions Only
-                                    </MenuItem>
-                                    <MenuItem value="mixed">
-                                        Questions + Submission
-                                    </MenuItem>
-                                </Select>
-                            </FormControl>
-                            <Alert severity="info">
-                                {assignmentMode === "question_only"
-                                    ? "Students answer questions only."
-                                    : assignmentMode === "submission_only"
-                                      ? "Students submit work only. Add the assignment question and choose how they respond."
-                                      : "Students answer questions and submit work."}
-                            </Alert>
+                            <Typography variant="h6">Assignment</Typography>
+                            <TextField
+                                label="Assignment attempts"
+                                type="number"
+                                value={assignmentAttempts}
+                                onChange={(e) =>
+                                    setAssignmentAttempts(e.target.value)
+                                }
+                                placeholder="Leave empty for unlimited"
+                                sx={{ width: 260 }}
+                                InputProps={{ inputProps: { min: 1 } }}
+                                helperText="Leave empty for unlimited attempts"
+                            />
                             <Box>
                                 <Typography
                                     variant="subtitle2"
                                     gutterBottom
                                     color="text.secondary"
                                 >
-                                    Assignment Question
+                                    Assignment content
                                 </Typography>
                                 <RichTextEditor
                                     value={assessmentPrompt}
                                     onChange={setAssessmentPrompt}
-                                    placeholder="Write the assignment question or task students must complete..."
-                                    minHeight={170}
+                                    placeholder="Write the assignment requirements and task description..."
+                                    minHeight={220}
                                 />
                                 <Typography
                                     variant="caption"
@@ -1011,38 +999,6 @@ export default function AssessmentEditor({
                                         : ""}
                                 </Typography>
                             </Box>
-
-                            {assignmentMode === "submission_only" && (
-                                <>
-                                    <FormControl fullWidth>
-                                        <InputLabel>
-                                            Response Format
-                                        </InputLabel>
-                                        <Select
-                                            value={typedResponseMode}
-                                            label="Response Format"
-                                            onChange={(e) =>
-                                                setTypedResponseMode(
-                                                    e.target.value,
-                                                )
-                                            }
-                                        >
-                                            <MenuItem value="submission_text">
-                                                Upload File and/or Write Response
-                                            </MenuItem>
-                                            <MenuItem value="short_answer_question">
-                                                Answer as One Typed Question
-                                            </MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                    {typedResponseMode ===
-                                        "short_answer_question" && (
-                                        <Alert severity="info">
-                                            Students will answer one typed question.
-                                        </Alert>
-                                    )}
-                                </>
-                            )}
                         </>
                     )}
 
@@ -1108,6 +1064,25 @@ export default function AssessmentEditor({
                                     }
                                     sx={{ width: 150 }}
                                     InputProps={{ inputProps: { min: 1 } }}
+                                />
+                                <TextField
+                                    label="Weight (%)"
+                                    type="number"
+                                    value={weight}
+                                    onChange={(e) =>
+                                        setWeight(
+                                            Math.min(
+                                                100,
+                                                Math.max(
+                                                    0,
+                                                    parseInt(e.target.value) ||
+                                                        0,
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                    sx={{ width: 150 }}
+                                    InputProps={{ inputProps: { min: 0, max: 100 } }}
                                 />
                             </Stack>
 
@@ -1190,183 +1165,13 @@ export default function AssessmentEditor({
                                 />
                             </Box>
 
-                            <Box>
-                                <Typography
-                                    variant="subtitle2"
-                                    gutterBottom
-                                    color="text.secondary"
-                                >
-                                    Assessment Content
-                                </Typography>
-                                <RichTextEditor
-                                    value={lessonContent}
-                                    onChange={setLessonContent}
-                                    placeholder="Optional guidance shown before students attempt this assessment..."
-                                    minHeight={150}
-                                />
-                            </Box>
                         </>
-                    )}
-
-                    {isAssignment && !assignmentHasQuestionSection && (
-                        <Alert severity="info">
-                            Question editing is hidden for this setup.
-                        </Alert>
                     )}
 
                     {isAssignment && (
-                        <>
-                            <Box onBlur={() => handleBlur("instructions")}>
-                                <Typography
-                                    variant="subtitle2"
-                                    gutterBottom
-                                    color={
-                                        getFieldError("instructions")
-                                            ? "error"
-                                            : "inherit"
-                                    }
-                                >
-                                    Instructions
-                                </Typography>
-                                <RichTextEditor
-                                    value={instructions}
-                                    onChange={setInstructions}
-                                    placeholder="Add assignment instructions for students..."
-                                    minHeight={180}
-                                />
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                >
-                                    {getPlainTextLength(instructions)} characters
-                                </Typography>
-                            </Box>
-
-                            {(assignmentMode === "mixed" ||
-                                (assignmentMode === "submission_only" &&
-                                    typedResponseMode ===
-                                        "submission_text")) && (
-                                <>
-                                    <Stack direction="row" spacing={2}>
-                                        <TextField
-                                            label="Total Points"
-                                            type="number"
-                                            value={points}
-                                            onChange={(e) =>
-                                                setPoints(
-                                                    parseInt(e.target.value) ||
-                                                        0,
-                                                )
-                                            }
-                                            size="small"
-                                            sx={{ width: 160 }}
-                                        />
-                                        <TextField
-                                            label="Weight (%)"
-                                            type="number"
-                                            value={weight}
-                                            onChange={(e) =>
-                                                setWeight(
-                                                    Math.min(
-                                                        100,
-                                                        Math.max(
-                                                            0,
-                                                            parseInt(
-                                                                e.target.value,
-                                                            ) || 0,
-                                                        ),
-                                                    ),
-                                                )
-                                            }
-                                            size="small"
-                                            sx={{ width: 140 }}
-                                            InputProps={{
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        %
-                                                    </InputAdornment>
-                                                ),
-                                            }}
-                                        />
-                                        <FormControl
-                                            size="small"
-                                            sx={{ width: 180 }}
-                                        >
-                                            <InputLabel>
-                                                What Students Submit
-                                            </InputLabel>
-                                            <Select
-                                                value={submissionType}
-                                                label="What Students Submit"
-                                                onChange={(e) =>
-                                                    setSubmissionType(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            >
-                                                <MenuItem value="file">
-                                                    File
-                                                </MenuItem>
-                                                <MenuItem value="text">
-                                                    Text
-                                                </MenuItem>
-                                                <MenuItem value="both">
-                                                    Both
-                                                </MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </Stack>
-
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={allowLate}
-                                                onChange={(e) =>
-                                                    setAllowLate(
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                            />
-                                        }
-                                        label="Allow Late Submissions"
-                                    />
-                                </>
-                            )}
-
-                            <Box>
-                                <Typography
-                                    variant="subtitle2"
-                                    gutterBottom
-                                    color="text.secondary"
-                                >
-                                    Assessment Materials
-                                </Typography>
-                                {node.id &&
-                                !String(node.id).startsWith("temp_") ? (
-                                    <FileUploader
-                                        nodeId={node.id}
-                                        files={materialFiles}
-                                        onUploadComplete={(newFile) =>
-                                            setMaterialFiles((prev) => [
-                                                ...prev,
-                                                newFile,
-                                            ])
-                                        }
-                                        onDeleteComplete={(fileId) =>
-                                            setMaterialFiles((prev) =>
-                                                prev.filter(
-                                                    (f) => f.id !== fileId,
-                                                ),
-                                            )
-                                        }
-                                    />
-                                ) : (
-                                    <Alert severity="info">
-                                        Save this assignment first to attach materials.
-                                    </Alert>
-                                )}
-                            </Box>
-                        </>
+                        <Alert severity="info">
+                            Students will click Start Assignment, review requirements, and submit a text response.
+                        </Alert>
                     )}
                 </Stack>
             )}
@@ -1374,123 +1179,234 @@ export default function AssessmentEditor({
             {/* Q&A Tab */}
             {activeTab === "qa" && (
                 <Stack spacing={3}>
-                    {/* New Question Form */}
                     <Box>
                         <Typography
                             variant="subtitle1"
                             fontWeight={500}
                             gutterBottom
                         >
-                            New question
+                            Ask or answer learner questions
                         </Typography>
                         <TextField
                             multiline
                             rows={3}
                             fullWidth
-                            placeholder="Enter question"
+                            placeholder="Type a learner-facing question for this assessment..."
                             value={newQAQuestion}
                             onChange={(e) => setNewQAQuestion(e.target.value)}
                             sx={{ mb: 2 }}
+                            disabled={
+                                !node?.id ||
+                                String(node.id).startsWith("temp_") ||
+                                creatingQuestion
+                            }
                         />
                         <Button
                             variant="contained"
                             color="primary"
-                            onClick={() => {
-                                if (newQAQuestion.trim()) {
-                                    setQaQuestions([
-                                        ...qaQuestions,
-                                        {
-                                            id: Date.now(),
-                                            question: newQAQuestion.trim(),
-                                            answer: "",
-                                            createdAt: new Date().toISOString(),
-                                        },
-                                    ]);
-                                    setNewQAQuestion("");
-                                    setSnackbar({
-                                        open: true,
-                                        message: "Question added!",
-                                        severity: "success",
-                                    });
-                                }
-                            }}
-                            disabled={!newQAQuestion.trim()}
+                            onClick={handleCreateQaQuestion}
+                            disabled={
+                                !newQAQuestion.trim() ||
+                                creatingQuestion ||
+                                !node?.id ||
+                                String(node.id).startsWith("temp_")
+                            }
                             sx={{ textTransform: "none" }}
                         >
-                            Submit
+                            {creatingQuestion ? "Posting..." : "Post Question"}
                         </Button>
+                        {(!node?.id || String(node.id).startsWith("temp_")) && (
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: "block", mt: 1 }}
+                            >
+                                Save this quiz first to enable live Q&A.
+                            </Typography>
+                        )}
                     </Box>
 
-                    {/* Q&A List */}
-                    {qaQuestions.length > 0 && (
+                    {qaLoading && (
+                        <Box sx={{ py: 4, textAlign: "center" }}>
+                            <CircularProgress size={24} />
+                        </Box>
+                    )}
+
+                    {qaError && !qaLoading && (
+                        <Alert severity="error">{qaError}</Alert>
+                    )}
+
+                    {!qaLoading && qaThreads.length > 0 && (
                         <Stack spacing={2}>
                             <Typography
                                 variant="subtitle2"
                                 color="text.secondary"
                             >
-                                Questions ({qaQuestions.length})
+                                Questions ({qaThreads.length})
                             </Typography>
-                            {qaQuestions.map((qa, idx) => (
+                            {qaThreads.map((thread, idx) => (
                                 <Paper
-                                    key={qa.id}
+                                    key={thread.id}
                                     variant="outlined"
                                     sx={{ p: 2 }}
                                 >
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "flex-start",
-                                        }}
-                                    >
-                                        <Box sx={{ flex: 1 }}>
+                                    <Stack spacing={1.5}>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                gap: 1,
+                                            }}
+                                        >
                                             <Typography
                                                 variant="body1"
                                                 fontWeight={500}
                                             >
-                                                Q{idx + 1}: {qa.question}
+                                                Q{idx + 1}: {thread.content || thread.title || "Untitled question"}
                                             </Typography>
-                                            {qa.answer ? (
-                                                <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                    sx={{ mt: 1 }}
+                                            <Stack direction="row" spacing={1}>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    onClick={() =>
+                                                        handleToggleThreadPin(
+                                                            thread.id,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        !!togglingByThreadId[
+                                                            thread.id
+                                                        ]
+                                                    }
                                                 >
-                                                    <strong>A:</strong>{" "}
-                                                    {qa.answer}
-                                                </Typography>
-                                            ) : (
-                                                <Typography
-                                                    variant="body2"
-                                                    color="warning.main"
-                                                    sx={{ mt: 1 }}
+                                                    {thread.is_pinned
+                                                        ? "Unpin"
+                                                        : "Pin"}
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    onClick={() =>
+                                                        handleToggleThreadLock(
+                                                            thread.id,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        !!togglingByThreadId[
+                                                            thread.id
+                                                        ]
+                                                    }
                                                 >
-                                                    Awaiting answer...
-                                                </Typography>
-                                            )}
+                                                    {thread.is_locked
+                                                        ? "Unlock"
+                                                        : "Lock"}
+                                                </Button>
+                                            </Stack>
                                         </Box>
-                                        <IconButton
-                                            size="small"
-                                            onClick={() =>
-                                                openDeleteDialog({
-                                                    title: "Delete Question",
-                                                    message:
-                                                        "Delete this question?",
-                                                    actionType: "qaQuestion",
-                                                    actionId: qa.id,
-                                                })
-                                            }
+
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
                                         >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                    </Box>
+                                            Asked by {thread.author || "Learner"}
+                                        </Typography>
+
+                                        {(thread.posts || []).length > 0 ? (
+                                            <Stack spacing={1}>
+                                                {(thread.posts || []).map(
+                                                    (post) => (
+                                                        <Box
+                                                            key={post.id}
+                                                            sx={{
+                                                                pl: 1.5,
+                                                                py: 0.5,
+                                                                borderLeft:
+                                                                    "2px solid",
+                                                                borderColor:
+                                                                    post.is_instructor
+                                                                        ? "success.main"
+                                                                        : "divider",
+                                                            }}
+                                                        >
+                                                            <Typography
+                                                                variant="caption"
+                                                                color="text.secondary"
+                                                            >
+                                                                {post.is_instructor
+                                                                    ? "Instructor"
+                                                                    : "Reply"}
+                                                                : {post.author}
+                                                            </Typography>
+                                                            <Typography variant="body2">
+                                                                {post.content}
+                                                            </Typography>
+                                                        </Box>
+                                                    ),
+                                                )}
+                                            </Stack>
+                                        ) : (
+                                            <Typography
+                                                variant="body2"
+                                                color="warning.main"
+                                            >
+                                                Awaiting instructor answer...
+                                            </Typography>
+                                        )}
+
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                gap: 1,
+                                                alignItems: "flex-start",
+                                            }}
+                                        >
+                                            <TextField
+                                                size="small"
+                                                fullWidth
+                                                placeholder="Write your answer..."
+                                                value={replyDrafts[thread.id] || ""}
+                                                disabled={
+                                                    !!thread.is_locked ||
+                                                    !!replyingByThreadId[
+                                                        thread.id
+                                                    ]
+                                                }
+                                                onChange={(event) =>
+                                                    setReplyDrafts((prev) => ({
+                                                        ...prev,
+                                                        [thread.id]:
+                                                            event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                            <Button
+                                                variant="contained"
+                                                size="small"
+                                                disabled={
+                                                    !!thread.is_locked ||
+                                                    !!replyingByThreadId[
+                                                        thread.id
+                                                    ] ||
+                                                    !(replyDrafts[thread.id] || "")
+                                                        .trim()
+                                                }
+                                                onClick={() =>
+                                                    handleReplyToQaThread(
+                                                        thread.id,
+                                                    )
+                                                }
+                                            >
+                                                Reply
+                                            </Button>
+                                        </Box>
+                                    </Stack>
                                 </Paper>
                             ))}
                         </Stack>
                     )}
 
-                    {/* Empty State */}
-                    {qaQuestions.length === 0 && !newQAQuestion && (
+                    {!qaLoading && qaThreads.length === 0 && !newQAQuestion && (
                         <Paper
                             variant="outlined"
                             sx={{
@@ -1500,8 +1416,8 @@ export default function AssessmentEditor({
                             }}
                         >
                             <Typography color="text.secondary">
-                                No questions yet. Students can ask questions
-                                about this quiz here.
+                                No questions yet. Learners will ask here,
+                                and you can answer directly.
                             </Typography>
                         </Paper>
                     )}

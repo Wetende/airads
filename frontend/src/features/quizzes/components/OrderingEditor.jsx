@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Stack, TextField, IconButton, Button, Typography, Box, Popover } from '@mui/material';
+import { Stack, TextField, IconButton, Button, Typography, Box } from '@mui/material';
 import { IconTrash, IconPlus } from '@tabler/icons-react';
-import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
+import AnswerExplanationPopover from './AnswerExplanationPopover';
 
 export default function OrderingEditor({ items, explanations = {}, onChange, onExplanationsChange }) {
   const [explanationAnchor, setExplanationAnchor] = useState(null);
@@ -98,39 +99,13 @@ export default function OrderingEditor({ items, explanations = {}, onChange, onE
         </Button>
       </Stack>
 
-      {/* Explanation Popover */}
-      <Popover
+      <AnswerExplanationPopover
         open={Boolean(explanationAnchor)}
         anchorEl={explanationAnchor}
         onClose={handleCloseExplanation}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Box sx={{ p: 2, width: 280 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-            <Box>
-              <Typography variant="subtitle2" fontWeight={600}>
-                Answer explanation
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Will be shown in "Show answer" section
-              </Typography>
-            </Box>
-            <IconButton size="small" onClick={handleCloseExplanation}>
-              <CloseIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </Box>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Enter explanation"
-            value={activeIndex !== null ? (explanations[`item_${activeIndex}`] || '') : ''}
-            onChange={(e) => handleUpdateExplanation(e.target.value)}
-            multiline
-            rows={2}
-          />
-        </Box>
-      </Popover>
+        value={activeIndex !== null ? (explanations[`item_${activeIndex}`] || '') : ''}
+        onChange={handleUpdateExplanation}
+      />
     </Box>
   );
 }

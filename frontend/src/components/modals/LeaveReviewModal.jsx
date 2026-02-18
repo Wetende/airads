@@ -13,12 +13,12 @@ import {
     Stack,
     Button,
     Rating,
-    TextField,
     IconButton,
     useTheme,
 } from '@mui/material';
 import { IconX } from '@tabler/icons-react';
 import { router } from '@inertiajs/react';
+import RichTextEditor from '@/components/RichTextEditor';
 
 export default function LeaveReviewModal({
     open,
@@ -31,6 +31,10 @@ export default function LeaveReviewModal({
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const reviewWordCount = review
+        .replace(/<[^>]*>/g, ' ')
+        .split(/\s+/)
+        .filter(Boolean).length;
 
     const handleSubmit = () => {
         if (rating === 0) return;
@@ -40,7 +44,7 @@ export default function LeaveReviewModal({
         // Submit review via Inertia
         router.post(`/programs/${programId}/review/`, {
             rating,
-            review,
+            review_html: review,
         }, {
             preserveScroll: true,
             onSuccess: () => {
@@ -97,22 +101,16 @@ export default function LeaveReviewModal({
                 </Box>
 
                 {/* Review Text */}
-                <TextField
-                    multiline
-                    rows={6}
-                    fullWidth
-                    placeholder="Write your review here..."
-                    value={review}
-                    onChange={(e) => setReview(e.target.value)}
-                    sx={{
-                        mb: 1,
-                        '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                        },
-                    }}
-                />
+                <Box sx={{ mb: 1 }}>
+                    <RichTextEditor
+                        value={review}
+                        onChange={setReview}
+                        minHeight={170}
+                        placeholder="Write your review here..."
+                    />
+                </Box>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'right', mb: 3 }}>
-                    {review.split(/\s+/).filter(Boolean).length} words
+                    {reviewWordCount} words
                 </Typography>
 
                 {/* Action Buttons */}

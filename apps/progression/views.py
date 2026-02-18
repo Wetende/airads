@@ -154,6 +154,7 @@ def _serialize_quiz_questions_for_course_player(quiz) -> list:
                 {
                     "left_text": pair.left_text,
                     "right_text": pair.right_text,
+                    "explanation": pair.explanation,
                 }
                 for pair in question.matching_pairs.all().order_by("position")
             ]
@@ -163,6 +164,7 @@ def _serialize_quiz_questions_for_course_player(quiz) -> list:
                 {
                     "gap_index": gap.gap_index,
                     "accepted_answers": gap.accepted_answers,
+                    "explanation": gap.explanation,
                 }
                 for gap in question.gap_answers.all().order_by("gap_index")
             ]
@@ -2453,6 +2455,17 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                     ),
                     'points': question.points,
                     'explanation': (question.answer_data or {}).get("explanation", ""),
+                    'orderingExplanations': (question.answer_data or {}).get("explanations", {}),
+                    'matchingExplanations': {
+                        pair.left_text: pair.explanation
+                        for pair in question.matching_pairs.all().order_by("position")
+                        if pair.explanation
+                    },
+                    'fillBlankExplanations': {
+                        str(gap.gap_index): gap.explanation
+                        for gap in question.gap_answers.all().order_by("gap_index")
+                        if gap.explanation
+                    },
                     'correctAnswer': correct_answer,
                 })
 

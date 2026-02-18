@@ -145,7 +145,7 @@ elif DB_ENGINE == "postgresql":
 # =============================================================================
 
 CORS_ALLOWED_ORIGINS = os.getenv(
-    "CORS_ORIGINS", 
+    "CORS_ORIGINS",
     "http://localhost:5173,http://127.0.0.1:5173"
 ).split(",")
 
@@ -170,7 +170,7 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
-    
+
     # HTTPS-related settings (can be disabled via env vars for local testing)
     CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "True") == "True"
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "True") == "True"

@@ -22,7 +22,7 @@ def backfill_enrollment_expiry(apps, schema_editor):
                 updates.append(enrollment)
 
     if updates:
-        Enrollment.objects.bulk_update(updates, ["expires_at"]) 
+        Enrollment.objects.bulk_update(updates, ["expires_at"])
 
 
 def noop_reverse(apps, schema_editor):

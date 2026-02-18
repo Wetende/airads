@@ -20,6 +20,7 @@ import {
 import { motion } from 'framer-motion';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
+import RichTextEditor from '@/components/RichTextEditor';
 
 export default function Create({ programs = [] }) {
   const { data, setData, post, processing, errors } = useForm({
@@ -31,6 +32,8 @@ export default function Create({ programs = [] }) {
     { label: 'Announcements', href: '/instructor/announcements/' },
     { label: 'Create' },
   ];
+
+  const messageText = data.message.replace(/<[^>]*>/g, '').trim();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -96,28 +99,25 @@ export default function Create({ programs = [] }) {
             >
               MESSAGE FOR COURSE STUDENTS
             </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={6}
-              placeholder="Enter message for students"
-              value={data.message}
-              onChange={(e) => setData('message', e.target.value)}
-              error={!!errors.message}
-              helperText={errors.message}
-              sx={{
-                mb: 3,
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: '#f8fafc',
-                },
-              }}
-            />
+            <Box sx={{ mb: 1 }}>
+              <RichTextEditor
+                value={data.message}
+                onChange={(value) => setData('message', value)}
+                minHeight={180}
+                placeholder="Write announcement for students..."
+              />
+            </Box>
+            {errors.message && (
+              <Typography variant="caption" color="error" sx={{ display: 'block', mb: 2 }}>
+                {errors.message}
+              </Typography>
+            )}
 
             {/* Submit Button */}
             <Button
               type="submit"
               variant="contained"
-              disabled={processing || !data.programId || !data.message}
+              disabled={processing || !data.programId || !messageText}
               sx={{
                 textTransform: 'uppercase',
                 fontWeight: 600,

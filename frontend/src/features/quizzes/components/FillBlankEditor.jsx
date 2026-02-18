@@ -1,20 +1,30 @@
-import { useState } from 'react';
-import { Stack, TextField, IconButton, Button, Typography, Box, Alert, Popover } from '@mui/material';
+import { useRef, useState } from 'react';
+import { Stack, TextField, Button, Typography, Box } from '@mui/material';
 import { IconTrash, IconPlus, IconHelp } from '@tabler/icons-react';
-import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
+import AnswerExplanationPopover from './AnswerExplanationPopover';
+
+const BLANK_TOKEN_REGEX = /\{\{\s*blank\s*\}\}/gi;
+
+const normalizeBlankTokens = (value) => {
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/_{3,}/g, '{{blank}}')
+    .replace(BLANK_TOKEN_REGEX, '{{blank}}');
+};
 
 export default function FillBlankEditor({ text, gaps, onTextChange, onGapsChange }) {
   const [explanationAnchor, setExplanationAnchor] = useState(null);
   const [activeGapIndex, setActiveGapIndex] = useState(null);
+  const textInputRef = useRef(null);
 
-  const handleTextChange = (e) => {
-    const newText = e.target.value;
-    onTextChange(newText);
+  const syncTextAndGaps = (nextText) => {
+    const normalizedText = normalizeBlankTokens(nextText);
+    onTextChange(normalizedText);
     
-    // Sync gaps count
-    const count = (newText.match(/\{\{blank\}\}/g) || []).length;
+    const count = (normalizedText.match(/\{\{blank\}\}/g) || []).length;
     let newGaps = [...gaps];
-    
+
     if (count > gaps.length) {
       for (let i = gaps.length; i < count; i++) {
         newGaps.push({ gap_index: i, accepted_answers: [], explanation: '' });
@@ -23,6 +33,39 @@ export default function FillBlankEditor({ text, gaps, onTextChange, onGapsChange
       newGaps = newGaps.slice(0, count);
     }
     onGapsChange(newGaps);
+  };
+
+  const handleTextChange = (e) => {
+    syncTextAndGaps(e.target.value);
+  };
+
+  const handleInsertBlank = () => {
+    const target = textInputRef.current;
+    const token = '{{blank}}';
+    const currentText = String(text || '');
+
+    if (!target || typeof target.selectionStart !== 'number') {
+      syncTextAndGaps(currentText ? `${currentText} ${token}` : token);
+      return;
+    }
+
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    const before = currentText.slice(0, start);
+    const after = currentText.slice(end);
+
+    const needsLeadingSpace = before.length > 0 && !/\s$/.test(before);
+    const needsTrailingSpace = after.length > 0 && !/^\s/.test(after);
+    const insertion = `${needsLeadingSpace ? ' ' : ''}${token}${needsTrailingSpace ? ' ' : ''}`;
+    const nextText = `${before}${insertion}${after}`;
+
+    syncTextAndGaps(nextText);
+
+    requestAnimationFrame(() => {
+      const newPosition = before.length + insertion.length;
+      target.focus();
+      target.setSelectionRange(newPosition, newPosition);
+    });
   };
 
   const updateGapAnswers = (index, valueString) => {
@@ -50,21 +93,36 @@ export default function FillBlankEditor({ text, gaps, onTextChange, onGapsChange
 
   return (
     <Box>
-      <Alert severity="info" sx={{ mb: 2 }}>
-        Use <code>{"{{blank}}"}</code> to insert a gap. Example: {"\"Roses are {{blank}}.\""}
-      </Alert>
       <TextField
         label="Question Text"
         value={text}
         onChange={handleTextChange}
+        inputRef={textInputRef}
         fullWidth
         multiline
         rows={3}
         sx={{ mb: 3 }}
       />
 
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={handleInsertBlank}
+          sx={{ textTransform: 'none' }}
+        >
+          Insert blank
+        </Button>
+        <Typography variant="caption" color="text.secondary">
+          Place your cursor where the gap should be, then click “Insert blank”.
+        </Typography>
+      </Box>
+
       <Typography variant="subtitle2" gutterBottom>
-        Gap Answers (Comma separated for variations)
+        Correct answers for each blank
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+        Type the marking answers below. Use commas for accepted variations (example: color, colour).
       </Typography>
       <Stack spacing={2}>
         {gaps.map((gap, index) => (
@@ -96,43 +154,17 @@ export default function FillBlankEditor({ text, gaps, onTextChange, onGapsChange
         ))}
       </Stack>
 
-      {/* Explanation Popover */}
-      <Popover
+      <AnswerExplanationPopover
         open={Boolean(explanationAnchor)}
         anchorEl={explanationAnchor}
         onClose={handleCloseExplanation}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Box sx={{ p: 2, width: 280 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-            <Box>
-              <Typography variant="subtitle2" fontWeight={600}>
-                Answer explanation
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Will be shown in "Show answer" section
-              </Typography>
-            </Box>
-            <IconButton size="small" onClick={handleCloseExplanation}>
-              <CloseIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </Box>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Enter explanation"
-            value={activeGapIndex !== null ? (gaps[activeGapIndex]?.explanation || '') : ''}
-            onChange={(e) => {
-              if (activeGapIndex !== null) {
-                updateGapExplanation(activeGapIndex, e.target.value);
-              }
-            }}
-            multiline
-            rows={2}
-          />
-        </Box>
-      </Popover>
+        value={activeGapIndex !== null ? (gaps[activeGapIndex]?.explanation || '') : ''}
+        onChange={(value) => {
+          if (activeGapIndex !== null) {
+            updateGapExplanation(activeGapIndex, value);
+          }
+        }}
+      />
     </Box>
   );
 }

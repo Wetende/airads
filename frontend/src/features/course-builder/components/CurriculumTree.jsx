@@ -121,6 +121,7 @@ function SortableLeaf({ id, children }) {
 }
 
 export default function CurriculumTree({ program, nodes, onNodeSelect, onCurriculumUpdate, blueprint }) {
+    const NODE_TITLE_MIN_LENGTH = 3;
     // Get feature flags from blueprint (with defaults)
     const featureFlags = blueprint?.featureFlags || {
         quizzes: true, assignments: true, practicum: false, portfolio: false, gamification: false
@@ -191,6 +192,10 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
     const [createType, setCreateType] = useState('section'); // 'section' or specific lesson type
     const [createTitle, setCreateTitle] = useState('');
     const [quizTitle, setQuizTitle] = useState('');
+    const trimmedQuizTitleLength = quizTitle.trim().length;
+    const trimmedCreateTitleLength = createTitle.trim().length;
+    const quizTitleError = quizTitle.length > 0 && trimmedQuizTitleLength < NODE_TITLE_MIN_LENGTH;
+    const createTitleError = createTitle.length > 0 && trimmedCreateTitleLength < NODE_TITLE_MIN_LENGTH;
     
     // Expanded state for sections
     const [expandedSections, setExpandedSections] = useState({});
@@ -695,9 +700,9 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                             variant="outlined"
                             value={quizTitle}
                             onChange={(e) => setQuizTitle(e.target.value)}
-                            inputProps={{ minLength: 3 }}
-                            helperText={`${quizTitle.length}/3 characters minimum`}
-                            error={quizTitle.length > 0 && quizTitle.length < 3}
+                            inputProps={{ minLength: NODE_TITLE_MIN_LENGTH }}
+                            helperText={quizTitleError ? `Enter at least ${NODE_TITLE_MIN_LENGTH} characters.` : undefined}
+                            error={quizTitleError}
                         />
                     ) : (
                         <TextField
@@ -708,9 +713,9 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                             variant="outlined"
                             value={createTitle}
                             onChange={(e) => setCreateTitle(e.target.value)}
-                            inputProps={{ minLength: 3 }}
-                            helperText={`${createTitle.length}/3 characters minimum`}
-                            error={createTitle.length > 0 && createTitle.length < 3}
+                            inputProps={{ minLength: NODE_TITLE_MIN_LENGTH }}
+                            helperText={createTitleError ? `Enter at least ${NODE_TITLE_MIN_LENGTH} characters.` : undefined}
+                            error={createTitleError}
                         />
                     )}
                 </DialogContent>
@@ -719,7 +724,7 @@ export default function CurriculumTree({ program, nodes, onNodeSelect, onCurricu
                         <Button 
                             variant="contained" 
                             onClick={createQuizModalOpen ? handleCreateQuiz : handleCreateSection}
-                            disabled={createQuizModalOpen ? quizTitle.length < 3 : createTitle.length < 3}
+                            disabled={createQuizModalOpen ? trimmedQuizTitleLength < NODE_TITLE_MIN_LENGTH : trimmedCreateTitleLength < NODE_TITLE_MIN_LENGTH}
                         >
                             Create
                         </Button>

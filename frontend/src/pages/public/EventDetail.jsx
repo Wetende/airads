@@ -11,9 +11,6 @@ import {
     Tab,
     Paper,
     Divider,
-    List,
-    ListItem,
-    ListItemText,
     Select,
     MenuItem,
     FormControl,
@@ -30,6 +27,7 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { format } from "date-fns";
+import DOMPurify from "dompurify";
 import FooterSection from "@/components/sections/landing/FooterSection";
 import PublicNavbar from "@/components/common/PublicNavbar";
 
@@ -422,7 +420,7 @@ export default function EventDetail({ event, isRegistered = false, archives = []
                                             "Event details..."}
                                     </Typography>
 
-                                    {event.what_you_learn && (
+                                    {event.what_you_learn_html && (
                                         <>
                                             <Typography
                                                 variant="h6"
@@ -435,50 +433,19 @@ export default function EventDetail({ event, isRegistered = false, archives = []
                                             >
                                                 What's new:
                                             </Typography>
-                                            <Grid container>
-                                                {event.what_you_learn.map(
-                                                    (item, idx) => (
-                                                        <Grid
-                                                            size={{
-                                                                xs: 12,
-                                                                sm: 6,
-                                                            }}
-                                                            key={idx}
-                                                        >
-                                                            <ListItem
-                                                                sx={{
-                                                                    pl: 0,
-                                                                    py: 0.5,
-                                                                }}
-                                                            >
-                                                                <Box
-                                                                    sx={{
-                                                                        width: 4,
-                                                                        height: 4,
-                                                                        bgcolor:
-                                                                            "text.primary",
-                                                                        borderRadius:
-                                                                            "50%",
-                                                                        mr: 2,
-                                                                        display:
-                                                                            "inline-block",
-                                                                    }}
-                                                                />
-                                                                <ListItemText
-                                                                    primary={
-                                                                        item
-                                                                    }
-                                                                    primaryTypographyProps={{
-                                                                        variant:
-                                                                            "body2",
-                                                                        color: "text.secondary",
-                                                                    }}
-                                                                />
-                                                            </ListItem>
-                                                        </Grid>
+                                            <Box
+                                                sx={{
+                                                    "& ul, & ol": { pl: 3, mb: 2 },
+                                                    "& li": { mb: 0.75 },
+                                                    "& h1, & h2, & h3": { mb: 1.5, mt: 2 },
+                                                    "& p": { mb: 1, color: "text.secondary" },
+                                                }}
+                                                dangerouslySetInnerHTML={{
+                                                    __html: DOMPurify.sanitize(
+                                                        event.what_you_learn_html,
                                                     ),
-                                                )}
-                                            </Grid>
+                                                }}
+                                            />
                                         </>
                                     )}
                                 </Box>

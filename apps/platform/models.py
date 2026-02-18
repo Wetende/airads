@@ -32,10 +32,10 @@ class PresetBlueprint(TimeStampedModel):
 class PlatformSettings(TimeStampedModel):
     """
     Single-tenant platform configuration.
-    
+
     This model stores the configuration for a single deployment instance.
     Each forked/deployed instance has exactly ONE row in this table.
-    
+
     Usage:
         settings = PlatformSettings.get_settings()
         if settings.deployment_mode == 'tvet':
@@ -219,7 +219,7 @@ class PlatformSettings(TimeStampedModel):
         """Get course levels - admin-defined or mode-based defaults."""
         if self.course_levels:
             return self.course_levels
-        
+
         # Default levels based on deployment mode (Kenya KNQF)
         MODE_LEVEL_DEFAULTS = {
             'tvet': [

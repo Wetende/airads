@@ -296,12 +296,17 @@ class Question(TimeStampedModel):
             if not gaps:
                 return False, 0
 
+            def normalize_fill_blank(value):
+                return " ".join(str(value or "").lower().strip().split())
+
             correct_count = 0
             for gap in gaps:
-                submitted = (
-                    str(student_answer.get(str(gap.gap_index), "")).lower().strip()
+                submitted = normalize_fill_blank(
+                    student_answer.get(str(gap.gap_index), "")
                 )
-                accepted = [a.lower().strip() for a in gap.accepted_answers]
+                accepted = [
+                    normalize_fill_blank(a) for a in gap.accepted_answers
+                ]
                 if submitted in accepted:
                     correct_count += 1
 
@@ -591,6 +596,7 @@ class QuestionMatchingPair(models.Model):
     )
     left_text = models.TextField()
     right_text = models.TextField()
+    explanation = models.TextField(blank=True, default="")
     position = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -636,6 +642,7 @@ class QuestionGapAnswer(models.Model):
     accepted_answers = models.JSONField(
         default=list
     )  # ["answer1", "answer2"] for flexibility
+    explanation = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "question_gap_answers"

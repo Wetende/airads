@@ -51,7 +51,10 @@ const QUESTION_TYPES = [
 const normalizeFillBlankText = (text, type) => {
     if (type !== "fill_blank") return text || "";
     if (typeof text !== "string") return "";
-    return text.replace(/<[^>]*>/g, "");
+    return text
+        .replace(/<[^>]*>/g, "")
+        .replace(/_{3,}/g, "{{blank}}")
+        .replace(/\{\{\s*blank\s*\}\}/gi, "{{blank}}");
 };
 
 /**
@@ -75,7 +78,7 @@ export default function QuestionEditorCard({
         correct: question.correct ?? 0,
         correctAnswers: question.correctAnswers || [],
         categories: question.categories || [],
-        required: question.required || false,
+        required: question.required ?? true,
         pairs: question.pairs || [],
         gaps: question.gaps || [],
         items: question.items || ["", "", "", ""],
@@ -94,7 +97,7 @@ export default function QuestionEditorCard({
             correct: question.correct ?? 0,
             correctAnswers: question.correctAnswers || [],
             categories: question.categories || [],
-            required: question.required || false,
+            required: question.required ?? true,
             pairs: question.pairs || [],
             gaps: question.gaps || [],
             items: question.items || ["", "", "", ""],
@@ -750,7 +753,11 @@ export default function QuestionEditorCard({
                     {localData.type === "ordering" && (
                         <OrderingEditor
                             items={localData.items}
+                            explanations={localData.explanations || {}}
                             onChange={(items) => updateField("items", items)}
+                            onExplanationsChange={(explanations) =>
+                                updateField("explanations", explanations)
+                            }
                         />
                     )}
 

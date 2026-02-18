@@ -14,7 +14,7 @@ export default function FillBlankQuestion({ question, onChange, value = {} }) {
 
   // Parse text to replace {{blank}} with input fields
   const renderContent = () => {
-     const parts = question.text.split('{{blank}}');
+      const parts = String(question.text || '').split(/\{\{\s*blank\s*\}\}/gi);
      return (
          <Box sx={{ lineHeight: 3 }}>
              {parts.map((part, idx) => (

@@ -9,7 +9,6 @@ from inertia import render
 from .models import Event, EventRegistration
 
 
-
 def index(request):
     """
     Renders the events listing page with published events.
@@ -100,7 +99,8 @@ def detail(request, slug):
         "image": event.image.url if event.image else "/static/images/course-placeholder.jpg",
         "description": event.description,
         "tab_content": event.tab_content or {},
-        "what_you_learn": event.what_you_learn or [],
+        "what_you_learn": event.what_you_learn_items or [],
+        "what_you_learn_html": event.what_you_learn_html or "",
         "external_url": event.external_url,
     }
 

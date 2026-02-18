@@ -3,6 +3,8 @@ Events models - Event management for the platform.
 """
 from django.db import models
 from django.utils.text import slugify
+
+from apps.core.learning_outcomes import extract_learning_outcome_items_from_html
 from apps.core.models import TimeStampedModel
 
 
@@ -32,10 +34,15 @@ class Event(TimeStampedModel):
         blank=True,
         help_text='{"location": "...", "event_target": "..."}'
     )
-    what_you_learn = models.JSONField(
+    what_you_learn_items = models.JSONField(
         default=list,
         blank=True,
-        help_text="List of learning outcomes/features"
+        help_text="Derived plain-text learning outcomes/features",
+    )
+    what_you_learn_html = models.TextField(
+        blank=True,
+        default="",
+        help_text="Rich text learning outcomes/features HTML",
     )
     
     # Publishing
@@ -56,6 +63,10 @@ class Event(TimeStampedModel):
         return self.title
 
     def save(self, *args, **kwargs):
+        self.what_you_learn_html = str(self.what_you_learn_html or "").strip()
+        self.what_you_learn_items = extract_learning_outcome_items_from_html(
+            self.what_you_learn_html
+        )
         if not self.slug:
             self.slug = slugify(self.title)
             # Ensure uniqueness

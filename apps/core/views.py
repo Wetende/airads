@@ -22,6 +22,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from inertia import render
 
 from apps.certifications.models import Certificate, VerificationLog
+from apps.core.learning_outcomes import extract_learning_outcome_items_from_html
 from apps.core.models import Program, User
 from apps.core.utils import get_instructor_program_ids, get_post_data, is_instructor
 
@@ -558,7 +559,8 @@ def public_program_detail(request, pk: int):
         "original_price": price_data.get("original_price"),
         "faq": program.faq or [],
         "notices": program.notices or [],
-        "what_you_learn": program.what_you_learn or [],
+        "what_you_learn": program.what_you_learn_items or [],
+        "what_you_learn_html": program.what_you_learn_html or "",
         "resources": [
             {
                 "id": r.id,
@@ -645,9 +647,10 @@ def program_review_submit(request, pk: int):
         return redirect("core:program_detail", pk=pk)
 
     raw_review = str(data.get("review_html") or data.get("review") or "").strip()
-    review_html = strip_tags(raw_review).strip()
+    review_text = strip_tags(raw_review).strip()
+    review_html = raw_review
 
-    if review_html and len(review_html) > 5000:
+    if review_text and len(review_text) > 5000:
         messages.error(request, "Review is too long (max 5000 characters).")
         return redirect("core:program_detail", pk=pk)
 
@@ -1809,12 +1812,12 @@ def admin_program_content(request, pk: int):
 
         program.level = selected_level
 
-        # Update Content/Syllabus - Split by newline
-        what_you_learn_raw = data.get("whatYouLearn", "")
-        # Filter empty lines
-        program.what_you_learn = [
-            line.strip() for line in what_you_learn_raw.split("\n") if line.strip()
-        ]
+        # Update content/syllabus from rich text editor HTML.
+        what_you_learn_raw = str(data.get("whatYouLearn", "")).strip()
+        program.what_you_learn_html = what_you_learn_raw
+        program.what_you_learn_items = extract_learning_outcome_items_from_html(
+            what_you_learn_raw
+        )
 
         # Handle Thumbnail
         if "thumbnail" in files:
@@ -1843,9 +1846,6 @@ def admin_program_content(request, pk: int):
     # Logic: only show categories if explicitly configured in platform settings.
     categories = platform_settings.program_categories or []
 
-    # Serialize what_you_learn as string for TextArea
-    what_you_learn_str = "\n".join(program.what_you_learn or [])
-
     return render(
         request,
         "Admin/Programs/Content",
@@ -1858,7 +1858,7 @@ def admin_program_content(request, pk: int):
                 "description": program.description or "",
                 "category": program.category or "",
                 "level": program.level or "",
-                "whatYouLearn": what_you_learn_str,
+                "whatYouLearn": program.what_you_learn_html or "",
             },
             "courseLevels": course_levels,
             "categories": categories,
@@ -2823,11 +2823,13 @@ def instructor_announcements_index(request):
     for p in programs:
         notices = p.notices or []
         for idx, notice in enumerate(notices):
+            raw_message = str(notice.get("message", "") or "")
             announcements.append(
                 {
                     "programId": p.id,
                     "programName": p.name,
-                    "message": notice.get("message", ""),
+                    "message": raw_message,
+                    "messageText": strip_tags(raw_message).strip(),
                     "createdAt": notice.get("createdAt"),
                     "index": idx,
                 }
@@ -2861,9 +2863,10 @@ def instructor_announcement_create(request):
     if request.method == "POST":
         data = get_post_data(request)
         program_id = data.get("programId")
-        message = data.get("message", "").strip()
+        raw_message = str(data.get("message", "")).strip()
+        message_text = strip_tags(raw_message).strip()
 
-        if not program_id or not message:
+        if not program_id or not message_text:
             messages.error(request, "Please select a course and enter a message")
             return render(
                 request,
@@ -2881,7 +2884,7 @@ def instructor_announcement_create(request):
         notices = program.notices or []
         notices.append(
             {
-                "message": message,
+                "message": raw_message,
                 "createdAt": timezone.now().isoformat(),
                 "createdBy": request.user.id,
             }
@@ -2904,7 +2907,7 @@ def instructor_announcement_create(request):
                 recipients=enrolled_users,
                 notification_type="announcement",
                 title="New Announcement",
-                message=message[:200] + ("..." if len(message) > 200 else ""),
+                message=message_text[:200] + ("..." if len(message_text) > 200 else ""),
                 action_url=f"/student/programs/{program.id}/",
                 related_program_id=program.id,
             )
@@ -2913,7 +2916,7 @@ def instructor_announcement_create(request):
                     recipient=enrolled_user,
                     notification_type="announcement",
                     subject=f"New Announcement: {program.name}",
-                    message=message[:500],
+                    message=message_text[:500],
                 )
 
         messages.success(request, "Announcement created successfully")
@@ -5050,7 +5053,8 @@ def serialize_program_data(program):
             "level": program.level,
             "category": program.category,
             "thumbnail": program.thumbnail.url if program.thumbnail else None,
-            "whatYouLearn": program.what_you_learn or [],
+            "whatYouLearn": program.what_you_learn_items or [],
+            "whatYouLearnHtml": program.what_you_learn_html or "",
             "resources": [
                 {
                     "id": r.id,
@@ -5425,6 +5429,7 @@ def _sync_quiz_questions(node, questions_data: list):
         defaults={
             "title": node.title,
             "pass_threshold": node.properties.get("passing_grade", 70),
+            "weight": node.properties.get("weight", 0),
             "time_limit_minutes": node.properties.get("quiz_duration"),
             "max_attempts": node.properties.get("max_attempts", 1),
             "randomize_questions": node.properties.get("randomize_questions", False),
@@ -5436,6 +5441,7 @@ def _sync_quiz_questions(node, questions_data: list):
     if not created:
         quiz.title = node.title
         quiz.pass_threshold = node.properties.get("passing_grade", 70)
+        quiz.weight = node.properties.get("weight", 0)
         quiz.time_limit_minutes = node.properties.get("quiz_duration")
         quiz.max_attempts = node.properties.get("max_attempts", 1)
         quiz.randomize_questions = node.properties.get("randomize_questions", False)
@@ -5479,13 +5485,21 @@ def _sync_quiz_questions(node, questions_data: list):
                 if isinstance(gap, dict):
                     index = gap.get("gap_index", gap_idx)
                     answers = gap.get("accepted_answers", [])
+                    explanation = gap.get("explanation", "")
                 else:
                     index = gap_idx
                     answers = []
+                    explanation = ""
                 if not isinstance(answers, list):
                     answers = []
                 cleaned = [a for a in answers if str(a).strip()]
-                normalized.append({"gap_index": index, "accepted_answers": cleaned})
+                normalized.append(
+                    {
+                        "gap_index": index,
+                        "accepted_answers": cleaned,
+                        "explanation": str(explanation or "").strip(),
+                    }
+                )
             return normalized
 
         def normalize_image_pairs(raw_pairs):
@@ -5501,6 +5515,23 @@ def _sync_quiz_questions(node, questions_data: list):
                         "question_image": str(pair.get("question_image", "")).strip(),
                         "answer_text": str(pair.get("answer_text", "")).strip(),
                         "answer_image": str(pair.get("answer_image", "")).strip(),
+                        "explanation": str(pair.get("explanation", "")).strip(),
+                        "position": pair.get("position", pair_idx),
+                    }
+                )
+            return normalized
+
+        def normalize_matching_pairs(raw_pairs):
+            if not isinstance(raw_pairs, list):
+                return []
+            normalized = []
+            for pair_idx, pair in enumerate(raw_pairs):
+                if not isinstance(pair, dict):
+                    continue
+                normalized.append(
+                    {
+                        "left_text": str(pair.get("left_text", "")).strip(),
+                        "right_text": str(pair.get("right_text", "")).strip(),
                         "explanation": str(pair.get("explanation", "")).strip(),
                         "position": pair.get("position", pair_idx),
                     }
@@ -5538,7 +5569,19 @@ def _sync_quiz_questions(node, questions_data: list):
                     raw_items = legacy_order
 
             items = [item for item in raw_items if str(item).strip()]
-            answer_data = {"items": items}
+            raw_explanations = q_data.get("explanations", {})
+            if not isinstance(raw_explanations, dict):
+                raw_explanations = {}
+            explanations = {
+                str(key): str(value).strip()
+                for key, value in raw_explanations.items()
+                if str(value).strip()
+            }
+
+            answer_data = {
+                "items": items,
+                "explanations": explanations,
+            }
 
         if db_id and db_id in existing_ids:
             # Update existing question
@@ -5569,6 +5612,19 @@ def _sync_quiz_questions(node, questions_data: list):
                         position=opt_idx,
                     )
 
+            if backend_type == "matching":
+                question = Question.objects.get(pk=db_id)
+                question.matching_pairs.all().delete()
+                pairs_data = normalize_matching_pairs(q_data.get("pairs", []))
+                for pair in pairs_data:
+                    QuestionMatchingPair.objects.create(
+                        question=question,
+                        left_text=pair["left_text"],
+                        right_text=pair["right_text"],
+                        explanation=pair["explanation"],
+                        position=pair["position"],
+                    )
+
             if backend_type == "fill_blank":
                 question = Question.objects.get(pk=db_id)
                 question.gap_answers.all().delete()
@@ -5580,6 +5636,7 @@ def _sync_quiz_questions(node, questions_data: list):
                         question=question,
                         gap_index=gap["gap_index"],
                         accepted_answers=gap["accepted_answers"],
+                        explanation=gap["explanation"],
                     )
 
             if backend_type == "image_matching":
@@ -5626,6 +5683,17 @@ def _sync_quiz_questions(node, questions_data: list):
                         position=opt_idx,
                     )
 
+            if backend_type == "matching":
+                pairs_data = normalize_matching_pairs(q_data.get("pairs", []))
+                for pair in pairs_data:
+                    QuestionMatchingPair.objects.create(
+                        question=new_question,
+                        left_text=pair["left_text"],
+                        right_text=pair["right_text"],
+                        explanation=pair["explanation"],
+                        position=pair["position"],
+                    )
+
             if backend_type == "fill_blank":
                 gaps_data = normalize_gaps(
                     q_data.get("gaps", q_data.get("gap_answers", []))
@@ -5635,6 +5703,7 @@ def _sync_quiz_questions(node, questions_data: list):
                         question=new_question,
                         gap_index=gap["gap_index"],
                         accepted_answers=gap["accepted_answers"],
+                        explanation=gap["explanation"],
                     )
 
             if backend_type == "image_matching":
@@ -5882,7 +5951,6 @@ def instructor_node_update(request, node_id: int):
     if node_type == "assignment" or lesson_type == "assignment":
         _sync_assignment(node)
 
-    messages.success(request, "Node updated")
     return redirect("core:instructor.program_manage", pk=node.program_id)
 
 
@@ -6744,6 +6812,7 @@ def _clone_quiz(source_quiz, new_node):
                 question=new_question,
                 left_text=pair.left_text,
                 right_text=pair.right_text,
+                explanation=pair.explanation,
                 position=pair.position,
             )
 
@@ -6753,6 +6822,7 @@ def _clone_quiz(source_quiz, new_node):
                 question=new_question,
                 gap_index=gap.gap_index,
                 accepted_answers=copy.deepcopy(gap.accepted_answers),
+                explanation=gap.explanation,
             )
 
         # Clone image matching pairs
@@ -6893,8 +6963,11 @@ def instructor_node_discussions(request, node_id: int):
     threads = (
         DiscussionThread.objects.filter(node=node)
         .select_related("user")
+        .prefetch_related("posts__user")
         .order_by("-is_pinned", "-created_at")
     )
+
+    instructor_ids = set(node.program.instructors.values_list("id", flat=True))
 
     discussions = [
         {
@@ -6906,6 +6979,17 @@ def instructor_node_discussions(request, node_id: int):
             "is_pinned": t.is_pinned,
             "is_locked": t.is_locked,
             "replies_count": t.posts.count(),
+            "posts": [
+                {
+                    "id": post.id,
+                    "content": post.content,
+                    "created_at": post.created_at.isoformat(),
+                    "author": post.user.get_full_name() or post.user.email,
+                    "author_id": post.user.id,
+                    "is_instructor": bool(post.user_id in instructor_ids),
+                }
+                for post in t.posts.all().order_by("created_at")
+            ],
             "created_at": t.created_at.isoformat(),
         }
         for t in threads

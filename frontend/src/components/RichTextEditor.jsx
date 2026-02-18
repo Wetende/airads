@@ -55,6 +55,8 @@ const extensions = [
 ];
 
 export default function RichTextEditor({ value, onChange, placeholder, minHeight = 150 }) {
+    const imageInputRef = React.useRef(null);
+
     const editor = useEditor({
         extensions,
         content: value || '',
@@ -90,10 +92,29 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
     };
 
     const addImage = () => {
-        const url = window.prompt('Enter image URL:');
-        if (url) {
-            editor.chain().focus().setImage({ src: url }).run();
+        imageInputRef.current?.click();
+    };
+
+    const handleImageFileChange = (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            event.target.value = '';
+            return;
         }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const src = reader.result;
+            if (typeof src === 'string') {
+                editor.chain().focus().setImage({ src }).run();
+            }
+        };
+        reader.readAsDataURL(file);
+
+        // Allow selecting the same file again
+        event.target.value = '';
     };
 
     return (
@@ -236,6 +257,13 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
                     }
                 })}
             >
+                <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleImageFileChange}
+                />
                 <EditorContent editor={editor} />
             </Box>
         </Paper>

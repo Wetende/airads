@@ -26,6 +26,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
+import DOMPurify from 'dompurify';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -134,16 +135,22 @@ export default function Index({ announcements = [], programs = [] }) {
                         <Chip label={a.programName} size="small" variant="outlined" />
                       </TableCell>
                       <TableCell>
-                        <Typography
+                        <Box
                           sx={{
                             maxWidth: 400,
+                            maxHeight: 48,
                             overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
+                            '& p': { m: 0 },
+                            '& ul, & ol': { m: 0, pl: 2.5 },
+                            '& li': { mb: 0.25 },
                           }}
-                        >
-                          {a.message}
-                        </Typography>
+                          dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(a.message || ''),
+                          }}
+                        />
+                        {!a.message && (
+                          <Typography color="text.secondary" variant="body2">—</Typography>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Typography color="text.secondary">

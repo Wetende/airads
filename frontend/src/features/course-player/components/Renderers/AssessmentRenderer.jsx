@@ -59,10 +59,11 @@ const buildQuizStartUrl = ({ quizId, enrollmentId, nodeId }) => {
 const AssessmentRenderer = ({
     node,
     enrollmentId,
+    discussions = [],
     onComplete,
     forceType = null,
 }) => {
-    const [file, setFile] = useState(null);
+    const [assignmentStarted, setAssignmentStarted] = useState(false);
     const [textContent, setTextContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -81,37 +82,29 @@ const AssessmentRenderer = ({
     const typedResponseMode = normalizeTypedResponseMode(
         properties.typed_response_mode,
     );
-    const submissionType = normalizeSubmissionType(properties.submission_type);
     const hasQuestions =
         Array.isArray(properties.questions) && properties.questions.length > 0;
     const hasQuizLink = Boolean(properties.quiz_id);
     const hasAssignmentLink = Boolean(properties.assignment_id);
     const materials = Array.isArray(properties.files) ? properties.files : [];
+    const assignmentAttempts = Number.isFinite(Number(properties.assignment_attempts))
+        ? Number(properties.assignment_attempts)
+        : null;
 
     const shouldShowPromptQuestionPath =
         isAssignment &&
         assignmentMode === "submission_only" &&
         typedResponseMode === "short_answer_question";
 
-    const shouldShowQuestions =
-        isQuiz ||
-        (isAssignment &&
-            (assignmentMode === "question_only" ||
-                assignmentMode === "mixed" ||
-                shouldShowPromptQuestionPath));
-    const shouldShowSubmission =
-        isAssignment &&
-        (assignmentMode === "mixed" ||
-            (assignmentMode === "submission_only" &&
-                typedResponseMode === "submission_text"));
+    const shouldShowQuestions = isQuiz;
+    const shouldShowSubmission = isAssignment;
 
     const handleSubmission = () => {
         if (!hasAssignmentLink || isSubmitting) return;
-        if (!file && !textContent.trim()) return;
+        if (!textContent.trim()) return;
 
         setIsSubmitting(true);
         const payload = new FormData();
-        if (file) payload.append("file", file);
         if (textContent.trim()) payload.append("text_content", textContent.trim());
         if (enrollmentId) payload.append("enrollment_id", String(enrollmentId));
         if (node?.id) payload.append("node_id", String(node.id));
@@ -143,6 +136,7 @@ const AssessmentRenderer = ({
                         },
                     }}
                     enrollmentId={enrollmentId}
+                    discussions={discussions}
                     onComplete={onComplete}
                 />
             );
@@ -159,6 +153,7 @@ const AssessmentRenderer = ({
                         },
                     }}
                     enrollmentId={enrollmentId}
+                    discussions={discussions}
                     onComplete={onComplete}
                 />
             );
@@ -222,7 +217,7 @@ const AssessmentRenderer = ({
                 <Stack spacing={2}>
                     <Box>
                         <Typography variant="h6" fontWeight={700}>
-                            Assignment Question
+                            Requirements
                         </Typography>
                         {stripHtml(assessmentPrompt) ? (
                             <Box
@@ -233,10 +228,28 @@ const AssessmentRenderer = ({
                             />
                         ) : (
                             <Alert severity="warning" sx={{ mt: 1 }}>
-                                This assignment question is not available yet.
+                                This assignment content is not available yet.
                             </Alert>
                         )}
                     </Box>
+
+                    <Typography variant="body2" color="text.secondary">
+                        {assignmentAttempts && assignmentAttempts > 0
+                            ? `Attempts allowed: ${assignmentAttempts}`
+                            : "Attempts allowed: Unlimited"}
+                    </Typography>
+
+                    {!assignmentStarted ? (
+                        <Box>
+                            <Button
+                                variant="contained"
+                                onClick={() => setAssignmentStarted(true)}
+                                disabled={!hasAssignmentLink}
+                            >
+                                Start Assignment
+                            </Button>
+                        </Box>
+                    ) : null}
 
                     {stripHtml(instructions) ? (
                         <Box>
@@ -297,14 +310,7 @@ const AssessmentRenderer = ({
     };
 
     const renderSubmissionSection = () => {
-        if (!shouldShowSubmission) return null;
-
-        const acceptsFile = submissionType === "file" || submissionType === "both";
-        const acceptsText = submissionType === "text" || submissionType === "both";
-        const allowedTypes = Array.isArray(properties.allowed_file_types)
-            ? properties.allowed_file_types
-            : [];
-        const acceptedTypesAttr = allowedTypes.map((ext) => `.${ext}`).join(",");
+        if (!shouldShowSubmission || !assignmentStarted) return null;
 
         return (
             <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
@@ -321,38 +327,16 @@ const AssessmentRenderer = ({
                         </Alert>
                     ) : (
                         <>
-                            {acceptsFile ? (
-                                <Box>
-                                    <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
-                                        Upload File
-                                    </Typography>
-                                    <input
-                                        type="file"
-                                        accept={acceptedTypesAttr || undefined}
-                                        onChange={(event) =>
-                                            setFile(event.target.files?.[0] || null)
-                                        }
-                                    />
-                                    {allowedTypes.length > 0 ? (
-                                        <Typography variant="caption" color="text.secondary">
-                                            Allowed: {allowedTypes.join(", ")}
-                                        </Typography>
-                                    ) : null}
-                                </Box>
-                            ) : null}
-
-                            {acceptsText ? (
-                                <TextField
-                                    label="Text Response"
-                                    multiline
-                                    rows={6}
-                                    fullWidth
-                                    value={textContent}
-                                    onChange={(event) =>
-                                        setTextContent(event.target.value)
-                                    }
-                                />
-                            ) : null}
+                            <TextField
+                                label="Your response"
+                                multiline
+                                rows={7}
+                                fullWidth
+                                value={textContent}
+                                onChange={(event) =>
+                                    setTextContent(event.target.value)
+                                }
+                            />
 
                             <Box>
                                 <Button
@@ -361,10 +345,10 @@ const AssessmentRenderer = ({
                                     disabled={
                                         isSubmitting ||
                                         !hasAssignmentLink ||
-                                        (!file && !textContent.trim())
+                                        !textContent.trim()
                                     }
                                 >
-                                    {isSubmitting ? "Submitting..." : "Submit"}
+                                    {isSubmitting ? "Submitting..." : "Submit Assignment"}
                                 </Button>
                             </Box>
                         </>

@@ -24,6 +24,7 @@ import DescriptionIcon from "@mui/icons-material/Description"; // Added
 import Brightness4Icon from "@mui/icons-material/Brightness4"; // Added
 import Brightness7Icon from "@mui/icons-material/Brightness7"; // Added
 import { useThemeMode } from "@/theme/index"; // Added
+import DOMPurify from "dompurify";
 import CourseBuilderLayout from "@/layouts/CourseBuilderLayout";
 import CurriculumTree, { flattenNodes } from "../components/CurriculumTree";
 import EditorContainer from "../editors/EditorContainer";
@@ -262,40 +263,20 @@ export default function InstructorProgramBuilder({
                             >
                                 LEARNING OUTCOMES
                             </Typography>
-                            {program.whatYouLearn &&
-                            program.whatYouLearn.length > 0 ? (
-                                <List dense>
-                                    {program.whatYouLearn.map((item, index) => (
-                                        <ListItem
-                                            key={index}
-                                            alignItems="flex-start"
-                                            sx={{ px: 0 }}
-                                        >
-                                            <ListItemIcon
-                                                sx={{ minWidth: 24, mt: 0.5 }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        width: 6,
-                                                        height: 6,
-                                                        borderRadius: "50%",
-                                                        backgroundColor:
-                                                            "#009688",
-                                                    }}
-                                                />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                primary={item}
-                                                primaryTypographyProps={{
-                                                    variant: "body2",
-                                                    style: {
-                                                        whiteSpace: "pre-wrap",
-                                                    },
-                                                }}
-                                            />
-                                        </ListItem>
-                                    ))}
-                                </List>
+                            {program.whatYouLearnHtml ? (
+                                <Box
+                                    sx={{
+                                        "& ul, & ol": { pl: 3, mb: 1.5 },
+                                        "& li": { mb: 0.5 },
+                                        "& h1, & h2, & h3": { mb: 1, mt: 1.5 },
+                                        "& p": { mb: 0.75 },
+                                    }}
+                                    dangerouslySetInnerHTML={{
+                                        __html: DOMPurify.sanitize(
+                                            program.whatYouLearnHtml,
+                                        ),
+                                    }}
+                                />
                             ) : (
                                 <Typography
                                     variant="body2"

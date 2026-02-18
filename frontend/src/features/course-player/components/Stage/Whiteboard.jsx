@@ -8,6 +8,7 @@ import VideoRenderer from "../Renderers/VideoRenderer";
 import TextRenderer from "../Renderers/TextRenderer";
 import AssessmentRenderer from "../Renderers/AssessmentRenderer";
 import DocumentLessonRenderer from "../Renderers/DocumentLessonRenderer";
+import LiveClassRenderer from "../Renderers/LiveClassRenderer";
 
 const Whiteboard = ({
     node,
@@ -15,6 +16,7 @@ const Whiteboard = ({
     nextNode,
     courseId,
     isCompleted = false,
+    discussions = [],
     onVideoProgress,
 }) => {
     const nodeId = node?.id;
@@ -156,6 +158,7 @@ const Whiteboard = ({
                 <AssessmentRenderer
                     node={node}
                     enrollmentId={courseId}
+                    discussions={discussions}
                     onComplete={handleComplete}
                 />
             );
@@ -167,6 +170,7 @@ const Whiteboard = ({
                 <AssessmentRenderer
                     node={node}
                     enrollmentId={courseId}
+                    discussions={discussions}
                     onComplete={handleComplete}
                 />
             );
@@ -198,7 +202,26 @@ const Whiteboard = ({
             );
         }
 
-        // 5. Text (Default) - render HTML content
+        // 5. Live class / stream lesson
+        if (lessonType === "live_class") {
+            return (
+                <LiveClassRenderer
+                    title={node.title}
+                    description={node.description || ""}
+                    content={node.properties?.content || ""}
+                    streamUrl={node.properties?.video_url || ""}
+                    startDate={node.properties?.start_date || ""}
+                    startTime={node.properties?.start_time || ""}
+                    endDate={node.properties?.end_date || ""}
+                    endTime={node.properties?.end_time || ""}
+                    timezone={node.properties?.timezone || ""}
+                    duration={node.properties?.duration || ""}
+                    allowJoinAnytime={!!node.properties?.allow_join_anytime}
+                />
+            );
+        }
+
+        // 6. Text (Default) - render HTML content
         return (
             <TextRenderer
                 title={node.title}

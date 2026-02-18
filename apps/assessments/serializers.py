@@ -193,13 +193,13 @@ class QuestionOptionSerializer(serializers.ModelSerializer):
 class QuestionMatchingPairSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionMatchingPair
-        fields = ['id', 'left_text', 'right_text', 'position']
+        fields = ['id', 'left_text', 'right_text', 'explanation', 'position']
 
 
 class QuestionGapAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionGapAnswer
-        fields = ['id', 'gap_index', 'accepted_answers']
+        fields = ['id', 'gap_index', 'accepted_answers', 'explanation']
 
 
 class QuestionSerializer(serializers.ModelSerializer):
