@@ -10,14 +10,7 @@ export default function OrderingQuestion({ question, onChange, value = [] }) {
       setItems(value);
     } else {
       // Initialize with shuffled items
-      let initial = question.items || [];
-      if (
-        (!initial || initial.length === 0) &&
-        Array.isArray(question.correct_order) &&
-        question.correct_order.every((item) => typeof item === 'string')
-      ) {
-        initial = question.correct_order;
-      }
+      const initial = question.items || [];
       const shuffled = [...initial].sort(() => Math.random() - 0.5);
       setItems(shuffled);
       // Don't call onChange immediately? Or do we want to count random as answer?
@@ -37,7 +30,6 @@ export default function OrderingQuestion({ question, onChange, value = [] }) {
 
   return (
     <Box>
-      <Typography fontWeight="medium" gutterBottom>{question.text}</Typography>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
         Arrange the items in the correct order.
       </Typography>

@@ -74,10 +74,14 @@ def _assignment_requires_submission(props: dict) -> bool:
     )
 
 
-def _record_inline_quiz_attempt(enrollment: Enrollment, node: CurriculumNode, answers) -> Optional[int]:
+def _record_inline_quiz_attempt(
+    enrollment: Enrollment,
+    node: CurriculumNode,
+    answers,
+) -> Optional[dict]:
     """
     Persist inline quiz answers into QuizAttempt so instructor review has a full trail.
-    Returns attempt id when recorded, else None.
+    Returns a summary dict when recorded, else None.
     """
     from apps.assessments.models import Quiz, QuizAttempt
 
@@ -122,7 +126,12 @@ def _record_inline_quiz_attempt(enrollment: Enrollment, node: CurriculumNode, an
     attempt.passed = passed
     attempt.save()
 
-    return attempt.id
+    return {
+        "id": attempt.id,
+        "score": float(percentage),
+        "passed": passed,
+        "attempt_number": attempt.attempt_number,
+    }
 
 
 def _serialize_quiz_questions_for_course_player(quiz) -> list:
@@ -578,8 +587,13 @@ def session_viewer(request, pk: int, node_id: int):
             is_quiz = node_type == "quiz" or lesson_type == "quiz"
 
             quiz_answers = data.get("quiz_answers")
+            recorded_quiz_attempt = None
             if isinstance(quiz_answers, dict):
-                _record_inline_quiz_attempt(enrollment, node, quiz_answers)
+                recorded_quiz_attempt = _record_inline_quiz_attempt(
+                    enrollment,
+                    node,
+                    quiz_answers,
+                )
 
             should_mark_complete = True
             completion_type = "view"
@@ -597,12 +611,11 @@ def session_viewer(request, pk: int, node_id: int):
                     ).exists()
                 )
                 has_question_attempt = bool(
-                    (quiz_id and QuizAttempt.objects.filter(
+                    quiz_id and QuizAttempt.objects.filter(
                         enrollment=enrollment,
                         quiz_id=quiz_id,
                         submitted_at__isnull=False,
-                    ).exists())
-                    or isinstance(quiz_answers, dict)
+                    ).exists()
                 )
 
                 if _assignment_requires_submission(props) and _assignment_requires_questions(props):
@@ -615,6 +628,12 @@ def session_viewer(request, pk: int, node_id: int):
                     should_mark_complete = has_question_attempt
                     completion_type = "quiz_pass"
             elif is_quiz and isinstance(quiz_answers, dict):
+                if recorded_quiz_attempt:
+                    should_mark_complete = bool(
+                        recorded_quiz_attempt.get("passed") is True
+                    )
+                else:
+                    should_mark_complete = False
                 completion_type = "quiz_pass"
             elif is_quiz:
                 from apps.assessments.models import QuizAttempt
@@ -625,6 +644,7 @@ def session_viewer(request, pk: int, node_id: int):
                     and QuizAttempt.objects.filter(
                         enrollment=enrollment,
                         quiz_id=quiz_id,
+                        passed=True,
                         submitted_at__isnull=False,
                     ).exists()
                 )
@@ -978,34 +998,34 @@ def _build_curriculum_tree(
 
         last_attempts_by_quiz_id = {}
         if quiz_ids:
-            attempts = (
-                QuizAttempt.objects.filter(enrollment=enrollment, quiz_id__in=quiz_ids)
-                .order_by("quiz_id", "-attempt_number")
-                .values(
-                    "quiz_id",
-                    "attempt_number",
-                    "score",
-                    "passed",
-                    "submitted_at",
-                )
+            attempts = QuizAttempt.objects.filter(
+                enrollment=enrollment,
+                quiz_id__in=quiz_ids,
+                submitted_at__isnull=False,
+            ).values(
+                "quiz_id",
+                "attempt_number",
+                "score",
+                "passed",
+                "submitted_at",
             )
 
-            seen = set()
             for attempt in attempts:
                 quiz_id = attempt["quiz_id"]
-                if quiz_id in seen:
-                    continue
-                seen.add(quiz_id)
-                last_attempts_by_quiz_id[quiz_id] = {
-                    "number": attempt["attempt_number"],
-                    "score": float(attempt["score"]) if attempt["score"] else 0,
-                    "passed": attempt["passed"],
-                    "completedAt": (
-                        attempt["submitted_at"].isoformat()
-                        if attempt["submitted_at"]
-                        else None
-                    ),
-                }
+                score = float(attempt["score"] or 0)
+                existing = last_attempts_by_quiz_id.get(quiz_id)
+
+                if existing is None or attempt["attempt_number"] > existing["number"]:
+                    last_attempts_by_quiz_id[quiz_id] = {
+                        "number": attempt["attempt_number"],
+                        "score": score,
+                        "passed": attempt["passed"],
+                        "completedAt": (
+                            attempt["submitted_at"].isoformat()
+                            if attempt["submitted_at"]
+                            else None
+                        ),
+                    }
 
     for node in nodes:
         children_qs = node.children.filter(is_published=True).order_by("position")

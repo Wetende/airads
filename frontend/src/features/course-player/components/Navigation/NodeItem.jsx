@@ -240,21 +240,26 @@ const NodeItem = ({
                         color="text.secondary"
                         sx={{ mt: 0.5, display: "block" }}
                     >
-                        Attempt #
+                        Last attempt #
                         {lastAttempt.number || lastAttempt.attemptNumber}:{" "}
                         {Math.round(lastAttempt.score || 0)}%
                         {lastAttempt.passed !== undefined && (
                             <span
                                 style={{
                                     marginLeft: 8,
-                                    color: lastAttempt.passed
-                                        ? "#4caf50"
-                                        : "#ff9800",
+                                    color:
+                                        lastAttempt.passed === true
+                                            ? "var(--mui-palette-success-main)"
+                                            : lastAttempt.passed === false
+                                              ? "var(--mui-palette-warning-main)"
+                                              : "var(--mui-palette-text-secondary)",
                                 }}
                             >
-                                {lastAttempt.passed
-                                    ? "✓ Passed"
-                                    : "○ Not passed"}
+                                {lastAttempt.passed === true
+                                    ? "Passed"
+                                    : lastAttempt.passed === false
+                                      ? "Failed"
+                                      : "Pending review"}
                             </span>
                         )}
                     </Typography>

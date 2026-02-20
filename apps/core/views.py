@@ -12,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.utils.html import strip_tags
 from django.utils.dateparse import parse_date, parse_datetime
@@ -3410,6 +3411,38 @@ def _assignment_requires_submission(props):
     )
 
 
+def _quiz_attempt_deadline(quiz, attempt):
+    time_limit_minutes = getattr(quiz, "time_limit_minutes", None)
+    if not time_limit_minutes:
+        return None
+    return attempt.started_at + timezone.timedelta(minutes=time_limit_minutes)
+
+
+def _is_quiz_attempt_expired(quiz, attempt, now=None) -> bool:
+    deadline = _quiz_attempt_deadline(quiz, attempt)
+    if not deadline:
+        return False
+    current_time = now or timezone.now()
+    return current_time >= deadline
+
+
+def _finalize_quiz_attempt(attempt, answers=None, submitted_at=None):
+    if answers is not None and isinstance(answers, dict):
+        attempt.answers = answers
+    attempt.submitted_at = submitted_at or timezone.now()
+    points_earned, points_possible, percentage, passed = attempt.calculate_score()
+    attempt.points_earned = points_earned
+    attempt.points_possible = points_possible
+    attempt.score = percentage
+    attempt.passed = passed
+    attempt.save()
+    return points_earned, points_possible, percentage, passed
+
+
+def _normalize_question_text(value) -> str:
+    return " ".join(strip_tags(str(value or "")).split())
+
+
 @login_required
 def student_quiz_start(request, quiz_id: int):
     """
@@ -3443,34 +3476,42 @@ def student_quiz_start(request, quiz_id: int):
         requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
     )
 
-    # Check attempts remaining
-    existing_attempts = QuizAttempt.objects.filter(
-        enrollment=enrollment, quiz=quiz
-    ).count()
-    if existing_attempts >= quiz.max_attempts:
-        messages.error(request, "You have used all your attempts for this quiz")
-        if in_course_player_context:
-            return redirect(
-                f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
-            )
-        return redirect("core:student.quiz_results", quiz_id=quiz_id)
-
-    # Check for in-progress attempt
-    in_progress = QuizAttempt.objects.filter(
-        enrollment=enrollment, quiz=quiz, submitted_at__isnull=True
-    ).first()
-
-    if in_progress:
-        # Resume existing attempt
-        attempt = in_progress
-    else:
-        # Start new attempt
-        attempt = QuizAttempt.objects.create(
+    with transaction.atomic():
+        attempts_qs = QuizAttempt.objects.select_for_update().filter(
             enrollment=enrollment,
             quiz=quiz,
-            attempt_number=existing_attempts + 1,
-            started_at=timezone.now(),
         )
+
+        in_progress = (
+            attempts_qs.filter(submitted_at__isnull=True)
+            .order_by("-attempt_number")
+            .first()
+        )
+
+        if in_progress and _is_quiz_attempt_expired(quiz, in_progress):
+            _finalize_quiz_attempt(in_progress)
+            in_progress = None
+
+        if in_progress:
+            attempt = in_progress
+        else:
+            existing_attempts = attempts_qs.count()
+            if existing_attempts >= quiz.max_attempts:
+                messages.error(request, "You have used all your attempts for this quiz")
+                if in_course_player_context:
+                    return redirect(
+                        f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
+                    )
+                return redirect("core:student.quiz_results", quiz_id=quiz_id)
+
+            attempt = QuizAttempt.objects.create(
+                enrollment=enrollment,
+                quiz=quiz,
+                attempt_number=existing_attempts + 1,
+                started_at=timezone.now(),
+            )
+
+        attempts_used = attempts_qs.count()
 
     # Serialize questions (without answers for student view)
     # Serialize questions (without answers for student view)
@@ -3485,7 +3526,7 @@ def student_quiz_start(request, quiz_id: int):
         q_data = {
             "id": q.id,
             "type": q.question_type,
-            "text": q.text,
+            "text": _normalize_question_text(q.text),
             "points": q.points,
         }
 
@@ -3495,7 +3536,9 @@ def student_quiz_start(request, quiz_id: int):
                 random.shuffle(opts)
             else:
                 opts.sort(key=lambda x: x.position)
-            q_data["options"] = [o.text for o in opts]
+            q_data["options"] = [
+                {"text": o.text, "position": o.position} for o in opts
+            ]
 
         elif q.question_type == "matching":
             q_data["pairs"] = [
@@ -3504,9 +3547,7 @@ def student_quiz_start(request, quiz_id: int):
             ]
 
         elif q.question_type == "ordering":
-            raw_items = q.answer_data.get("items")
-            if not raw_items:
-                raw_items = q.answer_data.get("correct_order", [])
+            raw_items = q.answer_data.get("items", [])
             items = list(raw_items) if isinstance(raw_items, (list, tuple)) else []
             random.shuffle(items)
             q_data["items"] = items
@@ -3552,9 +3593,7 @@ def student_quiz_start(request, quiz_id: int):
                 "answers": attempt.answers,
             },
             "questions": questions,
-            "attemptsRemaining": quiz.max_attempts
-            - existing_attempts
-            - (0 if in_progress else 1),
+            "attemptsRemaining": max(0, quiz.max_attempts - attempts_used),
             "coursePlayer": (
                 {
                     "sessionUrl": (
@@ -3595,45 +3634,61 @@ def student_quiz_submit(request, quiz_id: int):
     except Enrollment.DoesNotExist:
         return redirect("/dashboard/")
 
-    # Get in-progress attempt
-    attempt = QuizAttempt.objects.filter(
-        enrollment=enrollment, quiz=quiz, submitted_at__isnull=True
-    ).first()
-
-    if not attempt:
-        messages.error(request, "No quiz attempt in progress")
-        return redirect("core:student.quiz_start", quiz_id=quiz_id)
-
-    # Save answers
-    data = get_post_data(request)
-    attempt.answers = data.get("answers", {})
-    attempt.submitted_at = timezone.now()
-
-    requested_enrollment_id = _safe_int(data.get("enrollment_id"))
-    requested_node_id = _safe_int(data.get("node_id"))
-    in_course_player_context = (
-        requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
-    )
-
-    # Calculate score
-    points_earned, points_possible, percentage, passed = attempt.calculate_score()
-    attempt.points_earned = points_earned
-    attempt.points_possible = points_possible
-    attempt.score = percentage
-    attempt.passed = passed
-    attempt.save()
-
-    if passed is not None:
-        NotificationService.notify_quiz_graded(attempt)
-
-    if passed is True:
-        messages.success(request, f"Congratulations! You passed with {percentage}%!")
-    elif passed is False:
-        messages.warning(
-            request, f"You scored {percentage}%. Required: {quiz.pass_threshold}%"
+    with transaction.atomic():
+        attempt = (
+            QuizAttempt.objects.select_for_update()
+            .filter(
+                enrollment=enrollment,
+                quiz=quiz,
+                submitted_at__isnull=True,
+            )
+            .order_by("-attempt_number")
+            .first()
         )
-    else:
-        messages.info(request, "Your quiz has been submitted for review.")
+
+        if not attempt:
+            messages.error(request, "No quiz attempt in progress")
+            return redirect("core:student.quiz_start", quiz_id=quiz_id)
+
+        data = get_post_data(request)
+        submitted_answers = data.get("answers", {})
+        now = timezone.now()
+        expired = _is_quiz_attempt_expired(quiz, attempt, now=now)
+
+        if expired:
+            points_earned, points_possible, percentage, passed = _finalize_quiz_attempt(
+                attempt,
+                submitted_at=now,
+            )
+        else:
+            points_earned, points_possible, percentage, passed = _finalize_quiz_attempt(
+                attempt,
+                answers=submitted_answers if isinstance(submitted_answers, dict) else {},
+                submitted_at=now,
+            )
+
+        requested_enrollment_id = _safe_int(data.get("enrollment_id"))
+        requested_node_id = _safe_int(data.get("node_id"))
+        in_course_player_context = (
+            requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
+        )
+
+        if passed is not None:
+            NotificationService.notify_quiz_graded(attempt)
+
+        if expired:
+            messages.warning(
+                request,
+                "Time expired. Your quiz was submitted automatically using saved answers.",
+            )
+        elif passed is True:
+            messages.success(request, f"Congratulations! You passed with {percentage}%!")
+        elif passed is False:
+            messages.warning(
+                request, f"You scored {percentage}%. Required: {quiz.pass_threshold}%"
+            )
+        else:
+            messages.info(request, "Your quiz has been submitted for review.")
 
     if in_course_player_context:
         lesson_type = str((quiz.node.properties or {}).get("lesson_type") or "").lower()
@@ -3676,6 +3731,95 @@ def student_quiz_submit(request, quiz_id: int):
         )
 
     return redirect("core:student.quiz_results", quiz_id=quiz_id)
+
+
+@login_required
+def student_quiz_save(request, quiz_id: int):
+    """
+    Save in-progress quiz answers.
+    """
+    from apps.assessments.models import Quiz, QuizAttempt
+    from apps.progression.models import Enrollment
+
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    try:
+        quiz = Quiz.objects.select_related("node", "node__program").get(pk=quiz_id)
+    except Quiz.DoesNotExist:
+        return JsonResponse({"error": "Quiz not found"}, status=404)
+
+    try:
+        enrollment = Enrollment.objects.get(
+            user=request.user,
+            program=quiz.node.program,
+            status="active",
+        )
+    except Enrollment.DoesNotExist:
+        return JsonResponse({"error": "Enrollment not found"}, status=403)
+
+    data = get_post_data(request)
+    incoming_answers = data.get("answers", {})
+    if not isinstance(incoming_answers, dict):
+        incoming_answers = {}
+
+    requested_enrollment_id = _safe_int(data.get("enrollment_id"))
+    requested_node_id = _safe_int(data.get("node_id"))
+    in_course_player_context = (
+        requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
+    )
+
+    with transaction.atomic():
+        attempt = (
+            QuizAttempt.objects.select_for_update()
+            .filter(
+                enrollment=enrollment,
+                quiz=quiz,
+                submitted_at__isnull=True,
+            )
+            .order_by("-attempt_number")
+            .first()
+        )
+
+        if not attempt:
+            return JsonResponse(
+                {
+                    "error": "No in-progress attempt",
+                    "redirectUrl": (
+                        f"/student/quiz/{quiz_id}/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
+                        if in_course_player_context
+                        else f"/student/quiz/{quiz_id}/"
+                    ),
+                },
+                status=409,
+            )
+
+        now = timezone.now()
+        if _is_quiz_attempt_expired(quiz, attempt, now=now):
+            _finalize_quiz_attempt(attempt, submitted_at=now)
+            return JsonResponse(
+                {
+                    "expired": True,
+                    "saved": False,
+                    "redirectUrl": (
+                        f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
+                        if in_course_player_context
+                        else f"/student/quiz/{quiz_id}/results/"
+                    ),
+                },
+                status=409,
+            )
+
+        attempt.answers = incoming_answers
+        attempt.save(update_fields=["answers"])
+
+    return JsonResponse(
+        {
+            "saved": True,
+            "attemptId": attempt.id,
+            "savedAt": timezone.now().isoformat(),
+        }
+    )
 
 
 @login_required
@@ -3739,7 +3883,7 @@ def student_quiz_results(request, quiz_id: int):
                 {
                     "id": a.id,
                     "attemptNumber": a.attempt_number,
-                    "score": float(a.score) if a.score else None,
+                    "score": float(a.score) if a.score is not None else None,
                     "pointsEarned": a.points_earned,
                     "pointsPossible": a.points_possible,
                     "passed": a.passed,
@@ -5428,6 +5572,7 @@ def _sync_quiz_questions(node, questions_data: list):
         node=node,
         defaults={
             "title": node.title,
+            "description": node.properties.get("description", ""),
             "pass_threshold": node.properties.get("passing_grade", 70),
             "weight": node.properties.get("weight", 0),
             "time_limit_minutes": node.properties.get("quiz_duration"),
@@ -5440,6 +5585,7 @@ def _sync_quiz_questions(node, questions_data: list):
     # Update quiz settings if not created
     if not created:
         quiz.title = node.title
+        quiz.description = node.properties.get("description", "")
         quiz.pass_threshold = node.properties.get("passing_grade", 70)
         quiz.weight = node.properties.get("weight", 0)
         quiz.time_limit_minutes = node.properties.get("quiz_duration")
@@ -5471,11 +5617,7 @@ def _sync_quiz_questions(node, questions_data: list):
         }
         backend_type = type_mapping.get(question_type, question_type)
 
-        from django.utils.html import strip_tags
-
-        question_text = q_data.get("text", "")
-        if backend_type == "fill_blank":
-            question_text = strip_tags(question_text)
+        question_text = _normalize_question_text(q_data.get("text", ""))
 
         def normalize_gaps(raw_gaps):
             if not isinstance(raw_gaps, list):
@@ -5548,9 +5690,7 @@ def _sync_quiz_questions(node, questions_data: list):
         elif backend_type == "mcq_multi":
             answer_data = {
                 "options": q_data.get("options", []),
-                "correct_indices": q_data.get(
-                    "correct_indices", q_data.get("correctAnswers", [])
-                ),
+                "correct_indices": q_data.get("correct_indices", []),
             }
         elif backend_type == "true_false":
             answer_data = {"correct": q_data.get("correct", True)}
@@ -5561,12 +5701,6 @@ def _sync_quiz_questions(node, questions_data: list):
             }
         elif backend_type == "ordering":
             raw_items = q_data.get("items", [])
-            if not raw_items:
-                legacy_order = q_data.get("correct_order", [])
-                if isinstance(legacy_order, list) and all(
-                    isinstance(item, str) for item in legacy_order
-                ):
-                    raw_items = legacy_order
 
             items = [item for item in raw_items if str(item).strip()]
             raw_explanations = q_data.get("explanations", {})

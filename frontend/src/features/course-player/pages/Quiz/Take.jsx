@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Head, router } from "@inertiajs/react";
 import {
     Box,
@@ -29,6 +29,14 @@ import { motion } from "framer-motion";
 import MatchingQuestion from "@/features/quizzes/components/MatchingQuestion";
 import OrderingQuestion from "@/features/quizzes/components/OrderingQuestion";
 import FillBlankQuestion from "@/features/quizzes/components/FillBlankQuestion";
+
+const getCsrfToken = () => {
+    const cookie = document.cookie
+        .split(";")
+        .map((entry) => entry.trim())
+        .find((entry) => entry.startsWith("csrftoken="));
+    return cookie ? decodeURIComponent(cookie.split("=")[1] || "") : "";
+};
 
 // Reusable Question Card component
 const QuestionCard = ({
@@ -234,11 +242,50 @@ export default function Take({ quiz, attempt, questions, attemptsRemaining }) {
     );
     const [submitting, setSubmitting] = useState(false);
     const timerRef = useRef(null);
+    const saveTimeoutRef = useRef(null);
 
     const answersRef = useRef(answers);
     useEffect(() => {
         answersRef.current = answers;
     }, [answers]);
+
+    const persistAnswers = useCallback(
+        async (nextAnswers) => {
+            try {
+                const response = await fetch(`/student/quiz/${quiz.id}/save/`, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCsrfToken(),
+                    },
+                    body: JSON.stringify({ answers: nextAnswers }),
+                });
+
+                if (response.status === 409) {
+                    const data = await response.json().catch(() => ({}));
+                    if (data?.redirectUrl) {
+                        router.visit(data.redirectUrl);
+                    }
+                }
+            } catch {
+                // Draft save is best-effort to avoid interrupting quiz flow.
+            }
+        },
+        [quiz.id],
+    );
+
+    const queuePersistAnswers = useCallback(
+        (nextAnswers) => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            saveTimeoutRef.current = setTimeout(() => {
+                persistAnswers(nextAnswers);
+            }, 500);
+        },
+        [persistAnswers],
+    );
 
     // Quiz style: 'pagination' (default) or 'single_page'
     const quizStyle = quiz.quizStyle || "pagination";
@@ -256,6 +303,9 @@ export default function Take({ quiz, attempt, questions, attemptsRemaining }) {
 
     const handleAutoSubmit = () => {
         if (submitting) return;
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
         setSubmitting(true);
         router.post(
             `/student/quiz/${quiz.id}/submit/`,
@@ -284,13 +334,20 @@ export default function Take({ quiz, attempt, questions, attemptsRemaining }) {
     }, [timeRemaining, submitting]);
 
     const handleAnswerChange = (questionId, value) => {
-        setAnswers((prev) => ({
-            ...prev,
-            [questionId]: value,
-        }));
+        setAnswers((prev) => {
+            const nextAnswers = {
+                ...prev,
+                [questionId]: value,
+            };
+            queuePersistAnswers(nextAnswers);
+            return nextAnswers;
+        });
     };
 
     const handleSubmit = () => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
         setSubmitting(true);
         router.post(
             `/student/quiz/${quiz.id}/submit/`,
@@ -300,6 +357,15 @@ export default function Take({ quiz, attempt, questions, attemptsRemaining }) {
             },
         );
     };
+
+    useEffect(
+        () => () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        },
+        [],
+    );
 
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);

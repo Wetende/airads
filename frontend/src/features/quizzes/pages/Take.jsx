@@ -10,6 +10,8 @@ import {
     RadioGroup,
     Radio,
     FormControlLabel,
+    FormGroup,
+    Checkbox,
     TextField,
     Alert,
     LinearProgress,
@@ -29,6 +31,14 @@ import OrderingQuestion from "@/features/quizzes/components/OrderingQuestion";
 import FillBlankQuestion from "@/features/quizzes/components/FillBlankQuestion";
 import ImageMatchingQuestion from "@/features/quizzes/components/ImageMatchingQuestion";
 
+const getCsrfToken = () => {
+    const cookie = document.cookie
+        .split(";")
+        .map((entry) => entry.trim())
+        .find((entry) => entry.startsWith("csrftoken="));
+    return cookie ? decodeURIComponent(cookie.split("=")[1] || "") : "";
+};
+
 export default function Take({
     quiz,
     attempt,
@@ -43,15 +53,70 @@ export default function Take({
     );
     const [submitting, setSubmitting] = useState(false);
     const timerRef = useRef(null);
+    const saveTimeoutRef = useRef(null);
+
+    const persistAnswers = useCallback(
+        async (nextAnswers) => {
+            const payload = { answers: nextAnswers };
+            if (coursePlayer?.enrollmentId && coursePlayer?.nodeId) {
+                payload.enrollment_id = coursePlayer.enrollmentId;
+                payload.node_id = coursePlayer.nodeId;
+            }
+
+            try {
+                const response = await fetch(`/student/quiz/${quiz.id}/save/`, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCsrfToken(),
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.status === 409) {
+                    const data = await response.json().catch(() => ({}));
+                    if (data?.redirectUrl) {
+                        router.visit(data.redirectUrl);
+                    }
+                }
+            } catch {
+                // Draft save is best-effort to avoid interrupting quiz flow.
+            }
+        },
+        [coursePlayer?.enrollmentId, coursePlayer?.nodeId, quiz.id],
+    );
+
+    const queuePersistAnswers = useCallback(
+        (nextAnswers) => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            saveTimeoutRef.current = setTimeout(() => {
+                persistAnswers(nextAnswers);
+            }, 500);
+        },
+        [persistAnswers],
+    );
 
     const handleAnswerChange = (questionId, value) => {
-        setAnswers((prev) => ({
-            ...prev,
-            [questionId]: value,
-        }));
+        setAnswers((prev) => {
+            const nextAnswers = {
+                ...prev,
+                [questionId]: value,
+            };
+            queuePersistAnswers(nextAnswers);
+            return nextAnswers;
+        });
     };
 
     const handleSubmit = useCallback(() => {
+        if (submitting) {
+            return;
+        }
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
         setSubmitting(true);
         const payload = { answers };
         if (coursePlayer?.enrollmentId && coursePlayer?.nodeId) {
@@ -65,7 +130,22 @@ export default function Take({
                 onFinish: () => setSubmitting(false),
             },
         );
-    }, [answers, coursePlayer?.enrollmentId, coursePlayer?.nodeId, quiz.id]);
+    }, [
+        answers,
+        coursePlayer?.enrollmentId,
+        coursePlayer?.nodeId,
+        quiz.id,
+        submitting,
+    ]);
+
+    useEffect(
+        () => () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        },
+        [],
+    );
 
     // Calculate elapsed time for resuming
     useEffect(() => {
@@ -201,17 +281,17 @@ export default function Take({
                                         onChange={(e) =>
                                             handleAnswerChange(
                                                 currentQuestion.id,
-                                                parseInt(e.target.value),
+                                                parseInt(e.target.value, 10),
                                             )
                                         }
                                     >
                                         {currentQuestion.options.map(
                                             (opt, idx) => (
                                                 <FormControlLabel
-                                                    key={idx}
-                                                    value={idx}
+                                                    key={opt.position}
+                                                    value={opt.position}
                                                     control={<Radio />}
-                                                    label={`${String.fromCharCode(65 + idx)}. ${opt}`}
+                                                    label={`${String.fromCharCode(65 + idx)}. ${opt.text}`}
                                                     sx={{
                                                         border: "1px solid",
                                                         borderColor: "divider",
@@ -228,6 +308,67 @@ export default function Take({
                                             ),
                                         )}
                                     </RadioGroup>
+                                )}
+
+                            {/* MCQ Multi */}
+                            {currentQuestion.type === "mcq_multi" &&
+                                currentQuestion.options && (
+                                    <FormGroup>
+                                        {currentQuestion.options.map((opt, idx) => {
+                                            const currentSelections =
+                                                answers[currentQuestion.id] || [];
+                                            const isSelected =
+                                                currentSelections.includes(
+                                                    opt.position,
+                                                );
+                                            return (
+                                                <FormControlLabel
+                                                    key={opt.position}
+                                                    control={
+                                                        <Checkbox
+                                                            checked={isSelected}
+                                                            onChange={(e) => {
+                                                                const newValue =
+                                                                    e.target
+                                                                        .checked
+                                                                        ? [
+                                                                              ...currentSelections,
+                                                                              opt.position,
+                                                                          ]
+                                                                        : currentSelections.filter(
+                                                                              (i) =>
+                                                                                  i !==
+                                                                                  opt.position,
+                                                                          );
+                                                                handleAnswerChange(
+                                                                    currentQuestion.id,
+                                                                    newValue,
+                                                                );
+                                                            }}
+                                                        />
+                                                    }
+                                                    label={`${String.fromCharCode(65 + idx)}. ${opt.text}`}
+                                                    sx={{
+                                                        border: "1px solid",
+                                                        borderColor: isSelected
+                                                            ? "primary.main"
+                                                            : "divider",
+                                                        borderRadius: 1,
+                                                        mb: 1,
+                                                        mx: 0,
+                                                        p: 1,
+                                                        bgcolor: isSelected
+                                                            ? "primary.50"
+                                                            : "transparent",
+                                                        "&:hover": {
+                                                            bgcolor:
+                                                                "action.hover",
+                                                        },
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </FormGroup>
                                 )}
 
                             {/* True/False */}

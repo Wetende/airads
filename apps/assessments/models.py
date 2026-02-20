@@ -269,11 +269,6 @@ class Question(TimeStampedModel):
                         pair.id, attempt_id, "right"
                     )
                     submitted = student_answer.get(left_id)
-
-                    # Backward compatibility for attempts that still use raw pair IDs.
-                    if submitted is None and str(pair.id) in student_answer:
-                        submitted = student_answer.get(str(pair.id))
-                        expected_right_id = str(pair.id)
                 else:
                     submitted = student_answer.get(str(pair.id))
                     expected_right_id = str(pair.id)
@@ -320,10 +315,8 @@ class Question(TimeStampedModel):
 
         # 4. Ordering / Sequence
         elif self.question_type == "ordering":
-            # student_answer: ["Step 1", "Step 2"] or [2, 0, 1] (legacy)
-            expected_order = self.answer_data.get("items")
-            if not expected_order:
-                expected_order = self.answer_data.get("correct_order", [])
+            # student_answer: ["Step 1", "Step 2"]
+            expected_order = self.answer_data.get("items", [])
 
             if not isinstance(expected_order, list) or not isinstance(
                 student_answer, list
@@ -335,42 +328,98 @@ class Question(TimeStampedModel):
 
         # 5. Multi-Select MCQ
         elif self.question_type == "mcq_multi":
-            # student_answer: [0, 2] (list of selected option positions)
-            # Use QuestionOption model if available, fallback to answer_data for legacy/migration
-            if self.options.exists():
-                correct_positions = set(
-                    opt.position for opt in self.options.filter(is_correct=True)
-                )
-            else:
-                # Fallback to answer_data
-                correct_positions = set(self.answer_data.get("correct_indices", []))
+            options = list(self.options.all())
+            if not options:
+                return False, 0
 
-            submitted_set = (
-                set(student_answer) if isinstance(student_answer, list) else set()
-            )
+            valid_positions = {
+                str(opt.position) for opt in options
+            }
+            correct_positions = {
+                str(opt.position)
+                for opt in options
+                if opt.is_correct
+            }
+
+            submitted_set = set()
+            if isinstance(student_answer, list):
+                for value in student_answer:
+                    normalized = str(value).strip()
+                    if normalized in valid_positions:
+                        submitted_set.add(normalized)
+
             is_correct = submitted_set == correct_positions
             return is_correct, self.points if is_correct else 0
 
         # 6. Standard MCQ
         elif self.question_type == "mcq":
-            if self.options.exists():
-                # select related is_correct option
-                try:
-                    correct_option = self.options.get(is_correct=True)
-                    # Assuming student answer sends position index
-                    is_correct = int(student_answer) == correct_option.position
-                except (self.options.model.DoesNotExist, ValueError, TypeError):
-                    is_correct = False
-            else:
-                # Fallback
-                correct_idx = self.answer_data.get("correct")
-                is_correct = student_answer == correct_idx
+            options = list(self.options.all())
+            if not options:
+                return False, 0
+
+            correct_option = next((opt for opt in options if opt.is_correct), None)
+            if correct_option is None:
+                return False, 0
+
+            submitted_position = None
+            if student_answer is not None:
+                submitted_raw = str(student_answer).strip()
+                for option in options:
+                    if str(option.position) == submitted_raw:
+                        submitted_position = option.position
+                        break
+
+            is_correct = submitted_position == correct_option.position
             return is_correct, self.points if is_correct else 0
 
         # 7. True/False
         elif self.question_type == "true_false":
+            def normalize_bool(value):
+                if isinstance(value, bool):
+                    return value
+                if isinstance(value, (int, float)):
+                    if int(value) in {0, 1}:
+                        return bool(int(value))
+                    return None
+                if isinstance(value, str):
+                    normalized = value.strip().lower()
+                    if normalized in {"true", "1", "yes"}:
+                        return True
+                    if normalized in {"false", "0", "no"}:
+                        return False
+                return None
+
             correct_val = self.answer_data.get("correct")
-            is_correct = student_answer == correct_val
+            correct_bool = normalize_bool(correct_val)
+            submitted_bool = None
+
+            parsed_direct = normalize_bool(student_answer)
+            if parsed_direct is not None:
+                submitted_bool = parsed_direct
+            elif self.options.exists():
+                if isinstance(student_answer, (str, int, float)):
+                    option = self.options.filter(
+                        models.Q(id=student_answer)
+                        | models.Q(position=student_answer)
+                    ).first()
+                    if option is None and isinstance(student_answer, str):
+                        normalized = student_answer.strip().lower()
+                        option = self.options.filter(
+                            text__iexact=normalized
+                        ).first()
+
+                    if option is not None:
+                        by_text = normalize_bool(option.text)
+                        if by_text is not None:
+                            submitted_bool = by_text
+                        elif option.position in {0, 1}:
+                            submitted_bool = option.position == 0
+
+            is_correct = (
+                submitted_bool is not None
+                and correct_bool is not None
+                and submitted_bool == correct_bool
+            )
             return is_correct, self.points if is_correct else 0
 
         # 8. Short Answer

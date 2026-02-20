@@ -179,6 +179,7 @@ urlpatterns = [
     path("instructor/submissions/<int:submission_id>/grade/", views.instructor_assignment_grade, name="instructor.assignment_grade"),
     # Student Quiz Taking
     path("student/quiz/<int:quiz_id>/", views.student_quiz_start, name="student.quiz_start"),
+    path("student/quiz/<int:quiz_id>/save/", views.student_quiz_save, name="student.quiz_save"),
     path("student/quiz/<int:quiz_id>/submit/", views.student_quiz_submit, name="student.quiz_submit"),
     path("student/quiz/<int:quiz_id>/results/", views.student_quiz_results, name="student.quiz_results"),
     # Student Assignments

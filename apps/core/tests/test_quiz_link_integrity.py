@@ -221,13 +221,13 @@ class QuizLinkIntegrityTest(TestCase):
             position=0,
             answer_data={"correct": 0},
         )
-        QuestionOption.objects.create(
+        correct_option = QuestionOption.objects.create(
             question=question,
             text="Correct",
             is_correct=True,
             position=0,
         )
-        QuestionOption.objects.create(
+        wrong_option = QuestionOption.objects.create(
             question=question,
             text="Wrong",
             is_correct=False,
@@ -752,3 +752,253 @@ class QuizLinkIntegrityTest(TestCase):
                 for err in errors
             )
         )
+
+    def test_student_quiz_save_persists_in_progress_answers(self):
+        program = self._create_program(name="Quiz Save", code="QUIZ-SAVE")
+        student = User.objects.create_user(
+            username="student.save",
+            email="student.save@test.com",
+            password="password123",
+        )
+        enrollment = Enrollment.objects.create(
+            user=student,
+            program=program,
+            status="active",
+        )
+        node = CurriculumNode.objects.create(
+            program=program,
+            title="Draft Quiz Node",
+            node_type="Session",
+            properties={"lesson_type": "quiz"},
+        )
+        quiz = Quiz.objects.create(
+            node=node,
+            title="Draft Quiz",
+            is_published=True,
+            max_attempts=3,
+        )
+        question = Question.objects.create(
+            quiz=quiz,
+            question_type="mcq",
+            text="Pick one",
+            points=1,
+            position=0,
+            answer_data={"correct": 0},
+        )
+        QuizAttempt.objects.create(
+            enrollment=enrollment,
+            quiz=quiz,
+            attempt_number=1,
+            started_at=timezone.now(),
+        )
+
+        self.client.force_login(student)
+        response = self.client.post(
+            reverse("core:student.quiz_save", kwargs={"quiz_id": quiz.id}),
+            data=json.dumps({"answers": {str(question.id): 0}}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload.get("saved"))
+
+        attempt = QuizAttempt.objects.get(enrollment=enrollment, quiz=quiz)
+        self.assertEqual(attempt.answers.get(str(question.id)), 0)
+        self.assertIsNone(attempt.submitted_at)
+
+    def test_student_quiz_submit_after_expiry_grades_saved_answers_only(self):
+        program = self._create_program(name="Quiz Expiry", code="QUIZ-EXP")
+        student = User.objects.create_user(
+            username="student.expired",
+            email="student.expired@test.com",
+            password="password123",
+        )
+        enrollment = Enrollment.objects.create(
+            user=student,
+            program=program,
+            status="active",
+        )
+        node = CurriculumNode.objects.create(
+            program=program,
+            title="Expired Quiz Node",
+            node_type="Session",
+            properties={"lesson_type": "quiz"},
+        )
+        quiz = Quiz.objects.create(
+            node=node,
+            title="Expired Quiz",
+            is_published=True,
+            max_attempts=3,
+            time_limit_minutes=1,
+            pass_threshold=70,
+        )
+        question = Question.objects.create(
+            quiz=quiz,
+            question_type="mcq",
+            text="Pick one",
+            points=1,
+            position=0,
+            answer_data={"correct": 0},
+        )
+        correct_option = QuestionOption.objects.create(
+            question=question,
+            text="Correct",
+            is_correct=True,
+            position=0,
+        )
+        wrong_option = QuestionOption.objects.create(
+            question=question,
+            text="Wrong",
+            is_correct=False,
+            position=1,
+        )
+        QuizAttempt.objects.create(
+            enrollment=enrollment,
+            quiz=quiz,
+            attempt_number=1,
+            started_at=timezone.now() - timezone.timedelta(minutes=2),
+            answers={str(question.id): wrong_option.id},
+        )
+
+        self.client.force_login(student)
+        response = self.client.post(
+            reverse("core:student.quiz_submit", kwargs={"quiz_id": quiz.id}),
+            data=json.dumps({"answers": {str(question.id): correct_option.id}}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 302)
+        attempt = QuizAttempt.objects.get(enrollment=enrollment, quiz=quiz)
+        self.assertIsNotNone(attempt.submitted_at)
+        self.assertEqual(attempt.answers.get(str(question.id)), wrong_option.id)
+        self.assertEqual(attempt.points_earned, 0)
+        self.assertEqual(float(attempt.score), 0.0)
+
+    def test_quiz_results_preserves_zero_score_value(self):
+        program = self._create_program(name="Quiz Result Zero", code="QUIZ-0")
+        student = User.objects.create_user(
+            username="student.zero",
+            email="student.zero@test.com",
+            password="password123",
+        )
+        enrollment = Enrollment.objects.create(
+            user=student,
+            program=program,
+            status="active",
+        )
+        node = CurriculumNode.objects.create(
+            program=program,
+            title="Result Quiz Node",
+            node_type="Session",
+            properties={"lesson_type": "quiz"},
+        )
+        quiz = Quiz.objects.create(
+            node=node,
+            title="Result Quiz",
+            is_published=True,
+            max_attempts=3,
+        )
+        QuizAttempt.objects.create(
+            enrollment=enrollment,
+            quiz=quiz,
+            attempt_number=1,
+            started_at=timezone.now() - timezone.timedelta(minutes=5),
+            submitted_at=timezone.now(),
+            points_earned=0,
+            points_possible=1,
+            score=0,
+            passed=False,
+        )
+
+        self.client.force_login(student)
+        response = self.client.get(
+            reverse("core:student.quiz_results", kwargs={"quiz_id": quiz.id}),
+            HTTP_X_INERTIA=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        attempts = response.json()["props"]["attempts"]
+        self.assertEqual(len(attempts), 1)
+        self.assertEqual(attempts[0]["score"], 0.0)
+
+    def test_course_player_sidebar_uses_latest_quiz_attempt_result(self):
+        program = self._create_program(name="Sidebar Attempts", code="SIDEBAR-ATTEMPT")
+        student = User.objects.create_user(
+            username="student.sidebar",
+            email="student.sidebar@test.com",
+            password="password123",
+        )
+        enrollment = Enrollment.objects.create(
+            user=student,
+            program=program,
+            status="active",
+        )
+        node = CurriculumNode.objects.create(
+            program=program,
+            title="Sidebar Quiz Node",
+            node_type="Session",
+            properties={"lesson_type": "quiz"},
+            is_published=True,
+        )
+        quiz = Quiz.objects.create(
+            node=node,
+            title="Sidebar Quiz",
+            is_published=True,
+            max_attempts=3,
+        )
+        node.properties["quiz_id"] = quiz.id
+        node.save(update_fields=["properties"])
+
+        QuizAttempt.objects.create(
+            enrollment=enrollment,
+            quiz=quiz,
+            attempt_number=1,
+            started_at=timezone.now() - timezone.timedelta(minutes=10),
+            submitted_at=timezone.now() - timezone.timedelta(minutes=9),
+            points_earned=9,
+            points_possible=10,
+            score=90,
+            passed=True,
+        )
+        QuizAttempt.objects.create(
+            enrollment=enrollment,
+            quiz=quiz,
+            attempt_number=2,
+            started_at=timezone.now() - timezone.timedelta(minutes=5),
+            submitted_at=timezone.now() - timezone.timedelta(minutes=4),
+            points_earned=4,
+            points_possible=10,
+            score=40,
+            passed=False,
+        )
+
+        self.client.force_login(student)
+        response = self.client.get(
+            reverse(
+                "progression:student.session",
+                kwargs={"pk": enrollment.id, "node_id": node.id},
+            ),
+            HTTP_X_INERTIA=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        curriculum = response.json()["props"]["curriculum"]
+        
+        def find_node(nodes):
+            for item in nodes:
+                if item["id"] == node.id:
+                    return item
+                children = item.get("children") or []
+                found = find_node(children)
+                if found:
+                    return found
+            return None
+
+        current_node = find_node(curriculum)
+
+        self.assertIsNotNone(current_node)
+        self.assertIn("lastAttempt", current_node)
+        self.assertEqual(current_node["lastAttempt"]["number"], 2)
+        self.assertEqual(current_node["lastAttempt"]["score"], 40.0)
+        self.assertFalse(current_node["lastAttempt"]["passed"])

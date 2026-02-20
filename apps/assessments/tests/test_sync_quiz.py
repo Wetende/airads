@@ -68,7 +68,6 @@ class SyncQuizQuestionsTest(TestCase):
                 "text": "Order the numbers",
                 "points": 3,
                 "items": ["One", "Two", "Three"],  # The correct order
-                "correct_order": ["One", "Two", "Three"] # Legacy/fallback
             }
         ]
 

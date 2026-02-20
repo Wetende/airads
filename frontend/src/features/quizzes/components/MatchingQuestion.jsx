@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Stack, Paper, Typography, Box } from '@mui/material';
 
-
-// NOTE: Using DragDropContext might be overkill if we just want simple select matching.
-// But for drag-drop, we need strict mode setup or alternative.
-// Simplified version: Select Left -> Select Right to pair.
-
 export default function MatchingQuestion({ question, onChange, value = [] }) {
-  // value: array of pairs [{left, right}] or just dictionary {leftId: rightId}
-  // Let's assume value is object { "left_text": "right_text_selected" }
-  
   const [pairs, setPairs] = useState(question.pairs || []);
   const [shuffledRight, setShuffledRight] = useState([]);
   const [selections, setSelections] = useState(value || {}); // { "Left Text": "Right Text" }
@@ -21,16 +13,6 @@ export default function MatchingQuestion({ question, onChange, value = [] }) {
     const shuffled = [...rightSides].sort(() => Math.random() - 0.5);
     setShuffledRight(shuffled);
   }, [pairs]);
-
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
-    
-    // Logic for drag drop is complex with strict mode in React 18
-    // Fallback to simple select for robustness if dnd fails?
-  };
-  
-  // Implementation using simple select for now to avoid dnd library issues in this environment
-  // A clean matching UI: Left Column (Static) | Right Column (Dropdowns)
   
   const handleSelect = (leftText, rightText) => {
       const newSelections = { ...selections, [leftText]: rightText };
