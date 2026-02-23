@@ -3,7 +3,8 @@
  * Requirements: 5.3, 6.1, 6.2, 6.3
  */
 
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
+import Footer from '@/components/common/Footer';
 import {
   Box,
   Card,
@@ -177,6 +178,8 @@ export default function CertificateVerify({ serialNumber, result, certificate })
           {result === 'not_found' && <NotFoundCertificate serialNumber={serialNumber} />}
         </motion.div>
       </Container>
+
+      <Footer />
     </>
   );
 }

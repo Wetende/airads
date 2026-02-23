@@ -14,7 +14,7 @@ import {
 import { motion } from "framer-motion";
 import { useState } from "react";
 import PublicNavbar from "../../components/common/PublicNavbar";
-import FooterSection from "../../components/sections/landing/FooterSection";
+import Footer from "@/components/common/Footer";
 
 // ─── Unsplash hero image ──────────────────────────────────────────
 const HERO_IMAGE =
@@ -339,39 +339,7 @@ export default function Contact() {
                 </Box>
 
                 {/* ═══════ SECTION 4: Footer ═══════ */}
-                {platform && <FooterSection platform={platform} />}
-
-                {/* Fallback footer */}
-                {!platform && (
-                    <Box sx={{ bgcolor: "#1F2937", color: "white", py: 6 }}>
-                        <Container maxWidth="lg">
-                            <Stack
-                                direction={{ xs: "column", sm: "row" }}
-                                justifyContent="space-between"
-                                alignItems="center"
-                                spacing={2}
-                            >
-                                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.6)" }}>
-                                    © {new Date().getFullYear()} Crossview LMS. All rights reserved.
-                                </Typography>
-                                <Stack direction="row" spacing={3}>
-                                    <Link
-                                        href="/programs/"
-                                        style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "0.9rem" }}
-                                    >
-                                        Programs
-                                    </Link>
-                                    <Link
-                                        href="/about/"
-                                        style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "0.9rem" }}
-                                    >
-                                        About
-                                    </Link>
-                                </Stack>
-                            </Stack>
-                        </Container>
-                    </Box>
-                )}
+                <Footer />
             </Box>
         </ThemeProvider>
     );

@@ -326,23 +326,27 @@ def setup_mode(request):
         return redirect("/dashboard/")
     
     from apps.platform.services import PlatformSettingsService
-    from apps.blueprints.models import AcademicBlueprint
     
     if request.method == "POST":
         data = get_post_data(request)
-        PlatformSettingsService.update_deployment_mode(
-            deployment_mode=data.get("deploymentMode", "custom"),
-            blueprint_id=data.get("blueprintId"),
-        )
-        messages.success(request, "Deployment mode saved")
-        return redirect("tenants:setup.branding")
+        try:
+            PlatformSettingsService.update_deployment_mode(
+                deployment_mode=data.get("deploymentMode", "custom"),
+                blueprint_id=data.get("blueprintId"),
+            )
+            messages.success(request, "Deployment mode saved")
+            return redirect("tenants:setup.branding")
+        except ValidationError as exc:
+            error = (
+                exc.message_dict.get("blueprintId", [str(exc)])[0]
+                if hasattr(exc, "message_dict")
+                else str(exc)
+            )
+            messages.error(request, error)
     
     current = PlatformSettingsService.get_settings()
     modes = PlatformSettingsService.get_deployment_modes()
-    blueprints = [
-        {"id": b.id, "name": b.name}
-        for b in AcademicBlueprint.objects.all()
-    ]
+    blueprints = PlatformSettingsService.list_builder_compatible_blueprints()
     
     return render(
         request,
@@ -433,7 +437,6 @@ def platform_settings(request):
         return redirect("/dashboard/")
     
     from apps.platform.services import PlatformSettingsService
-    from apps.blueprints.models import AcademicBlueprint
     
     if request.method == "POST":
         data = get_post_data(request)
@@ -459,10 +462,19 @@ def platform_settings(request):
         )
         
         # Update mode if changed
-        PlatformSettingsService.update_deployment_mode(
-            deployment_mode=data.get("deploymentMode", "custom"),
-            blueprint_id=data.get("blueprintId"),
-        )
+        try:
+            PlatformSettingsService.update_deployment_mode(
+                deployment_mode=data.get("deploymentMode", "custom"),
+                blueprint_id=data.get("blueprintId"),
+            )
+        except ValidationError as exc:
+            error = (
+                exc.message_dict.get("blueprintId", [str(exc)])[0]
+                if hasattr(exc, "message_dict")
+                else str(exc)
+            )
+            messages.error(request, error)
+            return redirect("tenants:platform.settings")
 
         raw_levels = data.get("courseLevelsJson")
         if raw_levels:
@@ -490,10 +502,7 @@ def platform_settings(request):
     
     current = PlatformSettingsService.get_settings()
     modes = PlatformSettingsService.get_deployment_modes()
-    blueprints = [
-        {"id": b.id, "name": b.name}
-        for b in AcademicBlueprint.objects.all()
-    ]
+    blueprints = PlatformSettingsService.list_builder_compatible_blueprints()
     
     return render(
         request,

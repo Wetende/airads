@@ -31,7 +31,7 @@ import ButtonAnimationWrapper from "@/features/components/common/ButtonAnimation
 
 // Sections
 import HeroSection from "@/components/sections/landing/HeroSection";
-import FooterSection from "@/components/sections/landing/FooterSection";
+import Footer from "@/components/common/Footer";
 
 // Skeletons
 import CardGridSkeleton from "@/components/sections/landing/skeletons/CardGridSkeleton";
@@ -586,7 +586,7 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                 />
 
                 {/* Footer - Static import to avoid build warnings */}
-                <FooterSection platform={platform} />
+                <Footer />
             </Box>
         </ThemeProvider>
     );

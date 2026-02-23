@@ -1,4 +1,4 @@
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 import {
     Box,
     Container,
@@ -7,7 +7,6 @@ import {
     Grid,
     IconButton,
     Divider,
-    useTheme,
 } from "@mui/material";
 import {
     IconSchool,
@@ -27,10 +26,20 @@ function hexToRgba(hex, alpha = 1) {
     return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${alpha})`;
 }
 
-export default function FooterSection({ platform }) {
-    const theme = useTheme();
-    const primaryColor = platform.primaryColor || "#3B82F6";
+/**
+ * Shared Footer Component
+ * 
+ * Reads platform data from Inertia shared props automatically,
+ * so no props need to be passed. Uses the logo uploaded via SuperAdmin.
+ */
+export default function Footer() {
+    const { platform } = usePage().props;
+
+    // Provide sensible defaults if platform data is unavailable
+    const p = platform || {};
+    const primaryColor = p.primaryColor || "#3B82F6";
     const currentYear = new Date().getFullYear();
+    const institutionName = p.institutionName || "Crossview LMS";
 
     const quickLinks = [
         { label: "Programs", href: "/programs/" },
@@ -70,11 +79,11 @@ export default function FooterSection({ platform }) {
                         <Stack spacing={3}>
                             {/* Logo */}
                             <Stack direction="row" spacing={2} alignItems="center">
-                                {platform.logoUrl ? (
+                                {p.logoUrl ? (
                                     <Box
                                         component="img"
-                                        src={platform.logoUrl}
-                                        alt={platform.institutionName}
+                                        src={p.logoUrl}
+                                        alt={institutionName}
                                         sx={{
                                             height: 40,
                                             maxWidth: 160,
@@ -98,7 +107,7 @@ export default function FooterSection({ platform }) {
                                             <IconSchool size={24} />
                                         </Box>
                                         <Typography variant="h6" fontWeight={700}>
-                                            {platform.institutionName}
+                                            {institutionName}
                                         </Typography>
                                     </>
                                 )}
@@ -108,7 +117,7 @@ export default function FooterSection({ platform }) {
                                 variant="body2"
                                 sx={{ color: "rgba(255,255,255,0.7)", lineHeight: 1.8 }}
                             >
-                                {platform.description ||
+                                {p.description ||
                                     "Empowering learners with quality education and flexible learning options to achieve their goals."}
                             </Typography>
 
@@ -199,40 +208,40 @@ export default function FooterSection({ platform }) {
                             Contact Us
                         </Typography>
                         <Stack spacing={2}>
-                            {platform.email && (
+                            {p.email && (
                                 <Stack direction="row" spacing={2} alignItems="center">
                                     <IconMail size={18} color={primaryColor} />
                                     <Typography
                                         variant="body2"
                                         sx={{ color: "rgba(255,255,255,0.7)" }}
                                     >
-                                        {platform.email}
+                                        {p.email}
                                     </Typography>
                                 </Stack>
                             )}
-                            {platform.phone && (
+                            {p.phone && (
                                 <Stack direction="row" spacing={2} alignItems="center">
                                     <IconPhone size={18} color={primaryColor} />
                                     <Typography
                                         variant="body2"
                                         sx={{ color: "rgba(255,255,255,0.7)" }}
                                     >
-                                        {platform.phone}
+                                        {p.phone}
                                     </Typography>
                                 </Stack>
                             )}
-                            {platform.address && (
+                            {p.address && (
                                 <Stack direction="row" spacing={2} alignItems="flex-start">
                                     <IconMapPin size={18} color={primaryColor} style={{ marginTop: 4 }} />
                                     <Typography
                                         variant="body2"
                                         sx={{ color: "rgba(255,255,255,0.7)" }}
                                     >
-                                        {platform.address}
+                                        {p.address}
                                     </Typography>
                                 </Stack>
                             )}
-                            {!platform.email && !platform.phone && !platform.address && (
+                            {!p.email && !p.phone && !p.address && (
                                 <Typography
                                     variant="body2"
                                     sx={{ color: "rgba(255,255,255,0.7)" }}
@@ -257,7 +266,7 @@ export default function FooterSection({ platform }) {
                         variant="body2"
                         sx={{ color: "rgba(255,255,255,0.5)" }}
                     >
-                        © {currentYear} {platform.institutionName}. All rights reserved.
+                        © {currentYear} {institutionName}. All rights reserved.
                     </Typography>
                     <Typography
                         variant="body2"

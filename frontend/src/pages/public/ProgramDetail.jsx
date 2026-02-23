@@ -26,7 +26,6 @@ import {
     LinearProgress,
 } from "@mui/material";
 import {
-    IconBrandTabler,
     IconClock,
     IconBook,
     IconChartBar,
@@ -45,6 +44,7 @@ import { useState } from "react";
 import DOMPurify from "dompurify";
 import { CourseDetailsModal } from "@/components/modals";
 import PublicNavbar from "@/components/common/PublicNavbar";
+import Footer from "@/components/common/Footer";
 
 // --- Helper Components ---
 
@@ -974,31 +974,7 @@ export default function ProgramDetail({
                 </Container>
 
                 {/* Footer */}
-                <Box sx={{ bgcolor: "grey.900", color: "grey.400", py: 6 }}>
-                    <Container maxWidth="lg">
-                        <Stack
-                            direction="row"
-                            spacing={1}
-                            alignItems="center"
-                            justifyContent="center"
-                        >
-                            <IconBrandTabler size={24} color="white" />
-                            <Typography variant="body2" color="white">
-                                Crossview LMS
-                            </Typography>
-                        </Stack>
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                display: "block",
-                                textAlign: "center",
-                                mt: 1,
-                            }}
-                        >
-                            © 2025 Crossview LMS. All rights reserved.
-                        </Typography>
-                    </Container>
-                </Box>
+                <Footer />
             </Box>
 
             {/* Modals */}

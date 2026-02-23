@@ -90,12 +90,26 @@ hierarchy_structure = ["Section", "Lesson"]
 hierarchy_structure = ["Chapter", "Topic"]
 ```
 
+### Dynamic Mode Defaults
+
+Mode defaults provide starter labels for Tier 2 and Tier 3, but admins can still
+edit/create compliant 2-label blueprints:
+
+- `tvet` -> `["Unit", "Session"]`
+- `theology` -> `["Chapter", "Lesson"]`
+- `online` -> `["Section", "Lesson"]`
+- `nita` -> `["Module", "Practical"]`
+- `driving` -> `["Phase", "Lesson"]`
+- `cbc` -> `["Strand", "Lesson"]`
+- `custom` -> `["Section", "Lesson"]`
+
 ### Blueprint Structure Rules
 
 1. **Array length:** Must be exactly 2 elements (Container, Content)
 2. **Index 0:** Container type name (e.g., "Unit", "Module", "Section")
 3. **Index 1:** Content type name (e.g., "Session", "Lesson", "Topic")
 4. **Validation:** Node types are validated against this structure
+5. **Reserved Tier 1 labels:** Container label cannot be `Course` or `Program` because Tier 1 lives in `Program.level`
 
 ---
 
@@ -333,6 +347,30 @@ If you have existing programs with different node types, you may need to:
             lesson.properties['lesson_type'] = infer_lesson_type(lesson.node_type)
             lesson.save()
     ```
+
+### Normalization Command (Production-Safe)
+
+Use the management command to audit and normalize legacy/inconsistent data:
+
+```bash
+# Default dry-run
+python manage.py normalize_builder_taxonomy --mode online --output-json /tmp/taxonomy-report.json
+
+# Scope to a single program
+python manage.py normalize_builder_taxonomy --program-id 2 --mode theology
+
+# Apply after review
+python manage.py normalize_builder_taxonomy --apply --mode online
+```
+
+Behavior:
+
+- Dry-run is the default.
+- Invalid blueprints are normalized to explicit mode mapping.
+- Depth-0 node types are remapped to container label.
+- Depth-1 node types are remapped to content label.
+- `properties.lesson_type` is preserved.
+- Apply aborts when a program has nodes deeper than depth 1.
 
 ---
 

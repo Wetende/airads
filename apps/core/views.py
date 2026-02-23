@@ -25,6 +25,11 @@ from inertia import render
 from apps.certifications.models import Certificate, VerificationLog
 from apps.core.learning_outcomes import extract_learning_outcome_items_from_html
 from apps.core.models import Program, User
+from apps.core.taxonomy import (
+    MAX_BUILDER_DEPTH,
+    get_builder_hierarchy_or_default,
+    validate_builder_hierarchy,
+)
 from apps.core.utils import get_instructor_program_ids, get_post_data, is_instructor
 
 
@@ -5167,13 +5172,10 @@ def serialize_program_data(program):
     from apps.platform.models import PlatformSettings
 
     platform_settings = PlatformSettings.get_settings()
-    builder_hierarchy = (
-        list((program.blueprint.hierarchy_structure or [])[:2])
-        if program.blueprint and isinstance(program.blueprint.hierarchy_structure, list)
-        else ["Module", "Lesson"]
+    builder_hierarchy = get_builder_hierarchy_or_default(
+        program.blueprint.hierarchy_structure if program.blueprint else None,
+        deployment_mode=platform_settings.deployment_mode,
     )
-    if len(builder_hierarchy) < 2:
-        builder_hierarchy = (builder_hierarchy + ["Lesson"])[:2]
     level_value = (program.level or "").strip()
     prerequisite_program_ids = list(
         program.prerequisite_programs.values_list("id", flat=True)
@@ -5437,16 +5439,21 @@ def instructor_node_create(request, program_id: int):
         return redirect("core:instructor.program_manage", pk=program_id)
 
     blueprint_structure = program.blueprint.hierarchy_structure or []
+    is_valid_hierarchy, hierarchy_error = validate_builder_hierarchy(blueprint_structure)
 
-    # Course Builder taxonomy requires exactly two tiers:
-    # Container (depth 0) -> Content/Lesson (depth 1)
-    if len(blueprint_structure) != 2:
+    # Course Builder taxonomy requires:
+    # Tier 1 (Program.level) outside tree + 2 in-tree tiers (container/content)
+    if not is_valid_hierarchy:
         messages.error(
             request,
-            f"Blueprint must define exactly 2 hierarchy levels. Found {len(blueprint_structure)}: {blueprint_structure}",
+            hierarchy_error
+            or (
+                "Blueprint must define exactly 2 hierarchy levels. "
+                "Program level is configured separately."
+            ),
         )
         return redirect("core:instructor.program_manage", pk=program_id)
-    builder_structure = blueprint_structure
+    builder_structure = [str(label).strip() for label in blueprint_structure]
 
     try:
         parent = None
@@ -5472,10 +5479,11 @@ def instructor_node_create(request, program_id: int):
         # Reuse current_depth from line 4728 to avoid redundant get_depth() call
         depth = current_depth + 1 if parent else 0
 
-        if depth > 1:
+        if depth > MAX_BUILDER_DEPTH:
             raise ValueError(
                 f"Cannot create node at depth {depth}. "
-                f"Maximum depth is 1. Hierarchy: {builder_structure[0]} → {builder_structure[1]}"
+                f"Maximum depth is {MAX_BUILDER_DEPTH}. "
+                f"Hierarchy: {builder_structure[0]} → {builder_structure[1]}"
             )
 
         # Validate parent-child relationships
@@ -5520,7 +5528,15 @@ def instructor_node_create(request, program_id: int):
         if node_type_normalized == "assignment" or lesson_type_normalized == "assignment":
             _sync_assignment(node)
 
-        messages.success(request, f"{node_type} '{title}' created successfully")
+        # Use semantic labels in toasts to avoid blueprint label leakage
+        # (e.g. container label "Course" for section creation).
+        success_label = "Section" if parent is None else "Lesson"
+        if node_type_normalized == "quiz" or lesson_type_normalized == "quiz":
+            success_label = "Quiz"
+        elif node_type_normalized == "assignment" or lesson_type_normalized == "assignment":
+            success_label = "Assignment"
+
+        messages.success(request, f"{success_label} '{node.title}' created successfully")
 
         # Build updated curriculum tree and return as Inertia response
         curriculum = build_curriculum_tree(program)

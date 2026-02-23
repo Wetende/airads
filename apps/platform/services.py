@@ -5,6 +5,10 @@ Platform services - Business logic for platform management (single-tenant mode).
 from typing import Optional
 from django.core.exceptions import ValidationError
 
+from apps.core.taxonomy import (
+    get_mode_builder_hierarchy,
+    is_valid_builder_hierarchy,
+)
 from apps.platform.models import PresetBlueprint
 
 
@@ -13,7 +17,7 @@ MODE_BLUEPRINTS = {
     'tvet': {
         'name': 'TVET Standard (CDACC)',
         'description': 'Competency-based blueprint for TVET institutions following CDACC guidelines',
-        'hierarchy_structure': ['Level', 'Unit', 'Learning Outcome', 'Session'],
+        'hierarchy_structure': get_mode_builder_hierarchy('tvet'),
         'grading_logic': {
             'type': 'competency',
             'levels': ['Not Yet Competent', 'Competent'],
@@ -23,7 +27,7 @@ MODE_BLUEPRINTS = {
     'theology': {
         'name': 'Bible College Standard',
         'description': 'Weighted grading blueprint for theology and bible schools',
-        'hierarchy_structure': ['Year', 'Semester', 'Course', 'Session'],
+        'hierarchy_structure': get_mode_builder_hierarchy('theology'),
         'grading_logic': {
             'type': 'weighted',
             'components': [
@@ -36,7 +40,7 @@ MODE_BLUEPRINTS = {
     'nita': {
         'name': 'NITA Trade Test',
         'description': 'Trade test blueprint following NITA guidelines',
-        'hierarchy_structure': ['Trade', 'Grade', 'Module', 'Practical'],
+        'hierarchy_structure': get_mode_builder_hierarchy('nita'),
         'grading_logic': {
             'type': 'competency',
             'levels': ['Fail', 'Pass', 'Credit', 'Distinction'],
@@ -46,7 +50,7 @@ MODE_BLUEPRINTS = {
     'driving': {
         'name': 'Driving School (NTSA)',
         'description': 'Checklist-based blueprint for driving schools following NTSA guidelines',
-        'hierarchy_structure': ['License Class', 'Phase', 'Lesson'],
+        'hierarchy_structure': get_mode_builder_hierarchy('driving'),
         'grading_logic': {
             'type': 'checklist',
             'pass_all_required': True
@@ -55,7 +59,7 @@ MODE_BLUEPRINTS = {
     'cbc': {
         'name': 'CBC K-12 Standard',
         'description': 'Competency-Based Curriculum blueprint for K-12 schools',
-        'hierarchy_structure': ['Grade', 'Strand', 'Sub-Strand', 'Lesson'],
+        'hierarchy_structure': get_mode_builder_hierarchy('cbc'),
         'grading_logic': {
             'type': 'rubric',
             'levels': ['Below Expectation', 'Approaching', 'Meeting', 'Exceeding'],
@@ -65,7 +69,7 @@ MODE_BLUEPRINTS = {
     'online': {
         'name': 'Online Self-Paced',
         'description': 'Percentage-based grading for online self-paced courses',
-        'hierarchy_structure': ['Course', 'Module', 'Lesson'],
+        'hierarchy_structure': get_mode_builder_hierarchy('online'),
         'grading_logic': {
             'type': 'percentage',
             'pass_mark': 70
@@ -181,6 +185,17 @@ class PlatformSettingsService:
     """Service for platform settings management (single-tenant mode)."""
 
     @staticmethod
+    def list_builder_compatible_blueprints() -> list:
+        """Return blueprints valid for the 2-tier builder taxonomy."""
+        from apps.blueprints.models import AcademicBlueprint
+
+        blueprints = []
+        for blueprint in AcademicBlueprint.objects.all().order_by("name"):
+            if is_valid_builder_hierarchy(blueprint.hierarchy_structure):
+                blueprints.append({"id": blueprint.id, "name": blueprint.name})
+        return blueprints
+
+    @staticmethod
     def get_settings() -> dict:
         """Get current platform settings."""
         from apps.platform.models import PlatformSettings
@@ -242,23 +257,49 @@ class PlatformSettingsService:
             return None
         
         template = MODE_BLUEPRINTS[deployment_mode]
+        target_hierarchy = get_mode_builder_hierarchy(deployment_mode)
         
         # Check if blueprint already exists
-        blueprint = AcademicBlueprint.objects.filter(
-            name=template['name']
-        ).first()
-        
-        if not blueprint:
-            blueprint = AcademicBlueprint.objects.create(
-                name=template['name'],
-                description=template.get('description', f"Auto-generated blueprint for {deployment_mode} mode"),
-                hierarchy_structure=template['hierarchy_structure'],
+        blueprint = AcademicBlueprint.objects.filter(name=template['name']).first()
+
+        if blueprint and is_valid_builder_hierarchy(blueprint.hierarchy_structure):
+            return blueprint
+
+        # Compatibility guard: legacy blueprints may carry 3-4 levels.
+        # We do not slice legacy labels implicitly; we use explicit mode mapping.
+        if blueprint and not blueprint.programs.exists():
+            blueprint.hierarchy_structure = target_hierarchy
+            blueprint.grading_logic = template['grading_logic']
+            blueprint.description = template.get(
+                'description', f"Auto-generated blueprint for {deployment_mode} mode"
+            )
+            blueprint.save()
+            return blueprint
+
+        if blueprint and blueprint.programs.exists():
+            v2_name = f"{template['name']} (Builder 2-tier)"
+            existing_v2 = AcademicBlueprint.objects.filter(name=v2_name).first()
+            if existing_v2 and is_valid_builder_hierarchy(existing_v2.hierarchy_structure):
+                return existing_v2
+            return AcademicBlueprint.objects.create(
+                name=v2_name,
+                description=template.get(
+                    'description', f"Auto-generated blueprint for {deployment_mode} mode"
+                ),
+                hierarchy_structure=target_hierarchy,
                 grading_logic=template['grading_logic'],
                 progression_rules={},
                 certificate_enabled=True,
             )
-        
-        return blueprint
+
+        return AcademicBlueprint.objects.create(
+            name=template['name'],
+            description=template.get('description', f"Auto-generated blueprint for {deployment_mode} mode"),
+            hierarchy_structure=target_hierarchy,
+            grading_logic=template['grading_logic'],
+            progression_rules={},
+            certificate_enabled=True,
+        )
 
     @staticmethod
     def update_deployment_mode(
@@ -281,7 +322,23 @@ class PlatformSettingsService:
             # Use provided blueprint
             try:
                 blueprint = AcademicBlueprint.objects.get(pk=blueprint_id)
-                settings.active_blueprint = blueprint
+                if is_valid_builder_hierarchy(blueprint.hierarchy_structure):
+                    settings.active_blueprint = blueprint
+                elif deployment_mode != 'custom':
+                    fallback = PlatformSettingsService.get_or_create_blueprint_for_mode(
+                        deployment_mode
+                    )
+                    if fallback:
+                        settings.active_blueprint = fallback
+                else:
+                    raise ValidationError(
+                        {
+                            "blueprintId": (
+                                "Selected blueprint is not compatible with Course Builder. "
+                                "Use a blueprint with exactly 2 labels: [Container, Content]."
+                            )
+                        }
+                    )
             except AcademicBlueprint.DoesNotExist:
                 pass
         

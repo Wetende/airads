@@ -28,7 +28,7 @@ import {
 import { useState } from "react";
 import { format } from "date-fns";
 import DOMPurify from "dompurify";
-import FooterSection from "@/components/sections/landing/FooterSection";
+import Footer from "@/components/common/Footer";
 import PublicNavbar from "@/components/common/PublicNavbar";
 
 // Custom theme (consistent with listing page but with specific overrides)
@@ -540,7 +540,7 @@ export default function EventDetail({ event, isRegistered = false, archives = []
                     </Grid>
                 </Container>
 
-                <FooterSection platform={platform} />
+                <Footer />
             </Box>
         </ThemeProvider>
     );

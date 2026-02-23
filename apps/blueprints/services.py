@@ -4,6 +4,7 @@ Blueprint services - Validation and serialization.
 import json
 from typing import List, Dict, Any
 from .exceptions import InvalidHierarchyStructureException, InvalidGradingLogicException
+from apps.core.taxonomy import validate_builder_hierarchy
 
 
 class BlueprintValidationService:
@@ -11,18 +12,11 @@ class BlueprintValidationService:
 
     def validate_hierarchy_structure(self, structure: List[str]) -> bool:
         """Validate that hierarchy_structure has exactly two labels (container, content)."""
-        if not structure or not isinstance(structure, list):
-            raise InvalidHierarchyStructureException("Hierarchy structure must be a non-empty list")
-
-        if len(structure) != 2:
+        is_valid, reason = validate_builder_hierarchy(structure)
+        if not is_valid:
             raise InvalidHierarchyStructureException(
-                "Hierarchy structure must contain exactly 2 levels: Container and Content"
+                reason or "Invalid hierarchy structure"
             )
-        
-        for item in structure:
-            if not isinstance(item, str) or not item.strip():
-                raise InvalidHierarchyStructureException("All hierarchy items must be non-empty strings")
-        
         return True
 
     VALID_GRADING_TYPES = ['weighted', 'points', 'percentage', 'competency', 'pass_fail']

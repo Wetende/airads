@@ -410,7 +410,7 @@
     ]
   },
   "src/components/sections/landing/LearningModesSection.jsx": {
-    "file": "LearningModesSection-DkqCD6fC.js",
+    "file": "LearningModesSection-fv2P4IgA.js",
     "name": "LearningModesSection",
     "src": "src/components/sections/landing/LearningModesSection.jsx",
     "isDynamicEntry": true,
@@ -433,7 +433,7 @@
     ]
   },
   "src/components/sections/landing/ProgramsSection.jsx": {
-    "file": "ProgramsSection-CtwJjzWs.js",
+    "file": "ProgramsSection-DPXferol.js",
     "name": "ProgramsSection",
     "src": "src/components/sections/landing/ProgramsSection.jsx",
     "isDynamicEntry": true,
@@ -482,7 +482,7 @@
     ]
   },
   "src/main.jsx": {
-    "file": "main-BmPcTHX0.js",
+    "file": "main-sRHzohX3.js",
     "name": "main",
     "src": "src/main.jsx",
     "isEntry": true,

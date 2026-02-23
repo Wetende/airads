@@ -14,8 +14,9 @@ const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', plat
     const tabs = useMemo(() => {
         const baseTabs = [
             { label: 'Curriculum', value: 'curriculum', href: `/instructor/programs/${program.id}/manage/` },
-            { label: 'Drip', value: 'drip', href: `/instructor/programs/${program.id}/manage/drip/` },
-            { label: 'Settings', value: 'settings', href: `/instructor/programs/${program.id}/manage/settings/` },
+            // TODO: Implement later
+            // { label: 'Drip', value: 'drip', href: `/instructor/programs/${program.id}/manage/drip/` },
+            // { label: 'Settings', value: 'settings', href: `/instructor/programs/${program.id}/manage/settings/` },
         ];
         
         // Pricing tab: only when payments feature is enabled (Online, NITA, Driving modes)
@@ -27,18 +28,20 @@ const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', plat
         baseTabs.push({ label: 'FAQ', value: 'faq', href: `/instructor/programs/${program.id}/manage/faq/` });
         baseTabs.push({ label: 'Notice', value: 'notice', href: `/instructor/programs/${program.id}/manage/notice/` });
         
+        // TODO: Implement later
         // Practicum tab: when practicum/portfolio features enabled (TVET, Theology, Driving, NITA)
-        if (blueprintFlags.practicum || blueprintFlags.portfolio) {
-            baseTabs.push({ label: 'Practicum', value: 'practicum', href: `/instructor/programs/${program.id}/manage/practicum/` });
-        }
+        // if (blueprintFlags.practicum || blueprintFlags.portfolio) {
+        //     baseTabs.push({ label: 'Practicum', value: 'practicum', href: `/instructor/programs/${program.id}/manage/practicum/` });
+        // }
         
         // Note: Gamification is a PLATFORM-LEVEL feature (SuperAdmin toggle, Admin config, Student dashboard)
         // It is NOT configured per-course in Course Builder
         
+        // TODO: Implement later
         // Prerequisites tab: TVET/Theology/Online need course sequencing
-        if (['tvet', 'theology', 'online'].includes(deploymentMode)) {
-            baseTabs.push({ label: 'Prerequisites', value: 'prerequisites', href: `/instructor/programs/${program.id}/manage/prerequisites/` });
-        }
+        // if (['tvet', 'theology', 'online'].includes(deploymentMode)) {
+        //     baseTabs.push({ label: 'Prerequisites', value: 'prerequisites', href: `/instructor/programs/${program.id}/manage/prerequisites/` });
+        // }
         
         // Time Limit tab: subscription-based modes (Online, NITA, Driving)
         if (['online', 'nita', 'driving'].includes(deploymentMode)) {

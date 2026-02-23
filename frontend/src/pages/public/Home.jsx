@@ -6,6 +6,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import DescriptionIcon from '@mui/icons-material/Description'
 import TrackChangesIcon from '@mui/icons-material/TrackChanges'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
+import Footer from '@/components/common/Footer'
 
 export default function Home({ message }) {
   return (
@@ -64,6 +65,7 @@ export default function Home({ message }) {
           </div>
         </div>
       </div>
+      <Footer />
     </>
   )
 }

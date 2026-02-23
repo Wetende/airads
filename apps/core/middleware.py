@@ -86,17 +86,21 @@ class InertiaShareMiddleware:
         except Exception:
             share(request, platform=None)
 
-        # Share flash messages
-        flash_messages = []
-        storage = messages.get_messages(request)
-        for message in storage:
-            flash_messages.append(
-                {
-                    "type": message.tags,
-                    "message": str(message),
-                }
-            )
-        share(request, flash=flash_messages)
+        # Share flash messages lazily so messages created in the current view
+        # are available in the same Inertia response.
+        def _flash_messages():
+            flash_messages = []
+            storage = messages.get_messages(request)
+            for message in storage:
+                flash_messages.append(
+                    {
+                        "type": message.tags,
+                        "message": str(message),
+                    }
+                )
+            return flash_messages
+
+        share(request, flash=_flash_messages)
 
         return self.get_response(request)
 

@@ -1,4 +1,5 @@
 import { Head, useForm } from "@inertiajs/react";
+import Footer from "@/components/common/Footer";
 import {
     Box,
     Container,
@@ -128,6 +129,7 @@ export default function VerifyCertificate({ result }) {
                     </motion.div>
                 </Container>
             </Box>
+            <Footer />
         </>
     );
 }

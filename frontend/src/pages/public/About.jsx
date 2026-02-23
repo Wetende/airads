@@ -14,7 +14,7 @@ import {
 import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import PublicNavbar from "../../components/common/PublicNavbar";
-import FooterSection from "../../components/sections/landing/FooterSection";
+import Footer from "@/components/common/Footer";
 
 // ─── Unsplash images for education theme ──────────────────────────
 const IMAGES = {
@@ -480,39 +480,7 @@ export default function About() {
                 </Box>
 
                 {/* ═══════ SECTION 6: Footer ═══════ */}
-                {platform && <FooterSection platform={platform} />}
-
-                {/* Fallback footer when platform data is unavailable */}
-                {!platform && (
-                    <Box sx={{ bgcolor: "#1F2937", color: "white", py: 6 }}>
-                        <Container maxWidth="lg">
-                            <Stack
-                                direction={{ xs: "column", sm: "row" }}
-                                justifyContent="space-between"
-                                alignItems="center"
-                                spacing={2}
-                            >
-                                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.6)" }}>
-                                    © {new Date().getFullYear()} Crossview LMS. All rights reserved.
-                                </Typography>
-                                <Stack direction="row" spacing={3}>
-                                    <Link
-                                        href="/programs/"
-                                        style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "0.9rem" }}
-                                    >
-                                        Programs
-                                    </Link>
-                                    <Link
-                                        href="/contact/"
-                                        style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "0.9rem" }}
-                                    >
-                                        Contact
-                                    </Link>
-                                </Stack>
-                            </Stack>
-                        </Container>
-                    </Box>
-                )}
+                <Footer />
             </Box>
         </ThemeProvider>
     );

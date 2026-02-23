@@ -13,12 +13,13 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { IconBrandTabler, IconSearch, IconBook } from "@tabler/icons-react";
+import { IconSearch, IconBook } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { getBackgroundDots } from "../../utils/getBackgroundDots";
 import { Fragment, useState } from "react";
 import ProgramGrid from "../../components/lists/ProgramGrid";
 import PublicNavbar from "../../components/common/PublicNavbar";
+import Footer from "@/components/common/Footer";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -286,92 +287,7 @@ export default function Programs({
         </Container>
 
         {/* Footer */}
-        <Box sx={{ bgcolor: "grey.900", color: "grey.400", py: 8 }}>
-          <Container maxWidth="lg">
-            <Grid container spacing={8}>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  sx={{ mb: 2, color: "white" }}
-                >
-                  <IconBrandTabler size={32} />
-                  <Typography variant="h5" fontWeight={700}>
-                    Crossview
-                  </Typography>
-                </Stack>
-                <Typography variant="body2" sx={{ maxWidth: 300 }}>
-                  Empowering institutions with modern, flexible, and reliable
-                  educational technology.
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 6, md: 2 }}>
-                <Typography variant="subtitle2" color="white" gutterBottom>
-                  Platform
-                </Typography>
-                <Stack spacing={1}>
-                  <Link
-                    href="/programs/"
-                    style={{
-                      color: "inherit",
-                      textDecoration: "none",
-                    }}
-                  >
-                    Programs
-                  </Link>
-                  <Link
-                    href="/about/"
-                    style={{
-                      color: "inherit",
-                      textDecoration: "none",
-                    }}
-                  >
-                    About
-                  </Link>
-                </Stack>
-              </Grid>
-              <Grid size={{ xs: 6, md: 2 }}>
-                <Typography variant="subtitle2" color="white" gutterBottom>
-                  Support
-                </Typography>
-                <Stack spacing={1}>
-                  <Link
-                    href="/contact/"
-                    style={{
-                      color: "inherit",
-                      textDecoration: "none",
-                    }}
-                  >
-                    Contact
-                  </Link>
-                  <Link
-                    href="/verify-certificate/"
-                    style={{
-                      color: "inherit",
-                      textDecoration: "none",
-                    }}
-                  >
-                    Verify Certificate
-                  </Link>
-                </Stack>
-              </Grid>
-            </Grid>
-            <Box
-              sx={{
-                mt: 8,
-                pt: 4,
-                borderTop: 1,
-                borderColor: "grey.800",
-                textAlign: "center",
-              }}
-            >
-              <Typography variant="caption">
-                © 2025 Crossview LMS. All rights reserved.
-              </Typography>
-            </Box>
-          </Container>
-        </Box>
+        <Footer />
       </Box>
     </>
   );

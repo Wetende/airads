@@ -40,6 +40,12 @@ export default function EditorContainer({
     // Normalize type string: 'Quiz' -> 'quiz', 'Assignment' -> 'assignment'
     const type = (node.type || node.node_type || '').toLowerCase();
     const lessonType = (node.properties?.lesson_type || '').toLowerCase();
+    const hierarchy = Array.isArray(blueprint?.hierarchy_structure)
+        ? blueprint.hierarchy_structure
+        : Array.isArray(blueprint?.hierarchy)
+          ? blueprint.hierarchy
+          : [];
+    const containerType = (hierarchy[0] || '').toLowerCase();
 
     // Get feature flags from blueprint (with defaults)
     const featureFlags = blueprint?.featureFlags || {
@@ -50,8 +56,12 @@ export default function EditorContainer({
         gamification: false
     };
 
-    // Section/Module types are edited inline in the sidebar, not here
-    if (type === 'module' || type === 'section' || type === 'unit' || type === 'chapter') {
+    // Container nodes are edited inline in the sidebar, not in the right editor panel.
+    // Prefer blueprint taxonomy when available; fallback to common legacy labels.
+    const isContainerNode = containerType
+        ? type === containerType
+        : ['module', 'section', 'unit', 'chapter', 'course', 'year', 'semester'].includes(type);
+    if (isContainerNode) {
         return null;
     }
 

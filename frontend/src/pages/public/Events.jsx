@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import EventCard from "@/features/events/components/EventCard";
-import FooterSection from "@/components/sections/landing/FooterSection";
+import Footer from "@/components/common/Footer";
 import PublicNavbar from "@/components/common/PublicNavbar";
 
 // ─── Hero image — African students studying together ─────────────
@@ -152,39 +152,7 @@ export default function Events({ events }) {
                 </Container>
 
                 {/* ═══════ FOOTER ═══════ */}
-                {platform && <FooterSection platform={platform} />}
-
-                {/* Fallback footer */}
-                {!platform && (
-                    <Box sx={{ bgcolor: "#1F2937", color: "white", py: 6, mt: "auto" }}>
-                        <Container maxWidth="lg">
-                            <Stack
-                                direction={{ xs: "column", sm: "row" }}
-                                justifyContent="space-between"
-                                alignItems="center"
-                                spacing={2}
-                            >
-                                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.6)" }}>
-                                    © {new Date().getFullYear()} Crossview LMS. All rights reserved.
-                                </Typography>
-                                <Stack direction="row" spacing={3}>
-                                    <Link
-                                        href="/programs/"
-                                        style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "0.9rem" }}
-                                    >
-                                        Programs
-                                    </Link>
-                                    <Link
-                                        href="/about/"
-                                        style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "0.9rem" }}
-                                    >
-                                        About
-                                    </Link>
-                                </Stack>
-                            </Stack>
-                        </Container>
-                    </Box>
-                )}
+                <Footer />
             </Box>
         </ThemeProvider>
     );
