@@ -54,10 +54,96 @@ export default function Take({
     const [submitting, setSubmitting] = useState(false);
     const timerRef = useRef(null);
     const saveTimeoutRef = useRef(null);
+    const normalizedAnswersRef = useRef(false);
+
+    const normalizeSavedAnswers = useCallback(
+        (rawAnswers) => {
+            if (!rawAnswers || typeof rawAnswers !== "object") {
+                return {};
+            }
+
+            const next = { ...rawAnswers };
+            (questions || []).forEach((question) => {
+                const key = String(question?.id);
+                const existing = next[key] ?? next[question?.id];
+                if (existing === null || existing === undefined) {
+                    return;
+                }
+
+                if (
+                    !Array.isArray(question?.options) ||
+                    question.options.length === 0
+                ) {
+                    return;
+                }
+
+                const optionIdByPosition = new Map(
+                    question.options
+                        .map((opt) => [Number(opt?.position), opt?.id])
+                        .filter(
+                            ([pos, id]) =>
+                                Number.isFinite(pos) &&
+                                id !== null &&
+                                id !== undefined,
+                        ),
+                );
+                const optionIds = new Set(
+                    question.options
+                        .map((opt) =>
+                            opt?.id === null || opt?.id === undefined
+                                ? null
+                                : String(opt.id),
+                        )
+                        .filter(Boolean),
+                );
+
+                const mapTokenToOptionId = (token) => {
+                    if (token === null || token === undefined) return null;
+                    const asString = String(token).trim();
+                    if (!asString) return null;
+                    if (optionIds.has(asString)) return asString;
+                    const numeric = Number(asString);
+                    if (
+                        Number.isFinite(numeric) &&
+                        optionIdByPosition.has(numeric)
+                    ) {
+                        return String(optionIdByPosition.get(numeric));
+                    }
+                    return asString;
+                };
+
+                if (question.type === "mcq" || question.type === "true_false") {
+                    const mapped = mapTokenToOptionId(existing);
+                    if (mapped !== null) {
+                        next[key] = mapped;
+                    }
+                }
+
+                if (question.type === "mcq_multi") {
+                    if (!Array.isArray(existing)) {
+                        return;
+                    }
+                    const mapped = existing
+                        .map((token) => mapTokenToOptionId(token))
+                        .filter((token) => token !== null);
+                    next[key] = Array.from(new Set(mapped));
+                }
+            });
+
+            return next;
+        },
+        [questions],
+    );
+
+    useEffect(() => {
+        if (normalizedAnswersRef.current) return;
+        normalizedAnswersRef.current = true;
+        setAnswers((prev) => normalizeSavedAnswers(prev));
+    }, [normalizeSavedAnswers]);
 
     const persistAnswers = useCallback(
         async (nextAnswers) => {
-            const payload = { answers: nextAnswers };
+            const payload = { answers: normalizeSavedAnswers(nextAnswers) };
             if (coursePlayer?.enrollmentId && coursePlayer?.nodeId) {
                 payload.enrollment_id = coursePlayer.enrollmentId;
                 payload.node_id = coursePlayer.nodeId;
@@ -84,7 +170,12 @@ export default function Take({
                 // Draft save is best-effort to avoid interrupting quiz flow.
             }
         },
-        [coursePlayer?.enrollmentId, coursePlayer?.nodeId, quiz.id],
+        [
+            coursePlayer?.enrollmentId,
+            coursePlayer?.nodeId,
+            normalizeSavedAnswers,
+            quiz.id,
+        ],
     );
 
     const queuePersistAnswers = useCallback(
@@ -118,22 +209,19 @@ export default function Take({
             clearTimeout(saveTimeoutRef.current);
         }
         setSubmitting(true);
-        const payload = { answers };
+        const payload = { answers: normalizeSavedAnswers(answers) };
         if (coursePlayer?.enrollmentId && coursePlayer?.nodeId) {
             payload.enrollment_id = coursePlayer.enrollmentId;
             payload.node_id = coursePlayer.nodeId;
         }
-        router.post(
-            `/student/quiz/${quiz.id}/submit/`,
-            payload,
-            {
-                onFinish: () => setSubmitting(false),
-            },
-        );
+        router.post(`/student/quiz/${quiz.id}/submit/`, payload, {
+            onFinish: () => setSubmitting(false),
+        });
     }, [
         answers,
         coursePlayer?.enrollmentId,
         coursePlayer?.nodeId,
+        normalizeSavedAnswers,
         quiz.id,
         submitting,
     ]);
@@ -180,9 +268,199 @@ export default function Take({
         return `${mins}:${secs.toString().padStart(2, "0")}`;
     };
 
+    const quizStyle = quiz.quizStyle || "pagination";
+    const isSinglePage = quizStyle === "single_page";
     const currentQuestion = questions[currentIdx];
     const answeredCount = Object.keys(answers).length;
     const progress = (answeredCount / questions.length) * 100;
+
+    const renderQuestionContent = (question) => (
+        <>
+            {/* MCQ Options */}
+            {question.type === "mcq" && question.options && (
+                <RadioGroup
+                    value={answers[question.id] ?? ""}
+                    onChange={(e) =>
+                        handleAnswerChange(question.id, e.target.value)
+                    }
+                >
+                    {question.options.map((opt, idx) => (
+                        <FormControlLabel
+                            key={opt.id ?? opt.position ?? idx}
+                            value={String(opt.id)}
+                            control={<Radio />}
+                            label={`${String.fromCharCode(65 + idx)}. ${opt.text}`}
+                            sx={{
+                                border: "1px solid",
+                                borderColor: "divider",
+                                borderRadius: 1,
+                                mb: 1,
+                                mx: 0,
+                                p: 1,
+                                "&:hover": { bgcolor: "action.hover" },
+                            }}
+                        />
+                    ))}
+                </RadioGroup>
+            )}
+
+            {/* MCQ Multi */}
+            {question.type === "mcq_multi" && question.options && (
+                <FormGroup>
+                    {question.options.map((opt, idx) => {
+                        const currentSelections = Array.isArray(
+                            answers[question.id],
+                        )
+                            ? answers[question.id]
+                            : [];
+                        const optionId = String(opt.id);
+                        const selectedSet = new Set(
+                            currentSelections.map((value) => String(value)),
+                        );
+                        const isSelected = selectedSet.has(optionId);
+                        return (
+                            <FormControlLabel
+                                key={opt.id ?? opt.position ?? idx}
+                                control={
+                                    <Checkbox
+                                        checked={isSelected}
+                                        onChange={(e) => {
+                                            const newValue = e.target.checked
+                                                ? [
+                                                      ...currentSelections.map(
+                                                          (v) => String(v),
+                                                      ),
+                                                      optionId,
+                                                  ]
+                                                : currentSelections.filter(
+                                                      (i) =>
+                                                          String(i) !==
+                                                          optionId,
+                                                  );
+                                            handleAnswerChange(
+                                                question.id,
+                                                Array.from(
+                                                    new Set(
+                                                        newValue.map((v) =>
+                                                            String(v),
+                                                        ),
+                                                    ),
+                                                ),
+                                            );
+                                        }}
+                                    />
+                                }
+                                label={`${String.fromCharCode(65 + idx)}. ${opt.text}`}
+                                sx={{
+                                    border: "1px solid",
+                                    borderColor: isSelected
+                                        ? "primary.main"
+                                        : "divider",
+                                    borderRadius: 1,
+                                    mb: 1,
+                                    mx: 0,
+                                    p: 1,
+                                    bgcolor: isSelected
+                                        ? "primary.50"
+                                        : "transparent",
+                                    "&:hover": { bgcolor: "action.hover" },
+                                }}
+                            />
+                        );
+                    })}
+                </FormGroup>
+            )}
+
+            {/* True/False */}
+            {question.type === "true_false" && (
+                <RadioGroup
+                    value={answers[question.id] ?? ""}
+                    onChange={(e) =>
+                        handleAnswerChange(
+                            question.id,
+                            e.target.value === "true",
+                        )
+                    }
+                >
+                    <FormControlLabel
+                        value="true"
+                        control={<Radio />}
+                        label="True"
+                        sx={{
+                            border: "1px solid",
+                            borderColor: "divider",
+                            borderRadius: 1,
+                            mb: 1,
+                            mx: 0,
+                            p: 1,
+                        }}
+                    />
+                    <FormControlLabel
+                        value="false"
+                        control={<Radio />}
+                        label="False"
+                        sx={{
+                            border: "1px solid",
+                            borderColor: "divider",
+                            borderRadius: 1,
+                            mx: 0,
+                            p: 1,
+                        }}
+                    />
+                </RadioGroup>
+            )}
+
+            {/* Short Answer */}
+            {question.type === "short_answer" && (
+                <TextField
+                    value={answers[question.id] ?? ""}
+                    onChange={(e) =>
+                        handleAnswerChange(question.id, e.target.value)
+                    }
+                    fullWidth
+                    multiline
+                    rows={4}
+                    placeholder="Type your answer here..."
+                />
+            )}
+
+            {/* Matching */}
+            {question.type === "matching" && (
+                <MatchingQuestion
+                    question={question}
+                    value={answers[question.id]}
+                    onChange={(val) => handleAnswerChange(question.id, val)}
+                />
+            )}
+
+            {/* Ordering */}
+            {question.type === "ordering" && (
+                <OrderingQuestion
+                    question={question}
+                    value={answers[question.id]}
+                    onChange={(val) => handleAnswerChange(question.id, val)}
+                />
+            )}
+
+            {/* Fill Blank */}
+            {question.type === "fill_blank" && (
+                <FillBlankQuestion
+                    question={question}
+                    value={answers[question.id]}
+                    onChange={(val) => handleAnswerChange(question.id, val)}
+                />
+            )}
+
+            {/* Image Matching */}
+            {question.type === "image_matching" && (
+                <ImageMatchingQuestion
+                    question={question}
+                    value={answers[question.id]}
+                    onChange={(val) => handleAnswerChange(question.id, val)}
+                />
+            )}
+        </>
+    );
 
     return (
         <>
@@ -247,322 +525,167 @@ export default function Take({
                         </Box>
                     </Paper>
 
-                    {/* Question */}
-                    <Card sx={{ mb: 3 }}>
-                        <CardContent>
+                    {isSinglePage ? (
+                        <>
+                            {questions.map((question, idx) => (
+                                <Card
+                                    key={question.id}
+                                    id={`question-${question.id}`}
+                                    sx={{ mb: 3 }}
+                                >
+                                    <CardContent>
+                                        <Stack
+                                            direction="row"
+                                            alignItems="center"
+                                            spacing={2}
+                                            sx={{ mb: 2 }}
+                                        >
+                                            <Chip
+                                                label={`Question ${idx + 1}`}
+                                                color="primary"
+                                            />
+                                            <Chip
+                                                label={`${question.points} pt${question.points > 1 ? "s" : ""}`}
+                                                variant="outlined"
+                                                size="small"
+                                            />
+                                        </Stack>
+                                        <Typography variant="h6" sx={{ mb: 3 }}>
+                                            {question.text}
+                                        </Typography>
+                                        {renderQuestionContent(question)}
+                                    </CardContent>
+                                </Card>
+                            ))}
+                            <Stack direction="row" justifyContent="flex-end">
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    endIcon={<IconSend />}
+                                    onClick={handleSubmit}
+                                    disabled={submitting}
+                                >
+                                    {submitting
+                                        ? "Submitting..."
+                                        : "Submit Quiz"}
+                                </Button>
+                            </Stack>
+                        </>
+                    ) : (
+                        <>
+                            {/* Question */}
+                            <Card sx={{ mb: 3 }}>
+                                <CardContent>
+                                    <Stack
+                                        direction="row"
+                                        alignItems="center"
+                                        spacing={2}
+                                        sx={{ mb: 2 }}
+                                    >
+                                        <Chip
+                                            label={`Question ${currentIdx + 1}`}
+                                            color="primary"
+                                        />
+                                        <Chip
+                                            label={`${currentQuestion.points} pt${currentQuestion.points > 1 ? "s" : ""}`}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                    </Stack>
+                                    <Typography variant="h6" sx={{ mb: 3 }}>
+                                        {currentQuestion.text}
+                                    </Typography>
+                                    {renderQuestionContent(currentQuestion)}
+                                </CardContent>
+                            </Card>
+
+                            {/* Navigation */}
                             <Stack
                                 direction="row"
-                                alignItems="center"
-                                spacing={2}
-                                sx={{ mb: 2 }}
+                                justifyContent="space-between"
                             >
-                                <Chip
-                                    label={`Question ${currentIdx + 1}`}
-                                    color="primary"
-                                />
-                                <Chip
-                                    label={`${currentQuestion.points} pt${currentQuestion.points > 1 ? "s" : ""}`}
-                                    variant="outlined"
-                                    size="small"
-                                />
-                            </Stack>
+                                <Button
+                                    startIcon={<IconChevronLeft />}
+                                    onClick={() =>
+                                        setCurrentIdx((prev) =>
+                                            Math.max(0, prev - 1),
+                                        )
+                                    }
+                                    disabled={currentIdx === 0}
+                                >
+                                    Previous
+                                </Button>
 
-                            <Typography variant="h6" sx={{ mb: 3 }}>
-                                {currentQuestion.text}
-                            </Typography>
+                                {/* Question dots */}
+                                <Stack
+                                    direction="row"
+                                    spacing={0.5}
+                                    alignItems="center"
+                                >
+                                    {questions.map((q, idx) => (
+                                        <Box
+                                            key={q.id}
+                                            onClick={() => setCurrentIdx(idx)}
+                                            sx={{
+                                                width: 24,
+                                                height: 24,
+                                                borderRadius: "50%",
+                                                bgcolor:
+                                                    answers[q.id] !== undefined
+                                                        ? "success.main"
+                                                        : "grey.300",
+                                                border:
+                                                    idx === currentIdx
+                                                        ? "2px solid"
+                                                        : "none",
+                                                borderColor: "primary.main",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                color:
+                                                    answers[q.id] !== undefined
+                                                        ? "white"
+                                                        : "text.secondary",
+                                                fontSize: 10,
+                                                fontWeight: "bold",
+                                            }}
+                                        >
+                                            {idx + 1}
+                                        </Box>
+                                    ))}
+                                </Stack>
 
-                            {/* MCQ Options */}
-                            {currentQuestion.type === "mcq" &&
-                                currentQuestion.options && (
-                                    <RadioGroup
-                                        value={
-                                            answers[currentQuestion.id] ?? ""
-                                        }
-                                        onChange={(e) =>
-                                            handleAnswerChange(
-                                                currentQuestion.id,
-                                                parseInt(e.target.value, 10),
+                                {currentIdx === questions.length - 1 ? (
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        endIcon={<IconSend />}
+                                        onClick={handleSubmit}
+                                        disabled={submitting}
+                                    >
+                                        {submitting
+                                            ? "Submitting..."
+                                            : "Submit Quiz"}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        endIcon={<IconChevronRight />}
+                                        onClick={() =>
+                                            setCurrentIdx((prev) =>
+                                                Math.min(
+                                                    questions.length - 1,
+                                                    prev + 1,
+                                                ),
                                             )
                                         }
                                     >
-                                        {currentQuestion.options.map(
-                                            (opt, idx) => (
-                                                <FormControlLabel
-                                                    key={opt.position}
-                                                    value={opt.position}
-                                                    control={<Radio />}
-                                                    label={`${String.fromCharCode(65 + idx)}. ${opt.text}`}
-                                                    sx={{
-                                                        border: "1px solid",
-                                                        borderColor: "divider",
-                                                        borderRadius: 1,
-                                                        mb: 1,
-                                                        mx: 0,
-                                                        p: 1,
-                                                        "&:hover": {
-                                                            bgcolor:
-                                                                "action.hover",
-                                                        },
-                                                    }}
-                                                />
-                                            ),
-                                        )}
-                                    </RadioGroup>
+                                        Next
+                                    </Button>
                                 )}
-
-                            {/* MCQ Multi */}
-                            {currentQuestion.type === "mcq_multi" &&
-                                currentQuestion.options && (
-                                    <FormGroup>
-                                        {currentQuestion.options.map((opt, idx) => {
-                                            const currentSelections =
-                                                answers[currentQuestion.id] || [];
-                                            const isSelected =
-                                                currentSelections.includes(
-                                                    opt.position,
-                                                );
-                                            return (
-                                                <FormControlLabel
-                                                    key={opt.position}
-                                                    control={
-                                                        <Checkbox
-                                                            checked={isSelected}
-                                                            onChange={(e) => {
-                                                                const newValue =
-                                                                    e.target
-                                                                        .checked
-                                                                        ? [
-                                                                              ...currentSelections,
-                                                                              opt.position,
-                                                                          ]
-                                                                        : currentSelections.filter(
-                                                                              (i) =>
-                                                                                  i !==
-                                                                                  opt.position,
-                                                                          );
-                                                                handleAnswerChange(
-                                                                    currentQuestion.id,
-                                                                    newValue,
-                                                                );
-                                                            }}
-                                                        />
-                                                    }
-                                                    label={`${String.fromCharCode(65 + idx)}. ${opt.text}`}
-                                                    sx={{
-                                                        border: "1px solid",
-                                                        borderColor: isSelected
-                                                            ? "primary.main"
-                                                            : "divider",
-                                                        borderRadius: 1,
-                                                        mb: 1,
-                                                        mx: 0,
-                                                        p: 1,
-                                                        bgcolor: isSelected
-                                                            ? "primary.50"
-                                                            : "transparent",
-                                                        "&:hover": {
-                                                            bgcolor:
-                                                                "action.hover",
-                                                        },
-                                                    }}
-                                                />
-                                            );
-                                        })}
-                                    </FormGroup>
-                                )}
-
-                            {/* True/False */}
-                            {currentQuestion.type === "true_false" && (
-                                <RadioGroup
-                                    value={answers[currentQuestion.id] ?? ""}
-                                    onChange={(e) =>
-                                        handleAnswerChange(
-                                            currentQuestion.id,
-                                            e.target.value === "true",
-                                        )
-                                    }
-                                >
-                                    <FormControlLabel
-                                        value="true"
-                                        control={<Radio />}
-                                        label="True"
-                                        sx={{
-                                            border: "1px solid",
-                                            borderColor: "divider",
-                                            borderRadius: 1,
-                                            mb: 1,
-                                            mx: 0,
-                                            p: 1,
-                                        }}
-                                    />
-                                    <FormControlLabel
-                                        value="false"
-                                        control={<Radio />}
-                                        label="False"
-                                        sx={{
-                                            border: "1px solid",
-                                            borderColor: "divider",
-                                            borderRadius: 1,
-                                            mx: 0,
-                                            p: 1,
-                                        }}
-                                    />
-                                </RadioGroup>
-                            )}
-
-                            {/* Short Answer */}
-                            {currentQuestion.type === "short_answer" && (
-                                <TextField
-                                    value={answers[currentQuestion.id] ?? ""}
-                                    onChange={(e) =>
-                                        handleAnswerChange(
-                                            currentQuestion.id,
-                                            e.target.value,
-                                        )
-                                    }
-                                    fullWidth
-                                    multiline
-                                    rows={4}
-                                    placeholder="Type your answer here..."
-                                />
-                            )}
-
-                            {/* Matching */}
-                            {currentQuestion.type === "matching" && (
-                                <MatchingQuestion
-                                    question={currentQuestion}
-                                    value={answers[currentQuestion.id]}
-                                    onChange={(val) =>
-                                        handleAnswerChange(
-                                            currentQuestion.id,
-                                            val,
-                                        )
-                                    }
-                                />
-                            )}
-
-                            {/* Ordering */}
-                            {currentQuestion.type === "ordering" && (
-                                <OrderingQuestion
-                                    question={currentQuestion}
-                                    value={answers[currentQuestion.id]}
-                                    onChange={(val) =>
-                                        handleAnswerChange(
-                                            currentQuestion.id,
-                                            val,
-                                        )
-                                    }
-                                />
-                            )}
-
-                            {/* Fill Blank */}
-                            {currentQuestion.type === "fill_blank" && (
-                                <FillBlankQuestion
-                                    question={currentQuestion}
-                                    value={answers[currentQuestion.id]}
-                                    onChange={(val) =>
-                                        handleAnswerChange(
-                                            currentQuestion.id,
-                                            val,
-                                        )
-                                    }
-                                />
-                            )}
-
-                            {/* Image Matching */}
-                            {currentQuestion.type === "image_matching" && (
-                                <ImageMatchingQuestion
-                                    question={currentQuestion}
-                                    value={answers[currentQuestion.id]}
-                                    onChange={(val) =>
-                                        handleAnswerChange(
-                                            currentQuestion.id,
-                                            val,
-                                        )
-                                    }
-                                />
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Navigation */}
-                    <Stack direction="row" justifyContent="space-between">
-                        <Button
-                            startIcon={<IconChevronLeft />}
-                            onClick={() =>
-                                setCurrentIdx((prev) => Math.max(0, prev - 1))
-                            }
-                            disabled={currentIdx === 0}
-                        >
-                            Previous
-                        </Button>
-
-                        {/* Question dots */}
-                        <Stack
-                            direction="row"
-                            spacing={0.5}
-                            alignItems="center"
-                        >
-                            {questions.map((q, idx) => (
-                                <Box
-                                    key={q.id}
-                                    onClick={() => setCurrentIdx(idx)}
-                                    sx={{
-                                        width: 24,
-                                        height: 24,
-                                        borderRadius: "50%",
-                                        bgcolor:
-                                            answers[q.id] !== undefined
-                                                ? "success.main"
-                                                : "grey.300",
-                                        border:
-                                            idx === currentIdx
-                                                ? "2px solid"
-                                                : "none",
-                                        borderColor: "primary.main",
-                                        cursor: "pointer",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        color:
-                                            answers[q.id] !== undefined
-                                                ? "white"
-                                                : "text.secondary",
-                                        fontSize: 10,
-                                        fontWeight: "bold",
-                                    }}
-                                >
-                                    {idx + 1}
-                                </Box>
-                            ))}
-                        </Stack>
-
-                        {currentIdx === questions.length - 1 ? (
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                endIcon={<IconSend />}
-                                onClick={handleSubmit}
-                                disabled={submitting}
-                            >
-                                {submitting ? "Submitting..." : "Submit Quiz"}
-                            </Button>
-                        ) : (
-                            <Button
-                                endIcon={<IconChevronRight />}
-                                onClick={() =>
-                                    setCurrentIdx((prev) =>
-                                        Math.min(
-                                            questions.length - 1,
-                                            prev + 1,
-                                        ),
-                                    )
-                                }
-                            >
-                                Next
-                            </Button>
-                        )}
-                    </Stack>
+                            </Stack>
+                        </>
+                    )}
 
                     {attemptsRemaining > 0 && (
                         <Alert severity="info" sx={{ mt: 3 }}>

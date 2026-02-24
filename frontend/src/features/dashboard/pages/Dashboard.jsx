@@ -38,6 +38,8 @@ import BusinessIcon from '@mui/icons-material/Business';
 import SettingsIcon from '@mui/icons-material/Settings';
 import WarningIcon from '@mui/icons-material/Warning';
 
+import HowToRegIcon from '@mui/icons-material/HowToReg';
+
 import DashboardLayout from '@/layouts/DashboardLayout';
 
 // =============================================================================
@@ -204,7 +206,7 @@ function StudentContent({ enrollments, recentActivity }) {
 // Instructor Dashboard Content
 // =============================================================================
 
-function InstructorContent({ stats, recentSubmissions }) {
+function InstructorContent({ stats, recentSubmissions, pendingEnrollmentRequests }) {
   return (
     <Stack spacing={4}>
       <Box>
@@ -228,7 +230,7 @@ function InstructorContent({ stats, recentSubmissions }) {
           <StatCard title="Pending Reviews" value={stats?.pendingReviews || 0} icon={RateReviewIcon} color="warning" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard title="Completion Rate" value={`${stats?.completionRate || 0}%`} icon={TrendingUpIcon} color="info" />
+          <StatCard title="Pending Enrollments" value={stats?.pendingEnrollments || 0} icon={HowToRegIcon} color="error" />
         </Grid>
       </Grid>
 
@@ -313,6 +315,58 @@ function InstructorContent({ stats, recentSubmissions }) {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Pending Enrollment Requests */}
+      <Paper sx={{ p: 4 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Pending Enrollment Requests
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Students waiting for your approval
+            </Typography>
+          </Box>
+        </Stack>
+        {pendingEnrollmentRequests?.length > 0 ? (
+          <List dense>
+            {pendingEnrollmentRequests.map((req) => (
+              <ListItem key={req.id} divider>
+                <ListItemIcon>
+                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'warning.main', fontSize: '0.875rem' }}>
+                    {req.studentName?.[0] || '?'}
+                  </Avatar>
+                </ListItemIcon>
+                <ListItemText
+                  primary={req.studentName}
+                  secondary={`${req.programName} • ${new Date(req.createdAt).toLocaleDateString()}`}
+                />
+                <Button
+                  component={Link}
+                  href={`/instructor/programs/${req.programId}/enrollment-requests/`}
+                  size="small"
+                  variant="outlined"
+                >
+                  Review
+                </Button>
+              </ListItem>
+            ))}
+          </List>
+        ) : (
+          <Box sx={{
+            p: 4,
+            textAlign: 'center',
+            bgcolor: 'grey.50',
+            borderRadius: 2,
+            border: '1px dashed',
+            borderColor: 'divider',
+          }}>
+            <Typography variant="body2" color="text.secondary">
+              No pending enrollment requests
+            </Typography>
+          </Box>
+        )}
+      </Paper>
     </Stack>
   );
 }
@@ -498,7 +552,7 @@ export default function Dashboard(props) {
       case 'admin':
         return <AdminContent stats={props.stats} usage={props.usage} recentActivity={props.recentActivity} />;
       case 'instructor':
-        return <InstructorContent stats={props.stats} recentSubmissions={props.recentSubmissions} />;
+        return <InstructorContent stats={props.stats} recentSubmissions={props.recentSubmissions} pendingEnrollmentRequests={props.pendingEnrollmentRequests} />;
       default:
         return <StudentContent enrollments={props.enrollments} recentActivity={props.recentActivity} />;
     }

@@ -31,7 +31,7 @@ class QuestionCheckAnswerTest(TestCase):
         self.assertFalse(is_correct)
         self.assertEqual(points, 0)
 
-    def test_mcq_grades_by_position_only(self):
+    def test_mcq_accepts_option_position_or_id(self):
         question = Question.objects.create(
             quiz=self.quiz,
             question_type="mcq",
@@ -54,14 +54,14 @@ class QuestionCheckAnswerTest(TestCase):
         )
 
         by_position, position_points = question.check_answer(1)
-        by_option_id, id_points = question.check_answer(correct_option.id)
+        by_option_id, id_points = question.check_answer(str(correct_option.id))
 
         self.assertTrue(by_position)
         self.assertEqual(position_points, 1)
-        self.assertFalse(by_option_id)
-        self.assertEqual(id_points, 0)
+        self.assertTrue(by_option_id)
+        self.assertEqual(id_points, 1)
 
-    def test_mcq_multi_grades_by_positions_only(self):
+    def test_mcq_multi_accepts_option_positions_or_ids(self):
         question = Question.objects.create(
             quiz=self.quiz,
             question_type="mcq_multi",
@@ -90,12 +90,12 @@ class QuestionCheckAnswerTest(TestCase):
         )
 
         by_position, position_points = question.check_answer([1])
-        by_option_id, id_points = question.check_answer([correct_option.id])
+        by_option_id, id_points = question.check_answer([str(correct_option.id)])
 
         self.assertTrue(by_position)
         self.assertEqual(position_points, 2)
-        self.assertFalse(by_option_id)
-        self.assertEqual(id_points, 0)
+        self.assertTrue(by_option_id)
+        self.assertEqual(id_points, 2)
 
     def test_mcq_without_options_fails_closed(self):
         question = Question.objects.create(

@@ -33,7 +33,11 @@ def _normalize_assignment_mode(props: dict) -> str:
         return explicit_mode
 
     questions = props.get("questions", [])
-    return "mixed" if isinstance(questions, list) and len(questions) > 0 else "submission_only"
+    return (
+        "mixed"
+        if isinstance(questions, list) and len(questions) > 0
+        else "submission_only"
+    )
 
 
 def _safe_int(value):
@@ -69,9 +73,7 @@ def _assignment_requires_questions(props: dict) -> bool:
 def _assignment_requires_submission(props: dict) -> bool:
     mode = _normalize_assignment_mode(props)
     typed = _normalize_typed_response_mode((props or {}).get("typed_response_mode"))
-    return mode == "mixed" or (
-        mode == "submission_only" and typed == "submission_text"
-    )
+    return mode == "mixed" or (mode == "submission_only" and typed == "submission_text")
 
 
 def _record_inline_quiz_attempt(
@@ -203,7 +205,9 @@ def _hydrate_assessment_node_properties(node: CurriculumNode) -> dict:
     lesson_type = str(props.get("lesson_type") or "").lower()
     is_assignment = node_type == "assignment" or lesson_type == "assignment"
     is_quiz = node_type == "quiz" or lesson_type == "quiz"
-    includes_questions = is_quiz or (is_assignment and _assignment_requires_questions(props))
+    includes_questions = is_quiz or (
+        is_assignment and _assignment_requires_questions(props)
+    )
 
     if not includes_questions:
         return props
@@ -230,6 +234,171 @@ def _hydrate_assessment_node_properties(node: CurriculumNode) -> dict:
 
     props["questions"] = _serialize_quiz_questions_for_course_player(quiz)
     return props
+
+
+def _build_quiz_results_for_node(node: CurriculumNode, enrollment) -> Optional[dict]:
+    """
+    Build quiz results payload for a node so the CoursePlayer can render
+    results inline (score card, question review, retry button).
+    Returns None if the node has no linked quiz or no submitted attempts.
+    """
+    from apps.assessments.models import Quiz, QuizAttempt
+    from apps.core.views import _normalize_question_text, _coerce_bool
+
+    props = node.properties if isinstance(node.properties, dict) else {}
+    quiz_id = _safe_int(props.get("quiz_id"))
+    if not quiz_id:
+        return None
+
+    try:
+        quiz = Quiz.objects.get(pk=quiz_id)
+    except Quiz.DoesNotExist:
+        return None
+
+    attempts = list(
+        QuizAttempt.objects.filter(
+            enrollment=enrollment, quiz=quiz, submitted_at__isnull=False
+        ).order_by("-attempt_number")
+    )
+
+    if not attempts:
+        return None
+
+    show_correct_answer = bool(quiz.show_answers_after_submit)
+    if "quiz_attempt_history" in props:
+        show_attempt_history = _coerce_bool(
+            props.get("quiz_attempt_history"), default=False
+        )
+    else:
+        show_attempt_history = True
+
+    # Build question review
+    question_review = []
+    if show_correct_answer:
+        latest_attempt = attempts[0]
+        review_questions = quiz.questions.all().prefetch_related(
+            "options",
+            "matching_pairs",
+            "gap_answers",
+            "image_matching_pairs",
+        )
+        for question in review_questions:
+            student_answer = latest_attempt.answers.get(str(question.id))
+            if student_answer is None:
+                is_correct, points_earned = False, 0
+            else:
+                is_correct, points_earned = question.check_answer(
+                    student_answer, attempt_id=latest_attempt.id
+                )
+
+            # Format student answer for display
+            if student_answer is None:
+                student_display = "Not answered"
+            elif question.question_type in {"mcq", "true_false"}:
+                token = str(student_answer).strip()
+                student_display = token
+                for opt in question.options.all():
+                    if str(opt.id) == token or str(opt.position) == token:
+                        student_display = opt.text
+                        break
+            elif question.question_type == "mcq_multi" and isinstance(
+                student_answer, list
+            ):
+                labels = []
+                for val in student_answer:
+                    token = str(val).strip()
+                    label = token
+                    for opt in question.options.all():
+                        if str(opt.id) == token or str(opt.position) == token:
+                            label = opt.text
+                            break
+                    labels.append(label)
+                student_display = ", ".join(labels) if labels else "Not answered"
+            else:
+                student_display = str(student_answer)
+
+            # Format correct answer for display
+            q_type = question.question_type
+            if q_type == "mcq":
+                opt = (
+                    question.options.filter(is_correct=True)
+                    .order_by("position")
+                    .first()
+                )
+                correct_display = opt.text if opt else "N/A"
+            elif q_type == "true_false":
+                correct_val = (question.answer_data or {}).get("correct")
+                if isinstance(correct_val, bool):
+                    correct_display = "True" if correct_val else "False"
+                elif isinstance(correct_val, str):
+                    correct_display = (
+                        "True"
+                        if correct_val.strip().lower() in {"true", "1", "yes"}
+                        else "False"
+                    )
+                else:
+                    correct_display = "N/A"
+            elif q_type == "mcq_multi":
+                labels = list(
+                    question.options.filter(is_correct=True)
+                    .order_by("position")
+                    .values_list("text", flat=True)
+                )
+                correct_display = ", ".join(labels) if labels else "N/A"
+            elif q_type == "short_answer":
+                keywords = (question.answer_data or {}).get("keywords", [])
+                correct_display = (
+                    ", ".join(str(k).strip() for k in keywords if str(k).strip())
+                    if keywords
+                    else "Manual review"
+                )
+            else:
+                correct_display = "N/A"
+
+            question_review.append(
+                {
+                    "questionId": question.id,
+                    "questionType": question.question_type,
+                    "questionText": _normalize_question_text(question.text),
+                    "studentAnswer": student_display,
+                    "correctAnswer": correct_display,
+                    "isCorrect": is_correct,
+                    "pointsEarned": points_earned,
+                    "pointsPossible": question.points,
+                }
+            )
+
+    return {
+        "quiz": {
+            "id": quiz.id,
+            "title": quiz.title,
+            "passThreshold": quiz.pass_threshold,
+            "maxAttempts": quiz.max_attempts,
+            "nodeTitle": node.title,
+            "showCorrectAnswer": show_correct_answer,
+            "showAttemptHistory": show_attempt_history,
+            "retryUrl": (
+                f"/student/quiz/{quiz.id}/"
+                f"?enrollment_id={enrollment.id}&node_id={node.id}"
+            ),
+        },
+        "attempts": [
+            {
+                "id": a.id,
+                "attemptNumber": a.attempt_number,
+                "score": float(a.score) if a.score is not None else None,
+                "pointsEarned": a.points_earned,
+                "pointsPossible": a.points_possible,
+                "passed": a.passed,
+                "submittedAt": (
+                    a.submitted_at.isoformat() if a.submitted_at else None
+                ),
+            }
+            for a in attempts
+        ],
+        "questionReview": question_review,
+        "canRetry": len(attempts) < quiz.max_attempts,
+    }
 
 
 # =============================================================================
@@ -328,7 +497,9 @@ def program_list(request):
         progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
 
         # Get thumbnail URL
-        thumbnail_url = enrollment.program.thumbnail.url if enrollment.program.thumbnail else None
+        thumbnail_url = (
+            enrollment.program.thumbnail.url if enrollment.program.thumbnail else None
+        )
 
         enrollment_data.append(
             {
@@ -384,7 +555,7 @@ def program_view(request, pk: int):
     # Get unlock status map
     engine = ProgressionEngine()
     unlock_statuses = engine.get_unlock_status(enrollment)
-    status_map = {s['node_id']: s for s in unlock_statuses}
+    status_map = {s["node_id"]: s for s in unlock_statuses}
 
     # Find the first available lesson (incomplete and unlocked leaf node)
     def find_first_available_node(nodes):
@@ -399,7 +570,7 @@ def program_view(request, pk: int):
             else:
                 # It's a leaf node (lesson/quiz/assignment)
                 node_status = status_map.get(node.id, {})
-                is_locked = node_status.get('status') == 'locked'
+                is_locked = node_status.get("status") == "locked"
                 is_completed = node.id in completions_set
 
                 # Return first unlocked node (preferring incomplete)
@@ -436,10 +607,14 @@ def program_view(request, pk: int):
     # If we found a lesson, render the course player
     if target_node:
         # Reuse session_viewer logic to render course player
-        return _render_course_player(request, enrollment, target_node, completions, status_map)
+        return _render_course_player(
+            request, enrollment, target_node, completions, status_map
+        )
 
     # Fallback: If no lessons exist, show an empty state in course player
-    curriculum_tree = _build_curriculum_tree(root_nodes, completions, enrollment, status_map)
+    curriculum_tree = _build_curriculum_tree(
+        root_nodes, completions, enrollment, status_map
+    )
 
     total_nodes = _get_completable_nodes_count(program)
     progress = (len(completions) / total_nodes * 100) if total_nodes > 0 else 0
@@ -498,18 +673,13 @@ def _render_course_player(request, enrollment, node, completions, status_map):
         .order_by("position")
     )
 
-    curriculum_tree = _build_curriculum_tree(root_nodes, completions, enrollment, status_map)
+    curriculum_tree = _build_curriculum_tree(
+        root_nodes, completions, enrollment, status_map
+    )
 
     # Get content blocks
-    blocks = ContentBlock.objects.filter(node=node).order_by('position')
-    blocks_data = [
-        {
-            "id": b.id,
-            "type": b.block_type,
-            "data": b.data
-        }
-        for b in blocks
-    ]
+    blocks = ContentBlock.objects.filter(node=node).order_by("position")
+    blocks_data = [{"id": b.id, "type": b.block_type, "data": b.data} for b in blocks]
 
     # Get siblings for navigation
     siblings = _get_sibling_navigation(node, enrollment.id)
@@ -545,7 +715,9 @@ def _render_course_player(request, enrollment, node, completions, status_map):
             "progress": round(progress, 1),
             "isCompleted": is_completed,
             "isLocked": not unlock_status["is_unlocked"],
-            "status": "completed" if is_completed else ("unlocked" if unlock_status.get("is_unlocked") else "locked"),
+            "status": "completed"
+            if is_completed
+            else ("unlocked" if unlock_status.get("is_unlocked") else "locked"),
             "lockReason": unlock_status.get("lock_reason"),
             "lockReasonText": unlock_status.get("reason"),
             "unlocksAt": unlock_status.get("unlocks_at"),
@@ -611,14 +783,17 @@ def session_viewer(request, pk: int, node_id: int):
                     ).exists()
                 )
                 has_question_attempt = bool(
-                    quiz_id and QuizAttempt.objects.filter(
+                    quiz_id
+                    and QuizAttempt.objects.filter(
                         enrollment=enrollment,
                         quiz_id=quiz_id,
                         submitted_at__isnull=False,
                     ).exists()
                 )
 
-                if _assignment_requires_submission(props) and _assignment_requires_questions(props):
+                if _assignment_requires_submission(
+                    props
+                ) and _assignment_requires_questions(props):
                     should_mark_complete = has_submission and has_question_attempt
                     completion_type = "manual"
                 elif _assignment_requires_submission(props):
@@ -649,6 +824,25 @@ def session_viewer(request, pk: int, node_id: int):
                     ).exists()
                 )
                 completion_type = "quiz_pass"
+
+            if is_quiz:
+                from apps.assessments.models import QuizAttempt
+
+                quiz_id = _safe_int(props.get("quiz_id"))
+                has_passed_quiz_attempt = bool(
+                    quiz_id
+                    and QuizAttempt.objects.filter(
+                        enrollment=enrollment,
+                        quiz_id=quiz_id,
+                        passed=True,
+                        submitted_at__isnull=False,
+                    ).exists()
+                )
+                if not has_passed_quiz_attempt:
+                    NodeCompletion.objects.filter(
+                        enrollment=enrollment,
+                        node=node,
+                    ).delete()
 
             if should_mark_complete:
                 engine.mark_complete(
@@ -688,9 +882,11 @@ def session_viewer(request, pk: int, node_id: int):
     completions = list(enrollment.completions.values_list("node_id", flat=True))
     # Get unlock status map for sidebar
     unlock_statuses = engine.get_unlock_status(enrollment)
-    status_map = {s['node_id']: s for s in unlock_statuses}
+    status_map = {s["node_id"]: s for s in unlock_statuses}
 
-    curriculum_tree = _build_curriculum_tree(root_nodes, completions, enrollment, status_map)
+    curriculum_tree = _build_curriculum_tree(
+        root_nodes, completions, enrollment, status_map
+    )
 
     # Calculate progress
     total_nodes = _get_completable_nodes_count(enrollment.program)
@@ -698,19 +894,18 @@ def session_viewer(request, pk: int, node_id: int):
     progress = (completed_count / total_nodes * 100) if total_nodes > 0 else 0
 
     # Get content blocks
-    blocks = ContentBlock.objects.filter(node=node).order_by('position')
-    blocks_data = [
-        {
-            "id": b.id,
-            "type": b.block_type,
-            "data": b.data
-        }
-        for b in blocks
-    ]
+    blocks = ContentBlock.objects.filter(node=node).order_by("position")
+    blocks_data = [{"id": b.id, "type": b.block_type, "data": b.data} for b in blocks]
 
     # Get discussions for this node
     from apps.discussions.models import DiscussionThread
-    discussions_qs = DiscussionThread.objects.filter(node=node).select_related('user').prefetch_related('posts__user').order_by('-is_pinned', '-created_at')
+
+    discussions_qs = (
+        DiscussionThread.objects.filter(node=node)
+        .select_related("user")
+        .prefetch_related("posts__user")
+        .order_by("-is_pinned", "-created_at")
+    )
     discussions_data = [
         {
             "id": thread.id,
@@ -741,7 +936,10 @@ def session_viewer(request, pk: int, node_id: int):
 
     # Get notes for this student/node
     from .models import StudentNote
-    notes_qs = StudentNote.objects.filter(enrollment=enrollment, node=node).order_by('-created_at')
+
+    notes_qs = StudentNote.objects.filter(enrollment=enrollment, node=node).order_by(
+        "-created_at"
+    )
     notes_data = [
         {
             "id": note.id,
@@ -752,6 +950,12 @@ def session_viewer(request, pk: int, node_id: int):
         for note in notes_qs
     ]
 
+    # Inject quiz results data when redirected from quiz results page
+    if request.GET.get("show_results") == "1":
+        quiz_results = _build_quiz_results_for_node(node, enrollment)
+        if quiz_results:
+            node_properties["quizResults"] = quiz_results
+
     return render(
         request,
         "Student/CoursePlayer",
@@ -760,8 +964,8 @@ def session_viewer(request, pk: int, node_id: int):
                 "id": node.id,
                 "title": node.title,
                 "type": node.node_type,
-            "properties": node_properties,
-            "contentHtml": content_html,
+                "properties": node_properties,
+                "contentHtml": content_html,
                 "description": node.description or "",
                 "blocks": blocks_data,
             },
@@ -779,7 +983,9 @@ def session_viewer(request, pk: int, node_id: int):
             "progress": round(progress, 1),
             "isCompleted": is_completed,
             "isLocked": not unlock_status["is_unlocked"],
-            "status": "completed" if is_completed else ("unlocked" if unlock_status.get("is_unlocked") else "locked"),
+            "status": "completed"
+            if is_completed
+            else ("unlocked" if unlock_status.get("is_unlocked") else "locked"),
             "lockReason": unlock_status.get("lock_reason"),
             "lockReasonText": unlock_status.get("reason"),
             "unlocksAt": unlock_status.get("unlocks_at"),
@@ -787,8 +993,6 @@ def session_viewer(request, pk: int, node_id: int):
             "notes": notes_data,
         },
     )
-
-
 
 
 @login_required
@@ -949,11 +1153,12 @@ def session_note_delete(request, pk: int, node_id: int, note_id: int):
 # =============================================================================
 
 
-
 def _get_completable_nodes_count(program: Program) -> int:
     """Count nodes that can be completed (leaf nodes or nodes with completion rules)."""
     return CurriculumNode.objects.filter(
-        program=program, is_published=True, children__isnull=True  # Leaf nodes
+        program=program,
+        is_published=True,
+        children__isnull=True,  # Leaf nodes
     ).count()
 
 
@@ -1013,19 +1218,36 @@ def _build_curriculum_tree(
             for attempt in attempts:
                 quiz_id = attempt["quiz_id"]
                 score = float(attempt["score"] or 0)
-                existing = last_attempts_by_quiz_id.get(quiz_id)
+                summary = last_attempts_by_quiz_id.setdefault(quiz_id, {})
+                current_last = summary.get("lastAttempt")
+                current_best = summary.get("bestAttempt")
 
-                if existing is None or attempt["attempt_number"] > existing["number"]:
-                    last_attempts_by_quiz_id[quiz_id] = {
-                        "number": attempt["attempt_number"],
-                        "score": score,
-                        "passed": attempt["passed"],
-                        "completedAt": (
-                            attempt["submitted_at"].isoformat()
-                            if attempt["submitted_at"]
-                            else None
-                        ),
-                    }
+                normalized_attempt = {
+                    "number": attempt["attempt_number"],
+                    "score": score,
+                    "passed": attempt["passed"],
+                    "completedAt": (
+                        attempt["submitted_at"].isoformat()
+                        if attempt["submitted_at"]
+                        else None
+                    ),
+                }
+
+                if (
+                    current_last is None
+                    or normalized_attempt["number"] > current_last["number"]
+                ):
+                    summary["lastAttempt"] = normalized_attempt
+
+                if (
+                    current_best is None
+                    or normalized_attempt["score"] > current_best["score"]
+                    or (
+                        normalized_attempt["score"] == current_best["score"]
+                        and normalized_attempt["number"] > current_best["number"]
+                    )
+                ):
+                    summary["bestAttempt"] = normalized_attempt
 
     for node in nodes:
         children_qs = node.children.filter(is_published=True).order_by("position")
@@ -1033,8 +1255,8 @@ def _build_curriculum_tree(
         has_children = len(children) > 0
 
         node_status = status_map.get(node.id, {})
-        status_key = node_status.get('status', 'locked') # default locked if unknown
-        is_locked = status_key == 'locked'
+        status_key = node_status.get("status", "locked")  # default locked if unknown
+        is_locked = status_key == "locked"
 
         # Override isLocked if completed (safeguard)
         is_completed = node.id in completions
@@ -1049,8 +1271,8 @@ def _build_curriculum_tree(
             "status": "completed" if is_completed else status_key,
             "isCompleted": is_completed,
             "isLocked": is_locked,
-            "lockReason": node_status.get('lock_reason'),
-            "unlocksAt": node_status.get('unlocks_at'),
+            "lockReason": node_status.get("lock_reason"),
+            "unlocksAt": node_status.get("unlocks_at"),
             "hasChildren": has_children,
             "children": (
                 _build_curriculum_tree(
@@ -1071,7 +1293,9 @@ def _build_curriculum_tree(
         node_props = node.properties if isinstance(node.properties, dict) else {}
         node_type_normalized = str(node.node_type or "").lower()
         lesson_type = str(node_props.get("lesson_type") or "").lower()
-        is_assignment = node_type_normalized == "assignment" or lesson_type == "assignment"
+        is_assignment = (
+            node_type_normalized == "assignment" or lesson_type == "assignment"
+        )
         is_quiz = node_type_normalized == "quiz" or lesson_type == "quiz"
         includes_questions = is_quiz or (
             is_assignment and _assignment_requires_questions(node_props)
@@ -1079,7 +1303,11 @@ def _build_curriculum_tree(
         if includes_questions:
             quiz_id = _safe_int(node_props.get("quiz_id"))
             if quiz_id and quiz_id in last_attempts_by_quiz_id:
-                node_data["lastAttempt"] = last_attempts_by_quiz_id[quiz_id]
+                attempt_summary = last_attempts_by_quiz_id[quiz_id]
+                if attempt_summary.get("lastAttempt"):
+                    node_data["lastAttempt"] = attempt_summary["lastAttempt"]
+                if attempt_summary.get("bestAttempt"):
+                    node_data["bestAttempt"] = attempt_summary["bestAttempt"]
 
         result.append(node_data)
 
@@ -1134,6 +1362,29 @@ def _get_breadcrumbs(node: CurriculumNode, enrollment_id: int) -> list:
     return breadcrumbs
 
 
+def _quiz_node_has_passed_attempt(node: CurriculumNode, enrollment_id: int) -> bool:
+    """Return True when the enrollment has a passed submitted attempt for this quiz node."""
+    props = node.properties if isinstance(node.properties, dict) else {}
+    node_type = str(node.node_type or "").lower()
+    lesson_type = str(props.get("lesson_type") or "").lower()
+    is_quiz = node_type == "quiz" or lesson_type == "quiz"
+    if not is_quiz:
+        return True
+
+    quiz_id = _safe_int(props.get("quiz_id"))
+    if not quiz_id:
+        return False
+
+    from apps.assessments.models import QuizAttempt
+
+    return QuizAttempt.objects.filter(
+        enrollment_id=enrollment_id,
+        quiz_id=quiz_id,
+        submitted_at__isnull=False,
+        passed=True,
+    ).exists()
+
+
 def _get_sibling_navigation(node: CurriculumNode, enrollment_id: int) -> dict:
     """Get previous and next sibling nodes for navigation."""
     result = {"prev": None, "next": None}
@@ -1155,12 +1406,13 @@ def _get_sibling_navigation(node: CurriculumNode, enrollment_id: int) -> dict:
                 }
 
             if current_index < len(siblings) - 1:
-                next_node = siblings[current_index + 1]
-                result["next"] = {
-                    "id": next_node.id,
-                    "title": next_node.title,
-                    "url": f"/student/programs/{enrollment_id}/session/{next_node.id}/",
-                }
+                if _quiz_node_has_passed_attempt(node, enrollment_id):
+                    next_node = siblings[current_index + 1]
+                    result["next"] = {
+                        "id": next_node.id,
+                        "title": next_node.title,
+                        "url": f"/student/programs/{enrollment_id}/session/{next_node.id}/",
+                    }
         except StopIteration:
             pass
 
@@ -1737,7 +1989,9 @@ def instructor_programs(request):
                 "reviewCount": 0,  # TODO: Count reviews
                 "viewCount": total,  # Using enrollment count as views
                 "badgeType": program.badge_type,
-                "updatedAt": program.updated_at.isoformat() if program.updated_at else None,
+                "updatedAt": program.updated_at.isoformat()
+                if program.updated_at
+                else None,
             }
         )
 
@@ -1798,8 +2052,6 @@ def instructor_program_detail(request, pk: int):
             total_progress += completed_nodes / total_nodes * 100
     avg_progress = (total_progress / active) if active > 0 else 0
 
-    print(f"DEBUG: Program Resources: {list(program.resources.values('title', 'file'))}")
-
     return render(
         request,
         "Instructor/Programs/Show",
@@ -1825,7 +2077,7 @@ def instructor_program_detail(request, pk: int):
                         "title": r.title,
                         "url": r.file.url,
                         "type": r.resource_type,
-                        "ext": r.file.name.split('.')[-1] if '.' in r.file.name else ""
+                        "ext": r.file.name.split(".")[-1] if "." in r.file.name else "",
                     }
                     for r in program.resources.all()
                 ],
@@ -1839,7 +2091,6 @@ def instructor_program_detail(request, pk: int):
             "curriculum": curriculum_tree,
         },
     )
-    print(f"DEBUG: Program Resources: {list(program.resources.values('title', 'file'))}")
 
 
 def _build_instructor_curriculum_tree(nodes, program) -> list:
@@ -1998,8 +2249,10 @@ def instructor_student_detail(request, pk: int, enrollment_id: int):
     # Using the standard curriculum tree builder for detailed view
     # This might need a specialized builder if instructor needs to see more details
     # For now, reusing the student-facing one but could be adapted
-    status_map = {} # Instructors see everything as accessible
-    curriculum_tree = _build_curriculum_tree(root_nodes, completions, enrollment, status_map)
+    status_map = {}  # Instructors see everything as accessible
+    curriculum_tree = _build_curriculum_tree(
+        root_nodes, completions, enrollment, status_map
+    )
 
     # Get activity log
     activity_log = (
@@ -2291,9 +2544,9 @@ def instructor_gradebook_publish(request, pk: int):
 
     # Collect enrollments whose grades are about to be published
     enrollment_ids = list(
-        AssessmentResult.objects.filter(
-            enrollment__program=program, is_published=False
-        ).values_list("enrollment_id", flat=True).distinct()
+        AssessmentResult.objects.filter(enrollment__program=program, is_published=False)
+        .values_list("enrollment_id", flat=True)
+        .distinct()
     )
 
     # Publish all unpublished results
@@ -2302,9 +2555,9 @@ def instructor_gradebook_publish(request, pk: int):
     ).update(is_published=True, published_at=timezone.now())
 
     if enrollment_ids:
-        enrollments = Enrollment.objects.filter(
-            id__in=enrollment_ids
-        ).select_related("user", "program")
+        enrollments = Enrollment.objects.filter(id__in=enrollment_ids).select_related(
+            "user", "program"
+        )
         for enrollment in enrollments:
             NotificationService.notify_grade_published(enrollment)
 
@@ -2348,7 +2601,9 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
 
     completions = list(enrollment.completions.values_list("node_id", flat=True))
     status_map = {}  # Instructors see everything as accessible
-    curriculum_tree = _build_curriculum_tree(root_nodes, completions, enrollment, status_map)
+    curriculum_tree = _build_curriculum_tree(
+        root_nodes, completions, enrollment, status_map
+    )
 
     # Get all assessment attempts/submissions for this student in this program
     from apps.assessments.models import AssignmentSubmission, QuizAttempt
@@ -2364,7 +2619,11 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
     ).only("id", "node_type", "properties")
 
     for assessment_node in assessment_nodes:
-        props = assessment_node.properties if isinstance(assessment_node.properties, dict) else {}
+        props = (
+            assessment_node.properties
+            if isinstance(assessment_node.properties, dict)
+            else {}
+        )
         node_type = str(assessment_node.node_type or "").lower()
         lesson_type = str(props.get("lesson_type") or "").lower()
         is_assignment = node_type == "assignment" or lesson_type == "assignment"
@@ -2383,16 +2642,18 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
         if not quiz_id:
             continue
 
-        attempts = QuizAttempt.objects.filter(
-            enrollment=enrollment,
-            quiz_id=quiz_id
-        ).select_related('quiz').prefetch_related(
-            'quiz__questions',
-            'quiz__questions__options',
-            'quiz__questions__matching_pairs',
-            'quiz__questions__gap_answers',
-            'quiz__questions__image_matching_pairs',
-        ).order_by('-attempt_number')
+        attempts = (
+            QuizAttempt.objects.filter(enrollment=enrollment, quiz_id=quiz_id)
+            .select_related("quiz")
+            .prefetch_related(
+                "quiz__questions",
+                "quiz__questions__options",
+                "quiz__questions__matching_pairs",
+                "quiz__questions__gap_answers",
+                "quiz__questions__image_matching_pairs",
+            )
+            .order_by("-attempt_number")
+        )
 
         attempts_list = []
         for attempt in attempts:
@@ -2405,7 +2666,11 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                 answer_data = question.answer_data or {}
 
                 if q_type == "mcq":
-                    option = question.options.filter(is_correct=True).order_by("position").first()
+                    option = (
+                        question.options.filter(is_correct=True)
+                        .order_by("position")
+                        .first()
+                    )
                     return option.position if option else answer_data.get("correct")
 
                 if q_type == "mcq_multi":
@@ -2429,7 +2694,9 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                     }
 
                 if q_type == "ordering":
-                    return answer_data.get("items") or answer_data.get("correct_order", [])
+                    return answer_data.get("items") or answer_data.get(
+                        "correct_order", []
+                    )
 
                 if q_type == "fill_blank":
                     return [
@@ -2445,12 +2712,14 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                         ): question.get_image_matching_item_id(
                             pair.id, attempt.id, "right"
                         )
-                        for pair in question.image_matching_pairs.all().order_by("position")
+                        for pair in question.image_matching_pairs.all().order_by(
+                            "position"
+                        )
                     }
 
                 return None
 
-            for question in attempt.quiz.questions.all().order_by('position'):
+            for question in attempt.quiz.questions.all().order_by("position"):
                 student_answer = attempt.answers.get(str(question.id))
                 is_correct, points = (
                     question.check_answer(student_answer, attempt_id=attempt.id)
@@ -2459,51 +2728,67 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                 )
                 correct_answer = _serialize_correct_answer(question)
 
-                question_results.append({
-                    'questionId': question.id,
-                    'isCorrect': is_correct if is_correct is not None else False,
-                    'correctAnswer': correct_answer,
-                    'pointsEarned': points or 0,
-                })
+                question_results.append(
+                    {
+                        "questionId": question.id,
+                        "isCorrect": is_correct if is_correct is not None else False,
+                        "correctAnswer": correct_answer,
+                        "pointsEarned": points or 0,
+                    }
+                )
 
-                questions_data.append({
-                    'id': question.id,
-                    'text': question.text,
-                    'type': question.question_type,
-                    'options': list(
-                        question.options.all().order_by("position").values_list("text", flat=True)
-                    ),
-                    'points': question.points,
-                    'explanation': (question.answer_data or {}).get("explanation", ""),
-                    'orderingExplanations': (question.answer_data or {}).get("explanations", {}),
-                    'matchingExplanations': {
-                        pair.left_text: pair.explanation
-                        for pair in question.matching_pairs.all().order_by("position")
-                        if pair.explanation
-                    },
-                    'fillBlankExplanations': {
-                        str(gap.gap_index): gap.explanation
-                        for gap in question.gap_answers.all().order_by("gap_index")
-                        if gap.explanation
-                    },
-                    'correctAnswer': correct_answer,
-                })
+                questions_data.append(
+                    {
+                        "id": question.id,
+                        "text": question.text,
+                        "type": question.question_type,
+                        "options": list(
+                            question.options.all()
+                            .order_by("position")
+                            .values_list("text", flat=True)
+                        ),
+                        "points": question.points,
+                        "explanation": (question.answer_data or {}).get(
+                            "explanation", ""
+                        ),
+                        "orderingExplanations": (question.answer_data or {}).get(
+                            "explanations", {}
+                        ),
+                        "matchingExplanations": {
+                            pair.left_text: pair.explanation
+                            for pair in question.matching_pairs.all().order_by(
+                                "position"
+                            )
+                            if pair.explanation
+                        },
+                        "fillBlankExplanations": {
+                            str(gap.gap_index): gap.explanation
+                            for gap in question.gap_answers.all().order_by("gap_index")
+                            if gap.explanation
+                        },
+                        "correctAnswer": correct_answer,
+                    }
+                )
 
-            attempts_list.append({
-                'id': attempt.id,
-                'attemptNumber': attempt.attempt_number,
-                'score': float(attempt.score) if attempt.score else 0,
-                'passed': attempt.passed,
-                'completedAt': attempt.submitted_at.isoformat() if attempt.submitted_at else None,
-                'answers': attempt.answers,
-                'questionResults': question_results,
-            })
+            attempts_list.append(
+                {
+                    "id": attempt.id,
+                    "attemptNumber": attempt.attempt_number,
+                    "score": float(attempt.score) if attempt.score else 0,
+                    "passed": attempt.passed,
+                    "completedAt": attempt.submitted_at.isoformat()
+                    if attempt.submitted_at
+                    else None,
+                    "answers": attempt.answers,
+                    "questionResults": question_results,
+                }
+            )
 
             if attempts_list:
                 quiz_attempts_data[node_id] = attempts_list
             # Also include questions data with first attempt for display
             if attempts_list:
-                quiz_attempts_data[f'{node_id}_questions'] = questions_data
+                quiz_attempts_data[f"{node_id}_questions"] = questions_data
 
     assignment_ids = list(set(assignment_submission_nodes.values()))
     if assignment_ids:
@@ -2535,7 +2820,9 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
                 "isLate": bool(submission.is_late),
                 "fileName": submission.file_name,
                 "hasText": bool((submission.text_content or "").strip()),
-                "score": float(submission.score) if submission.score is not None else None,
+                "score": float(submission.score)
+                if submission.score is not None
+                else None,
                 "feedback": submission.feedback or "",
             }
 
@@ -2543,12 +2830,12 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
     # Add questions to each node in curriculum for display
     def attach_questions_to_curriculum(nodes):
         for node in nodes:
-            node_id = node.get('id')
-            questions_key = f'{node_id}_questions'
+            node_id = node.get("id")
+            questions_key = f"{node_id}_questions"
             if questions_key in quiz_attempts_data:
-                node['questions'] = quiz_attempts_data.pop(questions_key)
-            if node.get('children'):
-                attach_questions_to_curriculum(node['children'])
+                node["questions"] = quiz_attempts_data.pop(questions_key)
+            if node.get("children"):
+                attach_questions_to_curriculum(node["children"])
 
     attach_questions_to_curriculum(curriculum_tree)
 
@@ -2558,26 +2845,31 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
     progress = (completed_count / total_nodes * 100) if total_nodes > 0 else 0
 
     # Get quiz/assignment stats
-    quiz_count = CurriculumNode.objects.filter(
-        program=program,
-        is_published=True,
-    ).filter(
-        Q(node_type="quiz") | Q(properties__lesson_type="quiz")
-    ).count()
-    assignment_count = CurriculumNode.objects.filter(
-        program=program,
-        is_published=True,
-    ).filter(
-        Q(node_type="assignment") | Q(properties__lesson_type="assignment")
-    ).count()
+    quiz_count = (
+        CurriculumNode.objects.filter(
+            program=program,
+            is_published=True,
+        )
+        .filter(Q(node_type="quiz") | Q(properties__lesson_type="quiz"))
+        .count()
+    )
+    assignment_count = (
+        CurriculumNode.objects.filter(
+            program=program,
+            is_published=True,
+        )
+        .filter(Q(node_type="assignment") | Q(properties__lesson_type="assignment"))
+        .count()
+    )
 
-    quizzes_passed = QuizAttempt.objects.filter(
-        enrollment=enrollment, passed=True
-    ).values('quiz_id').distinct().count()
+    quizzes_passed = (
+        QuizAttempt.objects.filter(enrollment=enrollment, passed=True)
+        .values("quiz_id")
+        .distinct()
+        .count()
+    )
     assignments_submitted = sum(
-        1
-        for data in assignment_submissions_data.values()
-        if data.get("submitted")
+        1 for data in assignment_submissions_data.values() if data.get("submitted")
     )
 
     return render(
@@ -3145,7 +3437,9 @@ def student_enroll_request(request, pk: int):
         return redirect("progression:student.program", pk=pk)
 
     # Check if pending request exists
-    if EnrollmentRequest.objects.filter(user=user, program=program, status="pending").exists():
+    if EnrollmentRequest.objects.filter(
+        user=user, program=program, status="pending"
+    ).exists():
         messages.info(request, "Your enrollment request is pending approval.")
         return redirect("core:programs")
 
@@ -3153,11 +3447,14 @@ def student_enroll_request(request, pk: int):
     settings = PlatformSettings.get_settings()
     enrollment_mode = settings.features.get(
         "enrollment_mode",
-        settings.get_default_features_for_mode().get("enrollment_mode", "instructor_approval")
+        settings.get_default_features_for_mode().get(
+            "enrollment_mode", "instructor_approval"
+        ),
     )
 
     if request.method == "POST":
         import json
+
         data = {}
         if request.body:
             try:
@@ -3210,7 +3507,7 @@ def student_enroll_request(request, pk: int):
                 )
             messages.success(
                 request,
-                f"Your enrollment request for {program.name} has been submitted for approval."
+                f"Your enrollment request for {program.name} has been submitted for approval.",
             )
             return redirect("core:programs")
 
@@ -3249,7 +3546,9 @@ def instructor_enrollment_requests(request, pk: int):
     per_page = 20
 
     # Query requests
-    requests_query = EnrollmentRequest.objects.filter(program=program).select_related("user")
+    requests_query = EnrollmentRequest.objects.filter(program=program).select_related(
+        "user"
+    )
 
     if status_filter:
         requests_query = requests_query.filter(status=status_filter)
@@ -3316,10 +3615,7 @@ def instructor_enrollment_request_approve(request, pk: int, request_id: int):
 
     # Get request
     enrollment_request = get_object_or_404(
-        EnrollmentRequest,
-        pk=request_id,
-        program_id=pk,
-        status="pending"
+        EnrollmentRequest, pk=request_id, program_id=pk, status="pending"
     )
 
     # Create enrollment
@@ -3337,7 +3633,10 @@ def instructor_enrollment_request_approve(request, pk: int, request_id: int):
     enrollment_request.reviewed_at = timezone.now()
     enrollment_request.save()
 
-    messages.success(request, f"Approved enrollment for {enrollment_request.user.get_full_name() or enrollment_request.user.email}")
+    messages.success(
+        request,
+        f"Approved enrollment for {enrollment_request.user.get_full_name() or enrollment_request.user.email}",
+    )
 
     return redirect("progression:instructor.enrollment_requests", pk=pk)
 
@@ -3361,10 +3660,7 @@ def instructor_enrollment_request_reject(request, pk: int, request_id: int):
 
     # Get request
     enrollment_request = get_object_or_404(
-        EnrollmentRequest,
-        pk=request_id,
-        program_id=pk,
-        status="pending"
+        EnrollmentRequest, pk=request_id, program_id=pk, status="pending"
     )
 
     # Get rejection notes
@@ -3387,6 +3683,9 @@ def instructor_enrollment_request_reject(request, pk: int, request_id: int):
         reason=enrollment_request.reviewer_notes,
     )
 
-    messages.info(request, f"Rejected enrollment for {enrollment_request.user.get_full_name() or enrollment_request.user.email}")
+    messages.info(
+        request,
+        f"Rejected enrollment for {enrollment_request.user.get_full_name() or enrollment_request.user.email}",
+    )
 
     return redirect("progression:instructor.enrollment_requests", pk=pk)

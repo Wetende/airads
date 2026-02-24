@@ -9,6 +9,7 @@ import TextRenderer from "../Renderers/TextRenderer";
 import AssessmentRenderer from "../Renderers/AssessmentRenderer";
 import DocumentLessonRenderer from "../Renderers/DocumentLessonRenderer";
 import LiveClassRenderer from "../Renderers/LiveClassRenderer";
+import QuizResultsRenderer from "../Renderers/QuizResultsRenderer";
 
 const Whiteboard = ({
     node,
@@ -154,6 +155,10 @@ const Whiteboard = ({
 
         // 1. Quiz
         if (type === "quiz" || lessonType === "quiz") {
+            // Show results inline if quizResults data is present
+            if (node.properties?.quizResults) {
+                return <QuizResultsRenderer quizResults={node.properties.quizResults} />;
+            }
             return (
                 <AssessmentRenderer
                     node={node}

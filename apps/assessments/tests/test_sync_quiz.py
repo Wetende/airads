@@ -81,23 +81,20 @@ class SyncQuizQuestionsTest(TestCase):
 
     def test_sync_all_quiz_settings(self):
         """
-        Test that all frontend settings from AssessmentEditor are synced to Quiz model.
-        This ensures full integration between frontend toggles and backend storage.
+        Test that builder-visible quiz settings are synced to Quiz model.
         """
-        # Setup node with all settings enabled
         self.node.properties = {
             "passing_grade": 85,
             "quiz_duration": 45,
             "max_attempts": 3,
             "randomize_questions": True,
-            "randomize_answers": True,  # Maps to shuffle_options
-            "show_correct_answer": True,  # Maps to show_answers_after_submit
-            "quiz_time_unit": "Hours",
+            "randomize_answers": True,
+            "show_correct_answer": True,
             "quiz_style": "pagination",
-            "quiz_attempt_history": True,  # Maps to show_attempt_history
-            "retake_after_pass": True,  # Maps to allow_retake_after_pass
-            "points_cut_after_retake": 15,  # Maps to retake_penalty_percent
-            "total_points_override": 100,
+            "quiz_attempt_history": True,
+            "retake_penalty": 5,
+            "points_cut_after_retake": 15,
+            "weight": 40,
             "description": "Test quiz description",
             "questions": [
                 {
@@ -115,26 +112,71 @@ class SyncQuizQuestionsTest(TestCase):
         _sync_quiz_questions(self.node, self.node.properties.get("questions", []))
 
         quiz = Quiz.objects.get(node=self.node)
-        
-        # Verify all basic settings
+
         self.assertEqual(quiz.pass_threshold, 85)
         self.assertEqual(quiz.time_limit_minutes, 45)
         self.assertEqual(quiz.max_attempts, 3)
         self.assertTrue(quiz.randomize_questions)
+        self.assertEqual(quiz.weight, 40)
         self.assertEqual(quiz.description, "Test quiz description")
-        
-        # Verify new settings that were previously not synced
-        self.assertTrue(quiz.shuffle_options, "shuffle_options should be True")
-        self.assertTrue(quiz.show_answers_after_submit, "show_answers_after_submit should be True")
-        self.assertEqual(quiz.time_unit, "hours")
-        self.assertEqual(quiz.quiz_style, "pagination")
-        self.assertTrue(quiz.show_attempt_history, "show_attempt_history should be True")
-        self.assertTrue(quiz.allow_retake_after_pass, "allow_retake_after_pass should be True")
-        self.assertEqual(quiz.retake_penalty_percent, 15)
-        self.assertEqual(quiz.total_points_override, 100)
-        
-        # Verify get_total_points respects override
-        self.assertEqual(quiz.get_total_points(), 100)
+        self.assertTrue(quiz.shuffle_options)
+        self.assertTrue(quiz.show_answers_after_submit)
+        self.assertEqual(float(quiz.retake_penalty_percent), 15.0)
+
+        self.node.refresh_from_db()
+        self.assertEqual((self.node.properties or {}).get("quiz_id"), quiz.id)
+
+    def test_sync_settings_when_questions_are_empty(self):
+        self.node.properties = {
+            "passing_grade": 60,
+            "quiz_duration": 10,
+            "max_attempts": 2,
+            "randomize_questions": False,
+            "randomize_answers": False,
+            "show_correct_answer": False,
+            "retake_penalty": 12,
+            "questions": [
+                {
+                    "id": "temp_existing",
+                    "type": "mcq",
+                    "text": "Keep?",
+                    "points": 1,
+                    "options": ["A", "B"],
+                    "correct": 0,
+                }
+            ],
+        }
+        self.node.save()
+        _sync_quiz_questions(self.node, self.node.properties.get("questions", []))
+
+        quiz = Quiz.objects.get(node=self.node)
+        self.assertEqual(quiz.questions.count(), 1)
+
+        self.node.properties.update(
+            {
+                "passing_grade": 92,
+                "quiz_duration": 30,
+                "max_attempts": 4,
+                "randomize_questions": True,
+                "randomize_answers": True,
+                "show_correct_answer": True,
+                "retake_penalty": 7,
+                "questions": [],
+            }
+        )
+        self.node.save(update_fields=["properties"])
+
+        _sync_quiz_questions(self.node, [])
+
+        quiz.refresh_from_db()
+        self.assertEqual(quiz.pass_threshold, 92)
+        self.assertEqual(quiz.time_limit_minutes, 30)
+        self.assertEqual(quiz.max_attempts, 4)
+        self.assertTrue(quiz.randomize_questions)
+        self.assertTrue(quiz.shuffle_options)
+        self.assertTrue(quiz.show_answers_after_submit)
+        self.assertEqual(float(quiz.retake_penalty_percent), 7.0)
+        self.assertEqual(quiz.questions.count(), 0)
 
     def test_sync_image_matching_question_creates_pairs(self):
         questions_data = [

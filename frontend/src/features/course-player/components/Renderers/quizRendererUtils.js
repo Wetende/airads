@@ -1,6 +1,7 @@
 export const normalizeText = (value, fallback = '') => {
     if (value === null || value === undefined) return fallback;
-    const text = String(value).trim();
+    // Strip any HTML tags (e.g. <p>, <br>) that may leak from rich-text editors
+    const text = String(value).replace(/<[^>]*>/g, '').trim();
     return text || fallback;
 };
 

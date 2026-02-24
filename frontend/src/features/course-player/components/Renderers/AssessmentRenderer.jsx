@@ -124,6 +124,27 @@ const AssessmentRenderer = ({
     const renderQuestionsSection = () => {
         if (!shouldShowQuestions) return null;
 
+        if (isQuiz && hasQuizLink) {
+            return (
+                <QuizRenderer
+                    node={{
+                        ...node,
+                        properties: {
+                            ...properties,
+                            quiz_id: properties.quiz_id,
+                            questions: Array.isArray(properties.questions)
+                                ? properties.questions
+                                : [],
+                        },
+                    }}
+                    enrollmentId={enrollmentId}
+                    discussions={discussions}
+                    onComplete={onComplete}
+                    useBackendRuntime
+                />
+            );
+        }
+
         if (shouldShowPromptQuestionPath && hasQuestions) {
             return (
                 <QuizRenderer

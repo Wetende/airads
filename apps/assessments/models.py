@@ -299,9 +299,7 @@ class Question(TimeStampedModel):
                 submitted = normalize_fill_blank(
                     student_answer.get(str(gap.gap_index), "")
                 )
-                accepted = [
-                    normalize_fill_blank(a) for a in gap.accepted_answers
-                ]
+                accepted = [normalize_fill_blank(a) for a in gap.accepted_answers]
                 if submitted in accepted:
                     correct_count += 1
 
@@ -332,21 +330,41 @@ class Question(TimeStampedModel):
             if not options:
                 return False, 0
 
-            valid_positions = {
-                str(opt.position) for opt in options
-            }
-            correct_positions = {
-                str(opt.position)
-                for opt in options
-                if opt.is_correct
-            }
+            correct_positions = {str(opt.position) for opt in options if opt.is_correct}
+
+            def normalize_to_position(value):
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    numeric = int(value)
+                    matched = next(
+                        (opt for opt in options if opt.position == numeric),
+                        None,
+                    )
+                    if matched is not None:
+                        return str(matched.position)
+                    matched = next((opt for opt in options if opt.id == numeric), None)
+                    if matched is not None:
+                        return str(matched.position)
+
+                token = str(value).strip()
+                # Strings from modern payloads are option ids; fallback to positions.
+                matched = next((opt for opt in options if str(opt.id) == token), None)
+                if matched is not None:
+                    return str(matched.position)
+
+                matched = next(
+                    (opt for opt in options if str(opt.position) == token),
+                    None,
+                )
+                if matched is not None:
+                    return str(matched.position)
+                return None
 
             submitted_set = set()
             if isinstance(student_answer, list):
                 for value in student_answer:
-                    normalized = str(value).strip()
-                    if normalized in valid_positions:
-                        submitted_set.add(normalized)
+                    mapped = normalize_to_position(value)
+                    if mapped is not None:
+                        submitted_set.add(mapped)
 
             is_correct = submitted_set == correct_positions
             return is_correct, self.points if is_correct else 0
@@ -363,17 +381,42 @@ class Question(TimeStampedModel):
 
             submitted_position = None
             if student_answer is not None:
-                submitted_raw = str(student_answer).strip()
-                for option in options:
-                    if str(option.position) == submitted_raw:
-                        submitted_position = option.position
-                        break
+                matched_option = None
+                if isinstance(student_answer, (int, float)) and not isinstance(
+                    student_answer, bool
+                ):
+                    numeric = int(student_answer)
+                    matched_option = next(
+                        (opt for opt in options if opt.position == numeric),
+                        None,
+                    )
+                    if matched_option is None:
+                        matched_option = next(
+                            (opt for opt in options if opt.id == numeric),
+                            None,
+                        )
+                else:
+                    submitted_raw = str(student_answer).strip()
+                    # Strings from modern payloads are option ids; fallback to positions.
+                    matched_option = next(
+                        (opt for opt in options if str(opt.id) == submitted_raw),
+                        None,
+                    )
+                if matched_option is None:
+                    submitted_raw = str(student_answer).strip()
+                    matched_option = next(
+                        (opt for opt in options if str(opt.position) == submitted_raw),
+                        None,
+                    )
+                if matched_option is not None:
+                    submitted_position = matched_option.position
 
             is_correct = submitted_position == correct_option.position
             return is_correct, self.points if is_correct else 0
 
         # 7. True/False
         elif self.question_type == "true_false":
+
             def normalize_bool(value):
                 if isinstance(value, bool):
                     return value
@@ -399,14 +442,11 @@ class Question(TimeStampedModel):
             elif self.options.exists():
                 if isinstance(student_answer, (str, int, float)):
                     option = self.options.filter(
-                        models.Q(id=student_answer)
-                        | models.Q(position=student_answer)
+                        models.Q(id=student_answer) | models.Q(position=student_answer)
                     ).first()
                     if option is None and isinstance(student_answer, str):
                         normalized = student_answer.strip().lower()
-                        option = self.options.filter(
-                            text__iexact=normalized
-                        ).first()
+                        option = self.options.filter(text__iexact=normalized).first()
 
                     if option is not None:
                         by_text = normalize_bool(option.text)
@@ -450,6 +490,9 @@ class QuizAttempt(models.Model):
 
     # answers format: {"question_id": answer_value, ...}
     answers = models.JSONField(default=dict)
+    # runtime_state stores in-progress player metadata (e.g. current question index,
+    # randomized order snapshots) so reloads can resume exactly where the learner left off.
+    runtime_state = models.JSONField(default=dict)
 
     # Grading results
     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
@@ -489,12 +532,27 @@ class QuizAttempt(models.Model):
                 else:
                     points_earned += max(0, int(pts or 0))
 
-        percentage = (
+        raw_percentage = (
             (points_earned / points_possible * 100) if points_possible > 0 else 0
         )
-        passed = percentage >= self.quiz.pass_threshold if not needs_manual else None
 
-        return points_earned, points_possible, round(percentage, 2), passed
+        retake_count = max(0, (self.attempt_number or 1) - 1)
+        penalty_rate = float(self.quiz.retake_penalty_percent or 0) / 100
+        multiplier = max(0.0, 1 - (retake_count * penalty_rate))
+        penalized_percentage = raw_percentage * multiplier
+
+        passed = (
+            penalized_percentage >= self.quiz.pass_threshold
+            if not needs_manual
+            else None
+        )
+
+        return (
+            points_earned,
+            points_possible,
+            round(penalized_percentage, 2),
+            passed,
+        )
 
 
 class Assignment(TimeStampedModel):

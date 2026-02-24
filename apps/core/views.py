@@ -461,10 +461,14 @@ def public_program_detail(request, pk: int):
 
     from apps.reviews.models import ProgramReview
 
-    approved_reviews_qs = ProgramReview.objects.filter(
-        program=program,
-        status="approved",
-    ).select_related("user").order_by("-moderated_at", "-updated_at")[:20]
+    approved_reviews_qs = (
+        ProgramReview.objects.filter(
+            program=program,
+            status="approved",
+        )
+        .select_related("user")
+        .order_by("-moderated_at", "-updated_at")[:20]
+    )
 
     approved_reviews = [
         {
@@ -473,7 +477,9 @@ def public_program_detail(request, pk: int):
             "reviewText": review.review_html,
             "user": {
                 "id": review.user_id,
-                "name": review.user.get_full_name() or review.user.username or review.user.email,
+                "name": review.user.get_full_name()
+                or review.user.username
+                or review.user.email,
             },
             "updatedAt": review.updated_at.isoformat() if review.updated_at else None,
         }
@@ -711,16 +717,24 @@ def admin_reviews(request):
             "program": {"id": review.program_id, "name": review.program.name},
             "user": {
                 "id": review.user_id,
-                "name": review.user.get_full_name() or review.user.username or review.user.email,
+                "name": review.user.get_full_name()
+                or review.user.username
+                or review.user.email,
             },
             "rating": review.rating,
             "reviewText": review.review_html,
             "status": review.status,
             "moderationNote": review.moderation_note,
-            "moderatedAt": review.moderated_at.isoformat() if review.moderated_at else None,
+            "moderatedAt": review.moderated_at.isoformat()
+            if review.moderated_at
+            else None,
             "moderatedBy": (
-                review.moderated_by.get_full_name() or review.moderated_by.username or review.moderated_by.email
-            ) if review.moderated_by else None,
+                review.moderated_by.get_full_name()
+                or review.moderated_by.username
+                or review.moderated_by.email
+            )
+            if review.moderated_by
+            else None,
             "updatedAt": review.updated_at.isoformat() if review.updated_at else None,
         }
         for review in reviews_qs.order_by("-updated_at")[:200]
@@ -748,7 +762,9 @@ def admin_review_approve(request, review_id: int):
 
     from apps.reviews.models import ProgramReview
 
-    review = ProgramReview.objects.select_related("program").filter(pk=review_id).first()
+    review = (
+        ProgramReview.objects.select_related("program").filter(pk=review_id).first()
+    )
     if not review:
         messages.error(request, "Review not found.")
         return redirect("core:admin.reviews")
@@ -756,7 +772,9 @@ def admin_review_approve(request, review_id: int):
     review.status = "approved"
     review.moderated_by = request.user
     review.moderated_at = timezone.now()
-    review.moderation_note = str(get_post_data(request).get("moderation_note") or "").strip()
+    review.moderation_note = str(
+        get_post_data(request).get("moderation_note") or ""
+    ).strip()
     review.save()
 
     _recompute_program_rating(review.program_id)
@@ -771,7 +789,9 @@ def admin_review_reject(request, review_id: int):
 
     from apps.reviews.models import ProgramReview
 
-    review = ProgramReview.objects.select_related("program").filter(pk=review_id).first()
+    review = (
+        ProgramReview.objects.select_related("program").filter(pk=review_id).first()
+    )
     if not review:
         messages.error(request, "Review not found.")
         return redirect("core:admin.reviews")
@@ -779,7 +799,9 @@ def admin_review_reject(request, review_id: int):
     review.status = "rejected"
     review.moderated_by = request.user
     review.moderated_at = timezone.now()
-    review.moderation_note = str(get_post_data(request).get("moderation_note") or "").strip()
+    review.moderation_note = str(
+        get_post_data(request).get("moderation_note") or ""
+    ).strip()
     review.save()
 
     _recompute_program_rating(review.program_id)
@@ -1240,7 +1262,7 @@ def _get_instructor_dashboard_data(user) -> dict:
     from datetime import timedelta
 
     from apps.practicum.models import PracticumSubmission
-    from apps.progression.models import Enrollment, InstructorAssignment
+    from apps.progression.models import Enrollment, EnrollmentRequest, InstructorAssignment
 
     # Get assigned programs
     assignments = InstructorAssignment.objects.filter(instructor=user)
@@ -1253,6 +1275,11 @@ def _get_instructor_dashboard_data(user) -> dict:
 
     pending_reviews = PracticumSubmission.objects.filter(
         enrollment__program_id__in=program_ids, status="pending"
+    ).count()
+
+    # Pending enrollment requests across all instructor's programs
+    pending_enrollments = EnrollmentRequest.objects.filter(
+        program_id__in=program_ids, status="pending"
     ).count()
 
     total_enrollments = Enrollment.objects.filter(program_id__in=program_ids).count()
@@ -1287,14 +1314,36 @@ def _get_instructor_dashboard_data(user) -> dict:
         for s in recent_submissions
     ]
 
+    # Get recent pending enrollment requests
+    pending_enrollment_requests = (
+        EnrollmentRequest.objects.filter(
+            program_id__in=program_ids, status="pending"
+        )
+        .select_related("user", "program")
+        .order_by("-created_at")[:5]
+    )
+
+    enrollment_requests_data = [
+        {
+            "id": r.id,
+            "studentName": r.user.get_full_name() or r.user.email,
+            "programName": r.program.name,
+            "programId": r.program.id,
+            "createdAt": r.created_at.isoformat(),
+        }
+        for r in pending_enrollment_requests
+    ]
+
     return {
         "stats": {
             "programCount": len(program_ids),
             "totalStudents": total_students,
             "pendingReviews": pending_reviews,
+            "pendingEnrollments": pending_enrollments,
             "completionRate": round(completion_rate, 1),
         },
         "recentSubmissions": submissions_data,
+        "pendingEnrollmentRequests": enrollment_requests_data,
     }
 
 
@@ -1918,7 +1967,6 @@ def admin_program_publish(request, pk: int):
     from django.shortcuts import get_object_or_404
 
     from apps.core.services.validation import ProgramValidationService
-    from apps.curriculum.models import CurriculumNode
 
     program = get_object_or_404(Program, pk=pk)
 
@@ -1938,14 +1986,29 @@ def admin_program_publish(request, pk: int):
     program.is_published = not program.is_published
     program.save()
 
-    # Cascade unpublish: when program becomes unpublished, unpublish all child nodes
+    _sync_program_publication_state(program, program.is_published)
+
     if was_published and not program.is_published:
-        CurriculumNode.objects.filter(program=program).update(is_published=False)
         messages.success(request, f"Program '{program.name}' unpublished.")
     else:
         messages.success(request, f"Program '{program.name}' published successfully.")
 
     return redirect("core:admin.program", pk=pk)
+
+
+def _sync_program_publication_state(program: Program, is_published: bool):
+    """
+    Keep publish state consistent across program-owned learning records.
+
+    When a program is published/unpublished, curriculum visibility and the
+    linked assessment records (quiz/assignment) should match immediately.
+    """
+    from apps.assessments.models import Assignment, Quiz
+    from apps.curriculum.models import CurriculumNode
+
+    CurriculumNode.objects.filter(program=program).update(is_published=is_published)
+    Quiz.objects.filter(node__program=program).update(is_published=is_published)
+    Assignment.objects.filter(program=program).update(is_published=is_published)
 
 
 def _get_blueprints_for_form() -> list:
@@ -2412,10 +2475,15 @@ def instructor_programs(request):
             "name": p.name,
             "code": p.code or "",
             "description": p.description or "",
+            "thumbnail": p.thumbnail.url if p.thumbnail else None,
+            "category": p.category or "General",
             "blueprintName": p.blueprint.name if p.blueprint else None,
             "enrollmentCount": enrollment_counts.get(p.id, 0),
             "level": p.level or "",
             "isPublished": p.is_published,
+            "price": (p.custom_pricing or {}).get("price", 0),
+            "rating": float(p.rating_average or 0),
+            "reviewCount": p.rating_count or 0,
         }
         for p in programs
     ]
@@ -2779,7 +2847,9 @@ def instructor_grade_entry(request, enrollment_id: int):
 
     from apps.progression.models import Enrollment
 
-    enrollment = get_object_or_404(Enrollment.objects.select_related("program"), pk=enrollment_id)
+    enrollment = get_object_or_404(
+        Enrollment.objects.select_related("program"), pk=enrollment_id
+    )
 
     if not request.user.is_staff:
         program_ids = get_instructor_program_ids(request.user)
@@ -2795,7 +2865,9 @@ def instructor_grade_entry(request, enrollment_id: int):
 @login_required
 def instructor_program_gradebook(request, pk: int):
     """Bridge legacy core program-gradebook endpoint to canonical progression view."""
-    from apps.progression.views import instructor_gradebook as progression_instructor_gradebook
+    from apps.progression.views import (
+        instructor_gradebook as progression_instructor_gradebook,
+    )
 
     return progression_instructor_gradebook(request, pk)
 
@@ -2803,7 +2875,9 @@ def instructor_program_gradebook(request, pk: int):
 @login_required
 def instructor_program_gradebook_save(request, pk: int):
     """Bridge legacy core grade-save endpoint to canonical progression save view."""
-    from apps.progression.views import instructor_gradebook_save as progression_instructor_gradebook_save
+    from apps.progression.views import (
+        instructor_gradebook_save as progression_instructor_gradebook_save,
+    )
 
     return progression_instructor_gradebook_save(request, pk)
 
@@ -3448,38 +3522,8 @@ def _normalize_question_text(value) -> str:
     return " ".join(strip_tags(str(value or "")).split())
 
 
-@login_required
-def student_quiz_start(request, quiz_id: int):
-    """
-    Start a quiz attempt.
-    """
-    from apps.assessments.models import Quiz, QuizAttempt
-    from apps.progression.models import Enrollment
-
-    try:
-        quiz = (
-            Quiz.objects.select_related("node", "node__program")
-            .prefetch_related("questions")
-            .get(pk=quiz_id, is_published=True)
-        )
-    except Quiz.DoesNotExist:
-        messages.error(request, "Quiz not found or not published")
-        return redirect("/dashboard/")
-
-    # Check enrollment
-    try:
-        enrollment = Enrollment.objects.get(
-            user=request.user, program=quiz.node.program, status="active"
-        )
-    except Enrollment.DoesNotExist:
-        messages.error(request, "You are not enrolled in this program")
-        return redirect("/dashboard/")
-
-    requested_enrollment_id = _safe_int(request.GET.get("enrollment_id"))
-    requested_node_id = _safe_int(request.GET.get("node_id"))
-    in_course_player_context = (
-        requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
-    )
+def _resolve_in_progress_quiz_attempt(quiz, enrollment, create_if_missing=True):
+    from apps.assessments.models import QuizAttempt
 
     with transaction.atomic():
         attempts_qs = QuizAttempt.objects.select_for_update().filter(
@@ -3497,37 +3541,125 @@ def student_quiz_start(request, quiz_id: int):
             _finalize_quiz_attempt(in_progress)
             in_progress = None
 
-        if in_progress:
-            attempt = in_progress
-        else:
-            existing_attempts = attempts_qs.count()
-            if existing_attempts >= quiz.max_attempts:
-                messages.error(request, "You have used all your attempts for this quiz")
-                if in_course_player_context:
-                    return redirect(
-                        f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
-                    )
-                return redirect("core:student.quiz_results", quiz_id=quiz_id)
-
-            attempt = QuizAttempt.objects.create(
-                enrollment=enrollment,
-                quiz=quiz,
-                attempt_number=existing_attempts + 1,
-                started_at=timezone.now(),
-            )
-
         attempts_used = attempts_qs.count()
+        if not in_progress:
+            if attempts_used >= quiz.max_attempts:
+                return None, attempts_used, 0
+            if create_if_missing:
+                in_progress = QuizAttempt.objects.create(
+                    enrollment=enrollment,
+                    quiz=quiz,
+                    attempt_number=attempts_used + 1,
+                    started_at=timezone.now(),
+                    runtime_state={},
+                )
+                attempts_used += 1
 
-    # Serialize questions (without answers for student view)
-    # Serialize questions (without answers for student view)
+    return in_progress, attempts_used, max(0, quiz.max_attempts - attempts_used)
+
+
+def _normalize_order_from_runtime(order_values, valid_ids: list[int]) -> list[int]:
+    if not isinstance(order_values, list):
+        order_values = []
+
+    valid_set = set(valid_ids)
+    normalized = []
+    seen = set()
+    for raw_value in order_values:
+        parsed = _safe_int(raw_value)
+        if parsed is None or parsed not in valid_set or parsed in seen:
+            continue
+        normalized.append(parsed)
+        seen.add(parsed)
+
+    for item_id in valid_ids:
+        if item_id not in seen:
+            normalized.append(item_id)
+    return normalized
+
+
+def _ensure_quiz_attempt_runtime_state(quiz, attempt) -> dict:
     import random
 
-    quiz_questions = quiz.questions.all().prefetch_related(
-        "options", "matching_pairs", "gap_answers", "image_matching_pairs"
+    runtime_state = (
+        attempt.runtime_state.copy() if isinstance(attempt.runtime_state, dict) else {}
     )
+    changed = not isinstance(attempt.runtime_state, dict)
+
+    quiz_questions = list(quiz.questions.all().prefetch_related("options").order_by("position"))
+    question_ids = [question.id for question in quiz_questions]
+
+    normalized_question_order = _normalize_order_from_runtime(
+        runtime_state.get("question_order"),
+        question_ids,
+    )
+    if not runtime_state.get("question_order") and quiz.randomize_questions:
+        random.shuffle(normalized_question_order)
+    if runtime_state.get("question_order") != normalized_question_order:
+        runtime_state["question_order"] = normalized_question_order
+        changed = True
+
+    existing_option_order = (
+        runtime_state.get("option_order")
+        if isinstance(runtime_state.get("option_order"), dict)
+        else {}
+    )
+    normalized_option_order = {}
+    for question in quiz_questions:
+        if question.question_type not in {"mcq", "mcq_multi"}:
+            continue
+        option_ids = [option.id for option in question.options.all().order_by("position")]
+        if quiz.shuffle_options:
+            ordered_ids = _normalize_order_from_runtime(
+                existing_option_order.get(str(question.id)),
+                option_ids,
+            )
+            if not existing_option_order.get(str(question.id)):
+                random.shuffle(ordered_ids)
+        else:
+            ordered_ids = option_ids
+        normalized_option_order[str(question.id)] = ordered_ids
+
+    if existing_option_order != normalized_option_order:
+        runtime_state["option_order"] = normalized_option_order
+        changed = True
+
+    max_index = max(0, len(normalized_question_order) - 1)
+    current_index = _safe_int(runtime_state.get("current_question_index"))
+    normalized_index = 0 if current_index is None else max(0, min(current_index, max_index))
+    if runtime_state.get("current_question_index") != normalized_index:
+        runtime_state["current_question_index"] = normalized_index
+        changed = True
+
+    if changed:
+        attempt.runtime_state = runtime_state
+        attempt.save(update_fields=["runtime_state"])
+
+    return runtime_state
+
+
+def _serialize_quiz_questions_for_attempt(quiz, attempt, runtime_state=None) -> list:
+    import random
+
+    state = runtime_state if isinstance(runtime_state, dict) else {}
+    option_order = state.get("option_order") if isinstance(state.get("option_order"), dict) else {}
+
+    quiz_questions = list(
+        quiz.questions.all()
+        .prefetch_related(
+            "options", "matching_pairs", "gap_answers", "image_matching_pairs"
+        )
+        .order_by("position")
+    )
+    questions_by_id = {question.id: question for question in quiz_questions}
+    ordered_question_ids = _normalize_order_from_runtime(
+        state.get("question_order"),
+        [question.id for question in quiz_questions],
+    )
+    ordered_questions = [questions_by_id[qid] for qid in ordered_question_ids if qid in questions_by_id]
 
     questions = []
-    for q in quiz_questions:
+    for q in ordered_questions:
         q_data = {
             "id": q.id,
             "type": q.question_type,
@@ -3536,13 +3668,16 @@ def student_quiz_start(request, quiz_id: int):
         }
 
         if q.question_type in ["mcq", "mcq_multi"]:
-            opts = list(q.options.all())
+            opts = list(q.options.all().order_by("position"))
             if quiz.shuffle_options:
-                random.shuffle(opts)
-            else:
-                opts.sort(key=lambda x: x.position)
+                opts_by_id = {opt.id: opt for opt in opts}
+                ordered_option_ids = _normalize_order_from_runtime(
+                    option_order.get(str(q.id)),
+                    [opt.id for opt in opts],
+                )
+                opts = [opts_by_id[opt_id] for opt_id in ordered_option_ids if opt_id in opts_by_id]
             q_data["options"] = [
-                {"text": o.text, "position": o.position} for o in opts
+                {"id": o.id, "text": o.text, "position": o.position} for o in opts
             ]
 
         elif q.question_type == "matching":
@@ -3553,9 +3688,10 @@ def student_quiz_start(request, quiz_id: int):
 
         elif q.question_type == "ordering":
             raw_items = q.answer_data.get("items", [])
-            items = list(raw_items) if isinstance(raw_items, (list, tuple)) else []
-            random.shuffle(items)
-            q_data["items"] = items
+            q_data["items"] = (
+                list(raw_items) if isinstance(raw_items, (list, tuple)) else []
+            )
+
         elif q.question_type == "image_matching":
             image_pairs = list(q.image_matching_pairs.all().order_by("position"))
             left_items = [
@@ -3580,38 +3716,134 @@ def student_quiz_start(request, quiz_id: int):
 
         questions.append(q_data)
 
-    return render(
-        request,
-        "Student/Quiz/Take",
-        {
-            "quiz": {
-                "id": quiz.id,
-                "title": quiz.title,
-                "description": quiz.description,
-                "timeLimit": quiz.time_limit_minutes,
-                "nodeTitle": quiz.node.title,
-            },
-            "attempt": {
-                "id": attempt.id,
-                "attemptNumber": attempt.attempt_number,
-                "startedAt": attempt.started_at.isoformat(),
-                "answers": attempt.answers,
-            },
-            "questions": questions,
-            "attemptsRemaining": max(0, quiz.max_attempts - attempts_used),
-            "coursePlayer": (
-                {
-                    "sessionUrl": (
-                        f"/student/programs/{enrollment.id}/session/{quiz.node_id}/"
-                    ),
-                    "enrollmentId": enrollment.id,
-                    "nodeId": quiz.node_id,
-                }
-                if in_course_player_context
-                else None
-            ),
-        },
+    return questions
+
+
+def _is_quiz_json_mode(request, data=None) -> bool:
+    if str(request.GET.get("response") or "").strip().lower() == "json":
+        return True
+    if isinstance(data, dict) and str(data.get("response") or "").strip().lower() == "json":
+        return True
+    return False
+
+
+@login_required
+def student_quiz_start(request, quiz_id: int):
+    """
+    Start a quiz attempt.
+    """
+    from apps.assessments.models import Quiz
+    from apps.progression.models import Enrollment
+
+    try:
+        quiz = (
+            Quiz.objects.select_related("node", "node__program")
+            .prefetch_related("questions")
+            .get(pk=quiz_id)
+        )
+    except Quiz.DoesNotExist:
+        messages.error(request, "Quiz not found")
+        return redirect("/dashboard/")
+
+    if not quiz.is_published:
+        node_props = quiz.node.properties if isinstance(quiz.node.properties, dict) else {}
+        linked_quiz_id = _safe_int(node_props.get("quiz_id"))
+        # Backward compatibility: some historical records kept quiz unpublished while
+        # the linked curriculum node was already published and visible to students.
+        if quiz.node.is_published and linked_quiz_id == quiz.id:
+            quiz.is_published = True
+            quiz.save(update_fields=["is_published"])
+        else:
+            messages.error(request, "Quiz is not available")
+            return redirect("/dashboard/")
+
+    # Check enrollment
+    try:
+        enrollment = Enrollment.objects.get(
+            user=request.user,
+            program=quiz.node.program,
+            status__in=["active", "completed"],
+        )
+    except Enrollment.DoesNotExist:
+        if _is_quiz_json_mode(request):
+            return JsonResponse({"error": "Enrollment not found"}, status=403)
+        messages.error(request, "You are not enrolled in this program")
+        return redirect("/dashboard/")
+
+    requested_enrollment_id = _safe_int(request.GET.get("enrollment_id"))
+    requested_node_id = _safe_int(request.GET.get("node_id"))
+    in_course_player_context = (
+        requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
     )
+    wants_json = _is_quiz_json_mode(request)
+
+    attempt, _, attempts_remaining = _resolve_in_progress_quiz_attempt(
+        quiz,
+        enrollment,
+        create_if_missing=True,
+    )
+
+    if not attempt:
+        redirect_url = (
+            f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
+            if in_course_player_context
+            else f"/student/quiz/{quiz_id}/results/"
+        )
+        if wants_json:
+            return JsonResponse(
+                {
+                    "error": "max_attempts_reached",
+                    "attemptsRemaining": 0,
+                    "redirectUrl": redirect_url,
+                },
+                status=409,
+            )
+        messages.error(request, "You have used all your attempts for this quiz")
+        return redirect(redirect_url)
+
+    node_props = quiz.node.properties if isinstance(quiz.node.properties, dict) else {}
+    quiz_style = str(node_props.get("quiz_style") or "pagination").strip().lower()
+    if quiz_style not in {"pagination", "single_page"}:
+        quiz_style = "pagination"
+
+    runtime_state = _ensure_quiz_attempt_runtime_state(quiz, attempt)
+    questions = _serialize_quiz_questions_for_attempt(quiz, attempt, runtime_state)
+
+    payload = {
+        "quiz": {
+            "id": quiz.id,
+            "title": quiz.title,
+            "description": quiz.description,
+            "timeLimit": quiz.time_limit_minutes,
+            "nodeTitle": quiz.node.title,
+            "quizStyle": quiz_style,
+        },
+        "attempt": {
+            "id": attempt.id,
+            "attemptNumber": attempt.attempt_number,
+            "startedAt": attempt.started_at.isoformat(),
+            "answers": attempt.answers if isinstance(attempt.answers, dict) else {},
+            "runtimeState": runtime_state,
+        },
+        "questions": questions,
+        "attemptsRemaining": attempts_remaining,
+        "coursePlayer": (
+            {
+                "sessionUrl": (
+                    f"/student/programs/{enrollment.id}/session/{quiz.node_id}/"
+                ),
+                "enrollmentId": enrollment.id,
+                "nodeId": quiz.node_id,
+            }
+            if in_course_player_context
+            else None
+        ),
+    }
+
+    if wants_json:
+        return JsonResponse(payload)
+
+    return render(request, "Student/Quiz/Take", payload)
 
 
 @login_required
@@ -3626,9 +3858,14 @@ def student_quiz_submit(request, quiz_id: int):
     if request.method != "POST":
         return redirect("core:student.quiz_start", quiz_id=quiz_id)
 
+    data = get_post_data(request)
+    wants_json = _is_quiz_json_mode(request, data)
+
     try:
         quiz = Quiz.objects.get(pk=quiz_id)
     except Quiz.DoesNotExist:
+        if wants_json:
+            return JsonResponse({"error": "Quiz not found"}, status=404)
         messages.error(request, "Quiz not found")
         return redirect("/dashboard/")
 
@@ -3637,6 +3874,8 @@ def student_quiz_submit(request, quiz_id: int):
             user=request.user, program=quiz.node.program
         )
     except Enrollment.DoesNotExist:
+        if wants_json:
+            return JsonResponse({"error": "Enrollment not found"}, status=403)
         return redirect("/dashboard/")
 
     with transaction.atomic():
@@ -3652,13 +3891,45 @@ def student_quiz_submit(request, quiz_id: int):
         )
 
         if not attempt:
+            if wants_json:
+                requested_enrollment_id = _safe_int(data.get("enrollment_id"))
+                requested_node_id = _safe_int(data.get("node_id"))
+                in_course_player_context = (
+                    requested_enrollment_id == enrollment.id
+                    and requested_node_id == quiz.node_id
+                )
+                return JsonResponse(
+                    {
+                        "error": "no_in_progress_attempt",
+                        "redirectUrl": (
+                            f"/student/quiz/{quiz_id}/?response=json&enrollment_id={enrollment.id}&node_id={quiz.node_id}"
+                            if in_course_player_context
+                            else f"/student/quiz/{quiz_id}/?response=json"
+                        ),
+                    },
+                    status=409,
+                )
             messages.error(request, "No quiz attempt in progress")
             return redirect("core:student.quiz_start", quiz_id=quiz_id)
 
-        data = get_post_data(request)
         submitted_answers = data.get("answers", {})
         now = timezone.now()
         expired = _is_quiz_attempt_expired(quiz, attempt, now=now)
+
+        incoming_runtime_state = data.get("runtime_state")
+        if isinstance(incoming_runtime_state, dict):
+            merged_runtime_state = (
+                attempt.runtime_state.copy()
+                if isinstance(attempt.runtime_state, dict)
+                else {}
+            )
+            merged_runtime_state.update(incoming_runtime_state)
+            max_index = max(0, quiz.questions.count() - 1)
+            current_index = _safe_int(merged_runtime_state.get("current_question_index"))
+            merged_runtime_state["current_question_index"] = (
+                0 if current_index is None else max(0, min(current_index, max_index))
+            )
+            attempt.runtime_state = merged_runtime_state
 
         if expired:
             points_earned, points_possible, percentage, passed = _finalize_quiz_attempt(
@@ -3668,40 +3939,54 @@ def student_quiz_submit(request, quiz_id: int):
         else:
             points_earned, points_possible, percentage, passed = _finalize_quiz_attempt(
                 attempt,
-                answers=submitted_answers if isinstance(submitted_answers, dict) else {},
+                answers=submitted_answers
+                if isinstance(submitted_answers, dict)
+                else {},
                 submitted_at=now,
             )
 
         requested_enrollment_id = _safe_int(data.get("enrollment_id"))
         requested_node_id = _safe_int(data.get("node_id"))
         in_course_player_context = (
-            requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
+            requested_enrollment_id == enrollment.id
+            and requested_node_id == quiz.node_id
         )
+        has_passed_attempt = QuizAttempt.objects.filter(
+            enrollment=enrollment,
+            quiz=quiz,
+            submitted_at__isnull=False,
+            passed=True,
+        ).exists()
 
         if passed is not None:
             NotificationService.notify_quiz_graded(attempt)
 
-        if expired:
+        if not wants_json and expired:
             messages.warning(
                 request,
                 "Time expired. Your quiz was submitted automatically using saved answers.",
             )
-        elif passed is True:
-            messages.success(request, f"Congratulations! You passed with {percentage}%!")
-        elif passed is False:
+        elif not wants_json and passed is True:
+            messages.success(
+                request, f"Congratulations! You passed with {percentage}%!"
+            )
+        elif not wants_json and passed is False:
             messages.warning(
                 request, f"You scored {percentage}%. Required: {quiz.pass_threshold}%"
             )
-        else:
+        elif not wants_json:
             messages.info(request, "Your quiz has been submitted for review.")
 
+    redirect_url = f"/student/quiz/{quiz_id}/results/"
+    next_node = None
     if in_course_player_context:
         lesson_type = str((quiz.node.properties or {}).get("lesson_type") or "").lower()
         node_type = str(quiz.node.node_type or "").lower()
         is_assignment_node = node_type == "assignment" or lesson_type == "assignment"
+        is_quiz_node = node_type == "quiz" or lesson_type == "quiz"
         assignment_mode = _normalize_assignment_mode(quiz.node.properties or {})
 
-        should_mark_complete = True
+        should_mark_complete = has_passed_attempt if is_quiz_node else True
         if is_assignment_node:
             from apps.assessments.models import AssignmentSubmission
 
@@ -3709,7 +3994,9 @@ def student_quiz_submit(request, quiz_id: int):
                 (quiz.node.properties or {}).get("typed_response_mode")
             )
             if assignment_mode == "mixed":
-                assignment_id = _safe_int((quiz.node.properties or {}).get("assignment_id"))
+                assignment_id = _safe_int(
+                    (quiz.node.properties or {}).get("assignment_id")
+                )
                 should_mark_complete = (
                     bool(assignment_id)
                     and AssignmentSubmission.objects.filter(
@@ -3722,6 +4009,12 @@ def student_quiz_submit(request, quiz_id: int):
             else:
                 should_mark_complete = typed_response_mode == "short_answer_question"
 
+        if is_quiz_node and not has_passed_attempt:
+            NodeCompletion.objects.filter(
+                enrollment=enrollment,
+                node=quiz.node,
+            ).delete()
+
         if should_mark_complete:
             from apps.progression.services import ProgressionEngine
 
@@ -3731,10 +4024,43 @@ def student_quiz_submit(request, quiz_id: int):
                 completion_type="quiz_pass",
             )
 
-        return redirect(
+        redirect_url = (
             f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
         )
+        try:
+            from apps.progression.views import _get_sibling_navigation
 
+            next_node = _get_sibling_navigation(quiz.node, enrollment.id).get("next")
+        except Exception:
+            next_node = None
+
+    attempts_used = QuizAttempt.objects.filter(
+        enrollment=enrollment,
+        quiz=quiz,
+        submitted_at__isnull=False,
+    ).count()
+    attempts_remaining = max(0, quiz.max_attempts - attempts_used)
+
+    if wants_json:
+        return JsonResponse(
+            {
+                "attemptId": attempt.id,
+                "attemptNumber": attempt.attempt_number,
+                "score": float(percentage),
+                "pointsEarned": points_earned,
+                "pointsPossible": points_possible,
+                "passed": passed,
+                "expired": expired,
+                "attemptsRemaining": attempts_remaining,
+                "canRetry": attempts_remaining > 0,
+                "passThreshold": quiz.pass_threshold,
+                "nextNode": next_node,
+                "redirectUrl": redirect_url,
+            }
+        )
+
+    if in_course_player_context:
+        return redirect(redirect_url)
     return redirect("core:student.quiz_results", quiz_id=quiz_id)
 
 
@@ -3758,7 +4084,7 @@ def student_quiz_save(request, quiz_id: int):
         enrollment = Enrollment.objects.get(
             user=request.user,
             program=quiz.node.program,
-            status="active",
+            status__in=["active", "completed"],
         )
     except Enrollment.DoesNotExist:
         return JsonResponse({"error": "Enrollment not found"}, status=403)
@@ -3767,6 +4093,9 @@ def student_quiz_save(request, quiz_id: int):
     incoming_answers = data.get("answers", {})
     if not isinstance(incoming_answers, dict):
         incoming_answers = {}
+    incoming_runtime_state = (
+        data.get("runtime_state") if isinstance(data.get("runtime_state"), dict) else {}
+    )
 
     requested_enrollment_id = _safe_int(data.get("enrollment_id"))
     requested_node_id = _safe_int(data.get("node_id"))
@@ -3775,37 +4104,25 @@ def student_quiz_save(request, quiz_id: int):
     )
 
     with transaction.atomic():
+        attempts_qs = QuizAttempt.objects.select_for_update().filter(
+            enrollment=enrollment,
+            quiz=quiz,
+        )
         attempt = (
-            QuizAttempt.objects.select_for_update()
-            .filter(
-                enrollment=enrollment,
-                quiz=quiz,
-                submitted_at__isnull=True,
-            )
+            attempts_qs.filter(submitted_at__isnull=True)
             .order_by("-attempt_number")
             .first()
         )
 
-        if not attempt:
-            return JsonResponse(
-                {
-                    "error": "No in-progress attempt",
-                    "redirectUrl": (
-                        f"/student/quiz/{quiz_id}/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
-                        if in_course_player_context
-                        else f"/student/quiz/{quiz_id}/"
-                    ),
-                },
-                status=409,
-            )
-
         now = timezone.now()
-        if _is_quiz_attempt_expired(quiz, attempt, now=now):
+        if attempt and _is_quiz_attempt_expired(quiz, attempt, now=now):
             _finalize_quiz_attempt(attempt, submitted_at=now)
+            attempts_used = attempts_qs.count()
             return JsonResponse(
                 {
                     "expired": True,
                     "saved": False,
+                    "attemptsRemaining": max(0, quiz.max_attempts - attempts_used),
                     "redirectUrl": (
                         f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
                         if in_course_player_context
@@ -3815,13 +4132,55 @@ def student_quiz_save(request, quiz_id: int):
                 status=409,
             )
 
+        if not attempt:
+            attempts_used = attempts_qs.count()
+            if attempts_used >= quiz.max_attempts:
+                return JsonResponse(
+                    {
+                        "error": "max_attempts_reached",
+                        "saved": False,
+                        "attemptsRemaining": 0,
+                        "redirectUrl": (
+                            f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
+                            if in_course_player_context
+                            else f"/student/quiz/{quiz_id}/results/"
+                        ),
+                    },
+                    status=409,
+                )
+            attempt = QuizAttempt.objects.create(
+                enrollment=enrollment,
+                quiz=quiz,
+                attempt_number=attempts_used + 1,
+                started_at=now,
+                runtime_state={},
+            )
+            attempts_used += 1
+
+        runtime_state = _ensure_quiz_attempt_runtime_state(quiz, attempt)
+        if incoming_runtime_state:
+            runtime_state = (
+                runtime_state.copy() if isinstance(runtime_state, dict) else {}
+            )
+            runtime_state.update(incoming_runtime_state)
+        max_index = max(0, quiz.questions.count() - 1)
+        current_index = _safe_int(runtime_state.get("current_question_index"))
+        runtime_state["current_question_index"] = (
+            0 if current_index is None else max(0, min(current_index, max_index))
+        )
+
         attempt.answers = incoming_answers
-        attempt.save(update_fields=["answers"])
+        attempt.runtime_state = runtime_state
+        attempt.save(update_fields=["answers", "runtime_state"])
+        attempts_remaining = max(0, quiz.max_attempts - attempts_qs.count())
 
     return JsonResponse(
         {
             "saved": True,
             "attemptId": attempt.id,
+            "attemptNumber": attempt.attempt_number,
+            "attemptsRemaining": attempts_remaining,
+            "runtimeState": attempt.runtime_state,
             "savedAt": timezone.now().isoformat(),
         }
     )
@@ -3854,19 +4213,220 @@ def student_quiz_results(request, quiz_id: int):
         requested_enrollment_id == enrollment.id and requested_node_id == quiz.node_id
     )
 
-    next_node = None
+    # When accessed from course player context, redirect to session URL so
+    # results render inside the CoursePlayer layout (with sidebar/curriculum).
     if in_course_player_context:
-        try:
-            from apps.progression.views import _get_sibling_navigation
+        session_url = (
+            f"/student/programs/{enrollment.id}/session/{quiz.node_id}/"
+            f"?show_results=1"
+        )
+        return redirect(session_url)
 
-            siblings = _get_sibling_navigation(quiz.node, enrollment.id)
-            next_node = siblings.get("next")
-        except Exception:
-            next_node = None
+    next_node = None
 
-    attempts = QuizAttempt.objects.filter(
-        enrollment=enrollment, quiz=quiz, submitted_at__isnull=False
-    ).order_by("-attempt_number")
+    node_props = quiz.node.properties if isinstance(quiz.node.properties, dict) else {}
+    show_correct_answer = bool(quiz.show_answers_after_submit)
+    if "quiz_attempt_history" in node_props:
+        show_attempt_history = _coerce_bool(
+            node_props.get("quiz_attempt_history"), default=False
+        )
+    else:
+        # Backwards compatibility for nodes saved before this property existed.
+        show_attempt_history = True
+
+    attempts = list(
+        QuizAttempt.objects.filter(
+            enrollment=enrollment, quiz=quiz, submitted_at__isnull=False
+        ).order_by("-attempt_number")
+    )
+
+    def _normalize_option_label(question, raw_value):
+        token = str(raw_value).strip()
+        options = list(question.options.all())
+        for option in options:
+            if str(option.id) == token or str(option.position) == token:
+                return option.text
+        return token
+
+    def _format_student_answer(question, answer, attempt_id):
+        if answer is None:
+            return "Not answered"
+
+        q_type = question.question_type
+        if q_type in {"mcq", "true_false"}:
+            return _normalize_option_label(question, answer)
+
+        if q_type == "mcq_multi":
+            if not isinstance(answer, list):
+                return str(answer)
+            labels = [_normalize_option_label(question, value) for value in answer]
+            return ", ".join(labels) if labels else "Not answered"
+
+        if q_type == "short_answer":
+            return str(answer).strip() or "Not answered"
+
+        if q_type == "matching":
+            if not isinstance(answer, dict):
+                return str(answer)
+            entries = [
+                f"{str(left).strip()} -> {str(right).strip()}"
+                for left, right in answer.items()
+            ]
+            return "; ".join(entries) if entries else "Not answered"
+
+        if q_type == "ordering":
+            if not isinstance(answer, list):
+                return str(answer)
+            return " -> ".join(
+                str(item).strip() for item in answer if str(item).strip()
+            )
+
+        if q_type == "fill_blank":
+            if not isinstance(answer, dict):
+                return str(answer)
+            entries = [
+                f"Blank {str(index)}: {str(value).strip()}"
+                for index, value in sorted(
+                    answer.items(), key=lambda item: str(item[0])
+                )
+            ]
+            return "; ".join(entries) if entries else "Not answered"
+
+        if q_type == "image_matching":
+            if not isinstance(answer, dict):
+                return str(answer)
+            pairs = list(question.image_matching_pairs.all().order_by("position"))
+            right_labels = {
+                question.get_image_matching_item_id(
+                    pair.id, attempt_id, "right"
+                ): pair.answer_text
+                for pair in pairs
+            }
+            entries = []
+            for pair in pairs:
+                left_token = question.get_image_matching_item_id(
+                    pair.id, attempt_id, "left"
+                )
+                submitted = answer.get(left_token)
+                submitted_label = (
+                    right_labels.get(str(submitted), "Unmatched")
+                    if submitted is not None
+                    else "Unmatched"
+                )
+                entries.append(f"{pair.question_text} -> {submitted_label}")
+            return "; ".join(entries) if entries else "Not answered"
+
+        return str(answer)
+
+    def _format_correct_answer(question, attempt_id):
+        q_type = question.question_type
+        if q_type == "mcq":
+            option = (
+                question.options.filter(is_correct=True).order_by("position").first()
+            )
+            return option.text if option else "N/A"
+
+        if q_type == "true_false":
+
+            def normalize_bool(value):
+                if isinstance(value, bool):
+                    return value
+                if isinstance(value, (int, float)):
+                    if int(value) in {0, 1}:
+                        return bool(int(value))
+                    return None
+                if isinstance(value, str):
+                    normalized = value.strip().lower()
+                    if normalized in {"true", "1", "yes"}:
+                        return True
+                    if normalized in {"false", "0", "no"}:
+                        return False
+                return None
+
+            correct_bool = normalize_bool(question.answer_data.get("correct"))
+            if correct_bool is None:
+                return "N/A"
+            return "True" if correct_bool else "False"
+
+        if q_type == "mcq_multi":
+            labels = list(
+                question.options.filter(is_correct=True)
+                .order_by("position")
+                .values_list("text", flat=True)
+            )
+            return ", ".join(labels) if labels else "N/A"
+
+        if q_type == "short_answer":
+            keywords = question.answer_data.get("keywords", [])
+            if not keywords:
+                return "Manual review"
+            return ", ".join(
+                str(keyword).strip() for keyword in keywords if str(keyword).strip()
+            )
+
+        if q_type == "matching":
+            entries = [
+                f"{pair.left_text} -> {pair.right_text}"
+                for pair in question.matching_pairs.all().order_by("position")
+            ]
+            return "; ".join(entries) if entries else "N/A"
+
+        if q_type == "ordering":
+            items = question.answer_data.get("items", [])
+            if not isinstance(items, list):
+                return "N/A"
+            return " -> ".join(str(item).strip() for item in items if str(item).strip())
+
+        if q_type == "fill_blank":
+            entries = [
+                f"Blank {gap.gap_index}: {' / '.join(gap.accepted_answers)}"
+                for gap in question.gap_answers.all().order_by("gap_index")
+            ]
+            return "; ".join(entries) if entries else "N/A"
+
+        if q_type == "image_matching":
+            entries = [
+                f"{pair.question_text} -> {pair.answer_text}"
+                for pair in question.image_matching_pairs.all().order_by("position")
+            ]
+            return "; ".join(entries) if entries else "N/A"
+
+        return "N/A"
+
+    question_review = []
+    if show_correct_answer and attempts:
+        latest_attempt = attempts[0]
+        review_questions = quiz.questions.all().prefetch_related(
+            "options",
+            "matching_pairs",
+            "gap_answers",
+            "image_matching_pairs",
+        )
+        for question in review_questions:
+            student_answer = latest_attempt.answers.get(str(question.id))
+            if student_answer is None:
+                is_correct, points_earned = False, 0
+            else:
+                is_correct, points_earned = question.check_answer(
+                    student_answer, attempt_id=latest_attempt.id
+                )
+
+            question_review.append(
+                {
+                    "questionId": question.id,
+                    "questionType": question.question_type,
+                    "questionText": _normalize_question_text(question.text),
+                    "studentAnswer": _format_student_answer(
+                        question, student_answer, latest_attempt.id
+                    ),
+                    "correctAnswer": _format_correct_answer(
+                        question, latest_attempt.id
+                    ),
+                    "isCorrect": is_correct,
+                    "pointsEarned": points_earned,
+                    "pointsPossible": question.points,
+                }
+            )
 
     return render(
         request,
@@ -3878,6 +4438,8 @@ def student_quiz_results(request, quiz_id: int):
                 "passThreshold": quiz.pass_threshold,
                 "maxAttempts": quiz.max_attempts,
                 "nodeTitle": quiz.node.title,
+                "showCorrectAnswer": show_correct_answer,
+                "showAttemptHistory": show_attempt_history,
                 "retryUrl": (
                     f"/student/quiz/{quiz.id}/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
                     if in_course_player_context
@@ -3898,7 +4460,8 @@ def student_quiz_results(request, quiz_id: int):
                 }
                 for a in attempts
             ],
-            "canRetry": attempts.count() < quiz.max_attempts,
+            "questionReview": question_review,
+            "canRetry": len(attempts) < quiz.max_attempts,
             "coursePlayer": (
                 {
                     "sessionUrl": (
@@ -4440,7 +5003,10 @@ def student_assignment_view(request, assignment_id: int):
             pk=requested_node_id,
             program=assignment.program,
         ).first()
-        if node and _safe_int((node.properties or {}).get("assignment_id")) == assignment.id:
+        if (
+            node
+            and _safe_int((node.properties or {}).get("assignment_id")) == assignment.id
+        ):
             source_node = node
             next_node = None
             try:
@@ -4463,15 +5029,23 @@ def student_assignment_view(request, assignment_id: int):
             is_published=True,
         ).only("id", "node_type", "properties")
         for candidate in candidate_nodes:
-            props = candidate.properties if isinstance(candidate.properties, dict) else {}
+            props = (
+                candidate.properties if isinstance(candidate.properties, dict) else {}
+            )
             if _safe_int(props.get("assignment_id")) == assignment.id:
                 source_node = candidate
                 break
 
-    source_props = source_node.properties if isinstance(getattr(source_node, "properties", None), dict) else {}
+    source_props = (
+        source_node.properties
+        if isinstance(getattr(source_node, "properties", None), dict)
+        else {}
+    )
     assessment_prompt = str(source_props.get("assessment_prompt") or "").strip()
     if not assessment_prompt:
-        assessment_prompt = str(assignment.instructions or "").strip() or assignment.title
+        assessment_prompt = (
+            str(assignment.instructions or "").strip() or assignment.title
+        )
     typed_response_mode = _normalize_typed_response_mode(
         source_props.get("typed_response_mode")
     )
@@ -4572,7 +5146,10 @@ def student_assignment_submit(request, assignment_id: int):
         ).first()
         if context_node is None:
             in_course_player_context = False
-        elif _safe_int((context_node.properties or {}).get("assignment_id")) != assignment.id:
+        elif (
+            _safe_int((context_node.properties or {}).get("assignment_id"))
+            != assignment.id
+        ):
             in_course_player_context = False
             context_node = None
 
@@ -4657,7 +5234,9 @@ def student_assignment_submit(request, assignment_id: int):
         )
         messages.success(request, "Assignment submitted!")
     if in_course_player_context and context_node:
-        assignment_props = context_node.properties if isinstance(context_node.properties, dict) else {}
+        assignment_props = (
+            context_node.properties if isinstance(context_node.properties, dict) else {}
+        )
         assignment_mode = _normalize_assignment_mode(assignment_props)
         typed_response_mode = _normalize_typed_response_mode(
             assignment_props.get("typed_response_mode")
@@ -4766,7 +5345,7 @@ def instructor_program_submit_for_review(request, program_id: int):
             title="Program Submitted For Review",
             message=(
                 f'"{program.name}" was submitted by '
-                f'{request.user.get_full_name() or request.user.email}.'
+                f"{request.user.get_full_name() or request.user.email}."
             ),
             action_url=f"/admin/course-approval/{program.id}/",
             related_program_id=program.id,
@@ -5133,6 +5712,7 @@ def instructor_program_publish(request, program_id: int):
 
     program.is_published = True
     program.save()
+    _sync_program_publication_state(program, True)
 
     messages.success(request, f"'{program.name}' is now live for students!")
     return redirect("core:instructor.program", pk=program_id)
@@ -5224,7 +5804,11 @@ def serialize_program_data(program):
             "taxonomy": {
                 "levelValue": level_value,
                 "builderHierarchy": builder_hierarchy,
-                "fullHierarchy": [level_value, builder_hierarchy[0], builder_hierarchy[1]],
+                "fullHierarchy": [
+                    level_value,
+                    builder_hierarchy[0],
+                    builder_hierarchy[1],
+                ],
             },
             "blueprint": (
                 {
@@ -5321,7 +5905,9 @@ def build_curriculum_tree(program):
             "description": node["description"],
             "properties": node["properties"],
             "position": node["position"],
-            "unlockDate": node["unlock_date"].isoformat() if node["unlock_date"] else None,
+            "unlockDate": node["unlock_date"].isoformat()
+            if node["unlock_date"]
+            else None,
             "unlockAfterDays": node["unlock_after_days"],
             "children": [serialize_node(child, depth + 1) for child in children],
         }
@@ -5439,7 +6025,9 @@ def instructor_node_create(request, program_id: int):
         return redirect("core:instructor.program_manage", pk=program_id)
 
     blueprint_structure = program.blueprint.hierarchy_structure or []
-    is_valid_hierarchy, hierarchy_error = validate_builder_hierarchy(blueprint_structure)
+    is_valid_hierarchy, hierarchy_error = validate_builder_hierarchy(
+        blueprint_structure
+    )
 
     # Course Builder taxonomy requires:
     # Tier 1 (Program.level) outside tree + 2 in-tree tiers (container/content)
@@ -5523,9 +6111,11 @@ def instructor_node_create(request, program_id: int):
                 if isinstance(node.properties, dict)
                 else []
             )
-            if questions_data:
-                _sync_quiz_questions(node, questions_data)
-        if node_type_normalized == "assignment" or lesson_type_normalized == "assignment":
+            _sync_quiz_questions(node, questions_data)
+        if (
+            node_type_normalized == "assignment"
+            or lesson_type_normalized == "assignment"
+        ):
             _sync_assignment(node)
 
         # Use semantic labels in toasts to avoid blueprint label leakage
@@ -5533,10 +6123,15 @@ def instructor_node_create(request, program_id: int):
         success_label = "Section" if parent is None else "Lesson"
         if node_type_normalized == "quiz" or lesson_type_normalized == "quiz":
             success_label = "Quiz"
-        elif node_type_normalized == "assignment" or lesson_type_normalized == "assignment":
+        elif (
+            node_type_normalized == "assignment"
+            or lesson_type_normalized == "assignment"
+        ):
             success_label = "Assignment"
 
-        messages.success(request, f"{success_label} '{node.title}' created successfully")
+        messages.success(
+            request, f"{success_label} '{node.title}' created successfully"
+        )
 
         # Build updated curriculum tree and return as Inertia response
         curriculum = build_curriculum_tree(program)
@@ -5576,39 +6171,105 @@ def _sync_quiz_questions(node, questions_data: list):
         Question,
         QuestionGapAnswer,
         QuestionImageMatchingPair,
+        QuestionMatchingPair,
         QuestionOption,
         Quiz,
     )
+    from decimal import Decimal, InvalidOperation
 
-    if not questions_data:
-        return
+    questions_data = questions_data if isinstance(questions_data, list) else []
+    node_props = node.properties if isinstance(node.properties, dict) else {}
+
+    def to_bool(value, default=False):
+        if isinstance(value, bool):
+            return value
+        if value is None:
+            return default
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"true", "1", "yes", "on"}:
+                return True
+            if normalized in {"false", "0", "no", "off", ""}:
+                return False
+        return bool(value)
+
+    def to_int(value, default=0, minimum=None, maximum=None):
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return default
+
+        if minimum is not None and parsed < minimum:
+            parsed = minimum
+        if maximum is not None and parsed > maximum:
+            parsed = maximum
+        return parsed
+
+    def to_optional_positive_int(value, maximum=None):
+        if value is None or value == "":
+            return None
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return None
+        if parsed <= 0:
+            return None
+        if maximum is not None and parsed > maximum:
+            parsed = maximum
+        return parsed
+
+    def to_decimal_or_none(value):
+        if value is None or value == "":
+            return None
+        try:
+            return Decimal(str(value))
+        except (InvalidOperation, TypeError, ValueError):
+            return None
+
+    penalty = to_decimal_or_none(node_props.get("points_cut_after_retake"))
+    if penalty is None:
+        penalty = to_decimal_or_none(node_props.get("retake_penalty"))
+    if penalty is None:
+        penalty = Decimal("0")
+    penalty = min(max(penalty, Decimal("0")), Decimal("100"))
+
+    quiz_settings = {
+        "description": str(node_props.get("description", "") or "").strip(),
+        "pass_threshold": to_int(
+            node_props.get("passing_grade"), default=70, minimum=0, maximum=100
+        ),
+        "weight": to_int(node_props.get("weight"), default=0, minimum=0, maximum=100),
+        "time_limit_minutes": to_optional_positive_int(
+            node_props.get("quiz_duration"), maximum=10080
+        ),
+        "max_attempts": to_int(
+            node_props.get("max_attempts"), default=1, minimum=1, maximum=100
+        ),
+        "randomize_questions": to_bool(
+            node_props.get("randomize_questions"), default=False
+        ),
+        "shuffle_options": to_bool(node_props.get("randomize_answers"), default=False),
+        "show_answers_after_submit": to_bool(
+            node_props.get("show_correct_answer"), default=True
+        ),
+        "retake_penalty_percent": penalty,
+    }
 
     # Get or create Quiz for this node
     quiz, created = Quiz.objects.get_or_create(
         node=node,
         defaults={
             "title": node.title,
-            "description": node.properties.get("description", ""),
-            "pass_threshold": node.properties.get("passing_grade", 70),
-            "weight": node.properties.get("weight", 0),
-            "time_limit_minutes": node.properties.get("quiz_duration"),
-            "max_attempts": node.properties.get("max_attempts", 1),
-            "randomize_questions": node.properties.get("randomize_questions", False),
-            "retake_penalty_percent": node.properties.get("retake_penalty", 0),
+            **quiz_settings,
         },
     )
 
     # Update quiz settings if not created
     if not created:
         quiz.title = node.title
-        quiz.description = node.properties.get("description", "")
-        quiz.pass_threshold = node.properties.get("passing_grade", 70)
-        quiz.weight = node.properties.get("weight", 0)
-        quiz.time_limit_minutes = node.properties.get("quiz_duration")
-        quiz.max_attempts = node.properties.get("max_attempts", 1)
-        quiz.randomize_questions = node.properties.get("randomize_questions", False)
-        quiz.retake_penalty_percent = node.properties.get("retake_penalty", 0)
-        quiz.save()
+        for field, value in quiz_settings.items():
+            setattr(quiz, field, value)
+        quiz.save(update_fields=["title", *quiz_settings.keys()])
 
     # Track existing question IDs
     existing_ids = set(quiz.questions.values_list("id", flat=True))
@@ -5876,8 +6537,100 @@ def _sync_quiz_questions(node, questions_data: list):
     if removed_ids:
         Question.objects.filter(id__in=removed_ids).delete()
 
-    # Update node properties with db_ids for frontend tracking
-    node.properties["questions"] = updated_questions
+    question_metadata_by_id = {}
+    for q_data in updated_questions:
+        db_id = _safe_int(q_data.get("db_id"))
+        if not db_id:
+            continue
+        if q_data.get("generated_from_assessment_prompt") is True:
+            question_metadata_by_id[db_id] = {"generated_from_assessment_prompt": True}
+
+    # Rebuild properties from DB records (single source of truth).
+    # This prevents stale/raw frontend data (e.g. <p> tags, corrupted options)
+    # from persisting in node.properties across save cycles.
+    db_questions = (
+        quiz.questions.all()
+        .prefetch_related(
+            "options", "matching_pairs", "gap_answers", "image_matching_pairs"
+        )
+        .order_by("position")
+    )
+    rebuilt_questions = []
+    for q in db_questions:
+        q_entry = {
+            "id": f"q_{q.id}",
+            "db_id": q.id,
+            "type": q.question_type,
+            "text": q.text,  # Already normalized via _normalize_question_text
+            "points": q.points,
+        }
+        q_entry.update(question_metadata_by_id.get(q.id, {}))
+
+        if q.question_type in ("mcq", "mcq_multi"):
+            opts = list(q.options.all().order_by("position"))
+            q_entry["options"] = [o.text for o in opts]
+            if q.question_type == "mcq":
+                correct_opt = next((o for o in opts if o.is_correct), None)
+                q_entry["correct"] = correct_opt.position if correct_opt else 0
+            else:
+                q_entry["correct_indices"] = [o.position for o in opts if o.is_correct]
+
+        elif q.question_type == "true_false":
+            q_entry["correct"] = q.answer_data.get("correct", True)
+            opts = list(q.options.all().order_by("position"))
+            if opts:
+                q_entry["options"] = [o.text for o in opts]
+
+        elif q.question_type == "short_answer":
+            q_entry["keywords"] = q.answer_data.get("keywords", [])
+            q_entry["manual_grading"] = q.answer_data.get("manual_grading", True)
+
+        elif q.question_type == "matching":
+            pairs = list(q.matching_pairs.all().order_by("position"))
+            q_entry["pairs"] = [
+                {
+                    "left_text": p.left_text,
+                    "right_text": p.right_text,
+                    "explanation": p.explanation,
+                    "position": p.position,
+                }
+                for p in pairs
+            ]
+
+        elif q.question_type == "fill_blank":
+            gaps = list(q.gap_answers.all().order_by("gap_index"))
+            q_entry["gaps"] = [
+                {
+                    "gap_index": g.gap_index,
+                    "accepted_answers": g.accepted_answers,
+                    "explanation": g.explanation,
+                }
+                for g in gaps
+            ]
+
+        elif q.question_type == "ordering":
+            q_entry["items"] = q.answer_data.get("items", [])
+            q_entry["explanations"] = q.answer_data.get("explanations", {})
+
+        elif q.question_type == "image_matching":
+            img_pairs = list(q.image_matching_pairs.all().order_by("position"))
+            q_entry["image_pairs"] = [
+                {
+                    "question_text": p.question_text,
+                    "question_image": p.question_image,
+                    "answer_text": p.answer_text,
+                    "answer_image": p.answer_image,
+                    "explanation": p.explanation,
+                    "position": p.position,
+                }
+                for p in img_pairs
+            ]
+
+        rebuilt_questions.append(q_entry)
+
+    if not isinstance(node.properties, dict):
+        node.properties = {}
+    node.properties["questions"] = rebuilt_questions
     node.properties["quiz_id"] = quiz.id
     node.save(update_fields=["properties"])
 
@@ -6094,8 +6847,7 @@ def instructor_node_update(request, node_id: int):
 
     if node_type == "quiz" or lesson_type == "quiz":
         questions_data = node.properties.get("questions", [])
-        if questions_data:
-            _sync_quiz_questions(node, questions_data)
+        _sync_quiz_questions(node, questions_data)
 
     # Sync assignment data to Assignment table
     if node_type == "assignment" or lesson_type == "assignment":
@@ -6230,16 +6982,28 @@ def instructor_program_update_settings(request, pk: int):
         if not value:
             return None
         if isinstance(value, datetime):
-            return value if timezone.is_aware(value) else timezone.make_aware(value, timezone.get_current_timezone())
+            return (
+                value
+                if timezone.is_aware(value)
+                else timezone.make_aware(value, timezone.get_current_timezone())
+            )
         parsed = parse_datetime(str(value))
         if parsed:
-            return parsed if timezone.is_aware(parsed) else timezone.make_aware(parsed, timezone.get_current_timezone())
+            return (
+                parsed
+                if timezone.is_aware(parsed)
+                else timezone.make_aware(parsed, timezone.get_current_timezone())
+            )
         parsed_date = parse_date(str(value))
         if parsed_date:
-            return datetime.combine(parsed_date, datetime.min.time(), tzinfo=timezone.get_current_timezone())
+            return datetime.combine(
+                parsed_date, datetime.min.time(), tzinfo=timezone.get_current_timezone()
+            )
         return None
 
-    def _program_depends_on(source_program_id: int, target_program_id: int, seen=None) -> bool:
+    def _program_depends_on(
+        source_program_id: int, target_program_id: int, seen=None
+    ) -> bool:
         if seen is None:
             seen = set()
         if source_program_id in seen:
@@ -6255,8 +7019,7 @@ def instructor_program_update_settings(request, pk: int):
         if target_program_id in dep_ids:
             return True
         return any(
-            _program_depends_on(dep_id, target_program_id, seen)
-            for dep_id in dep_ids
+            _program_depends_on(dep_id, target_program_id, seen) for dep_id in dep_ids
         )
 
     prerequisite_ids = data.get("prerequisite_program_ids", [])
@@ -6278,7 +7041,10 @@ def instructor_program_update_settings(request, pk: int):
 
     for dep_id in normalized_prerequisite_ids:
         if _program_depends_on(dep_id, pk):
-            messages.error(request, "Prerequisite cycle detected. Please remove cyclic dependencies.")
+            messages.error(
+                request,
+                "Prerequisite cycle detected. Please remove cyclic dependencies.",
+            )
             return redirect("core:instructor.program_manage", pk=pk)
 
     drip_mode = (data.get("drip_mode") or "none").strip().lower()
@@ -6348,7 +7114,11 @@ def instructor_program_update_settings(request, pk: int):
                 if not node:
                     continue
 
-                node.unlock_after_days = unlock_after_days if unlock_after_days and unlock_after_days > 0 else None
+                node.unlock_after_days = (
+                    unlock_after_days
+                    if unlock_after_days and unlock_after_days > 0
+                    else None
+                )
                 node.unlock_date = unlock_date
                 node.updated_at = timezone.now()
                 updates.append(node)

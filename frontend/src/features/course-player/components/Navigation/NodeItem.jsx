@@ -89,6 +89,10 @@ const NodeItem = ({
         return node.lastAttempt || node.properties?.lastAttempt;
     };
 
+    const getBestAttempt = () => {
+        return node.bestAttempt || node.properties?.bestAttempt;
+    };
+
     // Build navigation URL
     const getHref = () => {
         if (node.url) return node.url;
@@ -169,6 +173,7 @@ const NodeItem = ({
     }
 
     const lastAttempt = getLastAttempt();
+    const bestAttempt = getBestAttempt();
 
     // Lesson item styling
     return (
@@ -263,6 +268,15 @@ const NodeItem = ({
                             </span>
                         )}
                     </Typography>
+                    {bestAttempt && (
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ mt: 0.25, display: "block", fontWeight: 600 }}
+                        >
+                            Best: {Math.round(bestAttempt.score || 0)}%
+                        </Typography>
+                    )}
                 </Box>
             )}
         </ListItem>

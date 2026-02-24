@@ -35,6 +35,7 @@ import {
     IconSend,
     IconMessageCircle,
     IconFolder,
+    IconUserCheck,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 
@@ -109,6 +110,14 @@ export default function Detail({ program, students, curriculum }) {
                             )}
                         </Box>
                         <Stack direction="row" spacing={1}>
+                            <Button
+                                component={Link}
+                                href={`/instructor/programs/${program.id}/enrollment-requests/`}
+                                variant="outlined"
+                                startIcon={<IconUserCheck size={18} />}
+                            >
+                                Enrollment Requests
+                            </Button>
                             <Button
                                 component={Link}
                                 href={`/instructor/programs/${program.id}/change-requests/`}

@@ -14,6 +14,7 @@ import {
   TableRow,
   Chip,
   Alert,
+  Divider,
 } from '@mui/material';
 import {
   IconCheck,
@@ -23,9 +24,19 @@ import {
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
 
-export default function Results({ quiz, attempts, canRetry, coursePlayer }) {
+export default function Results({
+  quiz,
+  attempts,
+  canRetry,
+  coursePlayer,
+  questionReview = [],
+}) {
   const bestAttempt = attempts.reduce(
-    (best, a) => (!best || (a.score && a.score > best.score) ? a : best),
+    (best, a) => {
+      const score = typeof a?.score === 'number' ? a.score : -1;
+      const bestScore = typeof best?.score === 'number' ? best.score : -1;
+      return !best || score > bestScore ? a : best;
+    },
     null
   );
   const backUrl = coursePlayer?.sessionUrl || '/dashboard/';
@@ -123,61 +134,109 @@ export default function Results({ quiz, attempts, canRetry, coursePlayer }) {
             </Alert>
           )}
 
-          {/* All Attempts */}
-          <Paper>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Attempt</TableCell>
-                    <TableCell>Score</TableCell>
-                    <TableCell>Points</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Submitted</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {attempts.map((a) => (
-                    <TableRow key={a.id}>
-                      <TableCell>#{a.attemptNumber}</TableCell>
-                      <TableCell>
-                        {a.score !== null ? `${a.score.toFixed(1)}%` : 'Pending'}
-                      </TableCell>
-                      <TableCell>
-                        {a.pointsEarned ?? '—'} / {a.pointsPossible ?? '—'}
-                      </TableCell>
-                      <TableCell>
-                        {a.passed === true && (
-                          <Chip
-                            icon={<IconCheck size={14} />}
-                            label="Passed"
-                            color="success"
-                            size="small"
-                          />
-                        )}
-                        {a.passed === false && (
-                          <Chip
-                            icon={<IconX size={14} />}
-                            label="Failed"
-                            color="error"
-                            size="small"
-                          />
-                        )}
-                        {a.passed === null && (
-                          <Chip label="Pending Review" size="small" />
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {a.submittedAt
-                          ? new Date(a.submittedAt).toLocaleString()
-                          : '—'}
-                      </TableCell>
+          {quiz.showCorrectAnswer && questionReview.length > 0 && (
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Correct Answer Review
+              </Typography>
+              <Stack spacing={2}>
+                {questionReview.map((item, index) => (
+                  <Box key={`${item.questionId}-${index}`}>
+                    <Stack direction="row" spacing={1} sx={{ mb: 0.75 }}>
+                      <Chip
+                        size="small"
+                        label={
+                          item.isCorrect === true
+                            ? 'Correct'
+                            : item.isCorrect === false
+                              ? 'Incorrect'
+                              : 'Pending Review'
+                        }
+                        color={
+                          item.isCorrect === true
+                            ? 'success'
+                            : item.isCorrect === false
+                              ? 'error'
+                              : 'default'
+                        }
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        Question {index + 1}
+                      </Typography>
+                    </Stack>
+                    <Typography variant="subtitle2">{item.questionText}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Your answer: {item.studentAnswer || 'Not answered'}
+                    </Typography>
+                    <Typography variant="body2" color="success.main">
+                      Correct answer: {item.correctAnswer || 'N/A'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Points: {item.pointsEarned ?? '—'} / {item.pointsPossible ?? '—'}
+                    </Typography>
+                    {index < questionReview.length - 1 && <Divider sx={{ mt: 1.5 }} />}
+                  </Box>
+                ))}
+              </Stack>
+            </Paper>
+          )}
+
+          {quiz.showAttemptHistory && (
+            <Paper>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Attempt</TableCell>
+                      <TableCell>Score</TableCell>
+                      <TableCell>Points</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Submitted</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
+                  </TableHead>
+                  <TableBody>
+                    {attempts.map((a) => (
+                      <TableRow key={a.id}>
+                        <TableCell>#{a.attemptNumber}</TableCell>
+                        <TableCell>
+                          {a.score !== null ? `${a.score.toFixed(1)}%` : 'Pending'}
+                        </TableCell>
+                        <TableCell>
+                          {a.pointsEarned ?? '—'} / {a.pointsPossible ?? '—'}
+                        </TableCell>
+                        <TableCell>
+                          {a.passed === true && (
+                            <Chip
+                              icon={<IconCheck size={14} />}
+                              label="Passed"
+                              color="success"
+                              size="small"
+                            />
+                          )}
+                          {a.passed === false && (
+                            <Chip
+                              icon={<IconX size={14} />}
+                              label="Failed"
+                              color="error"
+                              size="small"
+                            />
+                          )}
+                          {a.passed === null && (
+                            <Chip label="Pending Review" size="small" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {a.submittedAt
+                            ? new Date(a.submittedAt).toLocaleString()
+                            : '—'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+          )}
         </motion.div>
       </Container>
     </>

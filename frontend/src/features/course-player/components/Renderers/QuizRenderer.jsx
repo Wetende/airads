@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
 import {
     Alert,
@@ -27,6 +27,13 @@ import {
     normalizeQuestions,
 } from './quizRendererUtils';
 
+const getCsrfToken = () => {
+    const cookie = document.cookie
+        .split(';')
+        .map((entry) => entry.trim())
+        .find((entry) => entry.startsWith('csrftoken='));
+    return cookie ? decodeURIComponent(cookie.split('=')[1] || '') : '';
+};
 
 const renderQuestionInput = ({
     question,
@@ -191,19 +198,347 @@ const renderQuestionInput = ({
     );
 };
 
-const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
+const QuizRenderer = ({ node, enrollmentId, onComplete, useBackendRuntime = false }) => {
+    const quizId = node?.properties?.quiz_id;
+    const nodeType = String(node?.type || node?.nodeType || node?.node_type || '').toLowerCase();
+    const lessonType = String(node?.properties?.lesson_type || '').toLowerCase();
+    const isQuizNode = nodeType === 'quiz' || lessonType === 'quiz';
+    const shouldUseBackendRuntime = Boolean(useBackendRuntime || (quizId && isQuizNode));
+
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState({});
     const [resultSummary, setResultSummary] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingRuntime, setIsLoadingRuntime] = useState(shouldUseBackendRuntime);
+    const [runtimeError, setRuntimeError] = useState('');
+    const [runtimeQuestions, setRuntimeQuestions] = useState([]);
+    const [runtimeAttemptsRemaining, setRuntimeAttemptsRemaining] = useState(null);
 
-    const questions = useMemo(
+    const saveTimeoutRef = useRef(null);
+
+    const localQuestions = useMemo(
         () => normalizeQuestions(node?.properties?.questions || []),
         [node?.properties?.questions],
     );
+    const questions = shouldUseBackendRuntime ? runtimeQuestions : localQuestions;
 
-    const quizId = node?.properties?.quiz_id;
-    if (quizId && (!questions || questions.length === 0)) {
+    useEffect(() => {
+        setCurrentQuestionIndex(0);
+        setAnswers({});
+        setResultSummary(null);
+        setRuntimeError('');
+        setRuntimeQuestions([]);
+        setRuntimeAttemptsRemaining(null);
+        if (shouldUseBackendRuntime) {
+            setIsLoadingRuntime(true);
+        }
+    }, [node?.id, quizId, shouldUseBackendRuntime]);
+
+    const buildRuntimeQuery = useCallback(() => {
+        const params = new URLSearchParams();
+        params.set('response', 'json');
+        if (enrollmentId) {
+            params.set('enrollment_id', String(enrollmentId));
+        }
+        if (node?.id) {
+            params.set('node_id', String(node.id));
+        }
+        return params.toString();
+    }, [enrollmentId, node?.id]);
+
+    const loadRuntime = useCallback(async () => {
+        if (!shouldUseBackendRuntime || !quizId) return;
+
+        setIsLoadingRuntime(true);
+        setRuntimeError('');
+
+        try {
+            const query = buildRuntimeQuery();
+            const response = await fetch(`/student/quiz/${quizId}/?${query}`, {
+                credentials: 'same-origin',
+            });
+
+            if (response.status === 409) {
+                const payload = await response.json().catch(() => ({}));
+                if (payload?.redirectUrl) {
+                    router.visit(payload.redirectUrl);
+                    return;
+                }
+                setRuntimeError('No quiz attempt is available for this lesson.');
+                return;
+            }
+
+            if (!response.ok) {
+                setRuntimeError('Unable to load this quiz right now.');
+                return;
+            }
+
+            const payload = await response.json();
+            const normalizedQuestions = normalizeQuestions(payload?.questions || []);
+            const initialAnswers =
+                payload?.attempt?.answers && typeof payload.attempt.answers === 'object'
+                    ? payload.attempt.answers
+                    : {};
+            const rawIndex = Number(payload?.attempt?.runtimeState?.current_question_index ?? 0);
+            const maxIndex = Math.max(0, normalizedQuestions.length - 1);
+            const normalizedIndex = Number.isFinite(rawIndex)
+                ? Math.max(0, Math.min(rawIndex, maxIndex))
+                : 0;
+
+            setRuntimeQuestions(normalizedQuestions);
+            setAnswers(initialAnswers);
+            setCurrentQuestionIndex(normalizedIndex);
+            setRuntimeAttemptsRemaining(
+                typeof payload?.attemptsRemaining === 'number'
+                    ? payload.attemptsRemaining
+                    : null,
+            );
+            setResultSummary(null);
+        } catch {
+            setRuntimeError('Unable to load this quiz right now.');
+        } finally {
+            setIsLoadingRuntime(false);
+        }
+    }, [buildRuntimeQuery, quizId, shouldUseBackendRuntime]);
+
+    useEffect(() => {
+        if (!shouldUseBackendRuntime) return;
+        loadRuntime();
+    }, [loadRuntime, shouldUseBackendRuntime]);
+
+    const persistRuntimeState = useCallback(
+        async (nextAnswers, nextQuestionIndex) => {
+            if (!shouldUseBackendRuntime || !quizId) return;
+
+            const payload = {
+                response: 'json',
+                answers: nextAnswers,
+                runtime_state: {
+                    current_question_index: nextQuestionIndex,
+                },
+            };
+            if (enrollmentId) {
+                payload.enrollment_id = enrollmentId;
+            }
+            if (node?.id) {
+                payload.node_id = node.id;
+            }
+
+            try {
+                const response = await fetch(`/student/quiz/${quizId}/save/`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.status === 409) {
+                    const data = await response.json().catch(() => ({}));
+                    if (data?.redirectUrl) {
+                        router.visit(data.redirectUrl);
+                    }
+                    return;
+                }
+
+                if (response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    if (typeof data?.attemptsRemaining === 'number') {
+                        setRuntimeAttemptsRemaining(data.attemptsRemaining);
+                    }
+                }
+            } catch {
+                // Best-effort save: do not interrupt quiz flow on transient errors.
+            }
+        },
+        [enrollmentId, node?.id, quizId, shouldUseBackendRuntime],
+    );
+
+    const queueRuntimePersist = useCallback(
+        (nextAnswers, nextQuestionIndex) => {
+            if (!shouldUseBackendRuntime) return;
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            saveTimeoutRef.current = setTimeout(() => {
+                persistRuntimeState(nextAnswers, nextQuestionIndex);
+            }, 350);
+        },
+        [persistRuntimeState, shouldUseBackendRuntime],
+    );
+
+    useEffect(
+        () => () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        },
+        [],
+    );
+
+    const handleAnswerChange = (questionId, value) => {
+        setAnswers((previous) => {
+            const nextAnswers = {
+                ...previous,
+                [String(questionId)]: value,
+            };
+            queueRuntimePersist(nextAnswers, currentQuestionIndex);
+            return nextAnswers;
+        });
+    };
+
+    const handleSubmitQuiz = async () => {
+        if (isSubmitting) return;
+
+        if (!shouldUseBackendRuntime || !quizId) {
+            setIsSubmitting(true);
+
+            const summary = evaluateQuizAnswers(questions, answers);
+            setResultSummary(summary);
+
+            if (node?.id && enrollmentId) {
+                router.post(
+                    `/student/programs/${enrollmentId}/session/${node.id}/`,
+                    {
+                        mark_complete: true,
+                        quiz_answers: answers,
+                        quiz_score: summary.score,
+                    },
+                    {
+                        preserveScroll: true,
+                        only: ['isCompleted', 'curriculum'],
+                        onFinish: () => {
+                            setIsSubmitting(false);
+                            if (onComplete) onComplete();
+                        },
+                    },
+                );
+            } else {
+                setIsSubmitting(false);
+                if (onComplete) onComplete();
+            }
+            return;
+        }
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        setIsSubmitting(true);
+        setRuntimeError('');
+
+        const payload = {
+            response: 'json',
+            answers,
+            runtime_state: {
+                current_question_index: currentQuestionIndex,
+            },
+        };
+        if (enrollmentId) {
+            payload.enrollment_id = enrollmentId;
+        }
+        if (node?.id) {
+            payload.node_id = node.id;
+        }
+
+        try {
+            const response = await fetch(`/student/quiz/${quizId}/submit/`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.status === 409) {
+                const data = await response.json().catch(() => ({}));
+                if (data?.redirectUrl) {
+                    router.visit(data.redirectUrl);
+                    return;
+                }
+                setRuntimeError('No active attempt was found for submission.');
+                return;
+            }
+
+            if (!response.ok) {
+                setRuntimeError('Failed to submit quiz. Please try again.');
+                return;
+            }
+
+            const data = await response.json();
+            setResultSummary({
+                runtime: true,
+                score: Number(data?.score || 0),
+                passed: data?.passed,
+                pointsEarned: data?.pointsEarned,
+                pointsPossible: data?.pointsPossible,
+                attemptNumber: data?.attemptNumber,
+                attemptsRemaining: data?.attemptsRemaining,
+                canRetry: Boolean(data?.canRetry),
+                nextNode: data?.nextNode || null,
+            });
+            if (typeof data?.attemptsRemaining === 'number') {
+                setRuntimeAttemptsRemaining(data.attemptsRemaining);
+            }
+
+            router.reload({
+                preserveScroll: true,
+                only: ['curriculum', 'isCompleted', 'nextNode', 'progress'],
+            });
+        } catch {
+            setRuntimeError('Failed to submit quiz. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleNext = () => {
+        if (currentQuestionIndex < questions.length - 1) {
+            const nextIndex = currentQuestionIndex + 1;
+            setCurrentQuestionIndex(nextIndex);
+            queueRuntimePersist(answers, nextIndex);
+        } else {
+            handleSubmitQuiz();
+        }
+    };
+
+    const handleRetake = () => {
+        if (shouldUseBackendRuntime) {
+            loadRuntime();
+            return;
+        }
+        setResultSummary(null);
+        setCurrentQuestionIndex(0);
+        setAnswers({});
+    };
+
+    if (isLoadingRuntime) {
+        return (
+            <Paper elevation={0} sx={{ p: 4, borderRadius: 2, bgcolor: 'background.paper' }}>
+                <Typography color="text.secondary">Loading quiz...</Typography>
+            </Paper>
+        );
+    }
+
+    if (runtimeError) {
+        return (
+            <Paper elevation={0} sx={{ p: 4, borderRadius: 2, bgcolor: 'background.paper' }}>
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                    {runtimeError}
+                </Alert>
+                {shouldUseBackendRuntime && (
+                    <Button variant="contained" onClick={loadRuntime}>
+                        Retry
+                    </Button>
+                )}
+            </Paper>
+        );
+    }
+
+    if (quizId && (!questions || questions.length === 0) && !shouldUseBackendRuntime) {
         const query = new URLSearchParams();
         if (enrollmentId) {
             query.set('enrollment_id', String(enrollmentId));
@@ -262,60 +597,66 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
         );
     }
 
-    const currentQuestion = questions[currentQuestionIndex];
-    const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-
-    const handleAnswerChange = (questionId, value) => {
-        setAnswers((previous) => ({
-            ...previous,
-            [String(questionId)]: value,
-        }));
-    };
-
-    const handleSubmitQuiz = () => {
-        setIsSubmitting(true);
-
-        const summary = evaluateQuizAnswers(questions, answers);
-        setResultSummary(summary);
-
-        if (node?.id && enrollmentId) {
-            router.post(
-                `/student/programs/${enrollmentId}/session/${node.id}/`,
-                {
-                    mark_complete: true,
-                    quiz_answers: answers,
-                    quiz_score: summary.score,
-                },
-                {
-                    preserveScroll: true,
-                    only: ['isCompleted', 'curriculum'],
-                    onFinish: () => {
-                        setIsSubmitting(false);
-                        if (onComplete) onComplete();
-                    },
-                },
-            );
-        } else {
-            setIsSubmitting(false);
-            if (onComplete) onComplete();
-        }
-    };
-
-    const handleNext = () => {
-        if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex((previous) => previous + 1);
-        } else {
-            handleSubmitQuiz();
-        }
-    };
-
-    const handleRetake = () => {
-        setResultSummary(null);
-        setCurrentQuestionIndex(0);
-        setAnswers({});
-    };
+    const currentQuestion = questions[currentQuestionIndex] || questions[0];
+    const answeredCount = questions.filter((question) =>
+        isQuestionAnswered(question, answers[String(question.id)]),
+    ).length;
+    const progress = (answeredCount / questions.length) * 100;
 
     if (resultSummary) {
+        if (resultSummary.runtime) {
+            return (
+                <Paper
+                    elevation={0}
+                    sx={{ p: { xs: 2, md: 5 }, borderRadius: 2, bgcolor: 'background.paper' }}
+                >
+                    <Box sx={{ textAlign: 'center', mb: 4 }}>
+                        <Typography variant="h4" fontWeight={700} gutterBottom>
+                            Quiz Completed
+                        </Typography>
+
+                        <Typography
+                            variant="h2"
+                            color={resultSummary.passed ? 'success.main' : 'warning.main'}
+                            fontWeight={800}
+                            sx={{ mb: 1 }}
+                        >
+                            {Math.round(resultSummary.score)}%
+                        </Typography>
+
+                        <Typography color="text.secondary">
+                            Attempt #{resultSummary.attemptNumber}
+                            {typeof resultSummary.pointsEarned === 'number' &&
+                            typeof resultSummary.pointsPossible === 'number'
+                                ? ` • ${resultSummary.pointsEarned}/${resultSummary.pointsPossible} points`
+                                : ''}
+                        </Typography>
+                    </Box>
+
+                    <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap">
+                        {resultSummary.passed && resultSummary.nextNode?.url && (
+                            <Button
+                                variant="contained"
+                                onClick={() => router.visit(resultSummary.nextNode.url)}
+                            >
+                                Continue to Next Lesson
+                            </Button>
+                        )}
+                        {resultSummary.canRetry && (
+                            <Button variant="outlined" onClick={handleRetake}>
+                                Retake Quiz
+                            </Button>
+                        )}
+                        {!resultSummary.canRetry && runtimeAttemptsRemaining === 0 && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                No retakes remaining.
+                            </Typography>
+                        )}
+                    </Stack>
+                </Paper>
+            );
+        }
+
         return (
             <Paper
                 elevation={0}
@@ -501,6 +842,13 @@ const QuizRenderer = ({ node, enrollmentId, onComplete }) => {
                 minHeight: 400,
             }}
         >
+            {typeof runtimeAttemptsRemaining === 'number' && shouldUseBackendRuntime && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                    {runtimeAttemptsRemaining} retake
+                    {runtimeAttemptsRemaining === 1 ? '' : 's'} remaining.
+                </Alert>
+            )}
+
             <Box sx={{ mb: 4 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="caption" color="text.secondary" fontWeight={600}>
