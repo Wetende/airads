@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Quiz, Question, QuestionBankEntry, QuestionBank, Rubric
 from .serializers import (
-    QuizSerializer, QuestionSerializer, QuestionBankEntrySerializer, 
+    QuizSerializer, QuestionSerializer, QuestionBankEntrySerializer,
     QuestionBankSerializer, RubricSerializer
 )
 from .question_bank_service import QuestionBankService
@@ -39,7 +39,7 @@ def rubric_list(request):
     """
     service = RubricService()
     rubrics = service.get_accessible_rubrics(request.user)
-    
+
     return render(request, 'Assessments/Rubrics/Index', {
         'rubrics': RubricSerializer(rubrics, many=True).data,
         'can_create': True,  # Permissions are handled by service, but UI might need a toggle
@@ -66,7 +66,7 @@ def rubric_create(request):
                 status_code=400,
                 code="invalid_request",
             )
-        
+
         # Security Check: Scope Permissions
         scope = data.get('scope', 'course')
         if scope == 'global' and not request.user.is_superuser:
@@ -75,7 +75,7 @@ def rubric_create(request):
                 status_code=403,
                 code="permission_denied",
             )
-        
+
         if scope == 'program':
             if not (request.user.is_staff or request.user.is_superuser):
                 return _api_error(
@@ -83,7 +83,7 @@ def rubric_create(request):
                     status_code=403,
                     code="permission_denied",
                 )
-            
+
             # For admins, ensure they provide a program (optional check)
             program_id = data.get('program')
             if not program_id:
@@ -98,7 +98,7 @@ def rubric_create(request):
             serializer.save(owner=request.user)
             messages.success(request, 'Rubric created successfully.')
             return redirect('assessments:rubric_list')
-        
+
         # Return errors
         return render(request, 'Assessments/Rubrics/Create', {
             'errors': serializer.errors,
@@ -116,7 +116,7 @@ def rubric_edit(request, pk):
     service = RubricService()
     # Ensure user can access this rubric
     rubric = get_object_or_404(service.get_accessible_rubrics(request.user), pk=pk)
-    
+
     if request.method == 'POST':
         import json
         try:
@@ -150,7 +150,7 @@ def rubric_edit(request, pk):
             serializer.save()
             messages.success(request, 'Rubric updated successfully.')
             return redirect('assessments:rubric_list')
-            
+
         return render(request, 'Assessments/Rubrics/Edit', {
             'rubric': RubricSerializer(rubric).data,
             'errors': serializer.errors
@@ -207,24 +207,24 @@ class QuestionViewSet(viewsets.ModelViewSet):
         """
         quiz_id = request.data.get('quiz_id')
         order = request.data.get('order', [])
-        
+
         if not quiz_id:
             return _api_error(
                 "Please choose a quiz before reordering questions.",
                 status_code=400,
                 code="quiz_required",
             )
-            
+
         questions = Question.objects.filter(quiz_id=quiz_id)
         q_map = {q.id: q for q in questions}
-        
+
         updated = []
         for idx, q_id in enumerate(order):
             if q_id in q_map:
                 question = q_map[q_id]
                 question.position = idx
                 updated.append(question)
-                
+
         Question.objects.bulk_update(updated, ['position'])
         return Response({"status": "reordered"})
 
@@ -251,7 +251,7 @@ class QuestionBankViewSet(viewsets.ModelViewSet):
         entry = self.get_object()
         quiz_id = request.data.get('quiz_id')
         quiz = get_object_or_404(Quiz, pk=quiz_id)
-        
+
         # Clone question logic (simplified)
         original_q = entry.question
         new_q = Question.objects.create(
@@ -262,26 +262,26 @@ class QuestionBankViewSet(viewsets.ModelViewSet):
             position=quiz.questions.count(),
             answer_data=original_q.answer_data
         )
-        
+
         # Clone related objects
         for opt in original_q.options.all():
             opt.pk = None
             opt.question = new_q
             opt.save()
-            
+
         for pair in original_q.matching_pairs.all():
             pair.pk = None
             pair.question = new_q
             pair.save()
-            
+
         for gap in original_q.gap_answers.all():
             gap.pk = None
             gap.question = new_q
             gap.save()
-            
+
         entry.usage_count += 1
         entry.save()
-        
+
         return Response(QuestionSerializer(new_q).data, status=201)
 
 
@@ -291,7 +291,7 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
     All instructors on a program can access and share questions.
     """
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def list(self, request, program_id=None):
         """
         Search questions in a program's library.
@@ -310,13 +310,13 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
                 status_code=403,
                 code="permission_denied",
             )
-        
+
         # Get query params
         query = request.query_params.get('query', '')
         category = request.query_params.get('category', '')
         bank_id = request.query_params.get('bank_id')
         question_type = request.query_params.get('question_type', '')
-        
+
         service = QuestionBankService()
         entries = service.search_program_library(
             program=program,
@@ -325,10 +325,10 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
             bank_id=int(bank_id) if bank_id else None,
             question_type=question_type if question_type else None
         )
-        
+
         serializer = QuestionBankEntrySerializer(entries, many=True)
         return Response(serializer.data)
-    
+
     @decorators.action(detail=False, methods=['get'])
     def banks(self, request, program_id=None):
         """
@@ -350,7 +350,7 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
         banks = service.get_program_banks(program)
         serializer = QuestionBankSerializer(banks, many=True)
         return Response(serializer.data)
-    
+
     @decorators.action(detail=False, methods=['post'])
     def create_bank(self, request, program_id=None):
         """
@@ -369,7 +369,7 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
                 status_code=403,
                 code="permission_denied",
             )
-        
+
         name = request.data.get('name', '').strip()
         if not name:
             return _api_error(
@@ -377,7 +377,7 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
                 status_code=400,
                 code="name_required",
             )
-        
+
         service = QuestionBankService()
         bank = service.create_bank(
             program=program,
@@ -386,9 +386,9 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
             description=request.data.get('description', ''),
             category=request.data.get('category', '')
         )
-        
+
         return Response(QuestionBankSerializer(bank).data, status=201)
-    
+
     @decorators.action(detail=False, methods=['get'])
     def categories(self, request, program_id=None):
         """
@@ -409,7 +409,7 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
         service = QuestionBankService()
         categories = service.get_categories(program)
         return Response({"categories": categories})
-    
+
     @decorators.action(detail=True, methods=['post'], url_path='add-to-quiz')
     def add_to_quiz(self, request, program_id=None, pk=None):
         """
@@ -430,14 +430,14 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
 
         entry = get_object_or_404(QuestionBankEntry, pk=pk, bank__program=program)
         quiz_id = request.data.get('quiz_id')
-        
+
         if not quiz_id:
             return _api_error(
                 "Please choose a quiz before adding this question.",
                 status_code=400,
                 code="quiz_required",
             )
-        
+
         quiz = get_object_or_404(Quiz, pk=quiz_id)
         if quiz.node.program_id != program.id:
             return _api_error(
@@ -445,12 +445,12 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
                 status_code=403,
                 code="permission_denied",
             )
-        
+
         service = QuestionBankService()
         new_question = service.copy_from_bank(entry, quiz)
-        
+
         return Response(QuestionSerializer(new_question).data, status=201)
-    
+
     @decorators.action(detail=False, methods=['post'], url_path='save-to-library')
     def save_to_library(self, request, program_id=None):
         """
@@ -471,14 +471,14 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
         question_id = request.data.get('question_id')
         bank_id = request.data.get('bank_id')
         category = request.data.get('category', '')
-        
+
         if not question_id:
             return _api_error(
                 "Please select a question to save.",
                 status_code=400,
                 code="question_required",
             )
-        
+
         question = get_object_or_404(Question, pk=question_id)
         if question.quiz.node.program_id != program.id:
             return _api_error(
@@ -487,7 +487,7 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
                 code="permission_denied",
             )
         bank = get_object_or_404(QuestionBank, pk=bank_id, program=program) if bank_id else None
-        
+
         service = QuestionBankService()
         entry = service.add_to_bank(
             question=question,
@@ -497,5 +497,5 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
             difficulty=request.data.get('difficulty', 'medium'),
             tags=request.data.get('tags', [])
         )
-        
+
         return Response(QuestionBankEntrySerializer(entry).data, status=201)

@@ -177,7 +177,7 @@ export default function Detail({ program, students, curriculum }) {
                                         </Button>
                                         <Button
                                             component={Link}
-                                            href="/instructor/content/"
+                                            href={`/instructor/programs/${program.id}/manage/`}
                                             fullWidth
                                             variant="outlined"
                                             startIcon={<IconFolder size={18} />}

@@ -24,6 +24,22 @@ from apps.core.utils import serialize_user
 from apps.notifications.services import NotificationService
 
 
+def _get_instructor_accessible_program(user, program_id: int) -> Optional[Program]:
+    """Return program when user is staff or assigned instructor; otherwise None."""
+    if user.is_staff:
+        return Program.objects.filter(pk=program_id).first()
+
+    assignment = (
+        InstructorAssignment.objects.filter(
+            instructor=user,
+            program_id=program_id,
+        )
+        .select_related("program")
+        .first()
+    )
+    return assignment.program if assignment else None
+
+
 def _normalize_assignment_mode(props: dict) -> str:
     if not isinstance(props, dict):
         return "submission_only"
@@ -2016,9 +2032,11 @@ def instructor_program_detail(request, pk: int):
     """
     user = request.user
 
-    # Verify instructor has access to this program
-    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
-    program = assignment.program
+    # Verify instructor/staff has access to this program
+    program = _get_instructor_accessible_program(user, pk)
+    if not program:
+        messages.error(request, "You do not have access to this program.")
+        return redirect("progression:instructor.programs")
 
     # Get curriculum tree
     root_nodes = (
@@ -2133,9 +2151,11 @@ def instructor_students(request, pk: int):
     """
     user = request.user
 
-    # Verify instructor has access
-    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
-    program = assignment.program
+    # Verify instructor/staff has access
+    program = _get_instructor_accessible_program(user, pk)
+    if not program:
+        messages.error(request, "You do not have access to this program.")
+        return redirect("progression:instructor.programs")
 
     # Get filters
     status_filter = request.GET.get("status", "")
@@ -2224,9 +2244,11 @@ def instructor_student_detail(request, pk: int, enrollment_id: int):
     """
     user = request.user
 
-    # Verify instructor has access
-    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
-    program = assignment.program
+    # Verify instructor/staff has access
+    program = _get_instructor_accessible_program(user, pk)
+    if not program:
+        messages.error(request, "You do not have access to this program.")
+        return redirect("progression:instructor.programs")
 
     # Get enrollment
     enrollment = get_object_or_404(
@@ -2374,15 +2396,10 @@ def instructor_gradebook(request, pk: int):
     user = request.user
 
     # Verify instructor/staff has access
-    if user.is_staff:
-        program = get_object_or_404(Program, id=pk)
-    else:
-        assignment = get_object_or_404(
-            InstructorAssignment,
-            instructor=user,
-            program_id=pk,
-        )
-        program = assignment.program
+    program = _get_instructor_accessible_program(user, pk)
+    if not program:
+        messages.error(request, "You do not have access to this gradebook.")
+        return redirect("progression:instructor.programs")
 
     # Get grading config from blueprint
     grading_config = {}
@@ -2446,15 +2463,10 @@ def instructor_gradebook_save(request, pk: int):
     user = request.user
 
     # Verify instructor/staff has access
-    if user.is_staff:
-        program = get_object_or_404(Program, id=pk)
-    else:
-        assignment = get_object_or_404(
-            InstructorAssignment,
-            instructor=user,
-            program_id=pk,
-        )
-        program = assignment.program
+    program = _get_instructor_accessible_program(user, pk)
+    if not program:
+        messages.error(request, "You do not have access to this gradebook.")
+        return redirect("progression:instructor.programs")
 
     # Parse grades from request
     data = _get_post_data(request)
@@ -2532,15 +2544,10 @@ def instructor_gradebook_publish(request, pk: int):
     user = request.user
 
     # Verify instructor/staff has access
-    if user.is_staff:
-        program = get_object_or_404(Program, id=pk)
-    else:
-        assignment = get_object_or_404(
-            InstructorAssignment,
-            instructor=user,
-            program_id=pk,
-        )
-        program = assignment.program
+    program = _get_instructor_accessible_program(user, pk)
+    if not program:
+        messages.error(request, "You do not have access to this gradebook.")
+        return redirect("progression:instructor.programs")
 
     # Collect enrollments whose grades are about to be published
     enrollment_ids = list(
@@ -2573,15 +2580,10 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
     user = request.user
 
     # Verify instructor/staff has access
-    if user.is_staff:
-        program = get_object_or_404(Program, id=pk)
-    else:
-        assignment = get_object_or_404(
-            InstructorAssignment,
-            instructor=user,
-            program_id=pk,
-        )
-        program = assignment.program
+    program = _get_instructor_accessible_program(user, pk)
+    if not program:
+        messages.error(request, "You do not have access to this gradebook.")
+        return redirect("progression:instructor.programs")
 
     # Get enrollment
     enrollment = get_object_or_404(
@@ -3536,9 +3538,21 @@ def instructor_enrollment_requests(request, pk: int):
 
     user = request.user
 
-    # Verify instructor has access
-    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
-    program = assignment.program
+    # Verify access (assigned instructor or staff)
+    if user.is_staff:
+        program = get_object_or_404(Program, pk=pk)
+    else:
+        assignment = InstructorAssignment.objects.filter(
+            instructor=user,
+            program_id=pk,
+        ).select_related("program").first()
+        if not assignment:
+            messages.error(
+                request,
+                "You do not have access to enrollment requests for this program.",
+            )
+            return redirect("progression:instructor.programs")
+        program = assignment.program
 
     # Get filter params
     status_filter = request.GET.get("status", "pending")
@@ -3610,8 +3624,17 @@ def instructor_enrollment_request_approve(request, pk: int, request_id: int):
 
     user = request.user
 
-    # Verify instructor has access
-    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
+    # Verify access (assigned instructor or staff)
+    has_access = user.is_staff or InstructorAssignment.objects.filter(
+        instructor=user,
+        program_id=pk,
+    ).exists()
+    if not has_access:
+        messages.error(
+            request,
+            "You do not have permission to review enrollment requests for this program.",
+        )
+        return redirect("progression:instructor.programs")
 
     # Get request
     enrollment_request = get_object_or_404(
@@ -3655,8 +3678,17 @@ def instructor_enrollment_request_reject(request, pk: int, request_id: int):
 
     user = request.user
 
-    # Verify instructor has access
-    assignment = get_object_or_404(InstructorAssignment, instructor=user, program_id=pk)
+    # Verify access (assigned instructor or staff)
+    has_access = user.is_staff or InstructorAssignment.objects.filter(
+        instructor=user,
+        program_id=pk,
+    ).exists()
+    if not has_access:
+        messages.error(
+            request,
+            "You do not have permission to review enrollment requests for this program.",
+        )
+        return redirect("progression:instructor.programs")
 
     # Get request
     enrollment_request = get_object_or_404(

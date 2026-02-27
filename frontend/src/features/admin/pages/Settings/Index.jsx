@@ -235,7 +235,7 @@ export default function SettingsIndex({ platform, settings, subscription }) {
                   <Stack spacing={1}>
                     <Button
                       component={Link}
-                      href="/admin/settings/branding/"
+                      href="/admin/settings/"
                       startIcon={<PaletteIcon />}
                       variant="outlined"
                       fullWidth

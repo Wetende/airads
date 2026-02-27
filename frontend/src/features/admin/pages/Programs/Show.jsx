@@ -143,29 +143,29 @@ export default function ProgramShow({ program, stats, instructors = [], readines
                 {/* Stats Strip */}
                 <Card>
                   <CardContent>
-                    <Stack 
-                        direction={{ xs: 'column', md: 'row' }} 
-                        divider={<Divider orientation="vertical" flexItem />} 
-                        spacing={3} 
+                    <Stack
+                        direction={{ xs: 'column', md: 'row' }}
+                        divider={<Divider orientation="vertical" flexItem />}
+                        spacing={3}
                         justifyContent="space-between"
                         alignItems={{ xs: 'center', md: 'stretch' }}
                     >
-                        <StatItem 
-                            icon={PeopleIcon} 
-                            value={stats.enrollmentCount} 
-                            label="Total Enrollments" 
+                        <StatItem
+                            icon={PeopleIcon}
+                            value={stats.enrollmentCount}
+                            label="Total Enrollments"
                             color="primary"
                         />
-                        <StatItem 
-                            icon={SchoolIcon} 
-                            value={stats.activeEnrollments} 
-                            label="Active Students" 
+                        <StatItem
+                            icon={SchoolIcon}
+                            value={stats.activeEnrollments}
+                            label="Active Students"
                             color="success"
                         />
-                        <StatItem 
-                            icon={CheckCircleIcon} 
-                            value={stats.completedEnrollments} 
-                            label="Completed" 
+                        <StatItem
+                            icon={CheckCircleIcon}
+                            value={stats.completedEnrollments}
+                            label="Completed"
                             color="info"
                         />
                     </Stack>
@@ -297,7 +297,7 @@ export default function ProgramShow({ program, stats, instructors = [], readines
         <DialogContent>
             {program.isPublished ? (
                 <Typography>
-                    Are you sure you want to unpublish <strong>{program.name}</strong>? 
+                    Are you sure you want to unpublish <strong>{program.name}</strong>?
                     This will hide the course and all its content from students immediately.
                 </Typography>
             ) : (
@@ -305,7 +305,7 @@ export default function ProgramShow({ program, stats, instructors = [], readines
                     <Typography gutterBottom>
                          Review the following requirements before publishing:
                     </Typography>
-                    
+
                     <List dense sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                         {readiness.checks && readiness.checks.map((check, index) => (
                             <ListItem key={index}>
@@ -316,8 +316,8 @@ export default function ProgramShow({ program, stats, instructors = [], readines
                                         <CancelIcon color="error" />
                                     )}
                                 </ListItemIcon>
-                                <ListItemText 
-                                    primary={check.label} 
+                                <ListItemText
+                                    primary={check.label}
                                   secondary={!check.passed && (check.error || "Please complete this requirement before publishing.")}
                                     primaryTypographyProps={{
                                         color: check.passed ? 'text.primary' : 'error.main',
@@ -333,7 +333,7 @@ export default function ProgramShow({ program, stats, instructors = [], readines
                             You cannot publish this program until all checks pass.
                         </Alert>
                     )}
-                    
+
                     {readiness.isReady && (
                         <Alert severity="success">
                             All systems go! This course is ready to be published.
@@ -344,8 +344,8 @@ export default function ProgramShow({ program, stats, instructors = [], readines
         </DialogContent>
         <DialogActions>
             <Button onClick={() => setPublishOpen(false)}>Cancel</Button>
-            <Button 
-                variant="contained" 
+            <Button
+                variant="contained"
                 color={program.isPublished ? "error" : "success"}
                 disabled={!program.isPublished && !readiness.isReady}
                 onClick={handlePublish}

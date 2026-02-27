@@ -18,6 +18,7 @@ import {
   IconSend,
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
+import DashboardLayout from '@/layouts/DashboardLayout';
 
 export default function ChangeRequests({ program, changeRequests }) {
   const unresolvedCount = changeRequests.filter((cr) => !cr.isResolved).length;
@@ -34,6 +35,14 @@ export default function ChangeRequests({ program, changeRequests }) {
   return (
     <>
       <Head title={`Change Requests: ${program.name}`} />
+      <DashboardLayout
+        role="instructor"
+        breadcrumbs={[
+          { label: 'Programs', href: '/instructor/programs/' },
+          { label: program.name, href: `/instructor/programs/${program.id}/` },
+          { label: 'Change Requests' },
+        ]}
+      >
       <Container maxWidth="md" sx={{ py: 4 }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -142,6 +151,7 @@ export default function ChangeRequests({ program, changeRequests }) {
           )}
         </motion.div>
       </Container>
+      </DashboardLayout>
     </>
   );
 }

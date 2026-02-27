@@ -35,7 +35,7 @@ def content_blocks_list(request):
     node_id = request.GET.get('node_id')
     if not node_id:
         return JsonResponse([], safe=False)
-    
+
     # Authorization: verify user has access to this node's program
     if not is_instructor(request.user):
         return _json_error(
@@ -43,7 +43,7 @@ def content_blocks_list(request):
             status=403,
             code="permission_denied",
         )
-    
+
     program_ids = get_instructor_program_ids(request.user)
     node = get_object_or_404(CurriculumNode, pk=node_id)
     if node.program_id not in program_ids:
@@ -52,7 +52,7 @@ def content_blocks_list(request):
             status=403,
             code="permission_denied",
         )
-    
+
     blocks = ContentBlock.objects.filter(node_id=node_id).order_by('position')
     data = [{
         'id': b.id,
@@ -61,7 +61,7 @@ def content_blocks_list(request):
         'position': b.position,
         'data': b.data,
     } for b in blocks]
-    
+
     return JsonResponse(data, safe=False)
 
 
@@ -78,14 +78,14 @@ def content_block_create(request):
     block_type = data.get('block_type', 'text')
     block_data = data.get('data', {})
     position = data.get('position')
-    
+
     if not node_id:
         return _json_error(
             "Please select a lesson before saving content.",
             status=400,
             code="node_required",
         )
-    
+
     # Authorization
     if not is_instructor(request.user):
         return _json_error(
@@ -93,28 +93,28 @@ def content_block_create(request):
             status=403,
             code="permission_denied",
         )
-    
+
     program_ids = get_instructor_program_ids(request.user)
     node = get_object_or_404(CurriculumNode, pk=node_id)
-    
+
     if node.program_id not in program_ids:
         return _json_error(
             "You do not have access to this content.",
             status=403,
             code="permission_denied",
         )
-    
+
     # Auto-position if not provided
     if position is None:
         position = ContentBlock.objects.filter(node=node).count()
-    
+
     block = ContentBlock.objects.create(
         node=node,
         block_type=block_type,
         position=position,
         data=block_data,
     )
-    
+
     return JsonResponse({'id': block.id, 'status': 'success'}, status=201)
 
 
@@ -127,7 +127,7 @@ def content_block_update(request, pk: int):
     Returns JSON for Course Builder.
     """
     data = get_post_data(request)
-    
+
     # Authorization
     if not is_instructor(request.user):
         return _json_error(
@@ -135,26 +135,26 @@ def content_block_update(request, pk: int):
             status=403,
             code="permission_denied",
         )
-    
+
     block = get_object_or_404(ContentBlock, pk=pk)
     program_ids = get_instructor_program_ids(request.user)
-    
+
     if block.node.program_id not in program_ids:
         return _json_error(
             "You do not have access to this content.",
             status=403,
             code="permission_denied",
         )
-    
+
     if 'block_type' in data:
         block.block_type = data['block_type']
     if 'data' in data:
         block.data = data['data']
     if 'position' in data:
         block.position = data['position']
-    
+
     block.save()
-    
+
     return JsonResponse({'id': block.id, 'status': 'success'})
 
 
@@ -172,19 +172,19 @@ def content_block_delete(request, pk: int):
             status=403,
             code="permission_denied",
         )
-    
+
     block = get_object_or_404(ContentBlock, pk=pk)
     program_ids = get_instructor_program_ids(request.user)
-    
+
     if block.node.program_id not in program_ids:
         return _json_error(
             "You do not have access to this content.",
             status=403,
             code="permission_denied",
         )
-    
+
     block.delete()
-    
+
     return JsonResponse({'status': 'deleted'})
 
 
@@ -199,14 +199,14 @@ def content_blocks_reorder(request):
     data = get_post_data(request)
     node_id = data.get('node_id')
     order = data.get('order', [])
-    
+
     if not node_id:
         return _json_error(
             "Please select a lesson before reordering content.",
             status=400,
             code="node_required",
         )
-    
+
     # Authorization
     if not is_instructor(request.user):
         return _json_error(
@@ -214,20 +214,20 @@ def content_blocks_reorder(request):
             status=403,
             code="permission_denied",
         )
-    
+
     program_ids = get_instructor_program_ids(request.user)
     node = get_object_or_404(CurriculumNode, pk=node_id)
-    
+
     if node.program_id not in program_ids:
         return _json_error(
             "You do not have access to this content.",
             status=403,
             code="permission_denied",
         )
-    
+
     blocks = ContentBlock.objects.filter(node=node)
     block_map = {b.id: b for b in blocks}
-    
+
     updated = []
     current_pos = 0
     for block_id in order:
@@ -235,14 +235,14 @@ def content_blocks_reorder(request):
             block_id = int(block_id)
         except (ValueError, TypeError):
             continue
-            
+
         if block_id in block_map:
             block = block_map[block_id]
             block.position = current_pos
             updated.append(block)
             current_pos += 1
-    
+
     if updated:
         ContentBlock.objects.bulk_update(updated, ['position'])
-    
+
     return JsonResponse({'status': 'reordered'})

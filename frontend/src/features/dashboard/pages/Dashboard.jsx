@@ -17,12 +17,9 @@ import {
   ListItemText,
   ListItemIcon,
   Button,
-  Card,
-  CardContent,
-  CardActions,
+  Chip,
   Avatar,
 } from '@mui/material';
-import { motion } from 'framer-motion';
 
 // Icons
 import PeopleIcon from '@mui/icons-material/People';
@@ -37,6 +34,10 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import BusinessIcon from '@mui/icons-material/Business';
 import SettingsIcon from '@mui/icons-material/Settings';
 import WarningIcon from '@mui/icons-material/Warning';
+import GradingIcon from '@mui/icons-material/Grading';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
 
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 
@@ -73,63 +74,36 @@ function StatCard({ title, value, icon: Icon, color = 'primary', subtitle }) {
   );
 }
 
-function UsageBar({ label, used, max, unit = '' }) {
-  const percentage = max > 0 ? Math.round((used / max) * 100) : 0;
-  const isWarning = percentage >= 80;
-  const isError = percentage >= 95;
-
+function StudentSummaryCard({ title, value, subtitle, icon: Icon, progress }) {
   return (
-    <Box sx={{ mb: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-        <Typography variant="body2">{label}</Typography>
-        <Typography variant="body2" color="text.secondary">
-          {used.toLocaleString()} / {max.toLocaleString()} {unit}
+    <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+        <Typography variant="h6" sx={{ fontSize: '1rem' }}>
+          {title}
         </Typography>
-      </Box>
-      <LinearProgress
-        variant="determinate"
-        value={Math.min(percentage, 100)}
-        color={isError ? 'error' : isWarning ? 'warning' : 'primary'}
-        sx={{ height: 8, borderRadius: 1 }}
-      />
-    </Box>
-  );
-}
+        <Icon color="action" fontSize="small" />
+      </Stack>
 
-function ProgressCard({ enrollment }) {
-  return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Typography variant="h6" gutterBottom noWrap>
-          {enrollment.programName}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          {enrollment.programCode}
-        </Typography>
-        <Box sx={{ mt: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-            <Typography variant="body2">Progress</Typography>
-            <Typography variant="body2" fontWeight="medium">
-              {enrollment.progressPercent}%
-            </Typography>
-          </Box>
-          <LinearProgress
-            variant="determinate"
-            value={enrollment.progressPercent}
-            sx={{ height: 8, borderRadius: 1 }}
-          />
-        </Box>
-      </CardContent>
-      <CardActions>
-        <Button
-          component={Link}
-          href={`/student/programs/${enrollment.programId}/`}
-          size="small"
-        >
-          Continue
-        </Button>
-      </CardActions>
-    </Card>
+      <Typography variant="h4" fontWeight="bold" sx={{ mb: progress !== undefined ? 1.5 : 0.5 }}>
+        {value}
+      </Typography>
+
+      {progress !== undefined && (
+        <LinearProgress
+          variant="determinate"
+          value={Math.min(progress, 100)}
+          sx={{
+            height: 8,
+            borderRadius: 4,
+            mb: 1.5,
+          }}
+        />
+      )}
+
+      <Typography variant="body2" color="text.secondary">
+        {subtitle}
+      </Typography>
+    </Paper>
   );
 }
 
@@ -138,66 +112,184 @@ function ProgressCard({ enrollment }) {
 // =============================================================================
 
 function StudentContent({ enrollments, recentActivity }) {
+  const enrollmentList = enrollments || [];
+  const activityList = recentActivity || [];
+
+  const totalCourses = enrollmentList.length;
+  const inProgressCourses = enrollmentList.filter(
+    (enrollment) => enrollment.progressPercent > 0 && enrollment.progressPercent < 100
+  );
+  const completedCourses = enrollmentList.filter(
+    (enrollment) => enrollment.status === 'completed' || enrollment.progressPercent >= 100
+  );
+
+  const globalProgress =
+    totalCourses > 0
+      ? Math.round(
+          enrollmentList.reduce((total, enrollment) => total + Number(enrollment.progressPercent || 0), 0) /
+            totalCourses
+        )
+      : 0;
+  const successRate = totalCourses > 0 ? Math.round((completedCourses.length / totalCourses) * 100) : 0;
+
+  const recentlyCompleted =
+    activityList.length > 0
+      ? activityList.slice(0, 4)
+      : completedCourses.slice(0, 4).map((enrollment) => ({
+          nodeTitle: enrollment.programName,
+          programName: enrollment.programCode || 'Program',
+          completedAt: null,
+        }));
+
   return (
     <Stack spacing={3}>
       <Box>
         <Typography variant="h4" component="h1" gutterBottom>
-          My Dashboard
+          Student Dashboard
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Track your progress and continue learning
+          Welcome to your learning space. Here is your progress overview.
         </Typography>
       </Box>
 
-      {/* Enrollments */}
-      <Box>
-        <Typography variant="h6" gutterBottom>
-          My Programs
-        </Typography>
-        {enrollments?.length > 0 ? (
-          <Grid container spacing={2}>
-            {enrollments.map((enrollment, index) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={enrollment.id}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <ProgressCard enrollment={enrollment} />
-                </motion.div>
-              </Grid>
-            ))}
-          </Grid>
-        ) : (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <Typography color="text.secondary">
-              You are not enrolled in any programs yet.
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StudentSummaryCard
+            title="Overall Progress"
+            value={`${globalProgress}%`}
+            subtitle={
+              totalCourses > 0
+                ? `${inProgressCourses.length} active of ${totalCourses} total`
+                : 'No active programs yet'
+            }
+            progress={globalProgress}
+            icon={TrendingUpIcon}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StudentSummaryCard
+            title="Courses In Progress"
+            value={inProgressCourses.length}
+            subtitle={
+              totalCourses > 0
+                ? `Out of ${totalCourses} enrolled programs`
+                : 'Start a program to begin'
+            }
+            icon={SchoolIcon}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StudentSummaryCard
+            title="Courses Completed"
+            value={completedCourses.length}
+            subtitle={
+              totalCourses > 0 ? `Success rate: ${successRate}%` : 'No completions yet'
+            }
+            icon={CheckCircleIcon}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StudentSummaryCard
+            title="Recent Updates"
+            value={activityList.length}
+            subtitle="Latest learning activity"
+            icon={AssignmentIcon}
+          />
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Paper sx={{ p: 3.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+            <Typography variant="h5" sx={{ mb: 0.5 }}>
+              Courses in Progress
             </Typography>
-          </Paper>
-        )}
-      </Box>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2.5 }}>
+              Your currently active courses
+            </Typography>
 
-      {/* Recent Activity */}
-      {recentActivity?.length > 0 && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Recent Activity
-          </Typography>
-          <List dense>
-            {recentActivity.map((activity, index) => (
-              <ListItem key={index}>
-                <ListItemIcon>
-                  <CheckCircleIcon color="success" fontSize="small" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={activity.nodeTitle}
-                  secondary={`${activity.programName} • ${new Date(activity.completedAt).toLocaleDateString()}`}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
-      )}
+            {inProgressCourses.length > 0 ? (
+              <Stack spacing={2.5}>
+                {inProgressCourses.slice(0, 4).map((enrollment) => (
+                  <Box key={enrollment.id}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.75 }}>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontSize: '1.2rem' }}>
+                          {enrollment.programName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {enrollment.programCode || 'Program'}
+                        </Typography>
+                      </Box>
+                      <Chip label={`${Math.round(enrollment.progressPercent)}%`} size="small" />
+                    </Stack>
+                    <LinearProgress
+                      variant="determinate"
+                      value={Math.min(enrollment.progressPercent, 100)}
+                      sx={{ height: 8, borderRadius: 4, mb: 1 }}
+                    />
+                    <Button
+                      component={Link}
+                      href={`/student/programs/${enrollment.programId}/`}
+                      size="small"
+                      sx={{ px: 0 }}
+                    >
+                      Continue
+                    </Button>
+                  </Box>
+                ))}
+              </Stack>
+            ) : (
+              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'grey.50' }}>
+                <Typography color="text.secondary">No courses in progress yet.</Typography>
+              </Paper>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Paper sx={{ p: 3.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+            <Typography variant="h5" sx={{ mb: 0.5 }}>
+              Recently Completed
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2.5 }}>
+              Your latest successful learning steps
+            </Typography>
+
+            {recentlyCompleted.length > 0 ? (
+              <List dense disablePadding>
+                {recentlyCompleted.map((activity, index) => (
+                  <ListItem
+                    key={`${activity.nodeTitle}-${index}`}
+                    disableGutters
+                    sx={{ py: 1.25, alignItems: 'flex-start' }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography variant="h6" sx={{ fontSize: '1.2rem' }}>
+                          {activity.nodeTitle}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography variant="body2" color="text.secondary">
+                          {activity.completedAt
+                            ? `${activity.programName} • Completed ${new Date(activity.completedAt).toLocaleDateString()}`
+                            : `${activity.programName} • Completed`}
+                        </Typography>
+                      }
+                    />
+                    <Chip label="Done" color="success" variant="outlined" size="small" />
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'grey.50' }}>
+                <Typography color="text.secondary">No completed items yet.</Typography>
+              </Paper>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
     </Stack>
   );
 }
@@ -244,10 +336,10 @@ function InstructorContent({ stats, recentSubmissions, pendingEnrollmentRequests
             </Typography>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Button 
-                  component={Link} 
-                  href="/instructor/programs/" 
-                  variant="outlined" 
+                <Button
+                  component={Link}
+                  href="/instructor/programs/"
+                  variant="outlined"
                   startIcon={<SchoolIcon />}
                   fullWidth
                   size="large"
@@ -257,10 +349,10 @@ function InstructorContent({ stats, recentSubmissions, pendingEnrollmentRequests
                 </Button>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Button 
-                  component={Link} 
-                  href="/instructor/gradebook/" 
-                  variant="outlined" 
+                <Button
+                  component={Link}
+                  href="/instructor/gradebook/"
+                  variant="outlined"
                   startIcon={<AssignmentIcon />}
                   fullWidth
                   size="large"
@@ -270,10 +362,10 @@ function InstructorContent({ stats, recentSubmissions, pendingEnrollmentRequests
                 </Button>
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <Button 
-                  component={Link} 
-                  href="/instructor/practicum/" 
-                  variant="contained" 
+                <Button
+                  component={Link}
+                  href="/instructor/practicum/"
+                  variant="contained"
                   startIcon={<RateReviewIcon />}
                   fullWidth
                   size="large"
@@ -301,10 +393,10 @@ function InstructorContent({ stats, recentSubmissions, pendingEnrollmentRequests
                 ))}
               </List>
             ) : (
-              <Box sx={{ 
-                p: 4, 
-                textAlign: 'center', 
-                bgcolor: 'grey.50', 
+              <Box sx={{
+                p: 4,
+                textAlign: 'center',
+                bgcolor: 'grey.50',
                 borderRadius: 2,
                 border: '1px dashed',
                 borderColor: 'divider'
@@ -375,7 +467,68 @@ function InstructorContent({ stats, recentSubmissions, pendingEnrollmentRequests
 // Admin Dashboard Content
 // =============================================================================
 
-function AdminContent({ stats, usage, recentActivity }) {
+function ActionCard({ title, value, subtitle, icon: Icon, color = 'primary', href, linkLabel }) {
+  return (
+    <Paper
+      sx={{
+        p: 3,
+        height: '100%',
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'divider',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.5,
+      }}
+    >
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
+        <Box
+          sx={{
+            p: 1.25,
+            borderRadius: 2,
+            bgcolor: `${color}.light`,
+            color: `${color}.main`,
+            display: 'flex',
+          }}
+        >
+          <Icon fontSize="small" />
+        </Box>
+        {href && (
+          <Button component={Link} href={href} size="small" sx={{ minWidth: 0, fontSize: '0.75rem' }}>
+            {linkLabel || 'View'}
+          </Button>
+        )}
+      </Stack>
+      <Box>
+        <Typography variant="h4" fontWeight="bold">
+          {value}
+        </Typography>
+        <Typography variant="body2" fontWeight="medium">
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography variant="caption" color="text.secondary">
+            {subtitle}
+          </Typography>
+        )}
+      </Box>
+    </Paper>
+  );
+}
+
+function AdminContent({ stats, recentActivity }) {
+  const completionRate =
+    (stats?.activeEnrollments || 0) + (stats?.completedEnrollments || 0) > 0
+      ? Math.round(
+          ((stats?.completedEnrollments || 0) /
+            ((stats?.activeEnrollments || 0) + (stats?.completedEnrollments || 0))) *
+            100
+        )
+      : 0;
+
+  const hasPendingItems =
+    (stats?.pendingEnrollmentRequests || 0) > 0 || (stats?.pendingPracticumSubmissions || 0) > 0;
+
   return (
     <Stack spacing={3}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
@@ -389,8 +542,8 @@ function AdminContent({ stats, usage, recentActivity }) {
         </Stack>
       </Box>
 
-      {/* Stats */}
-      <Grid container spacing={5}>
+      {/* Row 1 — Platform Overview */}
+      <Grid container spacing={3}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard title="Total Students" value={stats?.totalStudents || 0} icon={PeopleIcon} color="primary" />
         </Grid>
@@ -401,33 +554,158 @@ function AdminContent({ stats, usage, recentActivity }) {
           <StatCard title="Active Programs" value={stats?.activePrograms || 0} icon={BusinessIcon} color="success" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard title="Enrollments" value={stats?.activeEnrollments || 0} icon={AssignmentIcon} color="info" />
+          <StatCard title="Active Enrollments" value={stats?.activeEnrollments || 0} icon={AssignmentIcon} color="info" />
         </Grid>
       </Grid>
 
-      {/* Usage & Activity */}
+      {/* Row 2 — Outcomes & Action Items */}
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Usage & Limits</Typography>
-            <UsageBar label="Students" used={usage?.studentsUsed || 0} max={usage?.studentsMax || 100} />
-            <UsageBar label="Programs" used={usage?.programsUsed || 0} max={usage?.programsMax || 10} />
-            <UsageBar label="Storage" used={usage?.storageUsedMb || 0} max={usage?.storageMaxMb || 5000} unit="MB" />
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <ActionCard
+            title="Certificates Issued"
+            value={stats?.certificatesIssued || 0}
+            subtitle="All time"
+            icon={EmojiEventsIcon}
+            color="warning"
+            href="/admin/certificates/"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <ActionCard
+            title="Completed Enrollments"
+            value={stats?.completedEnrollments || 0}
+            subtitle={`${completionRate}% completion rate`}
+            icon={CardMembershipIcon}
+            color="success"
+            href="/admin/enrollments/"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <ActionCard
+            title="Pending Enrollment Requests"
+            value={stats?.pendingEnrollmentRequests || 0}
+            subtitle={stats?.pendingEnrollmentRequests > 0 ? 'Awaiting approval' : 'All caught up'}
+            icon={GroupAddIcon}
+            color={stats?.pendingEnrollmentRequests > 0 ? 'error' : 'success'}
+            href="/admin/enrollments/"
+            linkLabel="Review"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <ActionCard
+            title="Pending Practicum Reviews"
+            value={stats?.pendingPracticumSubmissions || 0}
+            subtitle={stats?.pendingPracticumSubmissions > 0 ? 'Submissions awaiting review' : 'All reviewed'}
+            icon={GradingIcon}
+            color={stats?.pendingPracticumSubmissions > 0 ? 'warning' : 'success'}
+            href="/instructor/practicum/"
+            linkLabel="Review"
+          />
+        </Grid>
+      </Grid>
+
+      {/* Row 3 — Quick Actions + Recent Activity */}
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+            <Typography variant="h6" gutterBottom>Quick Actions</Typography>
+            <Stack spacing={1.5} sx={{ mt: 1 }}>
+              <Button
+                component={Link}
+                href="/admin/programs/"
+                variant="outlined"
+                startIcon={<SchoolIcon />}
+                fullWidth
+                sx={{ justifyContent: 'flex-start' }}
+              >
+                Manage Programs
+              </Button>
+              <Button
+                component={Link}
+                href="/admin/users/"
+                variant="outlined"
+                startIcon={<PeopleIcon />}
+                fullWidth
+                sx={{ justifyContent: 'flex-start' }}
+              >
+                Manage Users
+              </Button>
+              <Button
+                component={Link}
+                href="/admin/enrollments/"
+                variant="outlined"
+                startIcon={<PendingActionsIcon />}
+                fullWidth
+                sx={{ justifyContent: 'flex-start' }}
+                color={hasPendingItems ? 'error' : 'primary'}
+              >
+                Enrollment Requests
+                {stats?.pendingEnrollmentRequests > 0 && (
+                  <Box
+                    component="span"
+                    sx={{
+                      ml: 'auto',
+                      bgcolor: 'error.main',
+                      color: 'white',
+                      borderRadius: '50%',
+                      width: 20,
+                      height: 20,
+                      fontSize: '0.7rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {stats.pendingEnrollmentRequests}
+                  </Box>
+                )}
+              </Button>
+              <Button
+                component={Link}
+                href="/admin/certificates/"
+                variant="outlined"
+                startIcon={<EmojiEventsIcon />}
+                fullWidth
+                sx={{ justifyContent: 'flex-start' }}
+              >
+                Certificates
+              </Button>
+              <Button
+                component={Link}
+                href="/admin/general/"
+                variant="outlined"
+                startIcon={<SettingsIcon />}
+                fullWidth
+                sx={{ justifyContent: 'flex-start' }}
+              >
+                General Settings
+              </Button>
+            </Stack>
           </Paper>
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Recent Activity</Typography>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+            <Typography variant="h6" gutterBottom>Recent Enrollments</Typography>
             {recentActivity?.length > 0 ? (
-              <List dense>
+              <List dense disablePadding>
                 {recentActivity.map((activity, index) => (
-                  <ListItem key={index}>
-                    <ListItemText primary={activity.description} secondary={activity.timestamp} />
+                  <ListItem key={index} disableGutters sx={{ py: 1 }}>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.light', color: 'primary.main', fontSize: '0.75rem' }}>
+                        {activity.description?.[0] || 'U'}
+                      </Avatar>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={activity.description}
+                      secondary={activity.timestamp}
+                    />
                   </ListItem>
                 ))}
               </List>
             ) : (
-              <Typography variant="body2" color="text.secondary">No recent activity</Typography>
+              <Box sx={{ p: 3, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 2 }}>
+                <Typography variant="body2" color="text.secondary">No recent activity</Typography>
+              </Box>
             )}
           </Paper>
         </Grid>
@@ -550,7 +828,7 @@ export default function Dashboard(props) {
           />
         );
       case 'admin':
-        return <AdminContent stats={props.stats} usage={props.usage} recentActivity={props.recentActivity} />;
+        return <AdminContent stats={props.stats} recentActivity={props.recentActivity} />;
       case 'instructor':
         return <InstructorContent stats={props.stats} recentSubmissions={props.recentSubmissions} pendingEnrollmentRequests={props.pendingEnrollmentRequests} />;
       default:

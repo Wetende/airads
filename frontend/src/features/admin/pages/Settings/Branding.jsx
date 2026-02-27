@@ -29,7 +29,7 @@ export default function BrandingSettings({ branding = {}, errors = {} }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    post('/admin/settings/branding/');
+    post('/admin/settings/');
   };
 
   return (

@@ -37,6 +37,7 @@ import {
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import DashboardLayout from '@/layouts/DashboardLayout';
 
 const NODE_ICONS = {
   module: IconFolder,
@@ -82,6 +83,13 @@ export default function Review({ program, curriculum, changeRequests }) {
   return (
     <>
       <Head title={`Review: ${program.name}`} />
+      <DashboardLayout
+        role="admin"
+        breadcrumbs={[
+          { label: 'Course Approval', href: '/admin/course-approval/' },
+          { label: 'Review' },
+        ]}
+      >
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -297,6 +305,7 @@ export default function Review({ program, curriculum, changeRequests }) {
           confirmColor="success"
         />
       </Container>
+      </DashboardLayout>
     </>
   );
 }

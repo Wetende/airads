@@ -12,7 +12,7 @@ export function AuthProvider({ children, initialUser = null }) {
 
     const login = useCallback(async (credentials) => {
         return new Promise((resolve, reject) => {
-            router.post("/login", credentials, {
+            router.post("/login/", credentials, {
                 onSuccess: (page) => {
                     setUser(page.props.auth?.user);
                     resolve(page.props.auth?.user);

@@ -506,7 +506,7 @@ class NotificationService:
             notification_type='grade_published',
             title='Grades Published',
             message=f'Your grades for "{enrollment.program.name}" have been published.',
-            action_url=f'/student/programs/{enrollment.program.id}/grades/',
+            action_url='/student/assessments/',
             related_program_id=enrollment.program.id,
             related_enrollment_id=enrollment.id,
             priority='high',
@@ -531,7 +531,7 @@ class NotificationService:
             notification_type='assignment_graded',
             title='Assignment Graded',
             message=f'Your assignment has been graded.',
-            action_url=f'/student/assignments/{submission.id}/',
+            action_url=f'/student/assignment/{submission.assignment_id}/',
             related_assessment_id=submission.id,
         )
 
@@ -554,7 +554,7 @@ class NotificationService:
             notification_type='quiz_graded',
             title='Quiz Results Available',
             message=f'Your quiz results are now available.',
-            action_url=f'/student/quizzes/{attempt.id}/',
+            action_url=f'/student/quiz/{attempt.quiz_id}/results/',
             related_assessment_id=attempt.id,
         )
 
@@ -583,7 +583,7 @@ class NotificationService:
             notification_type='announcement',
             title=f'New Announcement: {announcement.title}',
             message=announcement.content[:200] + ('...' if len(announcement.content) > 200 else ''),
-            action_url=f'/student/programs/{announcement.program.id}/announcements/',
+            action_url=f'/student/programs/{announcement.program.id}/',
             related_program_id=announcement.program.id,
         )
 
@@ -709,7 +709,7 @@ class NotificationService:
                     notification_type='program_changes_requested',
                     title='Program Changes Requested',
                     message=message,
-                    action_url=f'/instructor/programs/{program.id}/edit/',
+                    action_url=f'/instructor/programs/{program.id}/manage/settings/',
                     related_program_id=program.id,
                 )
             if notification:

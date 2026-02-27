@@ -43,12 +43,12 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
 
   // Flash messages from Django
   const { flash } = usePage().props;
-  
+
   // Sync tree from props when Inertia reloads the page
   useEffect(() => {
     setNodes(tree);
   }, [tree]);
-  
+
   // Display flash messages from Django
   useEffect(() => {
     const messages = getFlashMessages(flash);
@@ -86,9 +86,8 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
   const handleCreateNode = (nodeData) => {
     setError(null);
     // Use Inertia router.post() - backend will redirect back with updated tree
-    router.post('/admin/curriculum/nodes/create/', {
-      programId: program.id,
-      parentId: parentForNew?.id || null,
+    router.post(`/instructor/programs/${program.id}/nodes/create/`, {
+      parent_id: parentForNew?.id || null,
       ...nodeData,
     }, {
       preserveScroll: true,
@@ -105,7 +104,7 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
   const handleUpdateNode = (nodeData) => {
     setError(null);
     // Use Inertia router.post() - backend will redirect back with updated tree
-    router.post(`/admin/curriculum/nodes/${selectedNode.id}/update/`, nodeData, {
+    router.post(`/instructor/nodes/${selectedNode.id}/update/`, nodeData, {
       preserveScroll: true,
       onError: (errors) => {
         setError(getUserErrorMessage(errors, 'Could not update this curriculum item. Please try again.'));
@@ -129,7 +128,7 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
     setDeletingNode(true);
     setError(null);
     // Use Inertia router.post() - backend will redirect back with updated tree
-    router.post(`/admin/curriculum/nodes/${pendingDeleteNodeId}/delete/`, {}, {
+    router.post(`/instructor/nodes/${pendingDeleteNodeId}/delete/`, {}, {
       preserveScroll: true,
       onSuccess: () => {
         setSelectedNode(null);

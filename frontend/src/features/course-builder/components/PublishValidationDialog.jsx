@@ -109,11 +109,11 @@ function formatIssueLine(issue) {
  * PublishValidationDialog - Pre-publish validation dialog
  * Shows errors, warnings, and course stats before publishing
  */
-export default function PublishValidationDialog({ 
-    open, 
-    onClose, 
+export default function PublishValidationDialog({
+    open,
+    onClose,
     programId,
-    onPublish 
+    onPublish
 }) {
     const [loading, setLoading] = useState(true);
     const [validation, setValidation] = useState(null);
@@ -128,16 +128,16 @@ export default function PublishValidationDialog({
     const fetchValidation = async () => {
         setLoading(true);
         setError(null);
-        
+
         try {
             const response = await fetch(`/instructor/programs/${programId}/validate/`, {
                 credentials: 'include'
             });
-            
+
             if (!response.ok) {
                 throw new Error('Failed to validate program');
             }
-            
+
             const data = await response.json();
             setValidation(data);
         } catch (err) {
@@ -154,22 +154,22 @@ export default function PublishValidationDialog({
 
     const renderStats = (details) => {
         if (!details) return null;
-        
+
         return (
             <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-                <Chip 
+                <Chip
                     icon={<InfoIcon />}
                     label={`${details.lesson_count} Lessons`}
                     variant="outlined"
                     color="primary"
                 />
-                <Chip 
+                <Chip
                     icon={<InfoIcon />}
                     label={`${details.quiz_count} Quizzes`}
                     variant="outlined"
                     color="secondary"
                 />
-                <Chip 
+                <Chip
                     icon={<InfoIcon />}
                     label={`${details.assignment_count} Assignments`}
                     variant="outlined"
@@ -180,10 +180,10 @@ export default function PublishValidationDialog({
     };
 
     return (
-        <Dialog 
-            open={open} 
-            onClose={onClose} 
-            maxWidth="sm" 
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="sm"
             fullWidth
         >
             <DialogTitle>
@@ -198,7 +198,7 @@ export default function PublishValidationDialog({
                     </Typography>
                 </Stack>
             </DialogTitle>
-            
+
             <DialogContent dividers>
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -210,17 +210,17 @@ export default function PublishValidationDialog({
                     <>
                         {/* Course stats */}
                         {renderStats(validation?.details)}
-                        
+
                         {/* Weight summary for theology mode */}
                         {validation?.details?.mode === 'theology' && (
-                            <Alert 
+                            <Alert
                                 severity={validation?.details?.total_assignment_weight === 100 ? 'success' : 'warning'}
                                 sx={{ mb: 2 }}
                             >
                                 Assignment weights: {validation?.details?.total_assignment_weight}% / 100%
                             </Alert>
                         )}
-                        
+
                         {/* Errors */}
                         {validation?.errors?.length > 0 && (
                             <Box sx={{ mb: 2 }}>
@@ -233,7 +233,7 @@ export default function PublishValidationDialog({
                                             <ListItemIcon sx={{ minWidth: 32 }}>
                                                 <ErrorIcon color="error" fontSize="small" />
                                             </ListItemIcon>
-                                            <ListItemText 
+                                            <ListItemText
                                                 primary={formatIssueLine(err)}
                                             />
                                         </ListItem>
@@ -241,7 +241,7 @@ export default function PublishValidationDialog({
                                 </List>
                             </Box>
                         )}
-                        
+
                         {/* Warnings */}
                         {validation?.warnings?.length > 0 && (
                             <Box sx={{ mb: 2 }}>
@@ -254,7 +254,7 @@ export default function PublishValidationDialog({
                                             <ListItemIcon sx={{ minWidth: 32 }}>
                                                 <WarningIcon color="warning" fontSize="small" />
                                             </ListItemIcon>
-                                            <ListItemText 
+                                            <ListItemText
                                                 primary={formatIssueLine(warn)}
                                             />
                                         </ListItem>
@@ -262,7 +262,7 @@ export default function PublishValidationDialog({
                                 </List>
                             </Box>
                         )}
-                        
+
                         {/* All good */}
                         {validation?.is_valid && validation?.errors?.length === 0 && (
                             <Alert severity="success" icon={<CheckIcon />}>
@@ -272,11 +272,11 @@ export default function PublishValidationDialog({
                     </>
                 )}
             </DialogContent>
-            
+
             <DialogActions>
                 <Button onClick={onClose}>Cancel</Button>
-                <Button 
-                    variant="contained" 
+                <Button
+                    variant="contained"
                     color="primary"
                     onClick={handlePublish}
                     disabled={loading || !validation?.is_valid}

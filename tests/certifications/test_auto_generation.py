@@ -6,6 +6,7 @@ Property tests for auto-generation on 100% completion.
 import pytest
 from hypothesis import given, strategies as st, settings
 from unittest.mock import patch, MagicMock
+import logging
 
 from apps.certifications.services import CertificationEngine
 from apps.certifications.models import Certificate, CertificateTemplate
@@ -227,3 +228,35 @@ class TestAutoGenerationOnCompletion:
         # Verify record was stored
         assert Certificate.objects.count() == initial_count + 1
         assert Certificate.objects.filter(id=certificate.id).exists()
+
+    def test_enrollment_completion_signal_does_not_crash_when_template_missing(self, caplog):
+        """
+        Regression: Enrollment completion flow SHALL not fail when certificate template config is missing.
+        """
+        from apps.blueprints.models import AcademicBlueprint
+        from apps.progression.models import Enrollment
+        from apps.core.models import User, Program
+        from apps.certifications.signals import on_enrollment_completed
+
+        blueprint = AcademicBlueprint.objects.create(
+            name="Signal Blueprint",
+            hierarchy_structure=["Section", "Lesson"],
+            grading_logic={"type": "weighted", "components": []},
+            certificate_enabled=True,
+        )
+
+        user = User.objects.create(
+            email="signal-test@example.com",
+            first_name="Signal",
+            last_name="Tester",
+        )
+        program = Program.objects.create(name="Signal Program", blueprint=blueprint)
+        enrollment = Enrollment.objects.create(user=user, program=program, status="completed")
+
+        CertificateTemplate.objects.all().delete()
+
+        with caplog.at_level(logging.ERROR):
+            on_enrollment_completed(Enrollment, enrollment)
+
+        assert Certificate.objects.filter(enrollment=enrollment).exists() is False
+        assert "Certificate generation failed for enrollment_id=" in caplog.text

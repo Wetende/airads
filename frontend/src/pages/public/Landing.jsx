@@ -141,7 +141,7 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
     const getDashboardUrl = () => {
         if (!user) return "/dashboard/";
         if (user.role === "instructor") return "/instructor/";
-        if (user.role === "student") return "/student/";
+        if (user.role === "student") return "/student/programs/";
         return "/dashboard/";
     };
 

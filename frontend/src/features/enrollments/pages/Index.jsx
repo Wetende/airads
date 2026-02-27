@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import {
     Box,
     Container,
@@ -32,6 +32,7 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { format } from "date-fns";
+import DashboardLayout from "@/layouts/DashboardLayout";
 
 export default function EnrollmentRequests({ program, requests, filters }) {
     const [statusFilter, setStatusFilter] = useState(filters.status || "pending");
@@ -96,7 +97,14 @@ export default function EnrollmentRequests({ program, requests, filters }) {
     return (
         <>
             <Head title={`Enrollment Requests - ${program.name}`} />
-
+            <DashboardLayout
+                role="instructor"
+                breadcrumbs={[
+                    { label: "Programs", href: "/instructor/programs/" },
+                    { label: program.name, href: `/instructor/programs/${program.id}/` },
+                    { label: "Enrollment Requests" },
+                ]}
+            >
             <Container maxWidth="lg" sx={{ py: 4 }}>
                 {/* Header */}
                 <Box sx={{ mb: 4 }}>
@@ -258,6 +266,7 @@ export default function EnrollmentRequests({ program, requests, filters }) {
                     </Box>
                 )}
             </Container>
+            </DashboardLayout>
 
             {/* Reject Dialog */}
             <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>

@@ -17,7 +17,7 @@ export default function Breadcrumbs({ items = [] }) {
                 aria-label="breadcrumb"
             >
                 <Link
-                    href="/dashboard"
+                    href="/dashboard/"
                     style={{
                         display: "flex",
                         alignItems: "center",

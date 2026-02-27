@@ -54,7 +54,7 @@ def admin_blueprints(request):
     # Note: Using manual annotation or separate query if annotate(Count("programs")) fails
     # But AcademicBlueprint.programs related_name exists, so simple annotation works
     blueprints = AcademicBlueprint.objects.annotate(program_count=Count("programs")).order_by("-created_at")
-    
+
     # Re-apply filters and pagination on the annotated queryset
     if search:
         blueprints = blueprints.filter(name__icontains=search)

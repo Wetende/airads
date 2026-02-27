@@ -1351,7 +1351,8 @@ def _get_instructor_dashboard_data(user) -> dict:
 def _get_admin_dashboard_data(user) -> dict:
     """Get dashboard data for admins."""
     from apps.certifications.models import Certificate
-    from apps.progression.models import Enrollment
+    from apps.practicum.models import PracticumSubmission
+    from apps.progression.models import Enrollment, EnrollmentRequest
 
     # Get stats for entire platform
 
@@ -1366,14 +1367,18 @@ def _get_admin_dashboard_data(user) -> dict:
     total_instructors = User.objects.filter(groups__name="Instructors").count()
 
     active_programs = Program.objects.filter(is_published=True).count()
+    total_programs = Program.objects.count()
     certificates_issued = Certificate.objects.count()
     active_enrollments = Enrollment.objects.filter(status="active").count()
+    completed_enrollments = Enrollment.objects.filter(status="completed").count()
+    pending_enrollment_requests = EnrollmentRequest.objects.filter(status="pending").count()
+    pending_practicum_submissions = PracticumSubmission.objects.filter(status="pending").count()
 
     # Recent activity (simplified)
     recent_enrollments = (
         Enrollment.objects.all()
         .select_related("user", "program")
-        .order_by("-enrolled_at")[:5]
+        .order_by("-enrolled_at")[:8]
     )
 
     recent_activity = [
@@ -1390,8 +1395,12 @@ def _get_admin_dashboard_data(user) -> dict:
             "totalStudents": total_students,
             "totalInstructors": total_instructors,
             "activePrograms": active_programs,
+            "totalPrograms": total_programs,
             "certificatesIssued": certificates_issued,
             "activeEnrollments": active_enrollments,
+            "completedEnrollments": completed_enrollments,
+            "pendingEnrollmentRequests": pending_enrollment_requests,
+            "pendingPracticumSubmissions": pending_practicum_submissions,
         },
         "recentActivity": recent_activity,
     }
@@ -7879,7 +7888,7 @@ def instructor_material_import(request, program_id: int):
 
     if not is_instructor(request.user) or request.method != "POST":
         messages.error(request, "Method not allowed")
-        return redirect(f"/instructor/course-builder/{program_id}/")
+        return redirect("core:instructor.program_manage", pk=program_id)
 
     # Verify access to target program
     if not (
@@ -7889,7 +7898,7 @@ def instructor_material_import(request, program_id: int):
         or request.user.is_staff
     ):
         messages.error(request, "Permission denied")
-        return redirect(f"/instructor/course-builder/{program_id}/")
+        return redirect("core:instructor.program_manage", pk=program_id)
 
     data = get_post_data(request)
     source_ids = data.get("source_node_ids", [])
@@ -7897,7 +7906,7 @@ def instructor_material_import(request, program_id: int):
 
     if not source_ids or not target_section_id:
         messages.error(request, "Missing source_node_ids or target_section_id")
-        return redirect(f"/instructor/course-builder/{program_id}/")
+        return redirect("core:instructor.program_manage", pk=program_id)
 
     try:
         target_program = Program.objects.get(pk=program_id)
@@ -7906,7 +7915,7 @@ def instructor_material_import(request, program_id: int):
         )
     except (Program.DoesNotExist, CurriculumNode.DoesNotExist):
         messages.error(request, "Invalid target program or section")
-        return redirect(f"/instructor/course-builder/{program_id}/")
+        return redirect("core:instructor.program_manage", pk=program_id)
 
     imported_count = 0
     for source_id in source_ids:
@@ -7918,7 +7927,7 @@ def instructor_material_import(request, program_id: int):
             continue  # Skip invalid source nodes
 
     messages.success(request, f"Imported {imported_count} item(s)")
-    return redirect(f"/instructor/course-builder/{program_id}/")
+    return redirect("core:instructor.program_manage", pk=program_id)
 
 
 # =============================================================================

@@ -23,11 +23,20 @@ import {
   IconClock,
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
+import DashboardLayout from '@/layouts/DashboardLayout';
 
 export default function Index({ program, assignments }) {
   return (
     <>
       <Head title={`Assignments: ${program.name}`} />
+      <DashboardLayout
+        role="instructor"
+        breadcrumbs={[
+          { label: 'Programs', href: '/instructor/programs/' },
+          { label: program.name, href: `/instructor/programs/${program.id}/` },
+          { label: 'Assignments' },
+        ]}
+      >
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -161,6 +170,7 @@ export default function Index({ program, assignments }) {
           </TableContainer>
         </motion.div>
       </Container>
+      </DashboardLayout>
     </>
   );
 }

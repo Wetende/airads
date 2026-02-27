@@ -23,6 +23,7 @@ import {
   IconAlertTriangle,
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
+import DashboardLayout from '@/layouts/DashboardLayout';
 
 const STATUS_CONFIG = {
   submitted: { color: 'info', label: 'Pending Review', icon: IconClock },
@@ -40,6 +41,7 @@ export default function Index({ programs, filter }) {
   return (
     <>
       <Head title="Course Approval Queue" />
+      <DashboardLayout role="admin" breadcrumbs={[{ label: 'Course Approval' }]}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -139,6 +141,7 @@ export default function Index({ programs, filter }) {
           </TableContainer>
         </motion.div>
       </Container>
+      </DashboardLayout>
     </>
   );
 }

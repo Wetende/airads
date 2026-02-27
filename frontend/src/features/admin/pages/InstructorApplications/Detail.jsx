@@ -37,6 +37,7 @@ import {
 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import DashboardLayout from '@/layouts/DashboardLayout';
 
 const STATUS_CONFIG = {
   draft: { color: 'default', label: 'Draft', icon: IconFileText },
@@ -85,6 +86,13 @@ export default function Detail({ application }) {
   return (
     <>
       <Head title={`Application: ${application.name}`} />
+      <DashboardLayout
+        role="admin"
+        breadcrumbs={[
+          { label: 'Instructor Applications', href: '/admin/instructor-applications/' },
+          { label: 'Review' },
+        ]}
+      >
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -339,6 +347,7 @@ export default function Detail({ application }) {
           confirmLabel="Unlock"
         />
       </Container>
+      </DashboardLayout>
     </>
   );
 }
