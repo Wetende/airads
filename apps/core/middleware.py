@@ -31,7 +31,7 @@ class InertiaShareMiddleware:
         # Share CSRF token with frontend (ensures token is available for Inertia requests)
         csrf_token = get_token(request)
         share(request, csrfToken=csrf_token)
-        
+
         # Share auth data
         if request.user.is_authenticated:
             share(
@@ -47,7 +47,7 @@ class InertiaShareMiddleware:
                     },
                 },
             )
-            
+
             # Share notifications data (lazy evaluated)
             user = request.user
             share(
@@ -68,7 +68,7 @@ class InertiaShareMiddleware:
             features = settings.get_default_features_for_mode()
             if settings.features:
                 features.update(settings.features)
-            
+
             share(
                 request,
                 platform={

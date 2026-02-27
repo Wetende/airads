@@ -27,7 +27,7 @@ function hexToRgba(hex, alpha = 1) {
 
 /**
  * Shared Footer Component
- * 
+ *
  * Reads platform data from Inertia shared props automatically,
  * so no props need to be passed. Uses the logo uploaded via SuperAdmin.
  */
