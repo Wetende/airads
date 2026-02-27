@@ -74,6 +74,9 @@ class InertiaShareMiddleware:
                 platform={
                     "institutionName": settings.institution_name,
                     "tagline": settings.tagline,
+                    "email": settings.contact_email,
+                    "phone": settings.contact_phone,
+                    "address": settings.address,
                     "logoUrl": settings.logo.url if settings.logo else None,
                     "faviconUrl": settings.favicon.url if settings.favicon else None,
                     "primaryColor": settings.primary_color,

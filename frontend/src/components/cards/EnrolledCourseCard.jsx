@@ -35,8 +35,7 @@ const getBadgeColor = (type, theme) => {
 
 export default function EnrolledCourseCard({ enrollment }) {
     const theme = useTheme();
-    const isCompleted =
-        enrollment.status === "completed" || enrollment.progressPercent >= 100;
+    const isCompleted = Number(enrollment.progressPercent || 0) >= 100;
     const progressColor = isCompleted
         ? theme.palette.success.main
         : theme.palette.primary.main;
@@ -171,10 +170,10 @@ export default function EnrolledCourseCard({ enrollment }) {
                     }}
                 />
 
-                {/* Action Button - goes to program detail page */}
+                {/* Action Button - goes directly to student course player */}
                 <Button
                     component={Link}
-                    href={`/programs/${enrollment.programId}/`}
+                    href={`/student/programs/${enrollment.programId}/`}
                     variant="contained"
                     fullWidth
                     sx={{

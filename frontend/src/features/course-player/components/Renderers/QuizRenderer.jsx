@@ -20,20 +20,13 @@ import MatchingQuestion from '@/features/quizzes/components/MatchingQuestion';
 import OrderingQuestion from '@/features/quizzes/components/OrderingQuestion';
 import FillBlankQuestion from '@/features/quizzes/components/FillBlankQuestion';
 import ImageMatchingQuestion from '@/features/quizzes/components/ImageMatchingQuestion';
+import { getCsrfHeaders } from '@/utils/csrf';
 import {
     evaluateQuizAnswers,
     formatAnswer,
     isQuestionAnswered,
     normalizeQuestions,
 } from './quizRendererUtils';
-
-const getCsrfToken = () => {
-    const cookie = document.cookie
-        .split(';')
-        .map((entry) => entry.trim())
-        .find((entry) => entry.startsWith('csrftoken='));
-    return cookie ? decodeURIComponent(cookie.split('=')[1] || '') : '';
-};
 
 const renderQuestionInput = ({
     question,
@@ -328,10 +321,9 @@ const QuizRenderer = ({ node, enrollmentId, onComplete, useBackendRuntime = fals
                 const response = await fetch(`/student/quiz/${quizId}/save/`, {
                     method: 'POST',
                     credentials: 'same-origin',
-                    headers: {
+                    headers: getCsrfHeaders({
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken(),
-                    },
+                    }),
                     body: JSON.stringify(payload),
                 });
 
@@ -446,10 +438,9 @@ const QuizRenderer = ({ node, enrollmentId, onComplete, useBackendRuntime = fals
             const response = await fetch(`/student/quiz/${quizId}/submit/`, {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: {
+                headers: getCsrfHeaders({
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCsrfToken(),
-                },
+                }),
                 body: JSON.stringify(payload),
             });
 

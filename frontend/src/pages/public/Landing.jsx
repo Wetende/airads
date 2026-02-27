@@ -22,11 +22,12 @@ import {
     MenuItem,
     Divider,
 } from "@mui/material";
-import { IconSchool, IconMenu2, IconX, IconBell, IconDashboard, IconUser, IconLogout } from "@tabler/icons-react";
-import { cloneElement, useState } from "react";
+import { IconMenu2, IconX, IconBell, IconDashboard, IconUser, IconLogout } from "@tabler/icons-react";
+import { useState } from "react";
 
 // Components
 import LazySection from "@/components/LazySection";
+import PlatformLogo from "@/components/common/PlatformLogo";
 import ButtonAnimationWrapper from "@/features/components/common/ButtonAnimationWrapper";
 
 // Sections
@@ -166,8 +167,8 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                 }}
             >
                 {/* ================== NAVBAR ================== */}
-                <AppBar 
-                    position="fixed" 
+                <AppBar
+                    position="fixed"
                     color="transparent"
                     elevation={scrolled ? 4 : 0}
                     sx={{
@@ -189,47 +190,17 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                 spacing={2}
                                 alignItems="center"
                             >
-                                {platform.logoUrl ? (
-                                    <Box
-                                        component="img"
-                                        src={platform.logoUrl}
-                                        alt={platform.institutionName}
-                                        sx={{
-                                            height: 40,
-                                            maxWidth: 160,
-                                            objectFit: "contain",
-                                        }}
-                                    />
-                                ) : (
-                                    <Stack
-                                        direction="row"
-                                        spacing={1}
-                                        alignItems="center"
-                                    >
-                                        <Box
-                                            sx={{
-                                                width: 40,
-                                                height: 40,
-                                                bgcolor: primaryColor,
-                                                borderRadius: 2,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                color: "white",
-                                            }}
-                                        >
-                                            <IconSchool size={24} />
-                                        </Box>
-                                        <Typography
-                                            variant="h6"
-                                            fontWeight={700}
-                                            color={navbarTextColor}
-                                            sx={{ transition: "color 0.3s ease" }}
-                                        >
-                                            {platform.institutionName}
-                                        </Typography>
-                                    </Stack>
-                                )}
+                                <PlatformLogo
+                                    platform={platform}
+                                    logoHeight={40}
+                                    logoMaxWidth={160}
+                                    iconContainerSize={40}
+                                    iconSize={24}
+                                    iconBgColor={primaryColor}
+                                    nameVariant="h6"
+                                    nameColor={navbarTextColor}
+                                    nameSx={{ transition: "color 0.3s ease" }}
+                                />
                             </Stack>
 
                             {/* Desktop Nav */}
@@ -266,7 +237,7 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                     <>
                                         {/* Notification Bell */}
                                         <IconButton
-                                            sx={{ 
+                                            sx={{
                                                 color: navbarTextColor,
                                                 display: { xs: "none", sm: "flex" },
                                             }}
@@ -288,9 +259,9 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                                     />
                                                 ) : (
                                                     <Avatar
-                                                        sx={{ 
-                                                            width: 36, 
-                                                            height: 36, 
+                                                        sx={{
+                                                            width: 36,
+                                                            height: 36,
                                                             bgcolor: primaryColor,
                                                             fontSize: 14,
                                                             fontWeight: 600,
@@ -308,16 +279,16 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                                 transformOrigin={{ vertical: "top", horizontal: "right" }}
                                                 PaperProps={{ sx: { mt: 1, minWidth: 180 } }}
                                             >
-                                                <MenuItem 
-                                                    component={Link} 
+                                                <MenuItem
+                                                    component={Link}
                                                     href={getDashboardUrl()}
                                                     onClick={() => setUserMenuAnchor(null)}
                                                 >
                                                     <ListItemIcon><IconDashboard size={18} /></ListItemIcon>
                                                     <ListItemText>Dashboard</ListItemText>
                                                 </MenuItem>
-                                                <MenuItem 
-                                                    component={Link} 
+                                                <MenuItem
+                                                    component={Link}
                                                     href="/profile/"
                                                     onClick={() => setUserMenuAnchor(null)}
                                                 >
@@ -325,9 +296,9 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                                     <ListItemText>Profile</ListItemText>
                                                 </MenuItem>
                                                 <Divider />
-                                                <MenuItem 
-                                                    component={Link} 
-                                                    href="/logout/" 
+                                                <MenuItem
+                                                    component={Link}
+                                                    href="/logout/"
                                                     method="post"
                                                     as="button"
                                                     onClick={() => setUserMenuAnchor(null)}
@@ -383,7 +354,7 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
 
                                 {/* Mobile Menu Toggle */}
                                 <IconButton
-                                    sx={{ 
+                                    sx={{
                                         display: { md: "none" },
                                         color: navbarTextColor,
                                         transition: "color 0.3s ease",
@@ -591,4 +562,3 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
         </ThemeProvider>
     );
 }
-

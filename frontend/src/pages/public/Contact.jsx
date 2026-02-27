@@ -185,23 +185,13 @@ export default function Contact() {
                                             Address
                                         </Typography>
                                         <Typography variant="body1" color="text.secondary">
-                                            Westlands, Nairobi
+                                            Pioneer Visionary Church of Christ / One Kingdom Mission Center
                                         </Typography>
                                         <Typography variant="body1" color="text.secondary">
-                                            Kenya
-                                        </Typography>
-                                    </Box>
-
-                                    {/* Phone */}
-                                    <Box sx={{ mb: 4 }}>
-                                        <Typography
-                                            variant="subtitle1"
-                                            sx={{ fontWeight: 700, color: primaryColor, mb: 0.5 }}
-                                        >
-                                            Phone
+                                            Pioneer 3rd Street, Kisumu Road, Eldoret City, Uasin Gishu County, Kenya
                                         </Typography>
                                         <Typography variant="body1" color="text.secondary">
-                                            +254 700 000 000
+                                            P. BOX 6300-30100, Eldoret
                                         </Typography>
                                     </Box>
 
@@ -214,7 +204,7 @@ export default function Contact() {
                                             Email
                                         </Typography>
                                         <Typography variant="body1" color="text.secondary">
-                                            hello@crossview.co.ke
+                                            info@crossviecollege.com
                                         </Typography>
                                     </Box>
                                 </motion.div>
@@ -328,7 +318,7 @@ export default function Contact() {
                 <Box sx={{ width: "100%", height: { xs: 300, md: 450 } }}>
                     <iframe
                         title="Location Map"
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15955.277444357954!2d36.8049!3d-1.2641!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f17366e0f5b3d%3A0x27e6e78eb6bf4ecc!2sWestlands%2C%20Nairobi!5e0!3m2!1sen!2ske!4v1700000000000!5m2!1sen!2ske"
+                        src="https://www.google.com/maps?q=0.5119850,35.2689220&z=16&output=embed"
                         width="100%"
                         height="100%"
                         style={{ border: 0 }}

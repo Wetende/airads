@@ -9,15 +9,14 @@ import {
     Divider,
 } from "@mui/material";
 import {
-    IconSchool,
     IconBrandFacebook,
     IconBrandTwitter,
     IconBrandLinkedin,
     IconBrandYoutube,
     IconMail,
-    IconPhone,
     IconMapPin,
 } from "@tabler/icons-react";
+import PlatformLogo from "./PlatformLogo";
 
 // --- Helper: Color utilities ---
 function hexToRgba(hex, alpha = 1) {
@@ -40,6 +39,12 @@ export default function Footer() {
     const primaryColor = p.primaryColor || "#3B82F6";
     const currentYear = new Date().getFullYear();
     const institutionName = p.institutionName || "Crossview LMS";
+    const contactEmail = "info@crossviecollege.com";
+    const contactAddress = [
+        "Pioneer Visionary Church of Christ / One Kingdom Mission Center",
+        "Pioneer 3rd Street, Kisumu Road, Eldoret City, Uasin Gishu County, Kenya",
+        "P. BOX 6300-30100, Eldoret",
+    ];
 
     const quickLinks = [
         { label: "Programs", href: "/programs/" },
@@ -79,38 +84,18 @@ export default function Footer() {
                         <Stack spacing={3}>
                             {/* Logo */}
                             <Stack direction="row" spacing={2} alignItems="center">
-                                {p.logoUrl ? (
-                                    <Box
-                                        component="img"
-                                        src={p.logoUrl}
-                                        alt={institutionName}
-                                        sx={{
-                                            height: 40,
-                                            maxWidth: 160,
-                                            objectFit: "contain",
-                                            filter: "brightness(0) invert(1)",
-                                        }}
-                                    />
-                                ) : (
-                                    <>
-                                        <Box
-                                            sx={{
-                                                width: 40,
-                                                height: 40,
-                                                bgcolor: primaryColor,
-                                                borderRadius: 2,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            <IconSchool size={24} />
-                                        </Box>
-                                        <Typography variant="h6" fontWeight={700}>
-                                            {institutionName}
-                                        </Typography>
-                                    </>
-                                )}
+                                <PlatformLogo
+                                    platform={p}
+                                    fallbackName={institutionName}
+                                    logoHeight={40}
+                                    logoMaxWidth={160}
+                                    iconContainerSize={40}
+                                    iconSize={24}
+                                    iconBgColor={primaryColor}
+                                    imageFilter="brightness(0) invert(1)"
+                                    nameVariant="h6"
+                                    nameColor="common.white"
+                                />
                             </Stack>
 
                             <Typography
@@ -208,40 +193,29 @@ export default function Footer() {
                             Contact Us
                         </Typography>
                         <Stack spacing={2}>
-                            {p.email && (
+                            {contactEmail && (
                                 <Stack direction="row" spacing={2} alignItems="center">
                                     <IconMail size={18} color={primaryColor} />
                                     <Typography
                                         variant="body2"
                                         sx={{ color: "rgba(255,255,255,0.7)" }}
                                     >
-                                        {p.email}
+                                        {contactEmail}
                                     </Typography>
                                 </Stack>
                             )}
-                            {p.phone && (
-                                <Stack direction="row" spacing={2} alignItems="center">
-                                    <IconPhone size={18} color={primaryColor} />
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ color: "rgba(255,255,255,0.7)" }}
-                                    >
-                                        {p.phone}
-                                    </Typography>
-                                </Stack>
-                            )}
-                            {p.address && (
+                            {contactAddress && (
                                 <Stack direction="row" spacing={2} alignItems="flex-start">
                                     <IconMapPin size={18} color={primaryColor} style={{ marginTop: 4 }} />
                                     <Typography
                                         variant="body2"
-                                        sx={{ color: "rgba(255,255,255,0.7)" }}
+                                        sx={{ color: "rgba(255,255,255,0.7)", whiteSpace: "pre-line" }}
                                     >
-                                        {p.address}
+                                        {contactAddress.join("\n")}
                                     </Typography>
                                 </Stack>
                             )}
-                            {!p.email && !p.phone && !p.address && (
+                            {!contactEmail && !contactAddress && (
                                 <Typography
                                     variant="body2"
                                     sx={{ color: "rgba(255,255,255,0.7)" }}

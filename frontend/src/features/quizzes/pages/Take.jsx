@@ -30,14 +30,7 @@ import MatchingQuestion from "@/features/quizzes/components/MatchingQuestion";
 import OrderingQuestion from "@/features/quizzes/components/OrderingQuestion";
 import FillBlankQuestion from "@/features/quizzes/components/FillBlankQuestion";
 import ImageMatchingQuestion from "@/features/quizzes/components/ImageMatchingQuestion";
-
-const getCsrfToken = () => {
-    const cookie = document.cookie
-        .split(";")
-        .map((entry) => entry.trim())
-        .find((entry) => entry.startsWith("csrftoken="));
-    return cookie ? decodeURIComponent(cookie.split("=")[1] || "") : "";
-};
+import { getCsrfHeaders } from "@/utils/csrf";
 
 export default function Take({
     quiz,
@@ -153,10 +146,9 @@ export default function Take({
                 const response = await fetch(`/student/quiz/${quiz.id}/save/`, {
                     method: "POST",
                     credentials: "same-origin",
-                    headers: {
+                    headers: getCsrfHeaders({
                         "Content-Type": "application/json",
-                        "X-CSRFToken": getCsrfToken(),
-                    },
+                    }),
                     body: JSON.stringify(payload),
                 });
 
@@ -215,6 +207,7 @@ export default function Take({
             payload.node_id = coursePlayer.nodeId;
         }
         router.post(`/student/quiz/${quiz.id}/submit/`, payload, {
+            headers: getCsrfHeaders(),
             onFinish: () => setSubmitting(false),
         });
     }, [

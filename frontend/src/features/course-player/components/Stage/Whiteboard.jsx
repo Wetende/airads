@@ -265,8 +265,8 @@ const Whiteboard = ({
         <Box
             sx={{ display: "flex", flexDirection: "column", minHeight: "100%" }}
         >
-            {/* Header: Type Label + Title */}
-            <LessonHeader title={node.title} node={node} />
+            {/* Header: Lesson title */}
+            <LessonHeader title={node.title} />
 
             {/* Content Area */}
             <Box sx={{ flexGrow: 1 }}>

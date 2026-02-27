@@ -52,20 +52,29 @@ export default function ProgramList({
                     <Box sx={{ width: 40, height: 4, bgcolor: 'primary.main', borderRadius: 2 }} />
                 </Box>
 
-                <FormControl size="small" sx={{ minWidth: 150 }}>
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                        value={filters.status || ''}
-                        label="Status"
-                        onChange={(e) => handleFilterChange(e.target.value)}
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Button
+                        component={Link}
+                        href="/programs/"
+                        variant="outlined"
                     >
-                        {statusOptions.map((option) => (
-                            <MenuItem key={option.value} value={option.value}>
-                                {option.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+                        Browse Public Programs
+                    </Button>
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                        <InputLabel>Status</InputLabel>
+                        <Select
+                            value={filters.status || ''}
+                            label="Status"
+                            onChange={(e) => handleFilterChange(e.target.value)}
+                        >
+                            {statusOptions.map((option) => (
+                                <MenuItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </Stack>
             </Stack>
 
             {enrollments.length === 0 ? (

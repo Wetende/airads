@@ -440,6 +440,7 @@ def student_dashboard(request):
         total_nodes = _get_completable_nodes_count(enrollment.program)
         completed_nodes = enrollment.completions.count()
         progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
+        effective_status = _reconcile_enrollment_status(enrollment, progress)
 
         enrollment_data.append(
             {
@@ -448,7 +449,7 @@ def student_dashboard(request):
                 "programName": enrollment.program.name,
                 "programCode": enrollment.program.code or "",
                 "progressPercent": round(progress, 1),
-                "status": enrollment.status,
+                "status": effective_status,
                 "enrolledAt": enrollment.enrolled_at.isoformat(),
             }
         )
@@ -503,14 +504,15 @@ def program_list(request):
         "program", "program__blueprint"
     )
 
-    if status_filter:
-        enrollments = enrollments.filter(status=status_filter)
-
     enrollment_data = []
     for enrollment in enrollments:
         total_nodes = _get_completable_nodes_count(enrollment.program)
         completed_nodes = enrollment.completions.count()
         progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
+        effective_status = _reconcile_enrollment_status(enrollment, progress)
+
+        if status_filter and effective_status != status_filter:
+            continue
 
         # Get thumbnail URL
         thumbnail_url = (
@@ -525,7 +527,7 @@ def program_list(request):
                 "programCode": enrollment.program.code or "",
                 "description": enrollment.program.description or "",
                 "progressPercent": round(progress, 1),
-                "status": enrollment.status,
+                "status": effective_status,
                 "enrolledAt": enrollment.enrolled_at.isoformat(),
                 # New display fields
                 "thumbnail": thumbnail_url,
@@ -1024,19 +1026,32 @@ def session_discussion_post(request, pk: int, node_id: int):
     from apps.discussions.models import DiscussionPost, DiscussionThread
     from apps.notifications.services import NotificationService
 
-    enrollment = get_object_or_404(
-        Enrollment.objects.select_related("program"),
-        id=pk,
-        user=request.user,
-        status="active",
+    enrollment = (
+        Enrollment.objects.select_related("program")
+        .filter(pk=pk, user=request.user)
+        .first()
     )
+    if not enrollment:
+        messages.error(
+            request,
+            "We could not find your enrollment for this lesson. Please reopen the course and try again.",
+        )
+        return redirect("progression:student.programs")
 
-    node = get_object_or_404(
-        CurriculumNode,
-        id=node_id,
-        program=enrollment.program,
-        is_published=True,
+    node = (
+        CurriculumNode.objects.filter(
+            id=node_id,
+            program=enrollment.program,
+            is_published=True,
+        )
+        .first()
     )
+    if not node:
+        messages.error(
+            request,
+            "This lesson is no longer available for discussion.",
+        )
+        return redirect("progression:student.program", pk=enrollment.pk)
 
     content = request.POST.get("content", "").strip()
     if not content:
@@ -1049,6 +1064,7 @@ def session_discussion_post(request, pk: int, node_id: int):
 
     thread_id = request.POST.get("thread_id") or request.POST.get("thread")
     parent_id = request.POST.get("parent_id")
+    title = request.POST.get("title", "").strip()
 
     if thread_id:
         thread = get_object_or_404(
@@ -1077,10 +1093,14 @@ def session_discussion_post(request, pk: int, node_id: int):
         NotificationService.notify_lesson_discussion_reply(post)
     else:
         # Create a new discussion thread
+        if not title:
+            base = " ".join(content.split())
+            title = base[:72] + ("..." if len(base) > 72 else "")
+
         thread = DiscussionThread.objects.create(
             node=node,
             user=request.user,
-            title="",  # No title for simple comments
+            title=title,
             content=content,
         )
         NotificationService.notify_lesson_discussion_comment(
@@ -1101,19 +1121,32 @@ def session_note_create(request, pk: int, node_id: int):
 
     from .models import StudentNote
 
-    enrollment = get_object_or_404(
-        Enrollment.objects.select_related("program"),
-        id=pk,
-        user=request.user,
-        status="active",
+    enrollment = (
+        Enrollment.objects.select_related("program")
+        .filter(pk=pk, user=request.user)
+        .first()
     )
+    if not enrollment:
+        messages.error(
+            request,
+            "We could not find your enrollment for this lesson. Please reopen the course and try again.",
+        )
+        return redirect("progression:student.programs")
 
-    node = get_object_or_404(
-        CurriculumNode,
-        id=node_id,
-        program=enrollment.program,
-        is_published=True,
+    node = (
+        CurriculumNode.objects.filter(
+            id=node_id,
+            program=enrollment.program,
+            is_published=True,
+        )
+        .first()
     )
+    if not node:
+        messages.error(
+            request,
+            "This lesson is no longer available for notes.",
+        )
+        return redirect("progression:student.program", pk=enrollment.pk)
 
     content = request.POST.get("content", "").strip()
     if not content:
@@ -1145,19 +1178,25 @@ def session_note_delete(request, pk: int, node_id: int, note_id: int):
     """
     from .models import StudentNote
 
-    enrollment = get_object_or_404(
-        Enrollment,
-        id=pk,
-        user=request.user,
-        status="active",
-    )
+    enrollment = Enrollment.objects.filter(pk=pk, user=request.user).first()
+    if not enrollment:
+        messages.error(
+            request,
+            "We could not find your enrollment for this lesson. Please reopen the course and try again.",
+        )
+        return redirect("progression:student.programs")
 
-    note = get_object_or_404(
-        StudentNote,
-        id=note_id,
-        enrollment=enrollment,
-        node_id=node_id,
+    note = (
+        StudentNote.objects.filter(
+            id=note_id,
+            enrollment=enrollment,
+            node_id=node_id,
+        )
+        .first()
     )
+    if not note:
+        messages.error(request, "That note could not be found or was already removed.")
+        return redirect("progression:student.session", pk=pk, node_id=node_id)
 
     note.delete()
 
@@ -1176,6 +1215,24 @@ def _get_completable_nodes_count(program: Program) -> int:
         is_published=True,
         children__isnull=True,  # Leaf nodes
     ).count()
+
+
+def _reconcile_enrollment_status(enrollment: Enrollment, progress: float) -> str:
+    """
+    Keep active/completed enrollment status in sync with computed progress.
+
+    This prevents stale states where status='completed' but progress is below 100%.
+    """
+    if enrollment.status not in {"active", "completed"}:
+        return enrollment.status
+
+    target_status = "completed" if progress >= 100 else "active"
+    if enrollment.status != target_status:
+        enrollment.status = target_status
+        enrollment.completed_at = timezone.now() if target_status == "completed" else None
+        enrollment.save(update_fields=["status", "completed_at", "updated_at"])
+
+    return target_status
 
 
 def _build_curriculum_tree(

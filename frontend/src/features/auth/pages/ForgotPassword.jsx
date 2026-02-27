@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { IconMail, IconArrowLeft } from "@tabler/icons-react";
 import { motion } from "framer-motion";
+import PlatformLogo from "@/components/common/PlatformLogo";
 
 const fadeInUp = {
     initial: { opacity: 0, y: 20 },
@@ -52,14 +53,13 @@ export default function ForgotPassword({ success, errors = {} }) {
                         <CardContent sx={{ p: 4 }}>
                             {/* Header */}
                             <Box sx={{ textAlign: "center", mb: 4 }}>
-                                {platform?.logoUrl && (
-                                    <Box
-                                        component="img"
-                                        src={platform.logoUrl}
-                                        alt={platform.institutionName}
-                                        sx={{ height: 48, mb: 2 }}
-                                    />
-                                )}
+                                <PlatformLogo
+                                    platform={platform}
+                                    showName={false}
+                                    logoHeight={48}
+                                    logoMaxWidth={180}
+                                    sx={{ mb: 2 }}
+                                />
                                 <Typography
                                     variant="h4"
                                     color="primary"
@@ -69,7 +69,7 @@ export default function ForgotPassword({ success, errors = {} }) {
                                     Forgot Password?
                                 </Typography>
                                 <Typography variant="body1" color="text.secondary">
-                                    Enter your email and we'll send you a reset link.
+                                    Enter your email and we&apos;ll send you a reset link.
                                 </Typography>
                             </Box>
 

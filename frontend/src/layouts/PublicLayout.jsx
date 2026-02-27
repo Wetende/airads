@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import ThemeProvider from "@/theme";
 import { getFlashMessages, getFlashSeverity } from "@/utils/userMessages";
+import PlatformLogo from "@/components/common/PlatformLogo";
 
 /**
  * PublicLayout - Layout wrapper for public pages with platform branding.
@@ -35,7 +36,8 @@ export default function PublicLayout({
     }
 
     return (
-        <Box
+        <ThemeProvider>
+            <Box
             sx={{
                 minHeight: "100vh",
                 display: "flex",
@@ -75,17 +77,14 @@ export default function PublicLayout({
                     }}
                 >
                     <Stack direction="row" spacing={2} alignItems="center">
-                        {platform.logoUrl && (
-                            <Box
-                                component="img"
-                                src={platform.logoUrl}
-                                alt={platform.institutionName}
-                                sx={{ height: 40 }}
-                            />
-                        )}
-                        <Typography variant="h6" fontWeight={600}>
-                            {platform.institutionName}
-                        </Typography>
+                        <PlatformLogo
+                            platform={platform}
+                            showNameWhenLogo
+                            logoHeight={40}
+                            logoMaxWidth={140}
+                            nameVariant="h6"
+                            nameFontWeight={600}
+                        />
                     </Stack>
                     <Stack direction="row" spacing={2}>
                         <Button

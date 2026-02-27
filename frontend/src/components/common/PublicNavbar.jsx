@@ -1,9 +1,8 @@
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 import {
     Box,
     Container,
     Stack,
-    Typography,
     Button,
     AppBar,
     Toolbar,
@@ -15,9 +14,10 @@ import {
     ListItem,
     ListItemText,
 } from "@mui/material";
-import { IconBrandTabler, IconMenu2, IconX } from "@tabler/icons-react";
+import { IconMenu2, IconX } from "@tabler/icons-react";
 import { cloneElement, useState } from "react";
 import ButtonAnimationWrapper from "./ButtonAnimationWrapper";
+import PlatformLogo from "./PlatformLogo";
 
 // Navigation links - Single source of truth
 const NAV_LINKS = [
@@ -52,6 +52,7 @@ function ElevationScroll({ children }) {
  */
 export default function PublicNavbar({ activeLink = "/", showAuth = true, auth = null }) {
     const theme = useTheme();
+    const { platform } = usePage().props;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const isActive = (href) => activeLink === href;
@@ -64,32 +65,18 @@ export default function PublicNavbar({ activeLink = "/", showAuth = true, auth =
                         <Toolbar disableGutters sx={{ justifyContent: "space-between" }}>
                             {/* Logo */}
                             <Stack direction="row" spacing={1} alignItems="center">
-                                <Box
-                                    component={Link}
+                                <PlatformLogo
+                                    platform={platform}
                                     href="/"
-                                    sx={{
-                                        width: 40,
-                                        height: 40,
-                                        bgcolor: "primary.main",
-                                        borderRadius: 2,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        color: "white",
-                                        textDecoration: "none",
-                                    }}
-                                >
-                                    <IconBrandTabler size={24} />
-                                </Box>
-                                <Typography
-                                    component={Link}
-                                    href="/"
-                                    variant="h5"
-                                    fontWeight={700}
-                                    sx={{ color: "grey.900", textDecoration: "none" }}
-                                >
-                                    Crossview
-                                </Typography>
+                                    fallbackName="Crossview"
+                                    logoHeight={40}
+                                    logoMaxWidth={160}
+                                    iconContainerSize={40}
+                                    iconSize={24}
+                                    iconBgColor="primary.main"
+                                    nameVariant="h5"
+                                    nameColor="grey.900"
+                                />
                             </Stack>
 
                             {/* Desktop Navigation */}

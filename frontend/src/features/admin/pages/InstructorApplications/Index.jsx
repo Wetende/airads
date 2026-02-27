@@ -66,7 +66,7 @@ export default function Index({
   return (
     <>
       <Head title="Instructor Applications" />
-      <DashboardLayout role="admin" breadcrumbs={[{ label: 'Instructor Applications' }]}> 
+      <DashboardLayout role="admin" breadcrumbs={[{ label: 'Instructor Applications' }]}>
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

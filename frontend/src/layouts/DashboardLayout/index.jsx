@@ -33,7 +33,6 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import SchoolIcon from "@mui/icons-material/School";
-import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import PeopleIcon from "@mui/icons-material/People";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import CardMembershipIcon from "@mui/icons-material/CardMembership";
@@ -49,13 +48,12 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
-import NotificationsIcon from "@mui/icons-material/Notifications";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
-import BrushIcon from "@mui/icons-material/Brush";
 import ApprovalIcon from "@mui/icons-material/Approval";
 
 // Custom Components
 import NotificationPanel from "@/components/NotificationPanel";
+import PlatformLogo from "@/components/common/PlatformLogo";
 import { useThemeMode } from "@/theme";
 
 const DRAWER_WIDTH_EXPANDED = 240;
@@ -329,17 +327,27 @@ export default function DashboardLayout({
                 }}
             >
                 {/* Logo */}
-                <IconButton
+                <Box
                     component={Link}
                     href="/"
                     sx={{
                         color: "primary.main",
                         borderRadius: 0,
+                        display: "inline-flex",
+                        textDecoration: "none",
                     }}
                     aria-label="home"
                 >
-                    <SchoolIcon sx={{ fontSize: 28 }} />
-                </IconButton>
+                    <PlatformLogo
+                        platform={platform}
+                        showName={false}
+                        fallbackName="Crossview"
+                        logoHeight={collapsed && !isMobile ? 28 : 32}
+                        logoMaxWidth={collapsed && !isMobile ? 32 : 120}
+                        iconContainerSize={28}
+                        iconSize={18}
+                    />
+                </Box>
 
                 {/* Institution Name - only when expanded */}
                 {(!collapsed || isMobile) && (

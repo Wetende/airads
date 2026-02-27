@@ -289,12 +289,12 @@
     "file": "vendor-hls-Cp2x8l1r.js",
     "name": "vendor-hls"
   },
-  "_vendor-icons-DOrnFeEo.js": {
-    "file": "vendor-icons-DOrnFeEo.js",
+  "_vendor-icons-CSoBo7ee.js": {
+    "file": "vendor-icons-CSoBo7ee.js",
     "name": "vendor-icons",
     "imports": [
       "_vendor-editor-BvTiqRK6.js",
-      "_vendor-mui-BngsIKsx.js",
+      "_vendor-mui-BRYk17kv.js",
       "_vendor-dnd-BX5Xl_T5.js"
     ]
   },
@@ -310,8 +310,8 @@
       "_vendor-dnd-BX5Xl_T5.js"
     ]
   },
-  "_vendor-mui-BngsIKsx.js": {
-    "file": "vendor-mui-BngsIKsx.js",
+  "_vendor-mui-BRYk17kv.js": {
+    "file": "vendor-mui-BRYk17kv.js",
     "name": "vendor-mui",
     "imports": [
       "_vendor-dnd-BX5Xl_T5.js",
@@ -319,13 +319,13 @@
       "_vendor-emotion-C1vEbodH.js"
     ]
   },
-  "_vendor-pdf-DVItsibG.js": {
-    "file": "vendor-pdf-DVItsibG.js",
+  "_vendor-pdf-Bs15b63K.js": {
+    "file": "vendor-pdf-Bs15b63K.js",
     "name": "vendor-pdf",
     "imports": [
       "_vendor-editor-BvTiqRK6.js",
       "_vendor-dnd-BX5Xl_T5.js",
-      "_vendor-mui-BngsIKsx.js"
+      "_vendor-mui-BRYk17kv.js"
     ]
   },
   "_vendor-player-Dm2RJ84W.js": {
@@ -369,62 +369,62 @@
     "src": "src/assets/images/learning.jpg"
   },
   "src/components/sections/landing/FAQSection.jsx": {
-    "file": "FAQSection-BDmaCYe5.js",
+    "file": "FAQSection-DsdZc2q7.js",
     "name": "FAQSection",
     "src": "src/components/sections/landing/FAQSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-BvTiqRK6.js",
       "_vendor-dnd-BX5Xl_T5.js",
-      "_vendor-mui-BngsIKsx.js",
+      "_vendor-mui-BRYk17kv.js",
       "_vendor-motion-DyQF4cvJ.js",
-      "_vendor-icons-DOrnFeEo.js",
+      "_vendor-icons-CSoBo7ee.js",
       "_vendor-emotion-C1vEbodH.js"
     ]
   },
   "src/components/sections/landing/FeaturesSection.jsx": {
-    "file": "FeaturesSection-NHy6s-uw.js",
+    "file": "FeaturesSection-BK_Brw-M.js",
     "name": "FeaturesSection",
     "src": "src/components/sections/landing/FeaturesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-BvTiqRK6.js",
-      "_vendor-mui-BngsIKsx.js",
+      "_vendor-mui-BRYk17kv.js",
       "_vendor-motion-DyQF4cvJ.js",
-      "_vendor-icons-DOrnFeEo.js",
+      "_vendor-icons-CSoBo7ee.js",
       "_vendor-dnd-BX5Xl_T5.js",
       "_vendor-emotion-C1vEbodH.js"
     ]
   },
   "src/components/sections/landing/InstructorsSection.jsx": {
-    "file": "InstructorsSection-BvZpNALf.js",
+    "file": "InstructorsSection-DGRC8xmW.js",
     "name": "InstructorsSection",
     "src": "src/components/sections/landing/InstructorsSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-BvTiqRK6.js",
-      "_vendor-mui-BngsIKsx.js",
+      "_vendor-mui-BRYk17kv.js",
       "_vendor-motion-DyQF4cvJ.js",
       "_vendor-dnd-BX5Xl_T5.js",
       "_vendor-emotion-C1vEbodH.js"
     ]
   },
   "src/components/sections/landing/LearningModesSection.jsx": {
-    "file": "LearningModesSection-DzpeTAIb.js",
+    "file": "LearningModesSection-ByZ9hNxj.js",
     "name": "LearningModesSection",
     "src": "src/components/sections/landing/LearningModesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-BvTiqRK6.js",
       "src/main.jsx",
-      "_vendor-mui-BngsIKsx.js",
+      "_vendor-mui-BRYk17kv.js",
       "_vendor-motion-DyQF4cvJ.js",
-      "_vendor-icons-DOrnFeEo.js",
+      "_vendor-icons-CSoBo7ee.js",
       "_vendor-dnd-BX5Xl_T5.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-ChxCOet9.js",
       "_vendor-player-Dm2RJ84W.js",
-      "_vendor-pdf-DVItsibG.js",
+      "_vendor-pdf-Bs15b63K.js",
       "_vendor-date-D5ebMS61.js",
       "_vendor-emotion-C1vEbodH.js"
     ],
@@ -433,56 +433,56 @@
     ]
   },
   "src/components/sections/landing/ProgramsSection.jsx": {
-    "file": "ProgramsSection-Cm_u93Bk.js",
+    "file": "ProgramsSection-CueBJF_H.js",
     "name": "ProgramsSection",
     "src": "src/components/sections/landing/ProgramsSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-BvTiqRK6.js",
       "src/main.jsx",
-      "_vendor-mui-BngsIKsx.js",
+      "_vendor-mui-BRYk17kv.js",
       "_vendor-motion-DyQF4cvJ.js",
-      "_vendor-icons-DOrnFeEo.js",
+      "_vendor-icons-CSoBo7ee.js",
       "_vendor-dnd-BX5Xl_T5.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-ChxCOet9.js",
       "_vendor-player-Dm2RJ84W.js",
-      "_vendor-pdf-DVItsibG.js",
+      "_vendor-pdf-Bs15b63K.js",
       "_vendor-date-D5ebMS61.js",
       "_vendor-emotion-C1vEbodH.js"
     ]
   },
   "src/components/sections/landing/TestimonialsSection.jsx": {
-    "file": "TestimonialsSection-BNOOeQLQ.js",
+    "file": "TestimonialsSection-rCMs96AZ.js",
     "name": "TestimonialsSection",
     "src": "src/components/sections/landing/TestimonialsSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-BvTiqRK6.js",
       "_vendor-swiper-DRkDqqfe.js",
-      "_vendor-mui-BngsIKsx.js",
+      "_vendor-mui-BRYk17kv.js",
       "_vendor-motion-DyQF4cvJ.js",
-      "_vendor-icons-DOrnFeEo.js",
+      "_vendor-icons-CSoBo7ee.js",
       "_vendor-dnd-BX5Xl_T5.js",
       "_vendor-emotion-C1vEbodH.js"
     ]
   },
   "src/components/sections/landing/TrustBadgesSection.jsx": {
-    "file": "TrustBadgesSection-CV89Hatd.js",
+    "file": "TrustBadgesSection-Cls8cC8Q.js",
     "name": "TrustBadgesSection",
     "src": "src/components/sections/landing/TrustBadgesSection.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_vendor-editor-BvTiqRK6.js",
-      "_vendor-mui-BngsIKsx.js",
+      "_vendor-mui-BRYk17kv.js",
       "_vendor-motion-DyQF4cvJ.js",
-      "_vendor-icons-DOrnFeEo.js",
+      "_vendor-icons-CSoBo7ee.js",
       "_vendor-dnd-BX5Xl_T5.js",
       "_vendor-emotion-C1vEbodH.js"
     ]
   },
   "src/main.jsx": {
-    "file": "main-CuvizL-C.js",
+    "file": "main-eOUkHyx1.js",
     "name": "main",
     "src": "src/main.jsx",
     "isEntry": true,
@@ -491,11 +491,11 @@
       "_vendor-dnd-BX5Xl_T5.js",
       "_vendor-axios-CZMj-T3T.js",
       "_vendor-lodash-ChxCOet9.js",
-      "_vendor-icons-DOrnFeEo.js",
-      "_vendor-mui-BngsIKsx.js",
+      "_vendor-icons-CSoBo7ee.js",
+      "_vendor-mui-BRYk17kv.js",
       "_vendor-motion-DyQF4cvJ.js",
       "_vendor-player-Dm2RJ84W.js",
-      "_vendor-pdf-DVItsibG.js",
+      "_vendor-pdf-Bs15b63K.js",
       "_vendor-date-D5ebMS61.js",
       "_vendor-emotion-C1vEbodH.js"
     ],

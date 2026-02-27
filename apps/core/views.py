@@ -505,7 +505,7 @@ def public_program_detail(request, pk: int):
             progress_percent = round(
                 (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0, 1
             )
-            is_completed = enrollment.status == "completed" or progress_percent >= 100
+            is_completed = progress_percent >= 100
 
             enrollment_data = {
                 "id": enrollment.id,
@@ -1223,6 +1223,16 @@ def _get_student_dashboard_data(user) -> dict:
         ).count()
         completed_nodes = enrollment.completions.count()
         progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
+        if enrollment.status in {"active", "completed"}:
+            target_status = "completed" if progress >= 100 else "active"
+            if enrollment.status != target_status:
+                enrollment.status = target_status
+                enrollment.completed_at = (
+                    timezone.now() if target_status == "completed" else None
+                )
+                enrollment.save(
+                    update_fields=["status", "completed_at", "updated_at"]
+                )
 
         enrollment_data.append(
             {
@@ -5046,16 +5056,16 @@ def student_assignment_view(request, assignment_id: int):
     from apps.progression.models import Enrollment
 
     try:
-        assignment = Assignment.objects.select_related("program").get(
-            pk=assignment_id, is_published=True
-        )
+        assignment = Assignment.objects.select_related("program").get(pk=assignment_id)
     except Assignment.DoesNotExist:
         messages.error(request, "Assignment not found")
         return redirect("/dashboard/")
 
     try:
         enrollment = Enrollment.objects.get(
-            user=request.user, program=assignment.program, status="active"
+            user=request.user,
+            program=assignment.program,
+            status__in=["active", "completed"],
         )
     except Enrollment.DoesNotExist:
         messages.error(request, "You are not enrolled in this program")
@@ -5070,6 +5080,7 @@ def student_assignment_view(request, assignment_id: int):
         node = CurriculumNode.objects.filter(
             pk=requested_node_id,
             program=assignment.program,
+            is_published=True,
         ).first()
         if (
             node
@@ -5090,6 +5101,10 @@ def student_assignment_view(request, assignment_id: int):
                 "nodeId": node.id,
                 "nextNode": next_node,
             }
+
+    if not assignment.is_published and source_node is None:
+        messages.error(request, "This assignment is not available")
+        return redirect("/dashboard/")
 
     if source_node is None:
         candidate_nodes = CurriculumNode.objects.filter(
@@ -5187,18 +5202,19 @@ def student_assignment_submit(request, assignment_id: int):
         return redirect("core:student.assignment", assignment_id=assignment_id)
 
     try:
-        assignment = Assignment.objects.select_related("program").get(
-            pk=assignment_id, is_published=True
-        )
+        assignment = Assignment.objects.select_related("program").get(pk=assignment_id)
     except Assignment.DoesNotExist:
         messages.error(request, "Assignment not found")
         return redirect("/dashboard/")
 
     try:
         enrollment = Enrollment.objects.get(
-            user=request.user, program=assignment.program, status="active"
+            user=request.user,
+            program=assignment.program,
+            status__in=["active", "completed"],
         )
     except Enrollment.DoesNotExist:
+        messages.error(request, "You are not enrolled in this program")
         return redirect("/dashboard/")
 
     requested_enrollment_id = _safe_int(request.POST.get("enrollment_id"))
@@ -5211,6 +5227,7 @@ def student_assignment_submit(request, assignment_id: int):
         context_node = CurriculumNode.objects.filter(
             pk=requested_node_id,
             program=assignment.program,
+            is_published=True,
         ).first()
         if context_node is None:
             in_course_player_context = False
@@ -5220,6 +5237,10 @@ def student_assignment_submit(request, assignment_id: int):
         ):
             in_course_player_context = False
             context_node = None
+
+    if not assignment.is_published and not (in_course_player_context and context_node):
+        messages.error(request, "This assignment is not available")
+        return redirect("/dashboard/")
 
     # Check for existing submission
     existing = AssignmentSubmission.objects.filter(

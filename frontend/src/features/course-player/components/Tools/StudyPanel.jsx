@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { router } from "@inertiajs/react";
+import React, { useEffect, useState } from "react";
+import { router, usePage } from "@inertiajs/react";
 import {
     Box,
     Typography,
@@ -23,6 +23,7 @@ import {
     NoteAlt as NoteIcon,
 } from "@mui/icons-material";
 import DiscussionsList from "./DiscussionsList";
+import { getFlashMessages } from "@/utils/userMessages";
 
 const StudyPanel = ({
     nodeId,
@@ -32,12 +33,42 @@ const StudyPanel = ({
     currentVideoTimestamp,
     onClose,
 }) => {
+    const { flash } = usePage().props;
+    const [discussionItems, setDiscussionItems] = useState(
+        Array.isArray(discussions) ? discussions : [],
+    );
     const [activeTab, setActiveTab] = useState(0); // 0 = Discussions, 1 = Notes
     const [isComposing, setIsComposing] = useState(false);
     const [message, setMessage] = useState("");
     const [noteContent, setNoteContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+
+    useEffect(() => {
+        setDiscussionItems(Array.isArray(discussions) ? discussions : []);
+    }, [discussions]);
+
+    useEffect(() => {
+        if (activeTab !== 0 || !nodeId || !enrollmentId) return;
+
+        const intervalId = window.setInterval(() => {
+            router.reload({
+                only: ["discussions", "flash"],
+                preserveScroll: true,
+                preserveState: true,
+            });
+        }, 15000);
+
+        return () => window.clearInterval(intervalId);
+    }, [activeTab, nodeId, enrollmentId]);
+
+    useEffect(() => {
+        const messages = getFlashMessages(flash);
+        const errorFlash = messages.find((msg) => msg.type === "error")?.message;
+        if (errorFlash) {
+            setErrorMessage(errorFlash);
+        }
+    }, [flash]);
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
@@ -65,6 +96,11 @@ const StudyPanel = ({
                 onSuccess: () => {
                     setMessage("");
                     setIsComposing(false);
+                    router.reload({
+                        only: ["discussions", "flash"],
+                        preserveScroll: true,
+                        preserveState: true,
+                    });
                 },
                 onError: () => {
                     setErrorMessage(
@@ -97,6 +133,13 @@ const StudyPanel = ({
                     setErrorMessage(
                         "Unable to post reply right now. Please try again.",
                     );
+                },
+                onSuccess: () => {
+                    router.reload({
+                        only: ["discussions", "flash"],
+                        preserveScroll: true,
+                        preserveState: true,
+                    });
                 },
                 onFinish: () => {
                     setIsSubmitting(false);
@@ -313,7 +356,7 @@ const StudyPanel = ({
 
                     <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
                         <DiscussionsList
-                            discussions={discussions}
+                            discussions={discussionItems}
                             onReply={handleSendReply}
                             disabled={isSubmitting}
                         />

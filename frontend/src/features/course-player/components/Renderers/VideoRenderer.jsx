@@ -187,8 +187,9 @@ const VideoRenderer = ({
                                 variant="caption"
                                 color="success.main"
                                 fontWeight="bold"
+                                aria-label="Requirement met"
                             >
-                                ✓ Requirement met
+                                ✓
                             </Typography>
                         )}
                     </Stack>

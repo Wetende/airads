@@ -66,6 +66,7 @@ const AssessmentRenderer = ({
     const [assignmentStarted, setAssignmentStarted] = useState(false);
     const [textContent, setTextContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submissionNotice, setSubmissionNotice] = useState(null);
 
     const properties = useMemo(() => {
         return node?.properties && typeof node.properties === "object"
@@ -104,6 +105,7 @@ const AssessmentRenderer = ({
         if (!textContent.trim()) return;
 
         setIsSubmitting(true);
+        setSubmissionNotice(null);
         const payload = new FormData();
         if (textContent.trim()) payload.append("text_content", textContent.trim());
         if (enrollmentId) payload.append("enrollment_id", String(enrollmentId));
@@ -113,7 +115,17 @@ const AssessmentRenderer = ({
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
+                setSubmissionNotice({
+                    severity: "success",
+                    message: "Assignment submitted successfully.",
+                });
                 if (onComplete) onComplete();
+            },
+            onError: () => {
+                setSubmissionNotice({
+                    severity: "error",
+                    message: "Submission failed. Please try again.",
+                });
             },
             onFinish: () => {
                 setIsSubmitting(false);
@@ -348,15 +360,23 @@ const AssessmentRenderer = ({
                         </Alert>
                     ) : (
                         <>
+                            {submissionNotice ? (
+                                <Alert severity={submissionNotice.severity}>
+                                    {submissionNotice.message}
+                                </Alert>
+                            ) : null}
                             <TextField
                                 label="Your response"
                                 multiline
                                 rows={7}
                                 fullWidth
                                 value={textContent}
-                                onChange={(event) =>
-                                    setTextContent(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setTextContent(event.target.value);
+                                    if (submissionNotice) {
+                                        setSubmissionNotice(null);
+                                    }
+                                }}
                             />
 
                             <Box>

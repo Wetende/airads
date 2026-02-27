@@ -184,6 +184,60 @@ def _make_program_with_subtree():
     }
 
 
+def _make_program_with_plain_leaf_nodes(num_leaf_nodes: int):
+    """
+    Helper to create a program whose leaf lessons have no explicit completion_rules.
+    These should still count toward progress.
+    """
+    from apps.core.models import User, Program
+    from apps.blueprints.models import AcademicBlueprint
+    from apps.curriculum.models import CurriculumNode
+    from apps.progression.models import Enrollment
+
+    timestamp = timezone.now().timestamp()
+
+    blueprint = AcademicBlueprint.objects.create(
+        name=f"Plain Leaf Blueprint {timestamp}",
+        hierarchy_structure=["Container", "Content"],
+        grading_logic={"type": "weighted", "components": []},
+        progression_rules={"sequential": False},
+    )
+
+    program = Program.objects.create(
+        name=f"Plain Leaf Program {timestamp}",
+        blueprint=blueprint,
+        is_published=True,
+    )
+
+    leaf_nodes = []
+    for i in range(num_leaf_nodes):
+        node = CurriculumNode.objects.create(
+            program=program,
+            node_type="Content",
+            title=f"Leaf Session {i + 1}",
+            position=i,
+        )
+        leaf_nodes.append(node)
+
+    user = User.objects.create_user(
+        username=f"leafuser_{timestamp}",
+        email=f"leaf_{timestamp}@example.com",
+        password="testpass123",
+    )
+
+    enrollment = Enrollment.objects.create(
+        user=user,
+        program=program,
+        status="active",
+    )
+
+    return {
+        "enrollment": enrollment,
+        "leaf_nodes": leaf_nodes,
+        "program": program,
+    }
+
+
 class TestProgressCalculationFormula:
     """
     **Feature: progression-engine, Property 9: Progress Calculation Formula**
@@ -407,5 +461,38 @@ class TestProgramCompletion:
         
         # Refresh enrollment from database
         enrollment.refresh_from_db()
-        
+
         assert enrollment.status == 'active'
+
+
+class TestLeafNodesWithoutRules:
+    """
+    Regression tests for lessons that do not define explicit completion_rules.
+    They should still count as completable leaf nodes.
+    """
+
+    def test_plain_leaf_nodes_count_toward_progress(self):
+        data = _make_program_with_plain_leaf_nodes(3)
+        enrollment = data["enrollment"]
+        leaf_nodes = data["leaf_nodes"]
+
+        NodeCompletion.objects.create(
+            enrollment=enrollment,
+            node=leaf_nodes[0],
+            completed_at=timezone.now(),
+            completion_type="view",
+        )
+
+        progress = ProgressCalculator().calculate(enrollment)
+        assert round(progress, 1) == 33.3
+
+    def test_partial_plain_leaf_completion_keeps_enrollment_active(self):
+        data = _make_program_with_plain_leaf_nodes(3)
+        enrollment = data["enrollment"]
+        leaf_nodes = data["leaf_nodes"]
+
+        engine = ProgressionEngine()
+        engine.mark_complete(enrollment, leaf_nodes[0], "view")
+
+        enrollment.refresh_from_db()
+        assert enrollment.status == "active"

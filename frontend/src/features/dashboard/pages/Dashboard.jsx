@@ -47,7 +47,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 // Shared Components
 // =============================================================================
 
-function StatCard({ title, value, icon: Icon, color = 'primary', subtitle }) {
+function StatCard({ title, value, icon: Icon, color = 'primary' }) {
   return (
     <Paper sx={{ p: 3, height: '100%' }}>
       <Stack direction="row" spacing={2} alignItems="center">
@@ -120,7 +120,7 @@ function StudentContent({ enrollments, recentActivity }) {
     (enrollment) => enrollment.progressPercent > 0 && enrollment.progressPercent < 100
   );
   const completedCourses = enrollmentList.filter(
-    (enrollment) => enrollment.status === 'completed' || enrollment.progressPercent >= 100
+    (enrollment) => Number(enrollment.progressPercent || 0) >= 100
   );
 
   const globalProgress =

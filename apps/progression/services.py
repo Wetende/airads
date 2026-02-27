@@ -254,7 +254,13 @@ class ProgressCalculator:
 
     def get_completable_nodes(self, nodes: List[CurriculumNode]) -> List[CurriculumNode]:
         """
-        Filter nodes to only those that are completable (not containers).
+        Filter nodes to only those that are completable.
+
+        Default behavior:
+        - Leaf nodes are completable.
+        - Nodes with `completion_rules.is_completable == False` are excluded.
+        - Non-leaf nodes are only completable when explicitly flagged
+          with `completion_rules.is_completable == True`.
 
         Args:
             nodes: List of nodes to filter
@@ -262,14 +268,23 @@ class ProgressCalculator:
         Returns:
             List of completable nodes
         """
-        completable = []
+        parent_ids = {n.parent_id for n in nodes if n.parent_id}
+
+        completable: List[CurriculumNode] = []
         for node in nodes:
-            if node.completion_rules:
-                if node.completion_rules.get('is_completable', True):
-                    completable.append(node)
-            else:
-                # Nodes without completion_rules are not completable (containers)
-                pass
+            rules = (
+                node.completion_rules
+                if isinstance(node.completion_rules, dict)
+                else {}
+            )
+            explicit_is_completable = rules.get("is_completable")
+            if explicit_is_completable is False:
+                continue
+
+            is_leaf = node.id not in parent_ids
+            if is_leaf or explicit_is_completable is True:
+                completable.append(node)
+
         return completable
 
     def get_subtree_nodes(self, root: CurriculumNode) -> List[CurriculumNode]:
