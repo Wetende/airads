@@ -27,6 +27,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import CurriculumTree from '@/components/CurriculumTree';
 import NodeEditor from '@/components/NodeEditor';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { getFlashMessages, getUserErrorMessage } from '@/utils/userMessages';
 
 export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }) {
   // Sync nodes from page props (updated after Inertia redirect)
@@ -50,12 +51,16 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
   
   // Display flash messages from Django
   useEffect(() => {
-    if (flash?.success) {
-      setSuccess(flash.success);
+    const messages = getFlashMessages(flash);
+    const successMessage = messages.find((msg) => msg.type === 'success')?.message;
+    const errorMessage = messages.find((msg) => msg.type === 'error')?.message;
+
+    if (successMessage) {
+      setSuccess(successMessage);
       setTimeout(() => setSuccess(null), 3000);
     }
-    if (flash?.error) {
-      setError(flash.error);
+    if (errorMessage) {
+      setError(errorMessage);
       setTimeout(() => setError(null), 5000);
     }
   }, [flash]);
@@ -92,7 +97,7 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
         setParentForNew(null);
       },
       onError: (errors) => {
-        setError(Object.values(errors).flat().join(', ') || 'Failed to create node');
+        setError(getUserErrorMessage(errors, 'Could not create this curriculum item. Please try again.'));
       },
     });
   };
@@ -103,7 +108,7 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
     router.post(`/admin/curriculum/nodes/${selectedNode.id}/update/`, nodeData, {
       preserveScroll: true,
       onError: (errors) => {
-        setError(Object.values(errors).flat().join(', ') || 'Failed to update node');
+        setError(getUserErrorMessage(errors, 'Could not update this curriculum item. Please try again.'));
       },
     });
   };
@@ -130,7 +135,7 @@ export default function CurriculumBuilder({ program, hierarchy = [], tree = [] }
         setSelectedNode(null);
       },
       onError: (errors) => {
-        setError(Object.values(errors).flat().join(', ') || 'Failed to delete node');
+        setError(getUserErrorMessage(errors, 'Could not delete this curriculum item. Please try again.'));
       },
       onFinish: () => {
         setDeletingNode(false);

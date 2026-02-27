@@ -4,6 +4,7 @@ Requirements: 1.1-1.4, 2.1-2.6, 3.1-3.6, 4.1-4.5, 5.1-5.6, 6.1-6.6
 """
 
 from datetime import datetime
+import re
 from typing import Optional
 
 from django.contrib import messages
@@ -1609,6 +1610,35 @@ def admin_program_detail(request, pk: int):
     validator = ProgramValidationService()
     validation_errors = validator.validate(program)
 
+    def _find_error(predicate):
+        for err in validation_errors:
+            if predicate(err):
+                return err
+        return None
+
+    structural_error = _find_error(
+        lambda err: "at least one Session/Lesson" in err
+    )
+    instructor_error = _find_error(
+        lambda err: "at least one assigned Instructor" in err
+    )
+    description_error = _find_error(
+        lambda err: "Description for the public catalog" in err
+    )
+    thumbnail_error = _find_error(lambda err: "Thumbnail image" in err)
+    mode_error = _find_error(
+        lambda err: "assessment weight" in err.lower()
+        or "invalid program level" in err.lower()
+    )
+    weight_total_match = (
+        re.search(r"Total assessment weight is\s+(\d+)%", mode_error or "")
+        if mode_error
+        else None
+    )
+    current_weight_total = (
+        weight_total_match.group(1) if weight_total_match else None
+    )
+
     # Structure readiness report for frontend
     readiness = {
         "isReady": len(validation_errors) == 0,
@@ -1616,27 +1646,56 @@ def admin_program_detail(request, pk: int):
         "checks": [
             {
                 "label": "Structural Integrity",
-                "passed": "Program must have at least one Session/Lesson."
-                not in validation_errors,
+                "passed": structural_error is None,
+                "error": (
+                    "Add at least one lesson or session to this course before publishing."
+                    if structural_error
+                    else None
+                ),
             },
             {
                 "label": "Instructor Assignment",
-                "passed": "Program must have at least one assigned Instructor."
-                not in validation_errors,
+                "passed": instructor_error is None,
+                "error": (
+                    "Assign at least one instructor to this course before publishing."
+                    if instructor_error
+                    else None
+                ),
             },
             {
                 "label": "Metadata (Description)",
-                "passed": "Program must have a Description for the public catalog."
-                not in validation_errors,
+                "passed": description_error is None,
+                "error": (
+                    "Add a clear course description for learners in the catalog."
+                    if description_error
+                    else None
+                ),
             },
             {
                 "label": "Metadata (Thumbnail)",
-                "passed": "Program must have a Thumbnail image."
-                not in validation_errors,
+                "passed": thumbnail_error is None,
+                "error": (
+                    "Upload a course thumbnail image so learners can identify this course."
+                    if thumbnail_error
+                    else None
+                ),
             },
             {
                 "label": "Mode Validations",
-                "passed": not any("assessment weight" in e for e in validation_errors),
+                "passed": mode_error is None,
+                "error": (
+                    (
+                        f"Current total assessment weight is {current_weight_total}%. It must be exactly 100% before publishing."
+                        if current_weight_total
+                        else "Total assessment weight must be exactly 100% before publishing."
+                    )
+                    if mode_error and "assessment weight" in mode_error.lower()
+                    else (
+                        "Select a valid course level from your platform settings before publishing."
+                        if mode_error and "invalid program level" in mode_error.lower()
+                        else None
+                    )
+                ),
             },
         ],
     }
@@ -6148,7 +6207,10 @@ def instructor_node_create(request, program_id: int):
         logger = logging.getLogger(__name__)
         logger.error(f"Node creation failed: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
-        messages.error(request, str(e))
+        messages.error(
+            request,
+            "Could not create this item right now. Please review the form and try again.",
+        )
         return redirect("core:instructor.program_manage", pk=program_id)
 
 
@@ -7560,7 +7622,12 @@ def instructor_lesson_document_upload(request, node_id: int):
             }
         )
         return JsonResponse(
-            {"error": f"Document processing failed: {str(exc)}"},
+            {
+                "error": (
+                    "We could not process this document. "
+                    "Please confirm the file is valid and try again."
+                )
+            },
             status=400,
         )
 

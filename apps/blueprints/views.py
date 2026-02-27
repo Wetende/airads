@@ -3,6 +3,8 @@ Blueprint views - Admin blueprint management.
 Requirements: FR-2.1, FR-2.2, FR-2.3, FR-2.4
 """
 
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
@@ -13,6 +15,9 @@ from apps.blueprints.models import AcademicBlueprint
 from apps.platform.models import PresetBlueprint
 from apps.core.models import Program
 from apps.core.utils import get_post_data, is_admin, is_superadmin
+
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -331,8 +336,12 @@ def admin_blueprint_delete(request, pk: int):
     try:
         blueprint.delete()
         messages.success(request, "Blueprint deleted successfully")
-    except Exception as e:
-        messages.error(request, str(e))
+    except Exception:
+        logger.exception("Blueprint delete failed for blueprint_id=%s", blueprint.id)
+        messages.error(
+            request,
+            "We could not delete this blueprint right now. Please try again.",
+        )
 
     return redirect("blueprints:admin.blueprints")
 

@@ -9,6 +9,7 @@ import {
     Alert,
 } from "@mui/material";
 import ThemeProvider from "@/theme";
+import { getFlashMessages, getFlashSeverity } from "@/utils/userMessages";
 
 /**
  * PublicLayout - Layout wrapper for public pages with platform branding.
@@ -21,6 +22,7 @@ export default function PublicLayout({
     showFooter = true,
 }) {
     const { platform, flash } = usePage().props;
+    const flashMessages = getFlashMessages(flash);
 
     // Handle inactive platform
     if (platform && !platform.isActive) {
@@ -45,13 +47,13 @@ export default function PublicLayout({
             }}
         >
             {/* Flash Messages */}
-            {flash?.length > 0 && (
+            {flashMessages.length > 0 && (
                 <Box
                     sx={{ position: "fixed", top: 16, right: 16, zIndex: 9999 }}
                 >
                     <Stack spacing={1}>
-                        {flash.map((msg, idx) => (
-                            <Alert key={idx} severity={getSeverity(msg.type)}>
+                        {flashMessages.map((msg, idx) => (
+                            <Alert key={idx} severity={getFlashSeverity(msg.type)}>
                                 {msg.message}
                             </Alert>
                         ))}
@@ -186,16 +188,3 @@ ErrorState.propTypes = {
     title: PropTypes.string.isRequired,
     message: PropTypes.string.isRequired,
 };
-
-/**
- * Map flash message type to MUI severity
- */
-function getSeverity(type) {
-    const map = {
-        success: "success",
-        error: "error",
-        warning: "warning",
-        info: "info",
-    };
-    return map[type] || "info";
-}

@@ -25,6 +25,7 @@ import {
     VideoFile as VideoFileIcon,
 } from "@mui/icons-material";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { getUserErrorMessage } from "@/utils/userMessages";
 
 const getFileIcon = (fileName) => {
     const ext = fileName.split(".").pop()?.toLowerCase();
@@ -104,9 +105,7 @@ export default function FileUploader({
             }
             setUploadProgress(100);
         } catch (err) {
-            setError(
-                err.response?.data?.error || err.message || "Upload failed",
-            );
+            setError(getUserErrorMessage(err, "Upload failed. Please try again."));
         } finally {
             setUploading(false);
         }
@@ -161,7 +160,12 @@ export default function FileUploader({
                     }
                 },
                 onError: (errors) => {
-                    setError(errors?.error || "Delete failed");
+                    setError(
+                        getUserErrorMessage(
+                            errors,
+                            "Could not delete this file. Please try again.",
+                        ),
+                    );
                 },
                 onFinish: () => {
                     setDeleting(false);

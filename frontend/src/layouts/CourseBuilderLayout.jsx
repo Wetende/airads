@@ -5,9 +5,11 @@ import {
   IconArrowLeft,
   IconEye,
 } from '@tabler/icons-react';
+import { getFlashMessages, getFlashSeverity } from '@/utils/userMessages';
 
 const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', platformFeatures = {}, deploymentMode = 'custom', ...props }) => {
     const { flash = [] } = usePage().props;
+    const flashMessages = getFlashMessages(flash);
     // Mode-aware tabs: conditionally show tabs based on platform features and blueprint flags
     const blueprintFlags = program?.blueprint?.featureFlags || {};
     
@@ -172,10 +174,10 @@ const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', plat
                 </Toolbar>
             </AppBar>
 
-            {flash.length > 0 && (
+            {flashMessages.length > 0 && (
                 <Box sx={{ position: 'fixed', top: 56, right: 16, zIndex: 1300 }}>
                     <Stack spacing={1}>
-                        {flash.map((msg, idx) => (
+                        {flashMessages.map((msg, idx) => (
                             <Alert key={idx} severity={getFlashSeverity(msg.type)}>
                                 {msg.message}
                             </Alert>
@@ -191,13 +193,5 @@ const CourseBuilderLayout = ({ children, program, activeTab = 'curriculum', plat
         </Box>
     );
 };
-
-function getFlashSeverity(type) {
-    const normalized = String(type || '').split(' ')[0].toLowerCase();
-    if (normalized === 'success') return 'success';
-    if (normalized === 'error' || normalized === 'danger') return 'error';
-    if (normalized === 'warning') return 'warning';
-    return 'info';
-}
 
 export default CourseBuilderLayout;

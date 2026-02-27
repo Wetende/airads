@@ -25,6 +25,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 import BlockManager from "./ContentBlocks/BlockManager";
+import { getUserErrorMessage } from "@/utils/userMessages";
 
 export default function NodeEditor({
     mode = "create",
@@ -50,6 +51,7 @@ export default function NodeEditor({
     });
 
     const [saving, setSaving] = useState(false);
+    const [blockSaveError, setBlockSaveError] = useState("");
 
     // Map initial blocks from backend format to frontend format
     const mapBlocks = (rawBlocks) => {
@@ -106,6 +108,7 @@ export default function NodeEditor({
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
+        setBlockSaveError("");
         try {
             // 1. Save Node Metadata first
             await onSave(formData);
@@ -154,7 +157,12 @@ export default function NodeEditor({
                     savedBlockIds.push(block.id);
                 }
             } catch (error) {
-                console.error("Failed to save block:", error);
+                setBlockSaveError(
+                    getUserErrorMessage(
+                        error,
+                        "Some lesson content could not be saved. Please try again.",
+                    ),
+                );
             }
         }
 
@@ -166,7 +174,12 @@ export default function NodeEditor({
                     order: savedBlockIds,
                 });
             } catch (error) {
-                console.error("Failed to reorder blocks:", error);
+                setBlockSaveError(
+                    getUserErrorMessage(
+                        error,
+                        "Could not update content order. Please try again.",
+                    ),
+                );
             }
         }
     };
@@ -300,6 +313,12 @@ export default function NodeEditor({
                 </Box>
 
                 <Divider />
+
+                {blockSaveError && (
+                    <Alert severity="error" onClose={() => setBlockSaveError("")}>
+                        {blockSaveError}
+                    </Alert>
+                )}
 
                 {/* Content Blocks (Only for Session/Lesson types) */}
                 {(formData.nodeType === "Session" ||

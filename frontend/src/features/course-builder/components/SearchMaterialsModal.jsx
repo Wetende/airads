@@ -33,6 +33,7 @@ import {
     Quiz as QuizIcon,
     Assignment as AssignmentIcon,
 } from "@mui/icons-material";
+import { getUserErrorMessage } from "@/utils/userMessages";
 
 // Helper to get icon by type
 const getIconForType = (type, lessonType) => {
@@ -95,7 +96,10 @@ export default function SearchMaterialsModal({
                 }
             } catch (err) {
                 setError(
-                    err.response?.data?.error || "Failed to fetch materials",
+                    getUserErrorMessage(
+                        err,
+                        "Could not load materials. Please try again.",
+                    ),
                 );
                 setMaterials([]);
             } finally {
@@ -170,8 +174,10 @@ export default function SearchMaterialsModal({
                 },
                 onError: (errors) => {
                     setError(
-                        Object.values(errors).flat().join(", ") ||
-                            "Failed to import materials",
+                        getUserErrorMessage(
+                            errors,
+                            "Could not import materials. Please try again.",
+                        ),
                     );
                     setImporting(false);
                 },

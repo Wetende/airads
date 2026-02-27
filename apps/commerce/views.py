@@ -227,7 +227,10 @@ def program_checkout_initialize(request, pk: int):
     if not paystack_response.get("status"):
         order.status = "failed"
         order.save(update_fields=["status", "updated_at"])
-        messages.error(request, paystack_response.get("message") or "Could not initialize payment.")
+        messages.error(
+            request,
+            "We could not start payment at the moment. Please try again.",
+        )
         return redirect("commerce:checkout", pk=pk)
 
     order.status = "pending_payment"

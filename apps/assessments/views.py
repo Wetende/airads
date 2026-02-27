@@ -16,6 +16,22 @@ from apps.assessments.services import RubricService
 from django.contrib import messages
 
 
+def _api_error(
+    message: str,
+    *,
+    status_code: int = 400,
+    code: str = "request_failed",
+):
+    return Response(
+        {
+            "code": code,
+            "message": message,
+            "error": message,
+        },
+        status=status_code,
+    )
+
+
 @login_required
 def rubric_list(request):
     """
@@ -44,21 +60,38 @@ def rubric_create(request):
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
-            return Response({"error": "Invalid JSON"}, status=400)
+            return _api_error(
+                "We could not read your request. "
+                "Please refresh and try again.",
+                status_code=400,
+                code="invalid_request",
+            )
         
         # Security Check: Scope Permissions
         scope = data.get('scope', 'course')
         if scope == 'global' and not request.user.is_superuser:
-            return Response({"error": "Only superadmins can create global rubrics"}, status=403)
+            return _api_error(
+                "Only superadmins can create global rubrics.",
+                status_code=403,
+                code="permission_denied",
+            )
         
         if scope == 'program':
             if not (request.user.is_staff or request.user.is_superuser):
-                 return Response({"error": "Only admins can create program rubrics"}, status=403)
+                return _api_error(
+                    "Only admins can create program rubrics.",
+                    status_code=403,
+                    code="permission_denied",
+                )
             
             # For admins, ensure they provide a program (optional check)
             program_id = data.get('program')
             if not program_id:
-                 return Response({"error": "Program ID required for program scope"}, status=400)
+                return _api_error(
+                    "Please select a program for this rubric.",
+                    status_code=400,
+                    code="program_required",
+                )
 
         serializer = RubricSerializer(data=data)
         if serializer.is_valid():
@@ -89,16 +122,28 @@ def rubric_edit(request, pk):
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
-             return Response({"error": "Invalid JSON"}, status=400)
+             return _api_error(
+                 "We could not read your request. Please refresh and try again.",
+                 status_code=400,
+                 code="invalid_request",
+             )
 
         # Security Check: Scope Modification
         new_scope = data.get('scope', rubric.scope)
         if new_scope != rubric.scope:
              # Validate permission to change to new scope
             if new_scope == 'global' and not request.user.is_superuser:
-                return Response({"error": "Only superadmins can create global rubrics"}, status=403)
+                return _api_error(
+                    "Only superadmins can create global rubrics.",
+                    status_code=403,
+                    code="permission_denied",
+                )
             if new_scope == 'program' and not (request.user.is_staff or request.user.is_superuser):
-                return Response({"error": "Only admins can create program rubrics"}, status=403)
+                return _api_error(
+                    "Only admins can create program rubrics.",
+                    status_code=403,
+                    code="permission_denied",
+                )
 
         serializer = RubricSerializer(rubric, data=data, partial=True)
         if serializer.is_valid():
@@ -164,7 +209,11 @@ class QuestionViewSet(viewsets.ModelViewSet):
         order = request.data.get('order', [])
         
         if not quiz_id:
-            return Response({"error": "quiz_id required"}, status=400)
+            return _api_error(
+                "Please choose a quiz before reordering questions.",
+                status_code=400,
+                code="quiz_required",
+            )
             
         questions = Question.objects.filter(quiz_id=quiz_id)
         q_map = {q.id: q for q in questions}
@@ -256,7 +305,11 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
             InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
             or request.user.is_staff
         ):
-            return Response({"error": "Permission denied"}, status=403)
+            return _api_error(
+                "You do not have permission to access this question library.",
+                status_code=403,
+                code="permission_denied",
+            )
         
         # Get query params
         query = request.query_params.get('query', '')
@@ -288,7 +341,11 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
             InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
             or request.user.is_staff
         ):
-            return Response({"error": "Permission denied"}, status=403)
+            return _api_error(
+                "You do not have permission to access this question library.",
+                status_code=403,
+                code="permission_denied",
+            )
         service = QuestionBankService()
         banks = service.get_program_banks(program)
         serializer = QuestionBankSerializer(banks, many=True)
@@ -307,11 +364,19 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
             InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
             or request.user.is_staff
         ):
-            return Response({"error": "Permission denied"}, status=403)
+            return _api_error(
+                "You do not have permission to create a question bank for this program.",
+                status_code=403,
+                code="permission_denied",
+            )
         
         name = request.data.get('name', '').strip()
         if not name:
-            return Response({"error": "Bank name is required"}, status=400)
+            return _api_error(
+                "Please enter a question bank name.",
+                status_code=400,
+                code="name_required",
+            )
         
         service = QuestionBankService()
         bank = service.create_bank(
@@ -336,7 +401,11 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
             InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
             or request.user.is_staff
         ):
-            return Response({"error": "Permission denied"}, status=403)
+            return _api_error(
+                "You do not have permission to access this question library.",
+                status_code=403,
+                code="permission_denied",
+            )
         service = QuestionBankService()
         categories = service.get_categories(program)
         return Response({"categories": categories})
@@ -353,17 +422,29 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
             InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
             or request.user.is_staff
         ):
-            return Response({"error": "Permission denied"}, status=403)
+            return _api_error(
+                "You do not have permission to add questions to this quiz.",
+                status_code=403,
+                code="permission_denied",
+            )
 
         entry = get_object_or_404(QuestionBankEntry, pk=pk, bank__program=program)
         quiz_id = request.data.get('quiz_id')
         
         if not quiz_id:
-            return Response({"error": "quiz_id is required"}, status=400)
+            return _api_error(
+                "Please choose a quiz before adding this question.",
+                status_code=400,
+                code="quiz_required",
+            )
         
         quiz = get_object_or_404(Quiz, pk=quiz_id)
         if quiz.node.program_id != program.id:
-            return Response({"error": "Permission denied"}, status=403)
+            return _api_error(
+                "You do not have permission to add questions to this quiz.",
+                status_code=403,
+                code="permission_denied",
+            )
         
         service = QuestionBankService()
         new_question = service.copy_from_bank(entry, quiz)
@@ -382,17 +463,29 @@ class ProgramQuestionLibraryViewSet(viewsets.ViewSet):
             InstructorAssignment.objects.filter(instructor=request.user, program=program).exists()
             or request.user.is_staff
         ):
-            return Response({"error": "Permission denied"}, status=403)
+            return _api_error(
+                "You do not have permission to save questions for this program.",
+                status_code=403,
+                code="permission_denied",
+            )
         question_id = request.data.get('question_id')
         bank_id = request.data.get('bank_id')
         category = request.data.get('category', '')
         
         if not question_id:
-            return Response({"error": "question_id is required"}, status=400)
+            return _api_error(
+                "Please select a question to save.",
+                status_code=400,
+                code="question_required",
+            )
         
         question = get_object_or_404(Question, pk=question_id)
         if question.quiz.node.program_id != program.id:
-            return Response({"error": "Permission denied"}, status=403)
+            return _api_error(
+                "You do not have permission to save questions for this program.",
+                status_code=403,
+                code="permission_denied",
+            )
         bank = get_object_or_404(QuestionBank, pk=bank_id, program=program) if bank_id else None
         
         service = QuestionBankService()

@@ -24,6 +24,87 @@ import {
     Info as InfoIcon
 } from '@mui/icons-material';
 
+function getReadableIssueMessage(issue) {
+    const issueType = issue?.type;
+    const message = String(issue?.message || '');
+
+    if (issueType === 'missing_content') {
+        return 'Add at least one lesson before publishing.';
+    }
+    if (issueType === 'missing_assessment') {
+        return 'Add at least one quiz or assignment before publishing.';
+    }
+    if (issueType === 'missing_weight') {
+        return 'Set an assessment weight for this assignment.';
+    }
+    if (issueType === 'invalid_weight_sum') {
+        const match = message.match(/currently\s+(\d+)%/i);
+        const total = match?.[1];
+        return total
+            ? `Current total assessment weight is ${total}%. It must be exactly 100% before publishing.`
+            : 'Total assessment weight must be exactly 100% before publishing.';
+    }
+    if (issueType === 'weight_recommendation') {
+        const match = message.match(/total\s+(\d+)%/i);
+        const total = match?.[1];
+        return total
+            ? `Current total assessment weight is ${total}%. Recommended total is 100%.`
+            : 'Recommended total assessment weight is 100%.';
+    }
+    if (issueType === 'missing_assessment_prompt') {
+        return 'Add assignment instructions or a prompt so learners know what to submit.';
+    }
+    if (issueType === 'invalid_assignment_mode_config') {
+        return 'Review assignment settings. Required question/submission options are incomplete.';
+    }
+    if (issueType === 'missing_assignment_question_link') {
+        return 'This assignment has questions but is not linked correctly. Re-save the assignment questions.';
+    }
+    if (issueType === 'invalid_submission_type_mapping') {
+        return 'Submission type is invalid. Set it to file, text, or both.';
+    }
+    if (issueType === 'empty_quiz') {
+        return 'Add at least one question to this quiz.';
+    }
+    if (issueType === 'missing_quiz_link') {
+        return 'This quiz has questions but is not linked correctly. Re-save the quiz.';
+    }
+    if (issueType === 'short_instructions') {
+        const match = message.match(/\((\d+)\/100\s+chars\)/i);
+        const count = match?.[1];
+        return count
+            ? `Assignment instructions are short (${count}/100 characters). Add more detail for learners.`
+            : 'Assignment instructions are short. Add more detail for learners.';
+    }
+    if (issueType === 'missing_document') {
+        return 'Upload a primary document file for this document lesson.';
+    }
+    if (issueType === 'document_conversion_not_ready') {
+        return 'Document processing is not complete yet. Wait for conversion, then try again.';
+    }
+    if (issueType === 'document_pdf_missing') {
+        return 'Tracked PDF is missing for this document lesson. Re-upload the document.';
+    }
+    if (issueType === 'document_pdf_invalid_path') {
+        return 'Document file path is invalid. Re-upload the document file.';
+    }
+    if (issueType === 'document_pdf_not_found') {
+        return 'Tracked document file could not be found. Re-upload the document.';
+    }
+    if (issueType === 'document_page_count_invalid') {
+        return 'Document page count is invalid. Reprocess or re-upload the document.';
+    }
+
+    return message || 'Please review this item before publishing.';
+}
+
+function formatIssueLine(issue) {
+    const readableMessage = getReadableIssueMessage(issue);
+    return issue?.node_title
+        ? `${issue.node_title}: ${readableMessage}`
+        : readableMessage;
+}
+
 /**
  * PublishValidationDialog - Pre-publish validation dialog
  * Shows errors, warnings, and course stats before publishing
@@ -144,7 +225,7 @@ export default function PublishValidationDialog({
                         {validation?.errors?.length > 0 && (
                             <Box sx={{ mb: 2 }}>
                                 <Typography variant="subtitle2" color="error" gutterBottom>
-                                    Errors (must fix before publishing)
+                                    Required fixes before publishing
                                 </Typography>
                                 <List dense>
                                     {validation.errors.map((err, idx) => (
@@ -153,8 +234,7 @@ export default function PublishValidationDialog({
                                                 <ErrorIcon color="error" fontSize="small" />
                                             </ListItemIcon>
                                             <ListItemText 
-                                                primary={err.node_title ? `${err.node_title}: ${err.message}` : err.message || err}
-                                                secondary={err.type ? `Type: ${err.type}` : null}
+                                                primary={formatIssueLine(err)}
                                             />
                                         </ListItem>
                                     ))}
@@ -166,7 +246,7 @@ export default function PublishValidationDialog({
                         {validation?.warnings?.length > 0 && (
                             <Box sx={{ mb: 2 }}>
                                 <Typography variant="subtitle2" color="warning.main" gutterBottom>
-                                    Warnings (optional to fix)
+                                    Recommended improvements
                                 </Typography>
                                 <List dense>
                                     {validation.warnings.map((warn, idx) => (
@@ -175,8 +255,7 @@ export default function PublishValidationDialog({
                                                 <WarningIcon color="warning" fontSize="small" />
                                             </ListItemIcon>
                                             <ListItemText 
-                                                primary={warn.node_title ? `${warn.node_title}: ${warn.message}` : warn.message || warn}
-                                                secondary={warn.type ? `Type: ${warn.type}` : null}
+                                                primary={formatIssueLine(warn)}
                                             />
                                         </ListItem>
                                     ))}

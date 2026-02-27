@@ -20,6 +20,7 @@ import {
     Slideshow as SlideIcon,
 } from "@mui/icons-material";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { getUserErrorMessage } from "@/utils/userMessages";
 
 const ACCEPTED_EXTENSIONS = ".pdf,.docx,.pptx";
 
@@ -81,8 +82,10 @@ export default function DocumentPrimaryUploader({
             onDocumentChange?.(response.data.document || null);
             setUploadProgress(100);
         } catch (err) {
-            const message =
-                err.response?.data?.error || err.message || "Document upload failed";
+            const message = getUserErrorMessage(
+                err,
+                "Document upload failed. Please try again.",
+            );
             setError(message);
             onError?.(message);
         } finally {
@@ -107,8 +110,10 @@ export default function DocumentPrimaryUploader({
             await axios.post(`/instructor/nodes/${nodeId}/document/delete/`, {});
             onDocumentChange?.(null);
         } catch (err) {
-            const message =
-                err.response?.data?.error || err.message || "Delete failed";
+            const message = getUserErrorMessage(
+                err,
+                "Could not delete this document. Please try again.",
+            );
             setError(message);
             onError?.(message);
         } finally {
