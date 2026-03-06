@@ -1,4 +1,3 @@
-import React from "react";
 import {
     Box,
     IconButton,
@@ -49,7 +48,8 @@ const ClassroomLayoutInner = ({
             sx={{
                 display: "flex",
                 flexDirection: "column",
-                height: "100vh",
+                minHeight: "100vh",
+                height: "100dvh",
                 bgcolor: "background.default",
                 overflow: "hidden",
             }}
@@ -171,6 +171,7 @@ const ClassroomLayoutInner = ({
                 sx={{
                     display: "flex",
                     flexGrow: 1,
+                    minHeight: 0,
                     overflow: "hidden",
                     position: "relative",
                 }}
@@ -222,6 +223,7 @@ const ClassroomLayoutInner = ({
                     component="main"
                     sx={{
                         flexGrow: 1,
+                        minHeight: 0,
                         height: "100%",
                         display: "flex",
                         flexDirection: "column",
@@ -308,4 +310,3 @@ const ClassroomLayout = (props) => (
 );
 
 export default ClassroomLayout;
-

@@ -11,6 +11,11 @@ from apps.assessments.models import (
     QuestionGapAnswer, QuestionBankEntry, QuestionBank,
     Rubric
 )
+from apps.assessments.text_normalization import (
+    normalize_assessment_text,
+    normalize_assessment_text_list,
+    normalize_question_answer_data,
+)
 
 
 class RubricSerializer(serializers.ModelSerializer):
@@ -213,6 +218,19 @@ class QuestionSerializer(serializers.ModelSerializer):
             'id', 'quiz', 'question_type', 'text', 'points', 'position', 'answer_data',
             'options', 'matching_pairs', 'gap_answers', 'created_at'
         ]
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        question_type = attrs.get("question_type", getattr(self.instance, "question_type", ""))
+
+        if "text" in attrs:
+            attrs["text"] = normalize_assessment_text(attrs["text"])
+        if "answer_data" in attrs:
+            attrs["answer_data"] = normalize_question_answer_data(
+                question_type,
+                attrs["answer_data"],
+            )
+        return attrs
         
     def create(self, validated_data):
         options_data = validated_data.pop('options', [])
@@ -222,12 +240,20 @@ class QuestionSerializer(serializers.ModelSerializer):
         question = Question.objects.create(**validated_data)
         
         for opt in options_data:
+            opt["text"] = normalize_assessment_text(opt.get("text", ""))
             QuestionOption.objects.create(question=question, **opt)
             
         for pair in pairs_data:
+            pair["left_text"] = normalize_assessment_text(pair.get("left_text", ""))
+            pair["right_text"] = normalize_assessment_text(pair.get("right_text", ""))
+            pair["explanation"] = normalize_assessment_text(pair.get("explanation", ""))
             QuestionMatchingPair.objects.create(question=question, **pair)
             
         for gap in gaps_data:
+            gap["accepted_answers"] = normalize_assessment_text_list(
+                gap.get("accepted_answers", [])
+            )
+            gap["explanation"] = normalize_assessment_text(gap.get("explanation", ""))
             QuestionGapAnswer.objects.create(question=question, **gap)
             
         return question
@@ -246,16 +272,24 @@ class QuestionSerializer(serializers.ModelSerializer):
         if options_data:
             instance.options.all().delete()
             for opt in options_data:
+                opt["text"] = normalize_assessment_text(opt.get("text", ""))
                 QuestionOption.objects.create(question=instance, **opt)
                 
         if pairs_data:
             instance.matching_pairs.all().delete()
             for pair in pairs_data:
+                pair["left_text"] = normalize_assessment_text(pair.get("left_text", ""))
+                pair["right_text"] = normalize_assessment_text(pair.get("right_text", ""))
+                pair["explanation"] = normalize_assessment_text(pair.get("explanation", ""))
                 QuestionMatchingPair.objects.create(question=instance, **pair)
                 
         if gaps_data:
             instance.gap_answers.all().delete()
             for gap in gaps_data:
+                gap["accepted_answers"] = normalize_assessment_text_list(
+                    gap.get("accepted_answers", [])
+                )
+                gap["explanation"] = normalize_assessment_text(gap.get("explanation", ""))
                 QuestionGapAnswer.objects.create(question=instance, **gap)
                 
         return instance
@@ -305,5 +339,4 @@ class QuestionBankEntrySerializer(serializers.ModelSerializer):
             'tags', 'usage_count', 'question_type', 'created_at', 'updated_at'
         ]
         read_only_fields = ['owner', 'usage_count', 'owner_name', 'bank_name', 'question_type']
-
 

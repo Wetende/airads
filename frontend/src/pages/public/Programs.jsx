@@ -12,14 +12,16 @@ import {
   Select,
   MenuItem,
   Pagination,
+  CircularProgress,
 } from "@mui/material";
 import { IconSearch, IconBook } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { getBackgroundDots } from "../../utils/getBackgroundDots";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import ProgramGrid from "../../components/lists/ProgramGrid";
 import PublicNavbar from "../../components/common/PublicNavbar";
 import Footer from "@/components/common/Footer";
+import { getProgramsListState } from "./programsState";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -27,6 +29,8 @@ const fadeInUp = {
   viewport: { once: true },
   transition: { duration: 0.5, ease: [0.215, 0.61, 0.355, 1] },
 };
+
+const PROGRAMS_ONLY_PROPS = ["programs", "groupedPrograms", "filters", "pagination"];
 
 export default function Programs({
   programs = [],
@@ -45,6 +49,13 @@ export default function Programs({
     filters.category || "",
   );
   const [selectedLevel, setSelectedLevel] = useState(filters.level || "");
+  const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
+
+  useEffect(() => {
+    setSearch(filters.search || "");
+    setSelectedCategory(filters.category || "");
+    setSelectedLevel(filters.level || "");
+  }, [filters.category, filters.level, filters.search]);
 
   const groupsToRender =
     groupedPrograms && groupedPrograms.length > 0
@@ -55,6 +66,27 @@ export default function Programs({
     (total, group) => total + (group.programs || []).length,
     0,
   );
+  const listState = getProgramsListState({
+    filters,
+    isLoadingPrograms,
+    totalPrograms,
+  });
+
+  const visitPrograms = (params, options = {}) => {
+    const queryString = params.toString();
+    const url = queryString ? `/programs/?${queryString}` : "/programs/";
+
+    router.get(url, {}, {
+      preserveState: true,
+      replace: true,
+      only: PROGRAMS_ONLY_PROPS,
+      onStart: () => setIsLoadingPrograms(true),
+      onFinish: () => setIsLoadingPrograms(false),
+      onCancel: () => setIsLoadingPrograms(false),
+      onError: () => setIsLoadingPrograms(false),
+      ...options,
+    });
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -62,15 +94,7 @@ export default function Programs({
     if (search) params.set("search", search);
     if (selectedCategory) params.set("category", selectedCategory);
     if (selectedLevel) params.set("level", selectedLevel);
-    router.get(
-      `/programs/?${params.toString()}`,
-      {},
-      {
-        preserveState: true,
-        replace: true,
-        only: ["programs", "groupedPrograms", "filters", "pagination"],
-      },
-    );
+    visitPrograms(params);
   };
 
   const handleCategoryChange = (category) => {
@@ -79,15 +103,7 @@ export default function Programs({
     if (search) params.set("search", search);
     if (category) params.set("category", category);
     if (selectedLevel) params.set("level", selectedLevel);
-    router.get(
-      `/programs/?${params.toString()}`,
-      {},
-      {
-        preserveState: true,
-        replace: true,
-        only: ["programs", "groupedPrograms", "filters", "pagination"],
-      },
-    );
+    visitPrograms(params);
   };
 
   const handleLevelChange = (level) => {
@@ -96,15 +112,7 @@ export default function Programs({
     if (search) params.set("search", search);
     if (selectedCategory) params.set("category", selectedCategory);
     if (level) params.set("level", level);
-    router.get(
-      `/programs/?${params.toString()}`,
-      {},
-      {
-        preserveState: true,
-        replace: true,
-        only: ["programs", "groupedPrograms", "filters", "pagination"],
-      },
-    );
+    visitPrograms(params);
   };
 
   const handlePageChange = (event, page) => {
@@ -113,16 +121,7 @@ export default function Programs({
     if (selectedCategory) params.set("category", selectedCategory);
     if (selectedLevel) params.set("level", selectedLevel);
     if (page > 1) params.set("page", page);
-    router.get(
-      `/programs/?${params.toString()}`,
-      {},
-      {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-        only: ["programs", "groupedPrograms", "filters", "pagination"],
-      },
-    );
+    visitPrograms(params, { preserveScroll: true });
   };
 
   return (
@@ -191,6 +190,7 @@ export default function Programs({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     size="small"
+                    disabled={isLoadingPrograms}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -213,6 +213,7 @@ export default function Programs({
                       displayEmpty
                       value={selectedCategory}
                       onChange={(e) => handleCategoryChange(e.target.value)}
+                      disabled={isLoadingPrograms}
                       sx={{
                         bgcolor: "background.paper",
                         borderRadius: 2,
@@ -233,6 +234,7 @@ export default function Programs({
                       displayEmpty
                       value={selectedLevel}
                       onChange={(e) => handleLevelChange(e.target.value)}
+                      disabled={isLoadingPrograms}
                       sx={{
                         bgcolor: "background.paper",
                         borderRadius: 2,
@@ -253,22 +255,27 @@ export default function Programs({
         </Box>
 
         {/* Programs Grid */}
-        <Container maxWidth="lg" sx={{ pb: 12 }}>
-          {totalPrograms === 0 ? (
+        <Container maxWidth="lg" sx={{ pb: 12 }} aria-busy={isLoadingPrograms}>
+          {listState.kind !== "ready" ? (
             <Box sx={{ textAlign: "center", py: 10 }}>
-              <IconBook size={48} color={theme.palette.grey[400]} />
+              {listState.kind === "loading" ? (
+                <CircularProgress size={42} thickness={4} />
+              ) : (
+                <IconBook size={48} color={theme.palette.grey[400]} />
+              )}
               <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
-                No programs found matching your search.
+                {listState.message}
               </Typography>
-              {(search || selectedCategory || selectedLevel) && (
+              {listState.showClearFilters && (
                 <Button
                   onClick={() => {
                     setSearch("");
                     setSelectedCategory("");
                     setSelectedLevel("");
-                    router.get("/programs/");
+                    visitPrograms(new URLSearchParams());
                   }}
                   sx={{ mt: 2 }}
+                  disabled={isLoadingPrograms}
                 >
                   Clear Filters
                 </Button>
@@ -276,6 +283,11 @@ export default function Programs({
             </Box>
           ) : (
             <Stack spacing={4}>
+              {isLoadingPrograms && (
+                <Typography variant="body2" color="text.secondary">
+                  Updating programs...
+                </Typography>
+              )}
               {groupsToRender.map((group) => (
                 <Fragment key={group.value || group.label}>
                   <Box>
@@ -308,6 +320,7 @@ export default function Programs({
                     count={pagination.totalPages}
                     color="primary"
                     onChange={handlePageChange}
+                    disabled={isLoadingPrograms}
                   />
                 </Stack>
               )}

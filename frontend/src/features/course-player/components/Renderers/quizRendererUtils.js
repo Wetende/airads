@@ -1,7 +1,28 @@
+const decodeHtmlEntities = (value) => {
+    const raw = String(value ?? '');
+
+    if (typeof document !== 'undefined') {
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = raw;
+        return textarea.value.replace(/\u00a0/g, ' ');
+    }
+
+    return raw
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&#160;/gi, ' ')
+        .replace(/&#xa0;/gi, ' ')
+        .replace(/&#39;/gi, "'")
+        .replace(/&quot;/gi, '"')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>');
+};
+
 export const normalizeText = (value, fallback = '') => {
     if (value === null || value === undefined) return fallback;
+    const decoded = decodeHtmlEntities(value).replace(/\u00a0/g, ' ');
     // Strip any HTML tags (e.g. <p>, <br>) that may leak from rich-text editors
-    const text = String(value).replace(/<[^>]*>/g, '').trim();
+    const text = decoded.replace(/<[^>]*>/g, '').trim();
     return text || fallback;
 };
 

@@ -17,7 +17,6 @@ from django.db.models import Count, Q
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect
-from django.utils.html import strip_tags
 from django.utils.dateparse import parse_date, parse_datetime
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
@@ -25,6 +24,12 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.csrf import ensure_csrf_cookie
 from inertia import render
 
+from apps.assessments.text_normalization import (
+    normalize_assessment_text,
+    normalize_assessment_text_list,
+    normalize_assessment_text_mapping,
+    normalize_question_answer_data,
+)
 from apps.certifications.models import Certificate, VerificationLog
 from apps.core.learning_outcomes import extract_learning_outcome_items_from_html
 from apps.core.models import Program, User
@@ -311,33 +316,33 @@ def public_programs_list(request):
             return 0
         return round(total_minutes / 60.0, 1)
 
-        for program in programs:
-            price_data = program.custom_pricing or {}
-            programs_data.append(
-                {
-                    "id": program.id,
-                    "name": program.name,
-                    "code": program.code or "",
-                    "description": program.description or "",
-                    "created_at": program.created_at.isoformat(),
-                    "thumbnail": program.thumbnail.url if program.thumbnail else None,
-                    "category": program.category or "",
-                    "level": program.level or "beginner",
-                    "badge_type": program.badge_type,
-                    "duration_hours": _minutes_to_hours(
-                        stats_by_program_id[program.id]["duration_minutes"]
-                    ),
-                    "lecture_count": stats_by_program_id[program.id]["lesson_count"],
-                    "assessment_count": stats_by_program_id[program.id][
-                        "assessment_count"
-                    ],
-                    "video_hours": program.video_hours,
-                    "price": price_data.get("price", 0),
-                    "original_price": price_data.get("original_price"),
-                    "rating": float(program.rating_average or 0),
-                    "review_count": program.rating_count,
-                }
-            )
+    for program in programs:
+        price_data = program.custom_pricing or {}
+        programs_data.append(
+            {
+                "id": program.id,
+                "name": program.name,
+                "code": program.code or "",
+                "description": program.description or "",
+                "created_at": program.created_at.isoformat(),
+                "thumbnail": program.thumbnail.url if program.thumbnail else None,
+                "category": program.category or "",
+                "level": program.level or "beginner",
+                "badge_type": program.badge_type,
+                "duration_hours": _minutes_to_hours(
+                    stats_by_program_id[program.id]["duration_minutes"]
+                ),
+                "lecture_count": stats_by_program_id[program.id]["lesson_count"],
+                "assessment_count": stats_by_program_id[program.id][
+                    "assessment_count"
+                ],
+                "video_hours": program.video_hours,
+                "price": price_data.get("price", 0),
+                "original_price": price_data.get("original_price"),
+                "rating": float(program.rating_average or 0),
+                "review_count": program.rating_count,
+            }
+        )
 
     from apps.platform.models import PlatformSettings
 
@@ -3760,7 +3765,7 @@ def _finalize_quiz_attempt(attempt, answers=None, submitted_at=None):
 
 
 def _normalize_question_text(value) -> str:
-    return " ".join(strip_tags(str(value or "")).split())
+    return normalize_assessment_text(value)
 
 
 def _resolve_in_progress_quiz_attempt(quiz, enrollment, create_if_missing=True):
@@ -6585,11 +6590,17 @@ def _sync_quiz_questions(node, questions_data: list):
                     continue
                 normalized.append(
                     {
-                        "question_text": str(pair.get("question_text", "")).strip(),
+                        "question_text": _normalize_question_text(
+                            pair.get("question_text", "")
+                        ),
                         "question_image": str(pair.get("question_image", "")).strip(),
-                        "answer_text": str(pair.get("answer_text", "")).strip(),
+                        "answer_text": _normalize_question_text(
+                            pair.get("answer_text", "")
+                        ),
                         "answer_image": str(pair.get("answer_image", "")).strip(),
-                        "explanation": str(pair.get("explanation", "")).strip(),
+                        "explanation": _normalize_question_text(
+                            pair.get("explanation", "")
+                        ),
                         "position": pair.get("position", pair_idx),
                     }
                 )
@@ -6604,9 +6615,11 @@ def _sync_quiz_questions(node, questions_data: list):
                     continue
                 normalized.append(
                     {
-                        "left_text": str(pair.get("left_text", "")).strip(),
-                        "right_text": str(pair.get("right_text", "")).strip(),
-                        "explanation": str(pair.get("explanation", "")).strip(),
+                        "left_text": _normalize_question_text(pair.get("left_text", "")),
+                        "right_text": _normalize_question_text(pair.get("right_text", "")),
+                        "explanation": _normalize_question_text(
+                            pair.get("explanation", "")
+                        ),
                         "position": pair.get("position", pair_idx),
                     }
                 )
@@ -6616,38 +6629,34 @@ def _sync_quiz_questions(node, questions_data: list):
         answer_data = {}
         if backend_type == "mcq":
             answer_data = {
-                "options": q_data.get("options", []),
+                "options": normalize_assessment_text_list(q_data.get("options", [])),
                 "correct": q_data.get("correct", 0),
             }
         elif backend_type == "mcq_multi":
             answer_data = {
-                "options": q_data.get("options", []),
+                "options": normalize_assessment_text_list(q_data.get("options", [])),
                 "correct_indices": q_data.get("correct_indices", []),
             }
         elif backend_type == "true_false":
             answer_data = {"correct": q_data.get("correct", True)}
         elif backend_type == "short_answer":
             answer_data = {
-                "keywords": q_data.get("keywords", []),
+                "keywords": normalize_assessment_text_list(q_data.get("keywords", [])),
                 "manual_grading": q_data.get("manual_grading", True),
             }
         elif backend_type == "ordering":
             raw_items = q_data.get("items", [])
 
-            items = [item for item in raw_items if str(item).strip()]
+            items = normalize_assessment_text_list(raw_items)
             raw_explanations = q_data.get("explanations", {})
-            if not isinstance(raw_explanations, dict):
-                raw_explanations = {}
-            explanations = {
-                str(key): str(value).strip()
-                for key, value in raw_explanations.items()
-                if str(value).strip()
-            }
+            explanations = normalize_assessment_text_mapping(raw_explanations)
 
             answer_data = {
                 "items": items,
                 "explanations": explanations,
             }
+
+        answer_data = normalize_question_answer_data(backend_type, answer_data)
 
         if db_id and db_id in existing_ids:
             # Update existing question
@@ -6667,7 +6676,7 @@ def _sync_quiz_questions(node, questions_data: list):
                 for opt_idx, opt_text in enumerate(q_data.get("options", [])):
                     QuestionOption.objects.create(
                         question=question,
-                        text=opt_text,
+                        text=_normalize_question_text(opt_text),
                         is_correct=(
                             (opt_idx == q_data.get("correct", 0))
                             if backend_type == "mcq"
@@ -6738,7 +6747,7 @@ def _sync_quiz_questions(node, questions_data: list):
                 for opt_idx, opt_text in enumerate(q_data.get("options", [])):
                     QuestionOption.objects.create(
                         question=new_question,
-                        text=opt_text,
+                        text=_normalize_question_text(opt_text),
                         is_correct=(
                             (opt_idx == q_data.get("correct", 0))
                             if backend_type == "mcq"

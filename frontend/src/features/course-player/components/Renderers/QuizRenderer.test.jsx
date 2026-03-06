@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import QuizRenderer from './QuizRenderer';
-import { evaluateQuizAnswers, normalizeQuestions } from './quizRendererUtils';
+import { evaluateQuizAnswers, normalizeQuestions, normalizeText } from './quizRendererUtils';
 
 vi.mock('@inertiajs/react', () => ({
     router: {
@@ -12,6 +12,26 @@ vi.mock('@inertiajs/react', () => ({
 }));
 
 describe('QuizRenderer', () => {
+    test('decodes html entities in question text and options', () => {
+        const normalized = normalizeQuestions([
+            {
+                id: 303,
+                type: 'mcq',
+                text: '<p>Define&nbsp;what&nbsp;public&nbsp;relations&#39;&nbsp;role&nbsp;is.</p>',
+                options: [
+                    'Handles&nbsp;communication',
+                    'Only&nbsp;buys&nbsp;ads',
+                ],
+                correct: 0,
+                points: 1,
+            },
+        ]);
+
+        expect(normalized[0].text).toBe("Define what public relations' role is.");
+        expect(normalized[0].options[0].text).toBe('Handles communication');
+        expect(normalizeText('Investors&#39;&nbsp;capital')).toBe("Investors' capital");
+    });
+
     test('renders labels when options are plain strings', () => {
         const html = renderToStaticMarkup(
             <QuizRenderer

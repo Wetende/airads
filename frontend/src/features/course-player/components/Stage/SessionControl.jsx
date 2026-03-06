@@ -35,6 +35,8 @@ const SessionControl = ({
         <Box
             sx={{
                 display: "flex",
+                flexWrap: { xs: "wrap", sm: "nowrap" },
+                gap: { xs: 1, sm: 2 },
                 justifyContent: "space-between",
                 alignItems: "center",
                 py: 2,
@@ -49,8 +51,12 @@ const SessionControl = ({
                 onClick={prevNode ? () => onNavigate(prevNode) : undefined}
                 startIcon={<NavigateBefore />}
                 sx={{
+                    order: { xs: 1, sm: 0 },
+                    flex: { xs: "1 1 calc(50% - 4px)", sm: "0 0 auto" },
+                    minWidth: 0,
                     color: "text.secondary",
                     textTransform: "none",
+                    justifyContent: "flex-start",
                     "&:hover": {
                         bgcolor: "transparent",
                         color: "text.primary",
@@ -61,13 +67,22 @@ const SessionControl = ({
             </Button>
 
             {/* Center: Completed Status */}
-            {completionTooltip && !canComplete && !isCompleted ? (
-                <Tooltip title={completionTooltip} arrow>
-                    <span>{completeButton}</span>
-                </Tooltip>
-            ) : (
-                completeButton
-            )}
+            <Box
+                sx={{
+                    order: { xs: 3, sm: 0 },
+                    flex: { xs: "1 1 100%", sm: "0 0 auto" },
+                    display: "flex",
+                    justifyContent: "center",
+                }}
+            >
+                {completionTooltip && !canComplete && !isCompleted ? (
+                    <Tooltip title={completionTooltip} arrow>
+                        <span>{completeButton}</span>
+                    </Tooltip>
+                ) : (
+                    completeButton
+                )}
+            </Box>
 
             {/* Next Button */}
             <Button
@@ -75,8 +90,12 @@ const SessionControl = ({
                 onClick={nextNode ? () => onNavigate(nextNode) : undefined}
                 endIcon={<NavigateNext />}
                 sx={{
+                    order: { xs: 2, sm: 0 },
+                    flex: { xs: "1 1 calc(50% - 4px)", sm: "0 0 auto" },
+                    minWidth: 0,
                     color: "text.secondary",
                     textTransform: "none",
+                    justifyContent: "flex-end",
                     "&:hover": {
                         bgcolor: "transparent",
                         color: "text.primary",
