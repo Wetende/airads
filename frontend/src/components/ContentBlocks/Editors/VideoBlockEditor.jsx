@@ -1,19 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { Box, TextField, MenuItem, Typography } from '@mui/material';
-import ReactPlayer from 'react-player';
+import { useState, useEffect } from "react";
+import { Box, TextField, Typography } from "@mui/material";
+import LazyReactPlayer from "@/components/LazyReactPlayer";
+import { loadReactPlayer } from "@/lib/loadReactPlayer";
 
 const VideoBlockEditor = ({ data, onChange }) => {
-    const [url, setUrl] = useState(data.url || '');
-    // const [provider, setProvider] = useState(data.provider || 'youtube'); // Auto-detect usually better
+    const [url, setUrl] = useState(data.url || "");
+    const [canPreview, setCanPreview] = useState(false);
 
     useEffect(() => {
-        // Debounce or direct update
         onChange({ ...data, url });
+    }, [data, onChange, url]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        if (!url) {
+            setCanPreview(false);
+            return undefined;
+        }
+
+        loadReactPlayer()
+            .then((module) => {
+                if (isMounted) {
+                    setCanPreview(module.default.canPlay?.(url) ?? false);
+                }
+            })
+            .catch(() => {
+                if (isMounted) {
+                    setCanPreview(false);
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
     }, [url]);
 
     return (
-        <Box sx={{ p: 2, border: '1px solid #eee', borderRadius: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>Video Settings</Typography>
+        <Box sx={{ p: 2, border: "1px solid #eee", borderRadius: 1 }}>
+            <Typography variant="subtitle2" gutterBottom>
+                Video Settings
+            </Typography>
             <TextField
                 fullWidth
                 label="Video URL (YouTube, Vimeo, etc.)"
@@ -24,13 +51,27 @@ const VideoBlockEditor = ({ data, onChange }) => {
                 size="small"
                 sx={{ mb: 2 }}
             />
-            
-            {url && ReactPlayer.canPlay(url) && (
-                <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', height: 200, bgcolor: 'black' }}>
-                    <ReactPlayer url={url} width="100%" height="100%" light controls />
+
+            {url && canPreview && (
+                <Box
+                    sx={{
+                        mt: 2,
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        height: 200,
+                        bgcolor: "black",
+                    }}
+                >
+                    <LazyReactPlayer
+                        url={url}
+                        width="100%"
+                        height="100%"
+                        light
+                        controls
+                    />
                 </Box>
             )}
-            
+
             {!url && (
                 <Typography variant="caption" color="text.secondary">
                     Paste a URL to see a preview.

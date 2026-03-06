@@ -7,6 +7,7 @@ All configuration is done via environment variables (12-factor app pattern).
 """
 
 import os
+import importlib.util
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -67,6 +68,9 @@ INSTALLED_APPS = [
     "apps.commerce",
 ]
 
+if DEBUG and importlib.util.find_spec("debug_toolbar"):
+    INSTALLED_APPS.append("debug_toolbar")
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # Serve static files in production
@@ -79,7 +83,11 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "inertia.middleware.InertiaMiddleware",
     "apps.core.middleware.InertiaShareMiddleware",
+    "apps.core.performance.SlowRequestLoggingMiddleware",
 ]
+
+if DEBUG and "debug_toolbar" in INSTALLED_APPS:
+    MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
 ROOT_URLCONF = "config.urls"
 
@@ -109,12 +117,14 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Use SQLite by default (development), MySQL/PostgreSQL for production
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite3")
+DB_CONN_MAX_AGE = int(os.getenv("DB_CONN_MAX_AGE", "60"))
 
 if DB_ENGINE == "sqlite3":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
+            "CONN_MAX_AGE": 0,
         }
     }
 elif DB_ENGINE == "mysql":
@@ -126,6 +136,7 @@ elif DB_ENGINE == "mysql":
             "PASSWORD": os.getenv("DB_PASSWORD", ""),
             "HOST": os.getenv("DB_HOST", "localhost"),
             "PORT": os.getenv("DB_PORT", "3306"),
+            "CONN_MAX_AGE": DB_CONN_MAX_AGE,
         }
     }
 elif DB_ENGINE == "postgresql":
@@ -137,6 +148,7 @@ elif DB_ENGINE == "postgresql":
             "PASSWORD": os.getenv("DB_PASSWORD", ""),
             "HOST": os.getenv("DB_HOST", "localhost"),
             "PORT": os.getenv("DB_PORT", "5432"),
+            "CONN_MAX_AGE": DB_CONN_MAX_AGE,
         }
     }
 
@@ -218,8 +230,34 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+STATICFILES_STORAGE_BACKEND = (
+    "django.contrib.staticfiles.storage.StaticFilesStorage"
+    if DEBUG
+    else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": STATICFILES_STORAGE_BACKEND,
+    },
+}
+
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+CACHE_LOCATION = os.getenv("CACHE_LOCATION", str(BASE_DIR / ".cache" / "django"))
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": CACHE_LOCATION,
+        "TIMEOUT": int(os.getenv("CACHE_TIMEOUT", "900")),
+        "OPTIONS": {
+            "MAX_ENTRIES": 5000,
+        },
+    }
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -256,6 +294,8 @@ CURRICULUM_NODE_REQUIRED_PROPERTIES = {
 # =============================================================================
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG" if DEBUG else "WARNING")
+ENABLE_PERF_LOGGING = os.getenv("ENABLE_PERF_LOGGING", "False").lower() == "true"
+SLOW_REQUEST_MS = int(os.getenv("SLOW_REQUEST_MS", "400"))
 
 # Payments
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY", "")
@@ -286,6 +326,11 @@ LOGGING = {
         "django": {
             "handlers": ["console"],
             "level": "INFO" if DEBUG else "ERROR",
+            "propagate": False,
+        },
+        "apps.core.performance": {
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": False,
         },
     },

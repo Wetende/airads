@@ -3,7 +3,12 @@ Platform settings models - Single-tenant configuration.
 """
 
 from django.db import models
+from django.core.cache import cache
 from apps.core.models import TimeStampedModel
+
+
+PLATFORM_PAYLOAD_CACHE_KEY = "platform_settings:payload"
+PLATFORM_COURSE_LEVELS_CACHE_KEY = "platform_settings:course_levels"
 
 
 class PresetBlueprint(TimeStampedModel):
@@ -118,6 +123,9 @@ class PlatformSettings(TimeStampedModel):
         """Ensure only one instance exists (singleton pattern)."""
         self.pk = 1
         super().save(*args, **kwargs)
+        cache.delete_many(
+            [PLATFORM_PAYLOAD_CACHE_KEY, PLATFORM_COURSE_LEVELS_CACHE_KEY]
+        )
 
     def delete(self, *args, **kwargs):
         """Prevent deletion of platform settings."""
@@ -126,8 +134,51 @@ class PlatformSettings(TimeStampedModel):
     @classmethod
     def get_settings(cls):
         """Get or create the platform settings instance."""
-        settings, _ = cls.objects.get_or_create(pk=1)
+        settings = cls.objects.filter(pk=1).first()
+        if settings is None:
+            settings = cls(pk=1)
+            settings.save()
         return settings
+
+    @classmethod
+    def get_cached_platform_payload(cls) -> dict:
+        """Return a cached payload for global platform branding props."""
+        payload = cache.get(PLATFORM_PAYLOAD_CACHE_KEY)
+        if payload is not None:
+            return payload
+
+        settings = cls.get_settings()
+        features = settings.get_default_features_for_mode()
+        if settings.features:
+            features.update(settings.features)
+
+        payload = {
+            "institutionName": settings.institution_name,
+            "tagline": settings.tagline,
+            "email": settings.contact_email,
+            "phone": settings.contact_phone,
+            "address": settings.address,
+            "logoUrl": settings.logo.url if settings.logo else None,
+            "faviconUrl": settings.favicon.url if settings.favicon else None,
+            "primaryColor": settings.primary_color,
+            "secondaryColor": settings.secondary_color,
+            "deploymentMode": settings.deployment_mode,
+            "isSetupComplete": settings.is_setup_complete,
+            "features": features,
+        }
+        cache.set(PLATFORM_PAYLOAD_CACHE_KEY, payload, timeout=900)
+        return payload
+
+    @classmethod
+    def get_cached_course_levels(cls) -> list:
+        """Return cached course levels for filter dropdowns."""
+        course_levels = cache.get(PLATFORM_COURSE_LEVELS_CACHE_KEY)
+        if course_levels is not None:
+            return course_levels
+
+        course_levels = cls.get_settings().get_course_levels()
+        cache.set(PLATFORM_COURSE_LEVELS_CACHE_KEY, course_levels, timeout=900)
+        return course_levels
 
     def __str__(self):
         return f"{self.institution_name} Settings"

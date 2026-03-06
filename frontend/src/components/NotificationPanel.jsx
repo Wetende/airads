@@ -1,40 +1,42 @@
 /**
- * NotificationPanel - Dropdown panel for viewing and managing notifications
+ * NotificationPanel - Dropdown panel for viewing and managing notifications.
  *
- * Uses Inertia.js shared data and partial reloads for data fetching.
- * Polling implemented via Inertia v2's usePoll hook.
+ * Fetches unread counts and items on demand via the notifications API instead
+ * of relying on globally shared Inertia props on every page response.
  */
 
-import { useState, useEffect } from "react";
-import { usePage, router, usePoll } from "@inertiajs/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import { router } from "@inertiajs/react";
 import {
-    Box,
-    Typography,
-    IconButton,
     Badge,
-    Popover,
-    List,
-    ListItem,
-    ListItemText,
-    ListItemIcon,
-    Divider,
+    Box,
     Button,
     CircularProgress,
+    Divider,
+    IconButton,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    Popover,
     Tooltip,
+    Typography,
 } from "@mui/material";
-
-// Icons
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import GradeIcon from "@mui/icons-material/Grade";
 import AnnouncementIcon from "@mui/icons-material/Announcement";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
+import GradeIcon from "@mui/icons-material/Grade";
+import InfoIcon from "@mui/icons-material/Info";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import PersonIcon from "@mui/icons-material/Person";
 import SchoolIcon from "@mui/icons-material/School";
-import InfoIcon from "@mui/icons-material/Info";
-import DoneAllIcon from "@mui/icons-material/DoneAll";
 
-// Map notification types to icons
+const POLL_INTERVAL_MS = 60_000;
+const COUNT_CACHE_KEY = "crossview.notification.unread_count";
+const COUNT_CACHE_TTL_MS = 60_000;
+
 const notificationIcons = {
     enrollment_confirmed: <CheckCircleIcon color="success" />,
     enrollment_approved: <CheckCircleIcon color="success" />,
@@ -50,7 +52,6 @@ const notificationIcons = {
     system: <InfoIcon color="action" />,
 };
 
-// Format relative time
 function formatRelativeTime(dateString) {
     const date = new Date(dateString);
     const now = new Date();
@@ -66,79 +67,180 @@ function formatRelativeTime(dateString) {
     return date.toLocaleDateString();
 }
 
+function loadCachedUnreadCount() {
+    try {
+        const raw = window.sessionStorage.getItem(COUNT_CACHE_KEY);
+        if (!raw) {
+            return null;
+        }
+        const parsed = JSON.parse(raw);
+        if (
+            typeof parsed?.count !== "number" ||
+            typeof parsed?.fetchedAt !== "number"
+        ) {
+            return null;
+        }
+        if (Date.now() - parsed.fetchedAt > COUNT_CACHE_TTL_MS) {
+            return null;
+        }
+        return parsed.count;
+    } catch {
+        return null;
+    }
+}
+
+function persistUnreadCount(count) {
+    try {
+        window.sessionStorage.setItem(
+            COUNT_CACHE_KEY,
+            JSON.stringify({ count, fetchedAt: Date.now() }),
+        );
+    } catch {
+        // Ignore storage failures.
+    }
+}
+
 export default function NotificationPanel() {
     const [anchorEl, setAnchorEl] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [items, setItems] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(() => {
+        if (typeof window === "undefined") {
+            return 0;
+        }
+        return loadCachedUnreadCount() ?? 0;
+    });
 
     const open = Boolean(anchorEl);
+    const hasItems = items.length > 0;
 
-    // Get notifications from shared props (populated by middleware)
-    const { notifications: notificationData } = usePage().props;
-    const unreadCount = notificationData?.unread_count || 0;
-    const items = notificationData?.items || [];
+    const syncUnreadCount = useCallback(async () => {
+        const response = await axios.get("/api/notifications/unread-count/");
+        const nextCount = Number(response.data?.count || 0);
+        setUnreadCount(nextCount);
+        persistUnreadCount(nextCount);
+        return nextCount;
+    }, []);
 
-    // Poll for updates every 60 seconds using Inertia v2's usePoll hook
-    // Only polls for the 'notifications' prop to minimize data transfer
-    const { stop: stopPolling, start: startPolling } = usePoll(
-        60000,
-        { only: ["notifications"] },
-        { autoStart: true },
-    );
+    const loadNotifications = useCallback(async () => {
+        const [countResponse, listResponse] = await Promise.all([
+            axios.get("/api/notifications/unread-count/"),
+            axios.get("/api/notifications/", {
+                params: { page: 1, per_page: 10 },
+            }),
+        ]);
 
-    // Stop polling when panel is open to avoid conflicts
+        const nextCount = Number(countResponse.data?.count || 0);
+        const nextItems = listResponse.data?.notifications || [];
+        setUnreadCount(nextCount);
+        setItems(nextItems);
+        persistUnreadCount(nextCount);
+    }, []);
+
     useEffect(() => {
-        if (open) {
-            stopPolling();
-        } else {
-            startPolling();
-        }
-    }, [open, stopPolling, startPolling]);
+        let cancelled = false;
 
-    const handleOpen = (event) => {
+        const maybeFetchCount = async () => {
+            const cachedCount =
+                typeof window !== "undefined" ? loadCachedUnreadCount() : null;
+            if (cachedCount !== null) {
+                setUnreadCount(cachedCount);
+                return;
+            }
+
+            try {
+                const nextCount = await syncUnreadCount();
+                if (cancelled) {
+                    return;
+                }
+                setUnreadCount(nextCount);
+            } catch {
+                if (!cancelled) {
+                    setUnreadCount((current) => current);
+                }
+            }
+        };
+
+        maybeFetchCount();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [syncUnreadCount]);
+
+    useEffect(() => {
+        const intervalId = window.setInterval(() => {
+            if (document.visibilityState === "visible") {
+                syncUnreadCount().catch(() => {
+                    // Ignore transient polling failures.
+                });
+            }
+        }, POLL_INTERVAL_MS);
+
+        return () => window.clearInterval(intervalId);
+    }, [syncUnreadCount]);
+
+    const handleOpen = async (event) => {
         setAnchorEl(event.currentTarget);
         setLoading(true);
-
-        // Fetch fresh notification data via partial reload
-        router.reload({
-            only: ["notifications"],
-            onFinish: () => setLoading(false),
-        });
+        try {
+            await loadNotifications();
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleClose = () => {
         setAnchorEl(null);
     };
 
-    const handleNotificationClick = (notification) => {
-        // Mark as read if unread
+    const handleNotificationClick = async (notification) => {
         if (!notification.is_read) {
-            router.post(
-                `/notifications/${notification.id}/read/`,
-                {},
-                {
-                    preserveScroll: true,
-                    preserveState: true,
-                },
+            setItems((current) =>
+                current.map((item) =>
+                    item.id === notification.id
+                        ? { ...item, is_read: true }
+                        : item,
+                ),
             );
+            setUnreadCount((current) => {
+                const nextCount = Math.max(0, current - 1);
+                persistUnreadCount(nextCount);
+                return nextCount;
+            });
+
+            try {
+                await axios.post(`/api/notifications/${notification.id}/read/`);
+            } catch {
+                await loadNotifications().catch(() => {
+                    // Ignore retry failure; a future poll will reconcile state.
+                });
+            }
         }
 
-        // Navigate if action URL provided
         if (notification.action_url) {
             handleClose();
             router.visit(notification.action_url);
         }
     };
 
-    const handleMarkAllRead = () => {
-        router.post(
-            "/notifications/mark-all-read/",
-            {},
-            {
-                preserveScroll: true,
-                preserveState: true,
-            },
+    const handleMarkAllRead = async () => {
+        setItems((current) =>
+            current.map((item) => ({ ...item, is_read: true })),
         );
+        setUnreadCount(0);
+        persistUnreadCount(0);
+
+        try {
+            await axios.post("/api/notifications/mark-all-read/");
+        } catch {
+            await loadNotifications().catch(() => {
+                // Ignore retry failure; a future poll will reconcile state.
+            });
+        }
     };
+
+    const renderedItems = useMemo(() => items, [items]);
 
     return (
         <>
@@ -172,7 +274,6 @@ export default function NotificationPanel() {
                     },
                 }}
             >
-                {/* Header */}
                 <Box
                     sx={{
                         display: "flex",
@@ -199,7 +300,6 @@ export default function NotificationPanel() {
                     )}
                 </Box>
 
-                {/* Content */}
                 <Box sx={{ flex: 1, overflow: "auto" }}>
                     {loading ? (
                         <Box
@@ -211,7 +311,7 @@ export default function NotificationPanel() {
                         >
                             <CircularProgress size={24} />
                         </Box>
-                    ) : items.length === 0 ? (
+                    ) : !hasItems ? (
                         <Box sx={{ p: 4, textAlign: "center" }}>
                             <NotificationsIcon
                                 sx={{
@@ -226,7 +326,7 @@ export default function NotificationPanel() {
                         </Box>
                     ) : (
                         <List disablePadding>
-                            {items.map((notification, index) => (
+                            {renderedItems.map((notification, index) => (
                                 <Box key={notification.id}>
                                     {index > 0 && <Divider />}
                                     <ListItem
@@ -325,8 +425,7 @@ export default function NotificationPanel() {
                     )}
                 </Box>
 
-                {/* Footer - View All link */}
-                {items.length > 0 && (
+                {hasItems && (
                     <Box
                         sx={{
                             borderTop: 1,

@@ -45,7 +45,7 @@ export default defineConfig(({ command }) => ({
                     if (!id.includes('node_modules')) {
                         return; // Let Rollup handle app code
                     }
-                    
+
                     // ===== Large standalone libraries (no React deps) =====
                     
                     // Video players - completely independent
@@ -59,14 +59,6 @@ export default defineConfig(({ command }) => ({
                     // PDF rendering - very large (~500kb), independent
                     if (id.includes('react-pdf') || id.includes('pdfjs-dist')) {
                         return 'vendor-pdf';
-                    }
-                    
-                    // Rich text editors
-                    if (id.includes('tiptap') || id.includes('prosemirror')) {
-                        return 'vendor-editor';
-                    }
-                    if (id.includes('react-quill') || id.includes('quill')) {
-                        return 'vendor-quill';
                     }
                     
                     // Charts are independent
@@ -91,11 +83,6 @@ export default defineConfig(({ command }) => ({
                         return 'vendor-mui';
                     }
                     
-                    // MUI icons - very large, keep separate
-                    if (id.includes('@mui/icons-material') || id.includes('@tabler/icons')) {
-                        return 'vendor-icons';
-                    }
-                    
                     // Emotion (MUI's styling engine)
                     if (id.includes('@emotion')) {
                         return 'vendor-emotion';
@@ -107,11 +94,6 @@ export default defineConfig(({ command }) => ({
                     }
                     
                     // ===== Utilities & Data libraries =====
-                    
-                    // React Player (video embeds)
-                    if (id.includes('react-player')) {
-                        return 'vendor-player';
-                    }
                     
                     // Date utilities
                     if (id.includes('date-fns')) {

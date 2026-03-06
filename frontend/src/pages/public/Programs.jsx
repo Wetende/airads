@@ -1,9 +1,8 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import {
   Box,
   Container,
   Typography,
-  Grid,
   Stack,
   useTheme,
   Button,
@@ -12,6 +11,7 @@ import {
   FormControl,
   Select,
   MenuItem,
+  Pagination,
 } from "@mui/material";
 import { IconSearch, IconBook } from "@tabler/icons-react";
 import { motion } from "framer-motion";
@@ -29,13 +29,14 @@ const fadeInUp = {
 };
 
 export default function Programs({
-  programs,
+  programs = [],
   groupedPrograms = [],
   courseLevels = [],
-  filters,
+  filters = {},
   categories = [],
   userEnrollments = [],
   userPendingRequests = [],
+  pagination = {},
 }) {
   const theme = useTheme();
   const { auth } = usePage().props;
@@ -67,7 +68,7 @@ export default function Programs({
       {
         preserveState: true,
         replace: true,
-        only: ["programs", "groupedPrograms", "filters"],
+        only: ["programs", "groupedPrograms", "filters", "pagination"],
       },
     );
   };
@@ -84,7 +85,7 @@ export default function Programs({
       {
         preserveState: true,
         replace: true,
-        only: ["programs", "groupedPrograms", "filters"],
+        only: ["programs", "groupedPrograms", "filters", "pagination"],
       },
     );
   };
@@ -101,7 +102,25 @@ export default function Programs({
       {
         preserveState: true,
         replace: true,
-        only: ["programs", "groupedPrograms", "filters"],
+        only: ["programs", "groupedPrograms", "filters", "pagination"],
+      },
+    );
+  };
+
+  const handlePageChange = (event, page) => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (selectedCategory) params.set("category", selectedCategory);
+    if (selectedLevel) params.set("level", selectedLevel);
+    if (page > 1) params.set("page", page);
+    router.get(
+      `/programs/?${params.toString()}`,
+      {},
+      {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        only: ["programs", "groupedPrograms", "filters", "pagination"],
       },
     );
   };
@@ -282,6 +301,16 @@ export default function Programs({
                   )}
                 </Fragment>
               ))}
+              {pagination.totalPages > 1 && (
+                <Stack direction="row" justifyContent="center" sx={{ pt: 2 }}>
+                  <Pagination
+                    page={pagination.page || 1}
+                    count={pagination.totalPages}
+                    color="primary"
+                    onChange={handlePageChange}
+                  />
+                </Stack>
+              )}
             </Stack>
           )}
         </Container>

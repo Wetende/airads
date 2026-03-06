@@ -215,6 +215,23 @@ class Program(TimeStampedModel):
             models.Index(fields=["name"]),
             models.Index(fields=["is_published"]),
             models.Index(fields=["submission_status"]),
+            models.Index(fields=["created_at"], name="program_created_idx"),
+            models.Index(
+                fields=["is_published", "created_at"],
+                name="program_pub_created_idx",
+            ),
+            models.Index(
+                fields=["is_published", "category"],
+                name="program_pub_category_idx",
+            ),
+            models.Index(
+                fields=["is_published", "level"],
+                name="program_pub_level_idx",
+            ),
+            models.Index(
+                fields=["blueprint", "created_at"],
+                name="program_blueprint_created_idx",
+            ),
         ]
 
     def __str__(self):

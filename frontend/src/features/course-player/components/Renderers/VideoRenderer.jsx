@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import ReactPlayer from "react-player";
 import { Box, Paper, Typography, LinearProgress, Stack } from "@mui/material";
+import LazyReactPlayer from "@/components/LazyReactPlayer";
 
 /**
  * VideoRenderer - Video player with optional progress requirements
@@ -148,7 +148,7 @@ const VideoRenderer = ({
                         height: "100%",
                     }}
                 >
-                    <ReactPlayer
+                    <LazyReactPlayer
                         ref={playerRef}
                         url={url}
                         width="100%"

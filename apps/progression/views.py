@@ -6,7 +6,8 @@ Requirements: 1.1-1.6, 2.1-2.5, 3.1-3.7, 4.1-4.7
 from typing import Optional
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q
+from django.core.cache import cache
+from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from inertia import render
@@ -20,7 +21,7 @@ from apps.assessments.models import Rubric
 from apps.practicum.models import PracticumSubmission, SubmissionReview
 from apps.certifications.models import Certificate
 from apps.progression.services import ProgressionEngine
-from apps.core.utils import serialize_user
+from apps.core.utils import serialize_user, should_render_inertia_prop
 from apps.notifications.services import NotificationService
 
 
@@ -433,7 +434,7 @@ def student_dashboard(request):
     # Get active enrollments with progress
     enrollments = Enrollment.objects.filter(
         user=user, status__in=["active", "completed"]
-    ).select_related("program", "program__blueprint")
+    ).select_related("program")
 
     enrollment_data = []
     for enrollment in enrollments:
@@ -499,57 +500,84 @@ def program_list(request):
     """
     user = request.user
     status_filter = request.GET.get("status", "")
+    include_enrollments = should_render_inertia_prop(request, "enrollments")
+    include_filters = should_render_inertia_prop(request, "filters")
+    include_status_options = should_render_inertia_prop(request, "statusOptions")
 
-    enrollments = Enrollment.objects.filter(user=user).select_related(
-        "program", "program__blueprint"
-    )
+    enrollments = Enrollment.objects.filter(user=user).select_related("program")
 
     enrollment_data = []
-    for enrollment in enrollments:
-        total_nodes = _get_completable_nodes_count(enrollment.program)
-        completed_nodes = enrollment.completions.count()
-        progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
-        effective_status = _reconcile_enrollment_status(enrollment, progress)
-
-        if status_filter and effective_status != status_filter:
-            continue
-
-        # Get thumbnail URL
-        thumbnail_url = (
-            enrollment.program.thumbnail.url if enrollment.program.thumbnail else None
+    if include_enrollments:
+        enrollments = list(
+            enrollments.only(
+                "id",
+                "program_id",
+                "program__id",
+                "program__name",
+                "program__code",
+                "program__description",
+                "program__thumbnail",
+                "program__category",
+                "program__duration_hours",
+                "program__badge_type",
+                "status",
+                "enrolled_at",
+                "completed_at",
+            )
+        )
+        program_counts = _get_completable_node_counts(
+            [enrollment.program_id for enrollment in enrollments]
+        )
+        completion_counts = _get_completion_counts(
+            [enrollment.id for enrollment in enrollments]
         )
 
-        enrollment_data.append(
-            {
-                "id": enrollment.id,
-                "programId": enrollment.program.id,
-                "programName": enrollment.program.name,
-                "programCode": enrollment.program.code or "",
-                "description": enrollment.program.description or "",
-                "progressPercent": round(progress, 1),
-                "status": effective_status,
-                "enrolledAt": enrollment.enrolled_at.isoformat(),
-                # New display fields
-                "thumbnail": thumbnail_url,
-                "category": enrollment.program.category or "",
-                "durationHours": enrollment.program.duration_hours or 0,
-                "badgeType": enrollment.program.badge_type,
-            }
-        )
+        for enrollment in enrollments:
+            total_nodes = program_counts.get(enrollment.program_id, 0)
+            completed_nodes = completion_counts.get(enrollment.id, 0)
+            progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
+            effective_status = _reconcile_enrollment_status(enrollment, progress)
 
+            if status_filter and effective_status != status_filter:
+                continue
+
+            enrollment_data.append(
+                {
+                    "id": enrollment.id,
+                    "programId": enrollment.program.id,
+                    "programName": enrollment.program.name,
+                    "programCode": enrollment.program.code or "",
+                    "description": enrollment.program.description or "",
+                    "progressPercent": round(progress, 1),
+                    "status": effective_status,
+                    "enrolledAt": enrollment.enrolled_at.isoformat(),
+                    "thumbnail": (
+                        enrollment.program.thumbnail.url
+                        if enrollment.program.thumbnail
+                        else None
+                    ),
+                    "category": enrollment.program.category or "",
+                    "durationHours": enrollment.program.duration_hours or 0,
+                    "badgeType": enrollment.program.badge_type,
+                }
+            )
+
+    props = {}
+    if include_enrollments:
+        props["enrollments"] = enrollment_data
+    if include_filters:
+        props["filters"] = {"status": status_filter}
+    if include_status_options:
+        props["statusOptions"] = [
+            {"value": "", "label": "All"},
+            {"value": "active", "label": "Active"},
+            {"value": "completed", "label": "Completed"},
+            {"value": "withdrawn", "label": "Withdrawn"},
+        ]
     return render(
         request,
         "Student/Programs/Index",
-        {
-            "enrollments": enrollment_data,
-            "filters": {"status": status_filter},
-            "statusOptions": [
-                {"value": "", "label": "All"},
-                {"value": "active", "label": "Active"},
-                {"value": "completed", "label": "Completed"},
-                {"value": "withdrawn", "label": "Withdrawn"},
-            ],
-        },
+        props,
     )
 
 
@@ -560,7 +588,7 @@ def program_view(request, pk: int):
     Requirements: 3.1, 3.2, 3.3
     """
     enrollment = get_object_or_404(
-        Enrollment.objects.select_related("program", "program__blueprint"),
+        Enrollment.objects.select_related("program"),
         program_id=pk,
         user=request.user,
     )
@@ -1217,6 +1245,34 @@ def _get_completable_nodes_count(program: Program) -> int:
     ).count()
 
 
+def _get_completable_node_counts(program_ids: list[int]) -> dict[int, int]:
+    """Return leaf-node counts keyed by program ID."""
+    if not program_ids:
+        return {}
+    return dict(
+        CurriculumNode.objects.filter(
+            program_id__in=program_ids,
+            is_published=True,
+            children__isnull=True,
+        )
+        .values("program_id")
+        .annotate(count=Count("id"))
+        .values_list("program_id", "count")
+    )
+
+
+def _get_completion_counts(enrollment_ids: list[int]) -> dict[int, int]:
+    """Return completion counts keyed by enrollment ID."""
+    if not enrollment_ids:
+        return {}
+    return dict(
+        NodeCompletion.objects.filter(enrollment_id__in=enrollment_ids)
+        .values("enrollment_id")
+        .annotate(count=Count("id"))
+        .values_list("enrollment_id", "count")
+    )
+
+
 def _reconcile_enrollment_status(enrollment: Enrollment, progress: float) -> str:
     """
     Keep active/completed enrollment status in sync with computed progress.
@@ -1506,14 +1562,20 @@ def assessment_results(request):
     user = request.user
     program_filter = request.GET.get("program", "")
     status_filter = request.GET.get("status", "")
-    page = int(request.GET.get("page", 1))
+    try:
+        page = max(int(request.GET.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
     per_page = 20
+    include_results = should_render_inertia_prop(request, "results")
+    include_pagination = should_render_inertia_prop(request, "pagination")
+    include_filters = should_render_inertia_prop(request, "filters")
+    include_program_options = should_render_inertia_prop(request, "programOptions")
+    include_status_options = should_render_inertia_prop(request, "statusOptions")
 
-    # Get user's enrollments for filtering
     user_enrollments = Enrollment.objects.filter(user=user).select_related("program")
     enrollment_ids = list(user_enrollments.values_list("id", flat=True))
 
-    # Get published results only
     results = AssessmentResult.objects.filter(
         enrollment_id__in=enrollment_ids,
         is_published=True,
@@ -1527,73 +1589,76 @@ def assessment_results(request):
         # Filter by status in result_data JSON
         results = results.filter(result_data__status=status_filter)
 
-    # Order by most recent
     results = results.order_by("-published_at", "-created_at")
 
-    # Pagination
     total_count = results.count()
     total_pages = (total_count + per_page - 1) // per_page
     offset = (page - 1) * per_page
     results = results[offset : offset + per_page]
 
-    # Build results data
     results_data = []
-    for result in results:
-        result_data = result.result_data or {}
-        results_data.append(
-            {
-                "id": result.id,
-                "nodeTitle": result.node.title,
-                "nodeType": result.node.node_type,
-                "programName": result.enrollment.program.name,
-                "programId": result.enrollment.program.id,
-                "total": result_data.get("total"),
-                "status": result_data.get("status"),
-                "letterGrade": result_data.get("letter_grade"),
-                "components": result_data.get("components", {}),
-                "lecturerComments": result.lecturer_comments,
-                "publishedAt": (
-                    result.published_at.isoformat() if result.published_at else None
-                ),
-            }
-        )
+    if include_results:
+        for result in results:
+            result_data = result.result_data or {}
+            results_data.append(
+                {
+                    "id": result.id,
+                    "nodeTitle": result.node.title,
+                    "nodeType": result.node.node_type,
+                    "programName": result.enrollment.program.name,
+                    "programId": result.enrollment.program.id,
+                    "total": result_data.get("total"),
+                    "status": result_data.get("status"),
+                    "letterGrade": result_data.get("letter_grade"),
+                    "components": result_data.get("components", {}),
+                    "lecturerComments": result.lecturer_comments,
+                    "publishedAt": (
+                        result.published_at.isoformat()
+                        if result.published_at
+                        else None
+                    ),
+                }
+            )
 
-    # Build program options for filter
-    program_options = [{"value": "", "label": "All Programs"}]
-    for enrollment in user_enrollments:
-        program_options.append(
-            {
-                "value": str(enrollment.program.id),
-                "label": enrollment.program.name,
-            }
-        )
-
+    props = {}
+    if include_results:
+        props["results"] = results_data
+    if include_pagination:
+        props["pagination"] = {
+            "page": page,
+            "perPage": per_page,
+            "totalCount": total_count,
+            "totalPages": total_pages,
+            "hasNext": page < total_pages,
+            "hasPrev": page > 1,
+        }
+    if include_filters:
+        props["filters"] = {
+            "program": program_filter,
+            "status": status_filter,
+        }
+    if include_program_options:
+        program_options = [{"value": "", "label": "All Programs"}]
+        for enrollment in user_enrollments:
+            program_options.append(
+                {
+                    "value": str(enrollment.program.id),
+                    "label": enrollment.program.name,
+                }
+            )
+        props["programOptions"] = program_options
+    if include_status_options:
+        props["statusOptions"] = [
+            {"value": "", "label": "All Statuses"},
+            {"value": "Pass", "label": "Pass"},
+            {"value": "Fail", "label": "Fail"},
+            {"value": "Competent", "label": "Competent"},
+            {"value": "Not Yet Competent", "label": "Not Yet Competent"},
+        ]
     return render(
         request,
         "Student/Assessments",
-        {
-            "results": results_data,
-            "pagination": {
-                "page": page,
-                "perPage": per_page,
-                "totalCount": total_count,
-                "totalPages": total_pages,
-                "hasNext": page < total_pages,
-                "hasPrev": page > 1,
-            },
-            "filters": {
-                "program": program_filter,
-                "status": status_filter,
-            },
-            "programOptions": program_options,
-            "statusOptions": [
-                {"value": "", "label": "All Statuses"},
-                {"value": "Pass", "label": "Pass"},
-                {"value": "Fail", "label": "Fail"},
-                {"value": "Competent", "label": "Competent"},
-                {"value": "Not Yet Competent", "label": "Not Yet Competent"},
-            ],
-        },
+        props,
     )
 
 
@@ -1611,109 +1676,120 @@ def practicum_history(request):
     user = request.user
     program_filter = request.GET.get("program", "")
     status_filter = request.GET.get("status", "")
-    page = int(request.GET.get("page", 1))
+    try:
+        page = max(int(request.GET.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
     per_page = 20
+    include_submissions = should_render_inertia_prop(request, "submissions")
+    include_pagination = should_render_inertia_prop(request, "pagination")
+    include_filters = should_render_inertia_prop(request, "filters")
+    include_program_options = should_render_inertia_prop(request, "programOptions")
+    include_status_options = should_render_inertia_prop(request, "statusOptions")
 
-    # Get user's enrollments
     user_enrollments = Enrollment.objects.filter(user=user).select_related("program")
     enrollment_ids = list(user_enrollments.values_list("id", flat=True))
 
-    # Get submissions
     submissions = (
         PracticumSubmission.objects.filter(
             enrollment_id__in=enrollment_ids,
         )
         .select_related("enrollment__program", "node")
-        .prefetch_related("reviews")
+        .prefetch_related(
+            Prefetch(
+                "reviews",
+                queryset=SubmissionReview.objects.order_by("-reviewed_at"),
+                to_attr="ordered_reviews",
+            )
+        )
     )
 
-    # Apply filters
     if program_filter:
         submissions = submissions.filter(enrollment__program_id=program_filter)
 
     if status_filter:
         submissions = submissions.filter(status=status_filter)
 
-    # Order by most recent
     submissions = submissions.order_by("-submitted_at")
 
-    # Pagination
     total_count = submissions.count()
     total_pages = (total_count + per_page - 1) // per_page
     offset = (page - 1) * per_page
     submissions = submissions[offset : offset + per_page]
 
-    # Build submissions data
     submissions_data = []
-    for submission in submissions:
-        # Get latest review if any
-        latest_review = submission.reviews.order_by("-reviewed_at").first()
-        review_data = None
-        if latest_review:
-            review_data = {
-                "status": latest_review.status,
-                "comments": latest_review.comments,
-                "totalScore": (
-                    float(latest_review.total_score)
-                    if latest_review.total_score
-                    else None
-                ),
-                "dimensionScores": latest_review.dimension_scores,
-                "reviewedAt": latest_review.reviewed_at.isoformat(),
-            }
+    if include_submissions:
+        for submission in submissions:
+            latest_review = submission.ordered_reviews[0] if submission.ordered_reviews else None
+            review_data = None
+            if latest_review:
+                review_data = {
+                    "status": latest_review.status,
+                    "comments": latest_review.comments,
+                    "totalScore": (
+                        float(latest_review.total_score)
+                        if latest_review.total_score
+                        else None
+                    ),
+                    "dimensionScores": latest_review.dimension_scores,
+                    "reviewedAt": latest_review.reviewed_at.isoformat(),
+                }
 
-        submissions_data.append(
-            {
-                "id": submission.id,
-                "nodeTitle": submission.node.title,
-                "nodeType": submission.node.node_type,
-                "programName": submission.enrollment.program.name,
-                "programId": submission.enrollment.program.id,
-                "version": submission.version,
-                "status": submission.status,
-                "fileType": submission.file_type,
-                "fileSize": submission.file_size,
-                "submittedAt": submission.submitted_at.isoformat(),
-                "review": review_data,
-            }
-        )
+            submissions_data.append(
+                {
+                    "id": submission.id,
+                    "nodeTitle": submission.node.title,
+                    "nodeType": submission.node.node_type,
+                    "programName": submission.enrollment.program.name,
+                    "programId": submission.enrollment.program.id,
+                    "version": submission.version,
+                    "status": submission.status,
+                    "fileType": submission.file_type,
+                    "fileSize": submission.file_size,
+                    "submittedAt": submission.submitted_at.isoformat(),
+                    "review": review_data,
+                }
+            )
 
-    # Build program options for filter
-    program_options = [{"value": "", "label": "All Programs"}]
-    for enrollment in user_enrollments:
-        program_options.append(
-            {
-                "value": str(enrollment.program.id),
-                "label": enrollment.program.name,
-            }
-        )
-
+    props = {}
+    if include_submissions:
+        props["submissions"] = submissions_data
+    if include_pagination:
+        props["pagination"] = {
+            "page": page,
+            "perPage": per_page,
+            "totalCount": total_count,
+            "totalPages": total_pages,
+            "hasNext": page < total_pages,
+            "hasPrev": page > 1,
+        }
+    if include_filters:
+        props["filters"] = {
+            "program": program_filter,
+            "status": status_filter,
+        }
+    if include_program_options:
+        program_options = [{"value": "", "label": "All Programs"}]
+        for enrollment in user_enrollments:
+            program_options.append(
+                {
+                    "value": str(enrollment.program.id),
+                    "label": enrollment.program.name,
+                }
+            )
+        props["programOptions"] = program_options
+    if include_status_options:
+        props["statusOptions"] = [
+            {"value": "", "label": "All Statuses"},
+            {"value": "pending", "label": "Pending"},
+            {"value": "approved", "label": "Approved"},
+            {"value": "revision_required", "label": "Revision Required"},
+            {"value": "rejected", "label": "Rejected"},
+        ]
     return render(
         request,
         "Student/Practicum/Index",
-        {
-            "submissions": submissions_data,
-            "pagination": {
-                "page": page,
-                "perPage": per_page,
-                "totalCount": total_count,
-                "totalPages": total_pages,
-                "hasNext": page < total_pages,
-                "hasPrev": page > 1,
-            },
-            "filters": {
-                "program": program_filter,
-                "status": status_filter,
-            },
-            "programOptions": program_options,
-            "statusOptions": [
-                {"value": "", "label": "All Statuses"},
-                {"value": "pending", "label": "Pending"},
-                {"value": "approved", "label": "Approved"},
-                {"value": "revision_required", "label": "Revision Required"},
-                {"value": "rejected", "label": "Rejected"},
-            ],
-        },
+        props,
     )
 
 
@@ -3235,14 +3311,19 @@ def admin_enrollments(request):
     if not _require_admin(request.user):
         return redirect("/dashboard/")
 
-    # Get filter params
     program_id = request.GET.get("program", "")
     status = request.GET.get("status", "")
     search = request.GET.get("search", "")
-    page = int(request.GET.get("page", 1))
+    try:
+        page = max(int(request.GET.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
     per_page = 20
+    include_enrollments = should_render_inertia_prop(request, "enrollments")
+    include_programs = should_render_inertia_prop(request, "programs")
+    include_filters = should_render_inertia_prop(request, "filters")
+    include_pagination = should_render_inertia_prop(request, "pagination")
 
-    # Build query (single-tenant: all enrollments)
     enrollments_query = Enrollment.objects.all().select_related("user", "program")
 
     if program_id:
@@ -3258,54 +3339,84 @@ def admin_enrollments(request):
             | Q(user__last_name__icontains=search)
         )
 
-    # Count and paginate
     total = enrollments_query.count()
-    enrollments_query = enrollments_query.order_by("-enrolled_at")
-    enrollments = enrollments_query[(page - 1) * per_page : page * per_page]
-
     enrollments_data = []
-    for e in enrollments:
-        # Calculate progress
-        total_nodes = _get_completable_nodes_count(e.program)
-        completed_nodes = e.completions.count()
-        progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
-
-        enrollments_data.append(
-            {
-                "id": e.id,
-                "userId": e.user.id,
-                "userName": e.user.get_full_name() or e.user.email,
-                "userEmail": e.user.email,
-                "programId": e.program.id,
-                "programName": e.program.name,
-                "status": e.status,
-                "progressPercent": round(progress, 1),
-                "enrolledAt": e.enrolled_at.isoformat(),
-                "completedAt": e.completed_at.isoformat() if e.completed_at else None,
-            }
+    if include_enrollments:
+        enrollments = list(
+            enrollments_query.only(
+                "id",
+                "user_id",
+                "user__id",
+                "user__email",
+                "user__first_name",
+                "user__last_name",
+                "program_id",
+                "program__id",
+                "program__name",
+                "status",
+                "enrolled_at",
+                "completed_at",
+            )
+            .order_by("-enrolled_at")[(page - 1) * per_page : page * per_page]
+        )
+        program_counts = _get_completable_node_counts(
+            [enrollment.program_id for enrollment in enrollments]
+        )
+        completion_counts = _get_completion_counts(
+            [enrollment.id for enrollment in enrollments]
         )
 
-    # Get programs for filter dropdown
-    programs = Program.objects.all().values("id", "name")
+        for enrollment in enrollments:
+            total_nodes = program_counts.get(enrollment.program_id, 0)
+            completed_nodes = completion_counts.get(enrollment.id, 0)
+            progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
 
+            enrollments_data.append(
+                {
+                    "id": enrollment.id,
+                    "userId": enrollment.user.id,
+                    "userName": enrollment.user.get_full_name()
+                    or enrollment.user.email,
+                    "userEmail": enrollment.user.email,
+                    "programId": enrollment.program.id,
+                    "programName": enrollment.program.name,
+                    "status": enrollment.status,
+                    "progressPercent": round(progress, 1),
+                    "enrolledAt": enrollment.enrolled_at.isoformat(),
+                    "completedAt": (
+                        enrollment.completed_at.isoformat()
+                        if enrollment.completed_at
+                        else None
+                    ),
+                }
+            )
+
+    props = {}
+    if include_enrollments:
+        props["enrollments"] = enrollments_data
+    if include_programs:
+        props["programs"] = cache.get_or_set(
+            "admin_enrollments:programs",
+            lambda: list(Program.objects.order_by("name").values("id", "name")),
+            900,
+        )
+    if include_filters:
+        props["filters"] = {
+            "program": program_id,
+            "status": status,
+            "search": search,
+        }
+    if include_pagination:
+        props["pagination"] = {
+            "page": page,
+            "perPage": per_page,
+            "total": total,
+            "totalPages": (total + per_page - 1) // per_page,
+        }
     return render(
         request,
         "Admin/Enrollments/Index",
-        {
-            "enrollments": enrollments_data,
-            "programs": list(programs),
-            "filters": {
-                "program": program_id,
-                "status": status,
-                "search": search,
-            },
-            "pagination": {
-                "page": page,
-                "perPage": per_page,
-                "total": total,
-                "totalPages": (total + per_page - 1) // per_page,
-            },
-        },
+        props,
     )
 
 

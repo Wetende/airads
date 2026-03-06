@@ -11,7 +11,9 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
+from django.core.cache import cache
 from django.core.mail import send_mail
+from django.db.models import Count, Q
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect
@@ -31,7 +33,12 @@ from apps.core.taxonomy import (
     get_builder_hierarchy_or_default,
     validate_builder_hierarchy,
 )
-from apps.core.utils import get_instructor_program_ids, get_post_data, is_instructor
+from apps.core.utils import (
+    get_instructor_program_ids,
+    get_post_data,
+    is_instructor,
+    should_render_inertia_prop,
+)
 
 
 def get_dashboard_url(role: str) -> str:
@@ -96,6 +103,15 @@ def _group_programs_by_level(
     return groups
 
 
+def _build_pagination(page: int, per_page: int, total: int) -> dict:
+    return {
+        "page": page,
+        "perPage": per_page,
+        "total": total,
+        "totalPages": (total + per_page - 1) // per_page,
+    }
+
+
 # =============================================================================
 # Public Pages
 # =============================================================================
@@ -110,49 +126,70 @@ def landing_page(request):
 
     from apps.progression.models import Enrollment
 
-    # Get top 6 published programs with enrollment counts
-    programs = Program.objects.filter(is_published=True).order_by("-created_at")[:6]
+    landing_payload = cache.get("landing_page:payload")
+    if landing_payload is None:
+        programs = list(
+            Program.objects.filter(is_published=True)
+            .only(
+                "id",
+                "name",
+                "code",
+                "description",
+                "thumbnail",
+                "badge_type",
+                "category",
+                "custom_pricing",
+                "created_at",
+            )
+            .order_by("-created_at")[:6]
+        )
+        program_ids = [program.id for program in programs]
 
-    enrollment_counts = dict(
-        Enrollment.objects.filter(program__is_published=True)
-        .values("program_id")
-        .annotate(count=Count("id"))
-        .values_list("program_id", "count")
-    )
+        enrollment_counts = dict(
+            Enrollment.objects.filter(program_id__in=program_ids)
+            .values("program_id")
+            .annotate(count=Count("id"))
+            .values_list("program_id", "count")
+        )
 
-    programs_data = [
-        {
-            "id": p.id,
-            "name": p.name,
-            "code": p.code or "",
-            "description": p.description or "",
-            "thumbnail": p.thumbnail.url if p.thumbnail else None,
-            "badge_type": p.badge_type,
-            "category": p.category,
-            "rating": 4.5,  # Placeholder rating
-            "price": p.custom_pricing.get("price", 0) if p.custom_pricing else 0,
-            "original_price": (
-                p.custom_pricing.get("original_price") if p.custom_pricing else None
-            ),
-            "enrollmentCount": enrollment_counts.get(p.id, 0),
+        programs_data = [
+            {
+                "id": program.id,
+                "name": program.name,
+                "code": program.code or "",
+                "description": program.description or "",
+                "thumbnail": program.thumbnail.url if program.thumbnail else None,
+                "badge_type": program.badge_type,
+                "category": program.category,
+                "rating": 4.5,
+                "price": (
+                    program.custom_pricing.get("price", 0)
+                    if program.custom_pricing
+                    else 0
+                ),
+                "original_price": (
+                    program.custom_pricing.get("original_price")
+                    if program.custom_pricing
+                    else None
+                ),
+                "enrollmentCount": enrollment_counts.get(program.id, 0),
+            }
+            for program in programs
+        ]
+
+        landing_payload = {
+            "programs": programs_data,
+            "stats": {
+                "programCount": Program.objects.filter(is_published=True).count(),
+                "studentCount": Enrollment.objects.values("user").distinct().count(),
+            },
         }
-        for p in programs
-    ]
-
-    # Get stats for the hero section
-    total_programs = Program.objects.filter(is_published=True).count()
-    total_students = Enrollment.objects.values("user").distinct().count()
+        cache.set("landing_page:payload", landing_payload, timeout=300)
 
     return render(
         request,
         "Public/Landing",
-        {
-            "programs": programs_data,
-            "stats": {
-                "programCount": total_programs,
-                "studentCount": total_students,
-            },
-        },
+        landing_payload,
     )
 
 
@@ -171,148 +208,191 @@ def public_programs_list(request):
     Public catalog of published programs.
     """
     from collections import defaultdict
-    from django.db.models import Count
-
     from apps.curriculum.models import CurriculumNode
     from apps.progression.models import Enrollment, EnrollmentRequest
 
-    # Base query
-    programs_query = Program.objects.filter(is_published=True)
+    try:
+        page = max(int(request.GET.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
+    per_page = 12
 
-    # Search filtering
+    include_programs = should_render_inertia_prop(
+        request, "programs", "groupedPrograms"
+    )
+    include_grouped_programs = should_render_inertia_prop(request, "groupedPrograms")
+    include_course_levels = should_render_inertia_prop(
+        request, "courseLevels", "groupedPrograms"
+    )
+    include_categories = should_render_inertia_prop(request, "categories")
+    include_user_enrollments = should_render_inertia_prop(request, "userEnrollments")
+    include_user_pending_requests = should_render_inertia_prop(
+        request, "userPendingRequests"
+    )
+    include_filters = should_render_inertia_prop(request, "filters")
+    include_pagination = should_render_inertia_prop(request, "pagination")
+
+    programs_query = Program.objects.filter(is_published=True)
     search = request.GET.get("search", "")
     if search:
         programs_query = programs_query.filter(name__icontains=search)
 
-    # Category filtering
     category = request.GET.get("category", "")
     if category:
-        programs_query = programs_query.filter(category__iexact=category)
+        programs_query = programs_query.filter(category=category)
 
     level = request.GET.get("level", "")
     if level:
         programs_query = programs_query.filter(level=level)
 
-    programs = list(programs_query.order_by("name"))
+    total = programs_query.count()
+    offset = (page - 1) * per_page
 
-    # Compute content stats from curriculum leaf nodes.
-    # NOTE: Curriculum node_type casing varies by blueprint (e.g. "Lesson", "Session").
-    # We treat *leaf nodes* as "lessons" unless they are assessments (quiz/assignment).
-    assessment_types = {"quiz", "assignment"}
+    programs = []
+    programs_data = []
+    if include_programs:
+        programs = list(
+            programs_query.only(
+                "id",
+                "name",
+                "code",
+                "description",
+                "created_at",
+                "thumbnail",
+                "category",
+                "level",
+                "badge_type",
+                "video_hours",
+                "custom_pricing",
+                "rating_average",
+                "rating_count",
+            )
+            .order_by("name")[offset : offset + per_page]
+        )
+        program_ids = [program.id for program in programs]
 
-    leaf_nodes = CurriculumNode.objects.filter(
-        program__in=programs,
-        is_published=True,
-        children__isnull=True,
-    ).values_list("program_id", "node_type", "properties")
+        assessment_types = {"quiz", "assignment"}
+        leaf_nodes = CurriculumNode.objects.filter(
+            program_id__in=program_ids,
+            is_published=True,
+            children__isnull=True,
+        ).values_list("program_id", "node_type", "properties")
 
-    stats_by_program_id = defaultdict(
-        lambda: {
-            "lesson_count": 0,
-            "assessment_count": 0,
-            "duration_minutes": 0,
-        }
-    )
+        stats_by_program_id = defaultdict(
+            lambda: {
+                "lesson_count": 0,
+                "assessment_count": 0,
+                "duration_minutes": 0,
+            }
+        )
 
-    for program_id, node_type, properties in leaf_nodes:
-        node_type_norm = (node_type or "").strip().lower()
-        is_assessment = node_type_norm in assessment_types
+        for program_id, node_type, properties in leaf_nodes:
+            node_type_norm = (node_type or "").strip().lower()
+            is_assessment = node_type_norm in assessment_types
 
-        if is_assessment:
-            stats_by_program_id[program_id]["assessment_count"] += 1
-        else:
-            stats_by_program_id[program_id]["lesson_count"] += 1
+            if is_assessment:
+                stats_by_program_id[program_id]["assessment_count"] += 1
+            else:
+                stats_by_program_id[program_id]["lesson_count"] += 1
 
-        if not is_assessment:
-            props = properties if isinstance(properties, dict) else {}
-            minutes = props.get("duration_minutes", 0)
-            try:
-                minutes_int = int(minutes) if minutes is not None else 0
-            except (TypeError, ValueError):
-                minutes_int = 0
-            stats_by_program_id[program_id]["duration_minutes"] += max(0, minutes_int)
+            if not is_assessment:
+                props = properties if isinstance(properties, dict) else {}
+                minutes = props.get("duration_minutes", 0)
+                try:
+                    minutes_int = int(minutes) if minutes is not None else 0
+                except (TypeError, ValueError):
+                    minutes_int = 0
+                stats_by_program_id[program_id]["duration_minutes"] += max(
+                    0, minutes_int
+                )
 
     def _minutes_to_hours(total_minutes: int) -> float:
         if not total_minutes:
             return 0
         return round(total_minutes / 60.0, 1)
 
-    # Build programs data with new fields
-    programs_data = []
-    for p in programs:
-        # Get thumbnail URL
-        thumbnail_url = p.thumbnail.url if p.thumbnail else None
+        for program in programs:
+            price_data = program.custom_pricing or {}
+            programs_data.append(
+                {
+                    "id": program.id,
+                    "name": program.name,
+                    "code": program.code or "",
+                    "description": program.description or "",
+                    "created_at": program.created_at.isoformat(),
+                    "thumbnail": program.thumbnail.url if program.thumbnail else None,
+                    "category": program.category or "",
+                    "level": program.level or "beginner",
+                    "badge_type": program.badge_type,
+                    "duration_hours": _minutes_to_hours(
+                        stats_by_program_id[program.id]["duration_minutes"]
+                    ),
+                    "lecture_count": stats_by_program_id[program.id]["lesson_count"],
+                    "assessment_count": stats_by_program_id[program.id][
+                        "assessment_count"
+                    ],
+                    "video_hours": program.video_hours,
+                    "price": price_data.get("price", 0),
+                    "original_price": price_data.get("original_price"),
+                    "rating": float(program.rating_average or 0),
+                    "review_count": program.rating_count,
+                }
+            )
 
-        # Calculate price display
-        price_data = p.custom_pricing or {}
-        price = price_data.get("price", 0)
-        original_price = price_data.get("original_price")
+    from apps.platform.models import PlatformSettings
 
-        programs_data.append(
-            {
-                "id": p.id,
-                "name": p.name,
-                "code": p.code or "",
-                "description": p.description or "",
-                "created_at": p.created_at.isoformat(),
-                "thumbnail": thumbnail_url,
-                "category": p.category or "",
-                "level": p.level or "beginner",
-                "badge_type": p.badge_type,
-                "duration_hours": _minutes_to_hours(
-                    stats_by_program_id[p.id]["duration_minutes"]
-                ),
-                "lecture_count": stats_by_program_id[p.id]["lesson_count"],
-                "assessment_count": stats_by_program_id[p.id]["assessment_count"],
-                # Deprecated on public pages (kept for backward compatibility)
-                "video_hours": p.video_hours,
-                "price": price,
-                "original_price": original_price,
-                "rating": float(p.rating_average or 0),
-                "review_count": p.rating_count,
-            }
-        )
-
-    categories = list(
-        Program.objects.filter(is_published=True, category__isnull=False)
-        .exclude(category="")
-        .values_list("category", flat=True)
-        .distinct()
+    course_levels = (
+        PlatformSettings.get_cached_course_levels() if include_course_levels else []
     )
 
-    # Get user enrollment data if authenticated
-    user_enrollments = []
-    user_pending_requests = []
-    if request.user.is_authenticated:
-        user_enrollments = list(
+    props = {}
+    if include_programs:
+        props["programs"] = programs_data
+    if include_grouped_programs:
+        props["groupedPrograms"] = _group_programs_by_level(programs_data, course_levels)
+    if include_course_levels:
+        props["courseLevels"] = course_levels
+    if include_filters:
+        props["filters"] = {
+            "search": search,
+            "category": category,
+            "level": level,
+            "page": page,
+        }
+    if include_pagination:
+        props["pagination"] = _build_pagination(page, per_page, total)
+    if include_categories:
+        props["categories"] = cache.get_or_set(
+            "public_programs:categories",
+            lambda: list(
+                Program.objects.filter(is_published=True, category__isnull=False)
+                .exclude(category="")
+                .values_list("category", flat=True)
+                .distinct()
+            ),
+            900,
+        )
+    if request.user.is_authenticated and include_user_enrollments:
+        props["userEnrollments"] = list(
             Enrollment.objects.filter(user=request.user).values_list(
                 "program_id", flat=True
             )
         )
-        user_pending_requests = list(
+    elif include_user_enrollments:
+        props["userEnrollments"] = []
+    if request.user.is_authenticated and include_user_pending_requests:
+        props["userPendingRequests"] = list(
             EnrollmentRequest.objects.filter(
                 user=request.user, status="pending"
             ).values_list("program_id", flat=True)
         )
-
-    from apps.platform.models import PlatformSettings
-
-    platform_settings = PlatformSettings.get_settings()
-    course_levels = platform_settings.get_course_levels()
-    grouped_programs = _group_programs_by_level(programs_data, course_levels)
+    elif include_user_pending_requests:
+        props["userPendingRequests"] = []
 
     return render(
         request,
         "Public/Programs",
-        {
-            "programs": programs_data,
-            "groupedPrograms": grouped_programs,
-            "courseLevels": course_levels,
-            "filters": {"search": search, "category": category, "level": level},
-            "categories": categories,
-            "userEnrollments": user_enrollments,
-            "userPendingRequests": user_pending_requests,
-        },
+        props,
     )
 
 
@@ -1214,7 +1294,7 @@ def _get_student_dashboard_data(user) -> dict:
     # Get active enrollments with progress
     enrollments = Enrollment.objects.filter(
         user=user, status__in=["active", "completed"]
-    ).select_related("program", "program__blueprint")
+    ).select_related("program")
 
     enrollment_data = []
     for enrollment in enrollments:
@@ -1491,15 +1571,26 @@ def admin_programs(request):
     if not _require_admin(request.user):
         return redirect("/dashboard/")
 
-    # Get filter params
     status = request.GET.get("status", "")
     blueprint_id = request.GET.get("blueprint", "")
     search = request.GET.get("search", "")
     level = request.GET.get("level", "")
-    page = int(request.GET.get("page", 1))
+    try:
+        page = max(int(request.GET.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
     per_page = 20
+    include_programs = should_render_inertia_prop(
+        request, "programs", "groupedPrograms"
+    )
+    include_grouped_programs = should_render_inertia_prop(request, "groupedPrograms")
+    include_blueprints = should_render_inertia_prop(request, "blueprints")
+    include_course_levels = should_render_inertia_prop(
+        request, "courseLevels", "groupedPrograms"
+    )
+    include_filters = should_render_inertia_prop(request, "filters")
+    include_pagination = should_render_inertia_prop(request, "pagination")
 
-    # Build query
     programs_query = Program.objects.all().select_related("blueprint")
 
     if status == "published":
@@ -1516,71 +1607,88 @@ def admin_programs(request):
     if level:
         programs_query = programs_query.filter(level=level)
 
-    # Count and paginate
     total = programs_query.count()
-    programs_query = programs_query.order_by("-created_at")
-    programs = programs_query[(page - 1) * per_page : page * per_page]
+    programs = []
+    programs_data = []
+    if include_programs:
+        programs = list(
+            programs_query.only(
+                "id",
+                "name",
+                "code",
+                "description",
+                "blueprint_id",
+                "blueprint__name",
+                "level",
+                "is_published",
+                "created_at",
+            )
+            .order_by("-created_at")[(page - 1) * per_page : page * per_page]
+        )
+        program_ids = [program.id for program in programs]
 
-    # Get enrollment counts
-    from django.db.models import Count
+        from apps.progression.models import Enrollment
 
-    from apps.progression.models import Enrollment
+        enrollment_counts = dict(
+            Enrollment.objects.filter(program_id__in=program_ids)
+            .values("program_id")
+            .annotate(count=Count("id"))
+            .values_list("program_id", "count")
+        )
 
-    enrollment_counts = dict(
-        Enrollment.objects.all()
-        .values("program_id")
-        .annotate(count=Count("id"))
-        .values_list("program_id", "count")
-    )
-
-    programs_data = [
-        {
-            "id": p.id,
-            "name": p.name,
-            "code": p.code or "",
-            "description": p.description or "",
-            "blueprintName": p.blueprint.name if p.blueprint else None,
-            "blueprintId": p.blueprint_id,
-            "level": p.level or "",
-            "isPublished": p.is_published,
-            "enrollmentCount": enrollment_counts.get(p.id, 0),
-            "createdAt": p.created_at.isoformat(),
-        }
-        for p in programs
-    ]
-
-    # Get blueprints for filter dropdown
-    from apps.blueprints.models import AcademicBlueprint
-
-    blueprints = AcademicBlueprint.objects.all().values("id", "name")
+        programs_data = [
+            {
+                "id": program.id,
+                "name": program.name,
+                "code": program.code or "",
+                "description": program.description or "",
+                "blueprintName": program.blueprint.name if program.blueprint else None,
+                "blueprintId": program.blueprint_id,
+                "level": program.level or "",
+                "isPublished": program.is_published,
+                "enrollmentCount": enrollment_counts.get(program.id, 0),
+                "createdAt": program.created_at.isoformat(),
+            }
+            for program in programs
+        ]
 
     from apps.platform.models import PlatformSettings
 
-    platform_settings = PlatformSettings.get_settings()
-    course_levels = platform_settings.get_course_levels()
-    grouped_programs = _group_programs_by_level(programs_data, course_levels)
+    course_levels = (
+        PlatformSettings.get_cached_course_levels() if include_course_levels else []
+    )
+
+    props = {}
+    if include_programs:
+        props["programs"] = programs_data
+    if include_grouped_programs:
+        props["groupedPrograms"] = _group_programs_by_level(programs_data, course_levels)
+    if include_blueprints:
+        from apps.blueprints.models import AcademicBlueprint
+
+        props["blueprints"] = cache.get_or_set(
+            "admin_programs:blueprints",
+            lambda: list(
+                AcademicBlueprint.objects.all().values("id", "name").order_by("name")
+            ),
+            900,
+        )
+    if include_course_levels:
+        props["courseLevels"] = course_levels
+    if include_filters:
+        props["filters"] = {
+            "status": status,
+            "blueprint": blueprint_id,
+            "search": search,
+            "level": level,
+        }
+    if include_pagination:
+        props["pagination"] = _build_pagination(page, per_page, total)
 
     return render(
         request,
         "Admin/Programs/Index",
-        {
-            "programs": programs_data,
-            "groupedPrograms": grouped_programs,
-            "blueprints": list(blueprints),
-            "courseLevels": course_levels,
-            "filters": {
-                "status": status,
-                "blueprint": blueprint_id,
-                "search": search,
-                "level": level,
-            },
-            "pagination": {
-                "page": page,
-                "perPage": per_page,
-                "total": total,
-                "totalPages": (total + per_page - 1) // per_page,
-            },
-        },
+        props,
     )
 
 
@@ -2157,14 +2265,18 @@ def admin_users(request):
     if not _require_admin(request.user):
         return redirect("/dashboard/")
 
-    # Get filter params
     role = request.GET.get("role", "")
     status = request.GET.get("status", "")
     search = request.GET.get("search", "")
-    page = int(request.GET.get("page", 1))
+    try:
+        page = max(int(request.GET.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
     per_page = 20
+    include_users = should_render_inertia_prop(request, "users")
+    include_filters = should_render_inertia_prop(request, "filters")
+    include_pagination = should_render_inertia_prop(request, "pagination")
 
-    # Build query (single-tenant: all users)
     users_query = User.objects.all()
 
     if role == "admin":
@@ -2175,6 +2287,8 @@ def admin_users(request):
         users_query = users_query.filter(is_staff=False).exclude(
             groups__name="Instructors"
         )
+    if role in {"instructor", "student"}:
+        users_query = users_query.distinct()
 
     if status == "active":
         users_query = users_query.filter(is_active=True)
@@ -2182,61 +2296,73 @@ def admin_users(request):
         users_query = users_query.filter(is_active=False)
 
     if search:
-        from django.db.models import Q
-
         users_query = users_query.filter(
             Q(email__icontains=search)
             | Q(first_name__icontains=search)
             | Q(last_name__icontains=search)
         )
 
-    # Count and paginate
     total = users_query.count()
-    users_query = users_query.order_by("-date_joined")
-    users = users_query[(page - 1) * per_page : page * per_page]
-
     users_data = []
-    for u in users:
-        user_role = (
-            "admin"
-            if u.is_staff
-            else (
-                "instructor"
-                if u.groups.filter(name="Instructors").exists()
-                else "student"
+    if include_users:
+        users = list(
+            users_query.only(
+                "id",
+                "email",
+                "first_name",
+                "last_name",
+                "is_staff",
+                "is_superuser",
+                "is_active",
+                "date_joined",
+                "last_login",
             )
-        )
-        users_data.append(
-            {
-                "id": u.id,
-                "email": u.email,
-                "firstName": u.first_name,
-                "lastName": u.last_name,
-                "fullName": u.get_full_name() or u.email,
-                "role": user_role,
-                "isActive": u.is_active,
-                "dateJoined": u.date_joined.isoformat(),
-                "lastLogin": u.last_login.isoformat() if u.last_login else None,
-            }
+            .order_by("-date_joined")
+            .prefetch_related("groups")[(page - 1) * per_page : page * per_page]
         )
 
+        for user in users:
+            group_names = {group.name for group in user.groups.all()}
+            user_role = (
+                "superadmin"
+                if user.is_superuser
+                else (
+                    "admin"
+                    if user.is_staff
+                    else ("instructor" if "Instructors" in group_names else "student")
+                )
+            )
+            users_data.append(
+                {
+                    "id": user.id,
+                    "email": user.email,
+                    "firstName": user.first_name,
+                    "lastName": user.last_name,
+                    "fullName": user.get_full_name() or user.email,
+                    "role": user_role,
+                    "isActive": user.is_active,
+                    "dateJoined": user.date_joined.isoformat(),
+                    "lastLogin": (
+                        user.last_login.isoformat() if user.last_login else None
+                    ),
+                }
+            )
+
+    props = {}
+    if include_users:
+        props["users"] = users_data
+    if include_filters:
+        props["filters"] = {
+            "role": role,
+            "status": status,
+            "search": search,
+        }
+    if include_pagination:
+        props["pagination"] = _build_pagination(page, per_page, total)
     return render(
         request,
         "Admin/Users/Index",
-        {
-            "users": users_data,
-            "filters": {
-                "role": role,
-                "status": status,
-                "search": search,
-            },
-            "pagination": {
-                "page": page,
-                "perPage": per_page,
-                "total": total,
-                "totalPages": (total + per_page - 1) // per_page,
-            },
-        },
+        props,
     )
 
 
@@ -2531,56 +2657,93 @@ def instructor_programs(request):
         return redirect("/dashboard/")
 
     program_ids = get_instructor_program_ids(request.user)
+    status = request.GET.get("status", "")
     level = request.GET.get("level", "")
-    programs = Program.objects.filter(id__in=program_ids).select_related("blueprint")
-    if level:
-        programs = programs.filter(level=level)
-
-    from django.db.models import Count
-
-    from apps.progression.models import Enrollment
-
-    enrollment_counts = dict(
-        Enrollment.objects.filter(program_id__in=program_ids)
-        .values("program_id")
-        .annotate(count=Count("id"))
-        .values_list("program_id", "count")
+    include_programs = should_render_inertia_prop(
+        request, "programs", "groupedPrograms"
     )
+    include_grouped_programs = should_render_inertia_prop(request, "groupedPrograms")
+    include_course_levels = should_render_inertia_prop(
+        request, "courseLevels", "groupedPrograms"
+    )
+    include_filters = should_render_inertia_prop(request, "filters")
 
-    programs_data = [
-        {
-            "id": p.id,
-            "name": p.name,
-            "code": p.code or "",
-            "description": p.description or "",
-            "thumbnail": p.thumbnail.url if p.thumbnail else None,
-            "category": p.category or "General",
-            "blueprintName": p.blueprint.name if p.blueprint else None,
-            "enrollmentCount": enrollment_counts.get(p.id, 0),
-            "level": p.level or "",
-            "isPublished": p.is_published,
-            "price": (p.custom_pricing or {}).get("price", 0),
-            "rating": float(p.rating_average or 0),
-            "reviewCount": p.rating_count or 0,
-        }
-        for p in programs
-    ]
+    programs_query = Program.objects.filter(id__in=program_ids).select_related("blueprint")
+    if status == "published":
+        programs_query = programs_query.filter(is_published=True)
+    elif status == "draft":
+        programs_query = programs_query.filter(is_published=False)
+    if level:
+        programs_query = programs_query.filter(level=level)
+
+    programs_data = []
+    if include_programs:
+        programs = list(
+            programs_query.only(
+                "id",
+                "name",
+                "code",
+                "description",
+                "thumbnail",
+                "category",
+                "blueprint_id",
+                "blueprint__name",
+                "level",
+                "is_published",
+                "custom_pricing",
+                "rating_average",
+                "rating_count",
+            ).order_by("name")
+        )
+        filtered_program_ids = [program.id for program in programs]
+
+        from apps.progression.models import Enrollment
+
+        enrollment_counts = dict(
+            Enrollment.objects.filter(program_id__in=filtered_program_ids)
+            .values("program_id")
+            .annotate(count=Count("id"))
+            .values_list("program_id", "count")
+        )
+
+        programs_data = [
+            {
+                "id": program.id,
+                "name": program.name,
+                "code": program.code or "",
+                "description": program.description or "",
+                "thumbnail": program.thumbnail.url if program.thumbnail else None,
+                "category": program.category or "General",
+                "blueprintName": program.blueprint.name if program.blueprint else None,
+                "enrollmentCount": enrollment_counts.get(program.id, 0),
+                "level": program.level or "",
+                "isPublished": program.is_published,
+                "price": (program.custom_pricing or {}).get("price", 0),
+                "rating": float(program.rating_average or 0),
+                "reviewCount": program.rating_count or 0,
+            }
+            for program in programs
+        ]
 
     from apps.platform.models import PlatformSettings
 
-    platform_settings = PlatformSettings.get_settings()
-    course_levels = platform_settings.get_course_levels()
-    grouped_programs = _group_programs_by_level(programs_data, course_levels)
+    course_levels = (
+        PlatformSettings.get_cached_course_levels() if include_course_levels else []
+    )
+    props = {}
+    if include_programs:
+        props["programs"] = programs_data
+    if include_grouped_programs:
+        props["groupedPrograms"] = _group_programs_by_level(programs_data, course_levels)
+    if include_course_levels:
+        props["courseLevels"] = course_levels
+    if include_filters:
+        props["filters"] = {"status": status, "level": level}
 
     return render(
         request,
         "Instructor/Programs/Index",
-        {
-            "programs": programs_data,
-            "groupedPrograms": grouped_programs,
-            "courseLevels": course_levels,
-            "filters": {"level": level},
-        },
+        props,
     )
 
 

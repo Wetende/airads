@@ -8,12 +8,6 @@ from django.middleware.csrf import get_token
 from inertia import share
 
 from apps.platform.models import PlatformSettings
-from apps.notifications.services import NotificationService
-
-
-
-
-
 class InertiaShareMiddleware:
     """
     Middleware to share common data with all Inertia pages.
@@ -47,45 +41,12 @@ class InertiaShareMiddleware:
                     },
                 },
             )
-
-            # Share notifications data (lazy evaluated)
-            user = request.user
-            share(
-                request,
-                notifications=lambda: {
-                    "unread_count": NotificationService.get_unread_count(user),
-                    "items": NotificationService.get_recent(user, limit=10),
-                },
-            )
         else:
             share(request, auth={"user": None})
-            share(request, notifications=None)
 
         # Share platform branding from PlatformSettings
         try:
-            settings = PlatformSettings.get_settings()
-            # Get features with defaults from deployment mode
-            features = settings.get_default_features_for_mode()
-            if settings.features:
-                features.update(settings.features)
-
-            share(
-                request,
-                platform={
-                    "institutionName": settings.institution_name,
-                    "tagline": settings.tagline,
-                    "email": settings.contact_email,
-                    "phone": settings.contact_phone,
-                    "address": settings.address,
-                    "logoUrl": settings.logo.url if settings.logo else None,
-                    "faviconUrl": settings.favicon.url if settings.favicon else None,
-                    "primaryColor": settings.primary_color,
-                    "secondaryColor": settings.secondary_color,
-                    "deploymentMode": settings.deployment_mode,
-                    "isSetupComplete": settings.is_setup_complete,
-                    "features": features,
-                },
-            )
+            share(request, platform=PlatformSettings.get_cached_platform_payload())
         except Exception:
             share(request, platform=None)
 
