@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import { IconMenu2, IconX, IconBell, IconDashboard, IconUser, IconLogout } from "@tabler/icons-react";
 import { useState } from "react";
+import useLogout from "@/hooks/useLogout";
 
 // Components
 import LazySection from "@/components/LazySection";
@@ -115,6 +116,7 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
     const [userMenuAnchor, setUserMenuAnchor] = useState(null);
     const { auth } = usePage().props;
     const user = auth?.user;
+    const triggerLogout = useLogout();
 
     // Dynamic colors from platform settings
     const primaryColor = platform.primaryColor || "#3B82F6";
@@ -152,6 +154,25 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
         const first = user.first_name?.[0] || user.firstName?.[0] || "";
         const last = user.last_name?.[0] || user.lastName?.[0] || "";
         return (first + last).toUpperCase() || user.email?.[0]?.toUpperCase() || "U";
+    };
+
+    const closeUserMenu = () => setUserMenuAnchor(null);
+    const closeMobileMenu = () => setMobileMenuOpen(false);
+
+    const handleDesktopLogout = () => {
+        triggerLogout({
+            onBefore: closeUserMenu,
+            onSuccess: closeUserMenu,
+            onError: closeUserMenu,
+        });
+    };
+
+    const handleMobileLogout = () => {
+        triggerLogout({
+            onBefore: closeMobileMenu,
+            onSuccess: closeMobileMenu,
+            onError: closeMobileMenu,
+        });
     };
 
     return (
@@ -250,6 +271,7 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                             <IconButton
                                                 onClick={(e) => setUserMenuAnchor(e.currentTarget)}
                                                 sx={{ p: 0.5 }}
+                                                aria-label="open user menu"
                                             >
                                                 {user.avatar_url || user.avatarUrl ? (
                                                     <Avatar
@@ -296,13 +318,7 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                                     <ListItemText>Profile</ListItemText>
                                                 </MenuItem>
                                                 <Divider />
-                                                <MenuItem
-                                                    component={Link}
-                                                    href="/logout/"
-                                                    method="post"
-                                                    as="button"
-                                                    onClick={() => setUserMenuAnchor(null)}
-                                                >
+                                                <MenuItem onClick={handleDesktopLogout}>
                                                     <ListItemIcon><IconLogout size={18} /></ListItemIcon>
                                                     <ListItemText>Logout</ListItemText>
                                                 </MenuItem>
@@ -360,6 +376,7 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                         transition: "color 0.3s ease",
                                     }}
                                     onClick={() => setMobileMenuOpen(true)}
+                                    aria-label="open mobile menu"
                                 >
                                     <IconMenu2 />
                                 </IconButton>
@@ -408,9 +425,7 @@ function PlatformLanding({ platform, programs = [], stats = {} }) {
                                 </ListItem>
                                 <ListItem>
                                     <Button
-                                        component={Link}
-                                        href="/logout/"
-                                        method="post"
+                                        onClick={handleMobileLogout}
                                         variant="outlined"
                                         fullWidth
                                         sx={{ borderRadius: 2 }}

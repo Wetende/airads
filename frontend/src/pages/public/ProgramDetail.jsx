@@ -48,6 +48,15 @@ import Footer from "@/components/common/Footer";
 
 // --- Helper Components ---
 
+function getCurrencyPrefix(currencyCode) {
+    const code = String(currencyCode || "").toUpperCase();
+    if (code === "KES") return "KSh ";
+    if (code === "USD" || !code) return "$";
+    if (code === "EUR") return "EUR ";
+    if (code === "GBP") return "GBP ";
+    return `${code} `;
+}
+
 // Course Details Sidebar with Context-Aware CTAs
 function CourseDetailsSidebar({
     program,
@@ -73,7 +82,9 @@ function CourseDetailsSidebar({
     // Determine CTA button text based on enrollment mode
     const getCtaText = () => {
         if (ctaState === "not_enrolled_paid") {
-            return `BUY NOW - ${program.price}`;
+            const programCurrency =
+                program?.customPricing?.currency || program?.currency;
+            return `GET COURSE - ${getCurrencyPrefix(programCurrency)}${program.price}`;
         }
         if (enrollmentMode === "approval") {
             return "REQUEST ENROLLMENT";
@@ -452,7 +463,12 @@ function PopularCourses({ courses }) {
                                 variant="caption"
                                 color="text.secondary"
                             >
-                                {course.price > 0 ? `$${course.price}` : "Free"}
+                                {course.price > 0
+                                    ? `${getCurrencyPrefix(
+                                          course.customPricing?.currency ||
+                                              course.currency,
+                                      )}${course.price}`
+                                    : "Free"}
                             </Typography>
                         </CardContent>
                     </Card>

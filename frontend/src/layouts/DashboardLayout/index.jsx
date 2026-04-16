@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Link, usePage, router } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 import {
     Box,
     Drawer,
@@ -54,6 +54,7 @@ import ApprovalIcon from "@mui/icons-material/Approval";
 // Custom Components
 import NotificationPanel from "@/components/NotificationPanel";
 import PlatformLogo from "@/components/common/PlatformLogo";
+import useLogout from "@/hooks/useLogout";
 import { useThemeMode } from "@/theme";
 
 const DRAWER_WIDTH_EXPANDED = 240;
@@ -286,14 +287,17 @@ export default function DashboardLayout({
     const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
     const handleCollapseToggle = () => setCollapsed(!collapsed);
+    const triggerLogout = useLogout({
+        onBefore: handleMenuClose,
+        onSuccess: handleMenuClose,
+        onError: handleMenuClose,
+    });
 
     const handleNavClick = () => {
         if (isMobile) handleDrawerClose();
     };
 
-    const handleLogout = () => {
-        router.post("/logout/");
-    };
+    const handleLogout = () => triggerLogout();
 
     const iOS =
         typeof navigator !== "undefined" &&
