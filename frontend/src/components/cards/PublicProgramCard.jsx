@@ -1,8 +1,16 @@
 /**
  * PublicProgramCard - Reusable program card for public pages
  * Used on landing page and programs listing page
+ *
+ * CTA Strategy:
+ *   Listing cards → "Preview This Course" (navigates to detail page)
+ *   Detail page  → "Buy Now" (adds to cart + redirects to /checkout/)
+ *
+ * This keeps the listing page clean and funnels users through:
+ *   Browse → Preview → Buy → Pay
  */
 
+import { useMemo } from "react";
 import { Link } from "@inertiajs/react";
 import {
     Box,
@@ -14,20 +22,26 @@ import {
     Stack,
     Rating,
     Button,
+    IconButton,
     useTheme,
 } from "@mui/material";
+import { IconHeart, IconHeartFilled } from "@tabler/icons-react";
+import { useWishlist } from "@/contexts/WishlistContext";
 
+// ---------------------------------------------------------------------------
 // Badge colors
+// ---------------------------------------------------------------------------
+
 function getBadgeColor(type) {
     switch (type) {
         case "featured":
-        case "special": // Merged from Programs
-            return "#F59E0B"; // Orange
+        case "special":
+            return "#F59E0B";
         case "new":
-            return "#10B981"; // Emerald
+            return "#10B981";
         case "popular":
-        case "hot": // Merged from Programs
-            return "#EF4444"; // Red
+        case "hot":
+            return "#EF4444";
         case "bestseller":
             return "#8B5CF6";
         default:
@@ -40,9 +54,24 @@ export default function PublicProgramCard({
     program,
     enrollmentStatus = null,
     showEnrollButton = false,
-    isAuthenticated = false,
 }) {
     const theme = useTheme();
+    const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
+
+    const wishlisted = useMemo(
+        () => (wishlist?.items || []).some((item) => item.program?.id === program.id),
+        [wishlist, program.id],
+    );
+
+    const handleWishlistToggle = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (wishlisted) {
+            await removeFromWishlist(program.id);
+        } else {
+            await addToWishlist(program.id);
+        }
+    };
 
     return (
         <Card
@@ -61,7 +90,7 @@ export default function PublicProgramCard({
                 },
             }}
         >
-            {/* Thumbnail with badge */}
+            {/* Thumbnail with badge + wishlist heart */}
             <Box sx={{ position: "relative" }}>
                 <CardMedia
                     component="img"
@@ -91,6 +120,33 @@ export default function PublicProgramCard({
                         }}
                     />
                 )}
+
+                {/* Wishlist heart icon */}
+                <IconButton
+                    onClick={handleWishlistToggle}
+                    size="small"
+                    aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                    sx={{
+                        position: "absolute",
+                        top: 8,
+                        left: 8,
+                        bgcolor: "rgba(255,255,255,0.85)",
+                        backdropFilter: "blur(4px)",
+                        "&:hover": {
+                            bgcolor: "rgba(255,255,255,0.95)",
+                            transform: "scale(1.1)",
+                        },
+                        transition: "all 0.2s ease",
+                        width: 32,
+                        height: 32,
+                    }}
+                >
+                    {wishlisted ? (
+                        <IconHeartFilled size={18} color={theme.palette.error.main} />
+                    ) : (
+                        <IconHeart size={18} color="#6B7280" />
+                    )}
+                </IconButton>
             </Box>
 
             <CardContent
@@ -118,7 +174,7 @@ export default function PublicProgramCard({
                     variant="subtitle1"
                     fontWeight={600}
                     sx={{
-                        mb: 1,
+                        mb: 0.5,
                         textDecoration: "none",
                         color: "#1F2937",
                         display: "-webkit-box",
@@ -126,7 +182,6 @@ export default function PublicProgramCard({
                         WebkitBoxOrient: "vertical",
                         overflow: "hidden",
                         "&:hover": { color: theme.palette.primary.main },
-                        minHeight: "3.2em", // approx 2 lines
                     }}
                 >
                     {program.name}
@@ -149,60 +204,62 @@ export default function PublicProgramCard({
                     </Typography>
                 )}
 
-                {/* Rating */}
-                <Stack
-                    direction="row"
-                    spacing={0.5}
-                    alignItems="center"
-                    sx={{ mb: 1.5 }}
-                >
-                    <Rating
-                        value={program.rating || 0}
-                        precision={0.1}
-                        size="small"
-                        readOnly
-                    />
-                    <Typography variant="caption" sx={{ color: "#6B7280" }}>
-                        {program.rating?.toFixed(1) || "0.0"}
-                    </Typography>
-                </Stack>
+                {/* Rating & Price Row */}
+                <Box sx={{ mt: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    {/* Rating */}
+                    <Stack
+                        direction="row"
+                        spacing={0.5}
+                        alignItems="center"
+                    >
+                        <Rating
+                            value={program.rating || 0}
+                            precision={0.1}
+                            size="small"
+                            readOnly
+                        />
+                        <Typography variant="caption" sx={{ color: "#6B7280" }}>
+                            {program.rating?.toFixed(1) || "0.0"}
+                        </Typography>
+                    </Stack>
 
-                {/* Price */}
-                <Box sx={{ mt: "auto" }}>
-                    {program.price > 0 ? (
-                        <Stack direction="row" spacing={1} alignItems="center">
+                    {/* Price */}
+                    <Box>
+                        {program.price > 0 ? (
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <Typography
+                                    variant="body1"
+                                    fontWeight={700}
+                                    color="primary.main"
+                                >
+                                    ${program.price}
+                                </Typography>
+                                {program.original_price &&
+                                    program.original_price > program.price && (
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                textDecoration: "line-through",
+                                                color: "#9CA3AF",
+                                            }}
+                                        >
+                                            ${program.original_price}
+                                        </Typography>
+                                    )}
+                            </Stack>
+                        ) : (
                             <Typography
                                 variant="body1"
                                 fontWeight={700}
-                                color="primary.main"
+                                color="success.main"
                             >
-                                ${program.price}
+                                Free
                             </Typography>
-                            {program.original_price &&
-                                program.original_price > program.price && (
-                                    <Typography
-                                        variant="body2"
-                                        sx={{
-                                            textDecoration: "line-through",
-                                            color: "#9CA3AF",
-                                        }}
-                                    >
-                                        ${program.original_price}
-                                    </Typography>
-                                )}
-                        </Stack>
-                    ) : (
-                        <Typography
-                            variant="body1"
-                            fontWeight={700}
-                            color="success.main"
-                        >
-                            Free
-                        </Typography>
-                    )}
+                        )}
+                    </Box>
                 </Box>
 
-                {/* Action Button - only if showEnrollButton is true */}
+                {/* Action Button */}
                 {showEnrollButton && (
                     <Box sx={{ mt: 2 }}>
                         {enrollmentStatus === "enrolled" ? (
@@ -226,22 +283,14 @@ export default function PublicProgramCard({
                                 Enrollment Pending
                             </Button>
                         ) : (
-
                             <Button
                                 component={Link}
                                 href={`/programs/${program.id}/`}
                                 variant="contained"
                                 fullWidth
                                 size="small"
-                                sx={
-                                    isAuthenticated
-                                        ? { bgcolor: "primary.main" } // Highlight for Enroll
-                                        : {}
-                                }
                             >
-                                {isAuthenticated
-                                    ? "Enroll Now"
-                                    : "View Details"}
+                                Preview This Course
                             </Button>
                         )}
                     </Box>

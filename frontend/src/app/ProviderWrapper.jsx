@@ -1,10 +1,12 @@
 import { ConfigProvider } from "@/contexts/ConfigContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CartProvider } from "@/contexts/CartContext";
+import { WishlistProvider } from "@/contexts/WishlistContext";
 import ThemeProvider from "@/theme";
 
 /**
  * ProviderWrapper - Root component that composes all context providers
- * Order: ConfigProvider → ThemeProvider → AuthProvider
+ * Order: ConfigProvider → ThemeProvider → AuthProvider → WishlistProvider → CartProvider
  *
  * @param {object} initialUser - User data from Inertia page props
  * @param {object} platform - Platform branding data
@@ -14,7 +16,11 @@ export default function ProviderWrapper({ children, initialUser = null, platform
         <ConfigProvider>
             <ThemeProvider platform={platform}>
                 <AuthProvider initialUser={initialUser}>
-                    {children}
+                    <WishlistProvider>
+                        <CartProvider>
+                            {children}
+                        </CartProvider>
+                    </WishlistProvider>
                 </AuthProvider>
             </ThemeProvider>
         </ConfigProvider>

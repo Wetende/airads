@@ -86,7 +86,7 @@ export default function PublicLayout({
                             nameFontWeight={600}
                         />
                     </Stack>
-                    <Stack direction="row" spacing={2}>
+                    <Stack direction="row" spacing={2} alignItems="center">
                         <Button
                             component={Link}
                             href="/login/"
