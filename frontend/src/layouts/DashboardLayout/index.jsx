@@ -49,8 +49,8 @@ import DarkModeIcon from "@mui/icons-material/DarkMode";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import ApprovalIcon from "@mui/icons-material/Approval";
 import ReceiptIcon from "@mui/icons-material/Receipt";
-
 import PaymentsIcon from "@mui/icons-material/Payments";
+import CampaignIcon from "@mui/icons-material/Campaign";
 
 // Custom Components
 import NotificationPanel from "@/components/NotificationPanel";
@@ -87,6 +87,11 @@ const roleNavigation = {
                     href: "/student/practicum/",
                     icon: RateReviewIcon,
                 },
+            ],
+        },
+        {
+            title: "Progress",
+            items: [
                 {
                     label: "Certificates",
                     href: "/student/certificates/",
@@ -97,6 +102,11 @@ const roleNavigation = {
                     href: "/student/orders/",
                     icon: ReceiptIcon,
                 },
+            ],
+        },
+        {
+            title: "Account",
+            items: [
                 {
                     label: "Profile",
                     href: "/student/profile/",
@@ -128,21 +138,36 @@ const roleNavigation = {
                     href: "/instructor/students/",
                     icon: PeopleIcon,
                 },
-                {
-                    label: "Assignments",
-                    href: "/instructor/assignments/",
-                    icon: AssignmentIcon,
-                },
-                {
-                    label: "Announcements",
-                    href: "/instructor/announcements/",
-                    icon: AssignmentIcon,
-                },
+            ],
+        },
+        {
+            title: "Progress",
+            items: [
                 {
                     label: "Gradebook",
                     href: "/instructor/gradebook/",
                     icon: GradingIcon,
                 },
+                {
+                    label: "Assignments",
+                    href: "/instructor/assignments/",
+                    icon: AssignmentIcon,
+                },
+            ],
+        },
+        {
+            title: "Communication",
+            items: [
+                {
+                    label: "Announcements",
+                    href: "/instructor/announcements/",
+                    icon: CampaignIcon,
+                },
+            ],
+        },
+        {
+            title: "Review",
+            items: [
                 {
                     label: "Rubrics",
                     href: "/rubrics/",
@@ -338,7 +363,7 @@ export default function DashboardLayout({
                     <PlatformLogo
                         platform={platform}
                         showName={false}
-                        fallbackName="Crossview"
+                        fallbackName="Learning Platform"
                         logoHeight={collapsed && !isMobile ? 28 : 32}
                         logoMaxWidth={collapsed && !isMobile ? 32 : 120}
                         iconContainerSize={28}
@@ -359,7 +384,7 @@ export default function DashboardLayout({
                             whiteSpace: "nowrap",
                         }}
                     >
-                        {platform?.institutionName || "Crossview"}
+                        {platform?.institutionName || "Learning Platform"}
                     </Typography>
                 )}
 

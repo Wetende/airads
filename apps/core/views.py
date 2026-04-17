@@ -118,6 +118,10 @@ def _group_programs_by_level(
 
 
 def _build_pagination(page: int, per_page: int, total: int) -> dict:
+    platform_features = platform_settings.get_default_features_for_mode()
+    if isinstance(platform_settings.features, dict):
+        platform_features.update(platform_settings.features)
+
     return {
         "page": page,
         "perPage": per_page,
@@ -6421,7 +6425,7 @@ def serialize_program_data(program):
         },
         "availablePrerequisites": available_prerequisites,
         "courseLevels": platform_settings.get_course_levels(),
-        "platformFeatures": platform_settings.get_default_features_for_mode(),
+        "platformFeatures": platform_features,
         "deploymentMode": platform_settings.deployment_mode,
     }
 

@@ -4,6 +4,7 @@
  * Uses theme colors (Chameleon engine - no hardcoded colors)
  */
 
+import { useState } from "react";
 import { Link } from "@inertiajs/react";
 import {
     Box,
@@ -11,15 +12,27 @@ import {
     CardContent,
     CardMedia,
     Typography,
-    Button,
     Chip,
     Stack,
     Rating,
     useTheme,
+    Menu,
+    MenuItem,
+    ListItemIcon,
+    ListItemText,
+    Divider,
+    IconButton,
 } from "@mui/material";
-import { IconEye, IconCircleFilled, IconTools, IconFileDescription } from "@tabler/icons-react";
+import {
+    IconDotsVertical,
+    IconFileDescription,
+    IconPencil,
+    IconStar,
+    IconList,
+    IconClock,
+} from "@tabler/icons-react";
+import { useCurrency } from "@/hooks/useCurrency";
 
-// Badge colors using theme palette
 const getBadgeColor = (type, theme) => {
     switch (type) {
         case "hot":
@@ -39,8 +52,18 @@ export default function ProgramManageCard({
     showMakeFeatured = true,
 }) {
     const theme = useTheme();
+    const { formatCurrency } = useCurrency();
+    const [anchorEl, setAnchorEl] = useState(null);
+    const open = Boolean(anchorEl);
 
-    // Format date
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
     const formatDate = (dateStr) => {
         if (!dateStr) return null;
         const date = new Date(dateStr);
@@ -59,20 +82,19 @@ export default function ProgramManageCard({
         return `${years} ${years === 1 ? "year" : "years"} ago`;
     };
 
-    // Get price display
     const getPriceDisplay = () => {
         const price = program.price || 0;
-        const originalPrice = program.originalPrice;
+        const originalPrice = program.originalPrice ?? program.original_price;
 
         if (price === 0) return { text: "Free", hasDiscount: false };
         if (originalPrice && originalPrice > price) {
             return {
-                text: `$${price}`,
-                original: `$${originalPrice}`,
+                text: formatCurrency(price),
+                original: formatCurrency(originalPrice),
                 hasDiscount: true,
             };
         }
-        return { text: `$${price}`, hasDiscount: false };
+        return { text: formatCurrency(price), hasDiscount: false };
     };
 
     const priceInfo = getPriceDisplay();
@@ -93,7 +115,6 @@ export default function ProgramManageCard({
                 },
             }}
         >
-            {/* Thumbnail with optional badge */}
             <Box sx={{ position: "relative" }}>
                 <CardMedia
                     component="img"
@@ -131,7 +152,6 @@ export default function ProgramManageCard({
                     p: 2,
                 }}
             >
-                {/* Category */}
                 <Typography
                     variant="caption"
                     color="text.secondary"
@@ -140,7 +160,6 @@ export default function ProgramManageCard({
                     {program.category || "General"}
                 </Typography>
 
-                {/* Title */}
                 <Typography
                     component={Link}
                     href={`/instructor/programs/${program.id}/`}
@@ -161,12 +180,41 @@ export default function ProgramManageCard({
                     {program.name}
                 </Typography>
 
-                {/* Rating + Views Row */}
                 <Stack
                     direction="row"
-                    spacing={2}
                     alignItems="center"
-                    sx={{ mb: 1.5 }}
+                    justifyContent="space-between"
+                    sx={{
+                        width: "100%",
+                        border: 1,
+                        borderColor: theme.palette.grey[200],
+                        bgcolor: theme.palette.grey[50],
+                        borderRadius: 2,
+                        px: 2,
+                        py: 0.75,
+                        mb: 1.5,
+                        color: "text.secondary",
+                    }}
+                >
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <IconList size={15} />
+                        <Typography variant="caption" fontWeight={600} fontSize="0.72rem">
+                            {program.lessonsCount || program.lessons_count || 0} Lectures
+                        </Typography>
+                    </Stack>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <IconClock size={15} />
+                        <Typography variant="caption" fontWeight={600} fontSize="0.72rem">
+                            {program.durationHours || program.duration_hours || 0} Hours
+                        </Typography>
+                    </Stack>
+                </Stack>
+
+                <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="flex-end"
+                    sx={{ mb: 2 }}
                 >
                     <Stack direction="row" spacing={0.5} alignItems="center">
                         <Rating
@@ -175,123 +223,115 @@ export default function ProgramManageCard({
                             size="small"
                             readOnly
                         />
-                        <Typography variant="caption" color="text.secondary">
-                            {program.rating?.toFixed(1) || "0"} (
-                            {program.reviewCount || 0})
+                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                            {program.rating?.toFixed(1) || "0.0"}
                         </Typography>
                     </Stack>
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                        <IconEye
-                            size={14}
-                            color={theme.palette.text.secondary}
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                            {program.viewCount || program.enrollmentCount || 0}
-                        </Typography>
-                    </Stack>
-                </Stack>
-
-                {/* Published Status + Price Row */}
-                <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    sx={{ mb: 2 }}
-                >
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                        <IconCircleFilled
-                            size={10}
-                            color={
-                                isPublished
-                                    ? theme.palette.success.main
-                                    : theme.palette.grey[400]
-                            }
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                            {isPublished ? "Published" : "Draft"}
-                        </Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Stack direction="column" alignItems="flex-end" spacing={-0.5}>
                         {priceInfo.hasDiscount && (
                             <Typography
                                 variant="caption"
                                 sx={{
                                     textDecoration: "line-through",
                                     color: "text.disabled",
+                                    fontSize: "0.7rem",
                                 }}
                             >
                                 {priceInfo.original}
                             </Typography>
                         )}
                         <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            color={
-                                priceInfo.text === "Free"
-                                    ? "success.main"
-                                    : "text.primary"
-                            }
+                            variant="subtitle1"
+                            fontWeight={800}
+                            color="text.primary"
                         >
                             {priceInfo.text}
                         </Typography>
                     </Stack>
                 </Stack>
 
-                {/* Action Buttons */}
-                {showMakeFeatured && (
-                    <Stack direction="row" spacing={1} sx={{ mt: 'auto' }}>
-                         <Button
-                            component={Link}
-                            href={`/instructor/programs/${program.id}/`}
-                            variant="outlined"
-                            fullWidth
-                            // startIcon={<IconFileDescription size={16} />}
-                            sx={{
-                                fontWeight: 700,
-                                py: 1,
-                                fontSize: '0.75rem',
-                                color: theme.palette.text.primary,
-                                borderColor: theme.palette.divider,
-                                "&:hover": {
-                                    borderColor: theme.palette.text.primary,
-                                    bgcolor: 'transparent'
-                                }
-                            }}
-                        >
-                            Details
-                        </Button>
-                        <Button
-                            component={Link}
-                            href={`/instructor/programs/${program.id}/manage/`}
-                            variant="contained"
-                            fullWidth
-                            // startIcon={<IconTools size={16} />}
-                            sx={{
-                                bgcolor: theme.palette.primary.main,
-                                color: "white",
-                                fontWeight: 700,
-                                py: 1,
-                                fontSize: '0.75rem',
-                                "&:hover": {
-                                    bgcolor: theme.palette.primary.dark,
-                                },
-                            }}
-                        >
-                            Builder
-                        </Button>
-                    </Stack>
-                )}
+                <Divider sx={{ mb: 1.5 }} />
 
-                {/* Last Updated */}
-                {program.updatedAt && (
-                    <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ mt: 1.5, textAlign: "center" }}
-                    >
-                        Last updated: {formatDate(program.updatedAt)}
-                    </Typography>
-                )}
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: "auto" }}>
+                    <Stack spacing={0.5}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography variant="caption" color="text.secondary">
+                                Course status:
+                            </Typography>
+                            <Chip
+                                label={isPublished ? "PUBLISHED" : "DRAFT"}
+                                size="small"
+                                sx={{
+                                    height: 20,
+                                    fontSize: "0.6rem",
+                                    fontWeight: 700,
+                                    bgcolor: isPublished ? theme.palette.success.main : theme.palette.grey[400],
+                                    color: "white",
+                                    borderRadius: 1,
+                                }}
+                            />
+                        </Stack>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography variant="caption" color="text.secondary">
+                                Last updated: <strong>{formatDate(program.updatedAt || program.updated_at) || "recently"}</strong>
+                            </Typography>
+                        </Stack>
+                    </Stack>
+
+                    <Box>
+                        <IconButton size="small" onClick={handleClick} sx={{ border: 1, borderColor: "divider", borderRadius: 1 }}>
+                            <IconDotsVertical size={16} />
+                        </IconButton>
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={open}
+                            onClose={handleClose}
+                            transformOrigin={{ horizontal: "right", vertical: "bottom" }}
+                            anchorOrigin={{ horizontal: "right", vertical: "top" }}
+                            PaperProps={{
+                                elevation: 3,
+                                sx: { mt: 0.5, minWidth: 160, borderRadius: 2 },
+                            }}
+                        >
+                            <MenuItem
+                                component={Link}
+                                href={`/instructor/programs/${program.id}/`}
+                                onClick={handleClose}
+                            >
+                                <ListItemIcon>
+                                    <IconFileDescription size={18} color={theme.palette.primary.main} />
+                                </ListItemIcon>
+                                <ListItemText primaryTypographyProps={{ variant: "body2", color: theme.palette.primary.main, fontWeight: 500 }}>
+                                    Details
+                                </ListItemText>
+                            </MenuItem>
+                            <Divider sx={{ my: 0.5 }} />
+                            <MenuItem component={Link} href={`/instructor/programs/${program.id}/manage/`} onClick={handleClose}>
+                                <ListItemIcon>
+                                    <IconPencil size={18} color={theme.palette.text.secondary} />
+                                </ListItemIcon>
+                                <ListItemText primaryTypographyProps={{ variant: "body2", color: "text.secondary", fontWeight: 500 }}>
+                                    Edit
+                                </ListItemText>
+                            </MenuItem>
+                            {showMakeFeatured && (
+                                <MenuItem
+                                    onClick={() => {
+                                        handleClose();
+                                        if (onMakeFeatured) onMakeFeatured();
+                                    }}
+                                >
+                                    <ListItemIcon>
+                                        <IconStar size={18} color={theme.palette.text.secondary} />
+                                    </ListItemIcon>
+                                    <ListItemText primaryTypographyProps={{ variant: "body2", color: "text.secondary", fontWeight: 500 }}>
+                                        Make Featured
+                                    </ListItemText>
+                                </MenuItem>
+                            )}
+                        </Menu>
+                    </Box>
+                </Stack>
             </CardContent>
         </Card>
     );

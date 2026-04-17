@@ -7,7 +7,6 @@
 import { Head, Link, router } from "@inertiajs/react";
 import {
   Box,
-  Grid,
   Typography,
   Stack,
   Button,
@@ -190,9 +189,26 @@ export default function InstructorProgramsIndex({
                   No programs in this level
                 </Typography>
               ) : (
-                <Grid container spacing={3}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 3,
+                  }}
+                >
                   {group.programs.map((program, index) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={program.id}>
+                    <Box
+                      key={program.id}
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "calc(50% - 12px)",
+                          md: "calc(33.333% - 16px)",
+                        },
+                        maxWidth: 350,
+                        minWidth: 280,
+                      }}
+                    >
                       <motion.div
                         {...fadeInUp}
                         transition={{
@@ -202,9 +218,9 @@ export default function InstructorProgramsIndex({
                       >
                         <ProgramManageCard program={program} />
                       </motion.div>
-                    </Grid>
+                    </Box>
                   ))}
-                </Grid>
+                </Box>
               )}
             </Fragment>
           ))}
