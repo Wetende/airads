@@ -3123,33 +3123,35 @@ def instructor_program_gradebook_save(request, pk: int):
 def instructor_announcements_index(request):
     """
     List all announcements across instructor's programs.
-    Announcements are stored in Program.notices JSONField.
+    Uses the Announcement model (apps.progression).
     """
     if not is_instructor(request.user):
         return redirect("/dashboard/")
 
+    from apps.progression.models import Announcement
+
     program_ids = get_instructor_program_ids(request.user)
     programs = Program.objects.filter(id__in=program_ids)
 
-    # Gather all notices from all programs
-    announcements = []
-    for p in programs:
-        notices = p.notices or []
-        for idx, notice in enumerate(notices):
-            raw_message = str(notice.get("message", "") or "")
-            announcements.append(
-                {
-                    "programId": p.id,
-                    "programName": p.name,
-                    "message": raw_message,
-                    "messageText": strip_tags(raw_message).strip(),
-                    "createdAt": notice.get("createdAt"),
-                    "index": idx,
-                }
-            )
+    announcements_qs = (
+        Announcement.objects.filter(program_id__in=program_ids)
+        .select_related("program", "author")
+        .order_by("-is_pinned", "-created_at")
+    )
 
-    # Sort by date descending
-    announcements.sort(key=lambda x: x.get("createdAt") or "", reverse=True)
+    announcements = [
+        {
+            "id": a.id,
+            "programId": a.program_id,
+            "programName": a.program.name,
+            "title": a.title,
+            "message": a.content,
+            "authorName": a.author.get_full_name() or a.author.email,
+            "createdAt": a.created_at.isoformat(),
+            "isPinned": a.is_pinned,
+        }
+        for a in announcements_qs
+    ]
 
     return render(
         request,
@@ -3165,10 +3167,12 @@ def instructor_announcements_index(request):
 def instructor_announcement_create(request):
     """
     Create a new announcement for a program.
-    Appends to Program.notices JSONField.
+    Creates an Announcement model record and notifies enrolled students.
     """
     if not is_instructor(request.user):
         return redirect("/dashboard/")
+
+    from apps.progression.models import Announcement
 
     program_ids = get_instructor_program_ids(request.user)
     programs = Program.objects.filter(id__in=program_ids)
@@ -3176,6 +3180,7 @@ def instructor_announcement_create(request):
     if request.method == "POST":
         data = get_post_data(request)
         program_id = data.get("programId")
+        title = str(data.get("title", "")).strip()
         raw_message = str(data.get("message", "")).strip()
         message_text = strip_tags(raw_message).strip()
 
@@ -3193,17 +3198,13 @@ def instructor_announcement_create(request):
             messages.error(request, "Program not found")
             return redirect("core:instructor.announcements")
 
-        # Append new notice
-        notices = program.notices or []
-        notices.append(
-            {
-                "message": raw_message,
-                "createdAt": timezone.now().isoformat(),
-                "createdBy": request.user.id,
-            }
+        # Create Announcement record
+        announcement = Announcement.objects.create(
+            program=program,
+            author=request.user,
+            title=title or "Announcement",
+            content=raw_message,
         )
-        program.notices = notices
-        program.save(update_fields=["notices"])
 
         # Notify all actively enrolled students in-app
         from apps.notifications.services import NotificationService
@@ -3219,7 +3220,7 @@ def instructor_announcement_create(request):
             NotificationService.bulk_create(
                 recipients=enrolled_users,
                 notification_type="announcement",
-                title="New Announcement",
+                title=announcement.title,
                 message=message_text[:200] + ("..." if len(message_text) > 200 else ""),
                 action_url=f"/student/programs/{program.id}/",
                 related_program_id=program.id,
@@ -3240,6 +3241,166 @@ def instructor_announcement_create(request):
         "Instructor/Announcements/Create",
         {"programs": [{"id": p.id, "name": p.name} for p in programs]},
     )
+
+
+@login_required
+def instructor_announcement_delete(request, pk):
+    """Delete an announcement. Instructor must own the program."""
+    if not is_instructor(request.user) or request.method != "DELETE":
+        return redirect("/dashboard/")
+
+    from apps.progression.models import Announcement
+
+    program_ids = get_instructor_program_ids(request.user)
+
+    try:
+        announcement = Announcement.objects.get(pk=pk, program_id__in=program_ids)
+    except Announcement.DoesNotExist:
+        messages.error(request, "Announcement not found")
+        return redirect("core:instructor.announcements")
+
+    announcement.delete()
+    messages.success(request, "Announcement deleted")
+    return redirect("core:instructor.announcements")
+
+
+# =============================================================================
+# Admin Announcements
+# =============================================================================
+
+
+@login_required
+def admin_announcements_index(request):
+    """List all announcements across all programs (admin view)."""
+    if not request.user.is_staff:
+        return redirect("/dashboard/")
+
+    from apps.progression.models import Announcement
+
+    announcements_qs = (
+        Announcement.objects.all()
+        .select_related("program", "author")
+        .order_by("-is_pinned", "-created_at")
+    )
+
+    announcements = [
+        {
+            "id": a.id,
+            "programId": a.program_id,
+            "programName": a.program.name,
+            "title": a.title,
+            "message": a.content,
+            "authorName": a.author.get_full_name() or a.author.email,
+            "createdAt": a.created_at.isoformat(),
+            "isPinned": a.is_pinned,
+        }
+        for a in announcements_qs
+    ]
+
+    programs = Program.objects.filter(is_published=True).values("id", "name")
+
+    return render(
+        request,
+        "Admin/Announcements/Index",
+        {
+            "announcements": announcements,
+            "programs": list(programs),
+        },
+    )
+
+
+@login_required
+def admin_announcement_create(request):
+    """Create announcement for any program (admin view)."""
+    if not request.user.is_staff:
+        return redirect("/dashboard/")
+
+    from apps.progression.models import Announcement
+
+    programs = Program.objects.filter(is_published=True)
+
+    if request.method == "POST":
+        data = get_post_data(request)
+        program_id = data.get("programId")
+        title = str(data.get("title", "")).strip()
+        raw_message = str(data.get("message", "")).strip()
+        message_text = strip_tags(raw_message).strip()
+
+        if not program_id or not message_text:
+            messages.error(request, "Please select a course and enter a message")
+            return render(
+                request,
+                "Admin/Announcements/Create",
+                {"programs": [{"id": p.id, "name": p.name} for p in programs]},
+            )
+
+        try:
+            program = Program.objects.get(pk=program_id)
+        except Program.DoesNotExist:
+            messages.error(request, "Program not found")
+            return redirect("core:admin.announcements")
+
+        announcement = Announcement.objects.create(
+            program=program,
+            author=request.user,
+            title=title or "Announcement",
+            content=raw_message,
+        )
+
+        # Notify enrolled students
+        from apps.notifications.services import NotificationService
+        from apps.progression.models import Enrollment
+
+        enrolled_users = User.objects.filter(
+            id__in=Enrollment.objects.filter(
+                program=program,
+                status="active",
+            ).values_list("user_id", flat=True)
+        )
+        if enrolled_users.exists():
+            NotificationService.bulk_create(
+                recipients=enrolled_users,
+                notification_type="announcement",
+                title=announcement.title,
+                message=message_text[:200] + ("..." if len(message_text) > 200 else ""),
+                action_url=f"/student/programs/{program.id}/",
+                related_program_id=program.id,
+            )
+            for enrolled_user in enrolled_users:
+                NotificationService.send_email_notification(
+                    recipient=enrolled_user,
+                    notification_type="announcement",
+                    subject=f"New Announcement: {program.name}",
+                    message=message_text[:500],
+                )
+
+        messages.success(request, "Announcement created successfully")
+        return redirect("core:admin.announcements")
+
+    return render(
+        request,
+        "Admin/Announcements/Create",
+        {"programs": [{"id": p.id, "name": p.name} for p in programs]},
+    )
+
+
+@login_required
+def admin_announcement_delete(request, pk):
+    """Delete any announcement (admin view)."""
+    if not request.user.is_staff or request.method != "DELETE":
+        return redirect("/dashboard/")
+
+    from apps.progression.models import Announcement
+
+    try:
+        announcement = Announcement.objects.get(pk=pk)
+    except Announcement.DoesNotExist:
+        messages.error(request, "Announcement not found")
+        return redirect("core:admin.announcements")
+
+    announcement.delete()
+    messages.success(request, "Announcement deleted")
+    return redirect("core:admin.announcements")
 
 
 # =============================================================================

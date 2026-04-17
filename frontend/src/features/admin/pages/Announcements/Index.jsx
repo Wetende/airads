@@ -1,6 +1,6 @@
 /**
- * Instructor Announcements Index
- * Lists all announcements across instructor's programs
+ * Admin Announcements Index
+ * Lists all announcements across all programs
  */
 
 import { Head, Link, router } from '@inertiajs/react';
@@ -54,7 +54,7 @@ export default function Index({ announcements = [], programs = [] }) {
     if (!pendingDelete) return;
     setDeleting(true);
     router.delete(
-      `/instructor/announcements/${pendingDelete}/delete/`,
+      `/admin/announcements/${pendingDelete}/delete/`,
       {
         onFinish: () => {
           setDeleting(false);
@@ -66,7 +66,7 @@ export default function Index({ announcements = [], programs = [] }) {
   };
 
   return (
-    <DashboardLayout breadcrumbs={breadcrumbs} role="instructor">
+    <DashboardLayout breadcrumbs={breadcrumbs} role="admin">
       <Head title="Announcements" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -91,7 +91,7 @@ export default function Index({ announcements = [], programs = [] }) {
             </Box>
             <Button
               component={Link}
-              href="/instructor/announcements/create/"
+              href="/admin/announcements/create/"
               variant="contained"
               startIcon={<IconPlus size={18} />}
               sx={{ textTransform: 'none' }}
@@ -110,6 +110,7 @@ export default function Index({ announcements = [], programs = [] }) {
                   <TableCell sx={{ fontWeight: 600 }}>Course</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Message</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Author</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
                   <TableCell></TableCell>
                 </TableRow>
@@ -117,13 +118,13 @@ export default function Index({ announcements = [], programs = [] }) {
               <TableBody>
                 {announcements.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                       <Typography color="text.secondary">
                         No announcements yet
                       </Typography>
                       <Button
                         component={Link}
-                        href="/instructor/announcements/create/"
+                        href="/admin/announcements/create/"
                         variant="outlined"
                         sx={{ mt: 2 }}
                       >
@@ -152,7 +153,7 @@ export default function Index({ announcements = [], programs = [] }) {
                       <TableCell>
                         <Box
                           sx={{
-                            maxWidth: 350,
+                            maxWidth: 300,
                             maxHeight: 48,
                             overflow: 'hidden',
                             '& p': { m: 0 },
@@ -166,6 +167,11 @@ export default function Index({ announcements = [], programs = [] }) {
                         {!a.message && (
                           <Typography color="text.secondary" variant="body2">—</Typography>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {a.authorName}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography color="text.secondary" variant="body2">

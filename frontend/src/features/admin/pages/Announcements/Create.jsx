@@ -1,9 +1,9 @@
 /**
- * Instructor Create Announcement
- * Form to send announcement to course students
+ * Admin Create Announcement
+ * Form to send announcement to any course's students
  */
 
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import {
   Box,
   Typography,
@@ -28,7 +28,7 @@ export default function Create({ programs = [] }) {
   });
 
   const breadcrumbs = [
-    { label: 'Announcements', href: '/instructor/announcements/' },
+    { label: 'Announcements', href: '/admin/announcements/' },
     { label: 'Create' },
   ];
 
@@ -36,11 +36,11 @@ export default function Create({ programs = [] }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    post('/instructor/announcements/create/');
+    post('/admin/announcements/create/');
   };
 
   return (
-    <DashboardLayout breadcrumbs={breadcrumbs} role="instructor">
+    <DashboardLayout breadcrumbs={breadcrumbs} role="admin">
       <Head title="Create Announcement" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}

@@ -113,6 +113,10 @@ urlpatterns = [
     path("admin/reviews/", views.admin_reviews, name="admin.reviews"),
     path("admin/reviews/<int:review_id>/approve/", views.admin_review_approve, name="admin.review.approve"),
     path("admin/reviews/<int:review_id>/reject/", views.admin_review_reject, name="admin.review.reject"),
+    # Admin Announcements
+    path("admin/announcements/", views.admin_announcements_index, name="admin.announcements"),
+    path("admin/announcements/create/", views.admin_announcement_create, name="admin.announcement_create"),
+    path("admin/announcements/<int:pk>/delete/", views.admin_announcement_delete, name="admin.announcement_delete"),
     # Instructor Views
     path("instructor/", views.instructor_landing, name="instructor.landing"),
     path("instructor/apply/", views.instructor_apply, name="instructor.apply"),
@@ -170,6 +174,7 @@ urlpatterns = [
     # Instructor Announcements
     path("instructor/announcements/", views.instructor_announcements_index, name="instructor.announcements"),
     path("instructor/announcements/create/", views.instructor_announcement_create, name="instructor.announcement_create"),
+    path("instructor/announcements/<int:pk>/delete/", views.instructor_announcement_delete, name="instructor.announcement_delete"),
     # Instructor Assignment Management
     path("instructor/assignments/", views.instructor_assignments_global, name="instructor.assignments_global"),
     path("instructor/programs/<int:program_id>/assignments/", views.instructor_assignments, name="instructor.assignments"),

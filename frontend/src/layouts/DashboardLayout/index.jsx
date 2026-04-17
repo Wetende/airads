@@ -246,6 +246,16 @@ const roleNavigation = {
             ],
         },
         {
+            title: "Communication",
+            items: [
+                {
+                    label: "Announcements",
+                    href: "/admin/announcements/",
+                    icon: CampaignIcon,
+                },
+            ],
+        },
+        {
             title: "Settings",
             items: [
                 {
