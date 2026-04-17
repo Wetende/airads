@@ -9,11 +9,21 @@ import "@/config"; // Load fonts
 import "./styles/app.css";
 import "nprogress/nprogress.css";
 
-const pages = import.meta.glob("./Pages/**/*.jsx");
-const features = import.meta.glob(
-    ["./features/**/pages/**/*.jsx", "!**/*.test.jsx", "!**/*.spec.jsx"],
-);
-const publicPages = import.meta.glob("./pages/public/*.jsx");
+const pages = import.meta.glob([
+    "./Pages/**/*.jsx",
+    "!**/*.test.jsx",
+    "!**/*.spec.jsx"
+]);
+const features = import.meta.glob([
+    "./features/**/pages/**/*.jsx",
+    "!**/*.test.jsx",
+    "!**/*.spec.jsx",
+]);
+const publicPages = import.meta.glob([
+    "./pages/public/*.jsx",
+    "!**/*.test.jsx",
+    "!**/*.spec.jsx"
+]);
 
 const featureMap = {
     // Auth
@@ -139,19 +149,32 @@ NProgress.configure({ showSpinner: false, trickleSpeed: 200, minimum: 0.3 });
 router.on("start", () => NProgress.start());
 router.on("finish", () => NProgress.done());
 
-// Create Inertia app
-createInertiaApp({
-    resolve: async (name) => {
-        const pageLoader = resolvePageLoader(name);
+// Check if we have the Inertia page data
+const appElement = document.getElementById("app");
+if (appElement && !appElement.dataset.page) {
+    // If the element exists but has no data-page, we are likely hitting the Vite dev server directly.
+    appElement.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:system-ui,sans-serif;background-color:#f9fafb;color:#111827;text-align:center;padding:2rem;">
+            <h1 style="font-size:1.5rem;font-weight:bold;margin-bottom:1rem;color:#ef4444;">Vite Dev Server Running</h1>
+            <p style="margin-bottom:1.5rem;max-width:28rem;">You are viewing the Vite development server directly. Inertia.js requires the application to be served through the Django backend to provide initial page data.</p>
+            <a href="http://127.0.0.1:8000" style="background-color:#10b981;color:white;padding:0.5rem 1rem;border-radius:0.375rem;text-decoration:none;font-weight:500;">Go to Django Application (Port 8000)</a>
+        </div>
+    `;
+    console.error("Inertia.js page data is missing. Please access the application through the Django backend.");
+} else {
+    // Create Inertia app
+    createInertiaApp({
+        resolve: async (name) => {
+            const pageLoader = resolvePageLoader(name);
 
-        if (!pageLoader) {
-            console.error(`Page not found: ${name}`);
-            return { default: () => <div>Page not found: {name}</div> };
-        }
+            if (!pageLoader) {
+                console.error(`Page not found: ${name}`);
+                return { default: () => <div>Page not found: {name}</div> };
+            }
 
-        return pageLoader();
-    },
-    setup({ el, App, props }) {
+            return pageLoader();
+        },
+        setup({ el, App, props }) {
         // Extract user from Inertia's initial page props
         const initialUser = props.initialPage?.props?.auth?.user || null;
         // Extract favicon URL from platform props
@@ -179,3 +202,4 @@ createInertiaApp({
     },
     progress: false, // We're using NProgress instead
 });
+}
