@@ -31,7 +31,7 @@ import { useCart } from "@/contexts/CartContext";
 import PaymentPending from "@/features/commerce/components/PaymentPending";
 import { resumePaystackTransaction } from "@/features/commerce/utils/paystackPopup";
 import * as commerceApi from "@/services/commerceApi";
-import { formatAmount } from "@/services/commerceApi";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const STEP_REVIEW = "review";
 const STEP_PROCESSING = "processing";
@@ -41,6 +41,7 @@ const STEP_PAYSTACK_PENDING = "paystack_pending"; // Native JS popup waiting
 export default function Checkout({ paystack }) {
     const { checkout } = usePage().props;
     const { cart, loading: cartLoading, refreshCart } = useCart();
+    const { formatMinorCurrency } = useCurrency();
     const [step, setStep] = useState(STEP_REVIEW);
     const [error, setError] = useState("");
     const [order, setOrder] = useState(null);
@@ -331,7 +332,7 @@ export default function Checkout({ paystack }) {
                                                      {item.program?.name}
                                                 </Typography>
                                                 <Typography variant="body2" fontWeight={600}>
-                                                    {formatAmount(item.amountMinor, item.currency)}
+                                                    {formatMinorCurrency(item.amountMinor)}
                                                 </Typography>
                                             </Stack>
                                         ))}
@@ -341,7 +342,7 @@ export default function Checkout({ paystack }) {
                                                 Total
                                             </Typography>
                                             <Typography variant="subtitle1" fontWeight={700}>
-                                                 {formatAmount(totalMinor, totalCurrency)}
+                                                 {formatMinorCurrency(totalMinor)}
                                             </Typography>
                                         </Stack>
                                     </>
@@ -420,8 +421,8 @@ export default function Checkout({ paystack }) {
                                 sx={{ py: 1.5, fontWeight: 700 }}
                             >
                                 {paymentMethod === "mpesa" 
-                                     ? `Send STK Push • ${formatAmount(totalMinor, totalCurrency)}`
-                                     : `Pay securely • ${formatAmount(totalMinor, totalCurrency)}`
+                                     ? `Send STK Push • ${formatMinorCurrency(totalMinor)}`
+                                     : `Pay securely • ${formatMinorCurrency(totalMinor)}`
                                  }
                             </Button>
                         )}

@@ -28,10 +28,10 @@ import PaymentPending from "@/features/commerce/components/PaymentPending";
 import { resumePaystackTransaction } from "@/features/commerce/utils/paystackPopup";
 import * as commerceApi from "@/services/commerceApi";
 import {
-    formatAmount,
     ORDER_STATUS_LABELS,
     ORDER_STATUS_COLORS,
 } from "@/services/commerceApi";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function OrderDetail({ orderId: propOrderId, paystack }) {
     const initialError =
@@ -43,6 +43,7 @@ export default function OrderDetail({ orderId: propOrderId, paystack }) {
     const [error, setError] = useState(initialError);
     const [retrying, setRetrying] = useState(false);
     const [showPending, setShowPending] = useState(false);
+    const { formatMinorCurrency } = useCurrency();
 
     // orderId comes from Inertia props or URL param
     const orderId = propOrderId || (() => {
@@ -224,7 +225,7 @@ export default function OrderDetail({ orderId: propOrderId, paystack }) {
                                             Total
                                         </Typography>
                                         <Typography variant="body2" fontWeight={700}>
-                                            {formatAmount(order.totalMinor, order.currency)}
+                                            {formatMinorCurrency(order.totalMinor)}
                                         </Typography>
                                     </Box>
                                     {order.refundedMinor > 0 && (
@@ -233,7 +234,7 @@ export default function OrderDetail({ orderId: propOrderId, paystack }) {
                                                 Refunded
                                             </Typography>
                                             <Typography variant="body2" fontWeight={600} color="error.main">
-                                                {formatAmount(order.refundedMinor, order.currency)}
+                                                {formatMinorCurrency(order.refundedMinor)}
                                             </Typography>
                                         </Box>
                                     )}
@@ -292,7 +293,7 @@ export default function OrderDetail({ orderId: propOrderId, paystack }) {
                                                     )}
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    {formatAmount(item.amountMinor, item.currency)}
+                                                    {formatMinorCurrency(item.amountMinor)}
                                                 </TableCell>
                                                 <TableCell align="right">
                                                     <Chip
@@ -322,7 +323,7 @@ export default function OrderDetail({ orderId: propOrderId, paystack }) {
                                                 <Stack direction="row" justifyContent="space-between">
                                                     <Box>
                                                         <Typography variant="body2" fontWeight={600}>
-                                                            {formatAmount(refund.amountMinor, order.currency)}
+                                                            {formatMinorCurrency(refund.amountMinor)}
                                                         </Typography>
                                                         {refund.reason && (
                                                             <Typography variant="caption" color="text.secondary">

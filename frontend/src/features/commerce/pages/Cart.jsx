@@ -26,10 +26,11 @@ import {
 } from "@tabler/icons-react";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { useCart } from "@/contexts/CartContext";
-import { formatAmount } from "@/services/commerceApi";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function Cart() {
     const { cart, loading, removeFromCart, clearCart, refreshCart } = useCart();
+    const { formatMinorCurrency } = useCurrency();
     const [removing, setRemoving] = useState(null);
     const [clearing, setClearing] = useState(false);
     const [error, setError] = useState("");
@@ -163,7 +164,7 @@ export default function Cart() {
                                         </Box>
                                         <Stack direction="row" spacing={2} alignItems="center">
                                             <Typography variant="subtitle1" fontWeight={700}>
-                                                {formatAmount(item.amountMinor, item.currency)}
+                                                {formatMinorCurrency(item.amountMinor)}
                                             </Typography>
                                             <Tooltip title="Remove from cart">
                                                 <IconButton
@@ -189,7 +190,7 @@ export default function Cart() {
                                         Subtotal
                                     </Typography>
                                     <Typography variant="h6" fontWeight={700}>
-                                        {formatAmount(cart?.totalMinor, cart?.currency)}
+                                        {formatMinorCurrency(cart?.totalMinor)}
                                     </Typography>
                                 </Stack>
                                 <Divider sx={{ my: 2 }} />

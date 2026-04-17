@@ -39,6 +39,16 @@ export default defineConfig(({ command }) => ({
         // Main bundle will be large but that's better than broken circular deps
         chunkSizeWarningLimit: 1500,
         rollupOptions: {
+            onwarn(warning, warn) {
+                // Suppress the "node:module externalized" warning from Vite internals
+                if (
+                    warning.code === 'MODULE_LEVEL_DIRECTIVE' ||
+                    (warning.message && warning.message.includes('has been externalized for browser compatibility'))
+                ) {
+                    return;
+                }
+                warn(warning);
+            },
             input: resolve("./frontend/src/main.jsx"),
             output: {
                 manualChunks(id) {

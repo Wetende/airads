@@ -25,8 +25,9 @@ import {
     IconButton,
     useTheme,
 } from "@mui/material";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-react";
+import { IconHeart, IconHeartFilled, IconList, IconClock } from "@tabler/icons-react";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useCurrency } from "@/hooks/useCurrency";
 
 // ---------------------------------------------------------------------------
 // Badge colors
@@ -57,6 +58,7 @@ export default function PublicProgramCard({
 }) {
     const theme = useTheme();
     const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
+    const { formatCurrency } = useCurrency();
 
     const wishlisted = useMemo(
         () => (wishlist?.items || []).some((item) => item.program?.id === program.id),
@@ -204,6 +206,37 @@ export default function PublicProgramCard({
                     </Typography>
                 )}
 
+                {/* Lectures and Hours Pill */}
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{
+                        width: "100%",
+                        border: 1,
+                        borderColor: "#E5E7EB",
+                        bgcolor: "#F9FAFB",
+                        borderRadius: 2,
+                        px: 2,
+                        py: 0.75,
+                        mb: 1.5,
+                        color: "#6B7280",
+                    }}
+                >
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <IconList size={15} />
+                        <Typography variant="caption" fontWeight={600} fontSize="0.72rem">
+                            {program.lessons_count || program.lessonsCount || 0} Lectures
+                        </Typography>
+                    </Stack>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <IconClock size={15} />
+                        <Typography variant="caption" fontWeight={600} fontSize="0.72rem">
+                            {program.duration_hours || program.durationHours || 0} Hours
+                        </Typography>
+                    </Stack>
+                </Stack>
+
                 {/* Rating & Price Row */}
                 <Box sx={{ mt: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     {/* Rating */}
@@ -232,7 +265,7 @@ export default function PublicProgramCard({
                                     fontWeight={700}
                                     color="primary.main"
                                 >
-                                    ${program.price}
+                                    {formatCurrency(program.price)}
                                 </Typography>
                                 {program.original_price &&
                                     program.original_price > program.price && (
@@ -243,7 +276,7 @@ export default function PublicProgramCard({
                                                 color: "#9CA3AF",
                                             }}
                                         >
-                                            ${program.original_price}
+                                            {formatCurrency(program.original_price)}
                                         </Typography>
                                     )}
                             </Stack>

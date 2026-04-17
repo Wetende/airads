@@ -428,11 +428,13 @@ export default function DashboardLayout({
                                     variant="overline"
                                     sx={{
                                         px: 2,
-                                        py: 0.5,
+                                        pt: 1,
+                                        pb: 0,
                                         display: "block",
                                         color: "text.secondary",
                                         fontSize: "0.7rem",
                                         fontWeight: 600,
+                                        lineHeight: 1.5,
                                     }}
                                 >
                                     {section.title}
@@ -454,7 +456,8 @@ export default function DashboardLayout({
                                             selected={isActive}
                                             sx={{
                                                 borderRadius: 1,
-                                                minHeight: 40,
+                                                minHeight: 36,
+                                                py: 0.5,
                                                 justifyContent:
                                                     collapsed && !isMobile
                                                         ? "center"
@@ -507,7 +510,7 @@ export default function DashboardLayout({
                                         <ListItem
                                             key={item.href}
                                             disablePadding
-                                            sx={{ px: 1, py: 0.25 }}
+                                            sx={{ px: 1, py: 0 }}
                                         >
                                             {collapsed && !isMobile ? (
                                                 <Tooltip

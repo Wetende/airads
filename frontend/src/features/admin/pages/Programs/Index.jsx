@@ -10,13 +10,6 @@ import {
   Button,
   Card,
   CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Chip,
   Stack,
   TextField,
@@ -24,18 +17,21 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  IconButton,
-  Menu,
-  Pagination,
 } from "@mui/material";
 import { Fragment, useState } from "react";
 import { motion } from "framer-motion";
 import AddIcon from "@mui/icons-material/Add";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import EditIcon from "@mui/icons-material/Edit";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import SettingsIcon from "@mui/icons-material/Settings";
+import PublishIcon from "@mui/icons-material/Publish";
+import UnpublishedIcon from "@mui/icons-material/Unpublished";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 import DashboardLayout from "@/layouts/DashboardLayout";
+import DataTable from "@/components/DataTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function ProgramsIndex({
@@ -46,39 +42,27 @@ export default function ProgramsIndex({
   filters = {},
   pagination = {},
 }) {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedProgram, setSelectedProgram] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState(null);
   const [search, setSearch] = useState(filters.search || "");
   const [status, setStatus] = useState(filters.status || "");
-  const [blueprint, setBlueprint] = useState(filters.blueprint || "");
   const [level, setLevel] = useState(filters.level || "");
 
-  const groupsToRender =
+  // Flatten grouped programs into a single list for DataTable
+  const allPrograms =
     groupedPrograms && groupedPrograms.length > 0
-      ? groupedPrograms
-      : [{ value: "all", label: "All Programs", programs }];
-
-  const totalPrograms = groupsToRender.reduce(
-    (total, group) => total + (group.programs || []).length,
-    0,
-  );
-
-  const handleMenuOpen = (event, program) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedProgram(program);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedProgram(null);
-  };
+      ? groupedPrograms.flatMap((group) =>
+          (group.programs || []).map((p) => ({
+            ...p,
+            groupLabel: group.label,
+          })),
+        )
+      : programs;
 
   const handleFilter = () => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (status) params.set("status", status);
-    if (blueprint) params.set("blueprint", blueprint);
     if (level) params.set("level", level);
 
     router.visit(`/admin/programs/?${params.toString()}`, {
@@ -87,7 +71,7 @@ export default function ProgramsIndex({
     });
   };
 
-  const handlePageChange = (event, page) => {
+  const handlePageChange = (page) => {
     const params = new URLSearchParams(window.location.search);
     params.set("page", page);
     router.visit(`/admin/programs/?${params.toString()}`, {
@@ -97,33 +81,117 @@ export default function ProgramsIndex({
     });
   };
 
-  const handleDelete = () => {
-    if (!selectedProgram) return;
-    setDeleteDialogOpen(true);
-    setAnchorEl(null);
-  };
-
-  const handleCloseDeleteDialog = () => {
-    setDeleteDialogOpen(false);
-    setSelectedProgram(null);
-  };
-
   const handleConfirmDelete = () => {
     if (!selectedProgram) return;
-    router.post(`/admin/programs/${selectedProgram.id}/delete/`, {}, {
-      onFinish: () => {
-        setDeleteDialogOpen(false);
-        setSelectedProgram(null);
+    router.post(
+      `/admin/programs/${selectedProgram.id}/delete/`,
+      {},
+      {
+        onFinish: () => {
+          setDeleteDialogOpen(false);
+          setSelectedProgram(null);
+        },
       },
-    });
+    );
   };
 
-  const handlePublish = () => {
-    if (selectedProgram) {
-      router.post(`/admin/programs/${selectedProgram.id}/publish/`);
-    }
-    handleMenuClose();
-  };
+  const columns = [
+    {
+      id: "name",
+      label: "Name",
+      render: (row) => (
+        <Box>
+          <Link
+            href={`/admin/programs/${row.id}/`}
+            style={{ textDecoration: "none" }}
+          >
+            <Typography fontWeight={500} color="primary" fontSize="0.875rem">
+              {row.name}
+            </Typography>
+          </Link>
+          {row.code && (
+            <Typography variant="caption" color="text.secondary">
+              {row.code}
+            </Typography>
+          )}
+        </Box>
+      ),
+    },
+    {
+      id: "level",
+      label: "Level",
+      render: (row) =>
+        row.level ? (
+          <Chip label={row.level} size="small" variant="outlined" />
+        ) : (
+          "—"
+        ),
+    },
+    {
+      id: "enrollmentCount",
+      label: "Enrollments",
+      render: (row) => (
+        <Typography fontSize="0.875rem" fontWeight={500}>
+          {row.enrollmentCount ?? 0}
+        </Typography>
+      ),
+    },
+    {
+      id: "isPublished",
+      label: "Status",
+      render: (row) => (
+        <Chip
+          label={row.isPublished ? "Published" : "Draft"}
+          size="small"
+          color={row.isPublished ? "success" : "default"}
+          sx={{
+            fontWeight: 500,
+            fontSize: "0.75rem",
+          }}
+        />
+      ),
+    },
+  ];
+
+  const actions = [
+    {
+      label: "View Details",
+      icon: <VisibilityIcon fontSize="small" />,
+      onClick: (row) => router.visit(`/admin/programs/${row.id}/`),
+    },
+    {
+      label: "Edit",
+      icon: <EditIcon fontSize="small" />,
+      onClick: (row) => router.visit(`/admin/programs/${row.id}/edit/`),
+    },
+    {
+      label: "Course Manager",
+      icon: <SettingsIcon fontSize="small" />,
+      onClick: (row) =>
+        router.visit(`/instructor/programs/${row.id}/manage/`),
+    },
+    {
+      label: (row) => (row.isPublished ? "Unpublish" : "Publish"),
+      icon: (row) =>
+        row.isPublished ? (
+          <UnpublishedIcon fontSize="small" />
+        ) : (
+          <PublishIcon fontSize="small" />
+        ),
+      onClick: (row) =>
+        router.post(`/admin/programs/${row.id}/publish/`),
+    },
+    {
+      label: "Delete",
+      icon: <DeleteIcon fontSize="small" />,
+      onClick: (row) => {
+        setSelectedProgram(row);
+        setDeleteDialogOpen(true);
+      },
+      color: "error",
+      disabled: (row) => row.enrollmentCount > 0,
+    },
+  ];
 
   return (
     <DashboardLayout role="admin" breadcrumbs={[{ label: "Programs" }]}>
@@ -175,7 +243,9 @@ export default function ProgramsIndex({
                   maxWidth: { md: 300 },
                 }}
                 InputProps={{
-                  startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />,
+                  startAdornment: (
+                    <SearchIcon color="action" sx={{ mr: 1 }} />
+                  ),
                 }}
                 onKeyPress={(e) => e.key === "Enter" && handleFilter()}
               />
@@ -196,28 +266,6 @@ export default function ProgramsIndex({
                   <MenuItem value="">All</MenuItem>
                   <MenuItem value="published">Published</MenuItem>
                   <MenuItem value="draft">Draft</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl
-                size="small"
-                fullWidth
-                sx={{
-                  minWidth: { xs: "100%", md: 200 },
-                  maxWidth: { md: 250 },
-                }}
-              >
-                <InputLabel>Blueprint</InputLabel>
-                <Select
-                  value={blueprint}
-                  label="Blueprint"
-                  onChange={(e) => setBlueprint(e.target.value)}
-                >
-                  <MenuItem value="">All Blueprints</MenuItem>
-                  {blueprints.map((bp) => (
-                    <MenuItem key={bp.id} value={bp.id}>
-                      {bp.name}
-                    </MenuItem>
-                  ))}
                 </Select>
               </FormControl>
               <FormControl
@@ -263,170 +311,33 @@ export default function ProgramsIndex({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Code</TableCell>
-                  <TableCell>Blueprint</TableCell>
-                  <TableCell>Enrollments</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {totalPrograms === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      <Typography color="text.secondary" sx={{ py: 4 }}>
-                        No programs found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  groupsToRender.map((group) => (
-                    <Fragment key={group.value || group.label}>
-                      <TableRow>
-                        <TableCell colSpan={6} sx={{ bgcolor: "grey.50" }}>
-                          <Typography variant="subtitle2" fontWeight="bold">
-                            {group.label}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                      {(group.programs || []).length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} align="center">
-                            <Typography color="text.secondary" sx={{ py: 2 }}>
-                              No programs in this level
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        (group.programs || []).map((program) => (
-                          <TableRow key={program.id} hover>
-                            <TableCell>
-                              <Link
-                                href={`/admin/programs/${program.id}/`}
-                                style={{ textDecoration: "none" }}
-                              >
-                                <Typography fontWeight="medium" color="primary">
-                                  {program.name}
-                                </Typography>
-                              </Link>
-                            </TableCell>
-                            <TableCell>{program.code || "-"}</TableCell>
-                            <TableCell>
-                              {program.blueprintName ? (
-                                <Chip
-                                  label={program.blueprintName}
-                                  size="small"
-                                  variant="outlined"
-                                />
-                              ) : (
-                                "-"
-                              )}
-                            </TableCell>
-                            <TableCell>{program.enrollmentCount}</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={
-                                  program.isPublished ? "Published" : "Draft"
-                                }
-                                size="small"
-                                color={
-                                  program.isPublished ? "success" : "default"
-                                }
-                              />
-                            </TableCell>
-                            <TableCell align="right">
-                              <IconButton
-                                size="small"
-                                onClick={(e) => handleMenuOpen(e, program)}
-                              >
-                                <MoreVertIcon />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </Fragment>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <DataTable
+            columns={columns}
+            rows={allPrograms}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            actions={actions}
+            emptyMessage="No programs found"
+          />
         </motion.div>
-
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <Pagination
-              count={pagination.totalPages}
-              page={pagination.page}
-              onChange={handlePageChange}
-              color="primary"
-            />
-          </Box>
-        )}
-
-        {/* Actions Menu */}
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-        >
-          <MenuItem
-            component={Link}
-            href={
-              selectedProgram ? `/admin/programs/${selectedProgram.id}/` : "#"
-            }
-          >
-            View Details
-          </MenuItem>
-          <MenuItem
-            component={Link}
-            href={
-              selectedProgram
-                ? `/admin/programs/${selectedProgram.id}/edit/`
-                : "#"
-            }
-          >
-            Edit
-          </MenuItem>
-          <MenuItem
-            component={Link}
-            href={
-              selectedProgram
-                ? `/instructor/programs/${selectedProgram.id}/manage/`
-                : "#"
-            }
-          >
-            Course Manager
-          </MenuItem>
-          <MenuItem onClick={handlePublish}>
-            {selectedProgram?.isPublished ? "Unpublish" : "Publish"}
-          </MenuItem>
-          {selectedProgram?.enrollmentCount === 0 && (
-            <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
-              Delete
-            </MenuItem>
-          )}
-        </Menu>
-        <ConfirmDialog
-          open={deleteDialogOpen}
-          onClose={handleCloseDeleteDialog}
-          onConfirm={handleConfirmDelete}
-          title="Delete Program"
-          message={
-            selectedProgram
-              ? `Are you sure you want to delete "${selectedProgram.name}"?`
-              : "Are you sure you want to delete this program?"
-          }
-          confirmLabel="Delete"
-          confirmColor="error"
-        />
       </Stack>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setSelectedProgram(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Program"
+        message={
+          selectedProgram
+            ? `Are you sure you want to delete "${selectedProgram.name}"?`
+            : "Are you sure you want to delete this program?"
+        }
+        confirmLabel="Delete"
+        confirmColor="error"
+      />
     </DashboardLayout>
   );
 }
