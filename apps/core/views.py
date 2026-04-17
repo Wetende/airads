@@ -118,10 +118,6 @@ def _group_programs_by_level(
 
 
 def _build_pagination(page: int, per_page: int, total: int) -> dict:
-    platform_features = platform_settings.get_default_features_for_mode()
-    if isinstance(platform_settings.features, dict):
-        platform_features.update(platform_settings.features)
-
     return {
         "page": page,
         "perPage": per_page,
@@ -6339,6 +6335,9 @@ def serialize_program_data(program):
     from apps.platform.models import PlatformSettings
 
     platform_settings = PlatformSettings.get_settings()
+    platform_features = platform_settings.get_default_features_for_mode()
+    if isinstance(platform_settings.features, dict):
+        platform_features.update(platform_settings.features)
     builder_hierarchy = get_builder_hierarchy_or_default(
         program.blueprint.hierarchy_structure if program.blueprint else None,
         deployment_mode=platform_settings.deployment_mode,
