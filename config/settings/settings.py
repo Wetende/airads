@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "apps.certifications",
     "apps.content",
     "apps.notifications",
+    "apps.messaging",
     "apps.events",
     "apps.reviews",
     "apps.commerce",
@@ -118,6 +119,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Use SQLite by default (development), MySQL/PostgreSQL for production
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite3")
 DB_CONN_MAX_AGE = int(os.getenv("DB_CONN_MAX_AGE", "60"))
+SQLITE_TIMEOUT_SECONDS = int(os.getenv("SQLITE_TIMEOUT_SECONDS", "20"))
 
 if DB_ENGINE == "sqlite3":
     DATABASES = {
@@ -125,6 +127,9 @@ if DB_ENGINE == "sqlite3":
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
             "CONN_MAX_AGE": 0,
+            "OPTIONS": {
+                "timeout": SQLITE_TIMEOUT_SECONDS,
+            },
         }
     }
 elif DB_ENGINE == "mysql":

@@ -55,6 +55,24 @@ def _get_instructor_accessible_program(user, program_id: int) -> Optional[Progra
     return assignment.program if assignment else None
 
 
+def _get_primary_instructor_payload(program: Program) -> Optional[dict]:
+    """Return a stable instructor payload for student messaging shortcuts."""
+    assignment = (
+        InstructorAssignment.objects.filter(program=program)
+        .select_related("instructor")
+        .order_by("-is_primary", "assigned_at", "id")
+        .first()
+    )
+    instructor = assignment.instructor if assignment else program.instructors.first()
+    if not instructor:
+        return None
+    return {
+        "id": instructor.id,
+        "name": instructor.get_full_name() or instructor.email,
+        "email": instructor.email,
+    }
+
+
 def _normalize_assignment_mode(props: dict) -> str:
     if not isinstance(props, dict):
         return "submission_only"
@@ -427,9 +445,7 @@ def _build_quiz_results_for_node(node: CurriculumNode, enrollment) -> Optional[d
                 "pointsEarned": a.points_earned,
                 "pointsPossible": a.points_possible,
                 "passed": a.passed,
-                "submittedAt": (
-                    a.submitted_at.isoformat() if a.submitted_at else None
-                ),
+                "submittedAt": (a.submitted_at.isoformat() if a.submitted_at else None),
             }
             for a in attempts
         ],
@@ -567,12 +583,60 @@ def program_list(request):
                 "completed_at",
             )
         )
-        program_counts = _get_completable_node_counts(
-            [enrollment.program_id for enrollment in enrollments]
+        program_ids = [enrollment.program_id for enrollment in enrollments]
+        program_counts = _get_completable_node_counts(program_ids)
+
+        from collections import defaultdict
+        from apps.curriculum.models import CurriculumNode
+
+        stats_by_program_id = defaultdict(
+            lambda: {"lesson_count": 0, "duration_minutes": 0}
         )
+        assessment_types = {"quiz", "assignment", "practicum", "peer_review"}
+
+        if program_ids:
+            leaf_nodes = CurriculumNode.objects.filter(
+                program_id__in=program_ids,
+                is_published=True,
+                children__isnull=True,
+            ).values_list("program_id", "node_type", "properties")
+
+            for program_id, node_type, properties in leaf_nodes:
+                node_type_norm = (node_type or "").strip().lower()
+                props = properties if isinstance(properties, dict) else {}
+                lesson_type_norm = str(props.get("lesson_type") or "").strip().lower()
+                if (
+                    node_type_norm in assessment_types
+                    or lesson_type_norm in assessment_types
+                ):
+                    continue
+                stats_by_program_id[program_id]["lesson_count"] += 1
+                minutes = props.get("duration_minutes", 0)
+                try:
+                    minutes_int = int(minutes) if minutes is not None else 0
+                except (TypeError, ValueError):
+                    minutes_int = 0
+                stats_by_program_id[program_id]["duration_minutes"] += max(
+                    0, minutes_int
+                )
+
         completion_counts = _get_completion_counts(
             [enrollment.id for enrollment in enrollments]
         )
+        primary_assignments = (
+            InstructorAssignment.objects.filter(program_id__in=program_ids)
+            .select_related("instructor")
+            .order_by("program_id", "-is_primary", "assigned_at", "id")
+        )
+        instructor_by_program = {}
+        for assignment in primary_assignments:
+            if assignment.program_id not in instructor_by_program:
+                instructor = assignment.instructor
+                instructor_by_program[assignment.program_id] = {
+                    "id": instructor.id,
+                    "name": instructor.get_full_name() or instructor.email,
+                    "email": instructor.email,
+                }
 
         for enrollment in enrollments:
             total_nodes = program_counts.get(enrollment.program_id, 0)
@@ -580,8 +644,15 @@ def program_list(request):
             progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
             effective_status = _reconcile_enrollment_status(enrollment, progress)
 
-            if status_filter and effective_status != status_filter:
-                continue
+            stats = stats_by_program_id.get(
+                enrollment.program.id, {"lesson_count": 0, "duration_minutes": 0}
+            )
+            duration_hours = (
+                round(stats["duration_minutes"] / 60.0, 1)
+                if stats["duration_minutes"]
+                else 0
+            )
+            lesson_count = stats["lesson_count"]
 
             enrollment_data.append(
                 {
@@ -599,8 +670,10 @@ def program_list(request):
                         else None
                     ),
                     "category": enrollment.program.category or "",
-                    "durationHours": enrollment.program.duration_hours or 0,
+                    "durationHours": duration_hours,
+                    "lectureCount": lesson_count,
                     "badgeType": enrollment.program.badge_type,
+                    "instructor": instructor_by_program.get(enrollment.program_id),
                 }
             )
 
@@ -706,6 +779,7 @@ def program_view(request, pk: int):
 
     total_nodes = _get_completable_nodes_count(program)
     progress = (len(completions) / total_nodes * 100) if total_nodes > 0 else 0
+    primary_instructor = _get_primary_instructor_payload(program)
 
     return render(
         request,
@@ -716,6 +790,7 @@ def program_view(request, pk: int):
                 "id": program.id,
                 "name": program.name,
             },
+            "instructor": primary_instructor,
             "enrollment": {
                 "id": enrollment.id,
                 "progressPercent": round(progress, 1),
@@ -775,6 +850,7 @@ def _render_course_player(request, enrollment, node, completions, status_map):
     # Calculate progress
     total_nodes = _get_completable_nodes_count(program)
     progress = (len(completions) / total_nodes * 100) if total_nodes > 0 else 0
+    primary_instructor = _get_primary_instructor_payload(program)
 
     return render(
         request,
@@ -793,6 +869,7 @@ def _render_course_player(request, enrollment, node, completions, status_map):
                 "id": program.id,
                 "name": program.name,
             },
+            "instructor": primary_instructor,
             "enrollment": {
                 "id": enrollment.id,
                 "progressPercent": round(progress, 1),
@@ -1132,14 +1209,11 @@ def session_discussion_post(request, pk: int, node_id: int):
         )
         return redirect("progression:student.programs")
 
-    node = (
-        CurriculumNode.objects.filter(
-            id=node_id,
-            program=enrollment.program,
-            is_published=True,
-        )
-        .first()
-    )
+    node = CurriculumNode.objects.filter(
+        id=node_id,
+        program=enrollment.program,
+        is_published=True,
+    ).first()
     if not node:
         messages.error(
             request,
@@ -1227,14 +1301,11 @@ def session_note_create(request, pk: int, node_id: int):
         )
         return redirect("progression:student.programs")
 
-    node = (
-        CurriculumNode.objects.filter(
-            id=node_id,
-            program=enrollment.program,
-            is_published=True,
-        )
-        .first()
-    )
+    node = CurriculumNode.objects.filter(
+        id=node_id,
+        program=enrollment.program,
+        is_published=True,
+    ).first()
     if not node:
         messages.error(
             request,
@@ -1280,14 +1351,11 @@ def session_note_delete(request, pk: int, node_id: int, note_id: int):
         )
         return redirect("progression:student.programs")
 
-    note = (
-        StudentNote.objects.filter(
-            id=note_id,
-            enrollment=enrollment,
-            node_id=node_id,
-        )
-        .first()
-    )
+    note = StudentNote.objects.filter(
+        id=note_id,
+        enrollment=enrollment,
+        node_id=node_id,
+    ).first()
     if not note:
         messages.error(request, "That note could not be found or was already removed.")
         return redirect("progression:student.session", pk=pk, node_id=node_id)
@@ -1327,6 +1395,24 @@ def _get_completable_node_counts(program_ids: list[int]) -> dict[int, int]:
     )
 
 
+def _get_lesson_counts(program_ids: list[int]) -> dict[int, int]:
+    """Return leaf-node counts excluding quizzes and assignments."""
+    if not program_ids:
+        return {}
+    return dict(
+        CurriculumNode.objects.filter(
+            program_id__in=program_ids,
+            is_published=True,
+            children__isnull=True,
+        )
+        .exclude(properties__has_key="quiz_id")
+        .exclude(properties__has_key="assignment_id")
+        .values("program_id")
+        .annotate(count=Count("id"))
+        .values_list("program_id", "count")
+    )
+
+
 def _get_completion_counts(enrollment_ids: list[int]) -> dict[int, int]:
     """Return completion counts keyed by enrollment ID."""
     if not enrollment_ids:
@@ -1351,7 +1437,9 @@ def _reconcile_enrollment_status(enrollment: Enrollment, progress: float) -> str
     target_status = "completed" if progress >= 100 else "active"
     if enrollment.status != target_status:
         enrollment.status = target_status
-        enrollment.completed_at = timezone.now() if target_status == "completed" else None
+        enrollment.completed_at = (
+            timezone.now() if target_status == "completed" else None
+        )
         enrollment.save(update_fields=["status", "completed_at", "updated_at"])
 
     return target_status
@@ -1620,111 +1708,26 @@ def _get_sibling_navigation(node: CurriculumNode, enrollment_id: int) -> dict:
 
 
 @login_required
-def assessment_results(request):
-    """
-    View assessment results with filtering and pagination.
-    Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6
-    """
-    user = request.user
-    program_filter = request.GET.get("program", "")
-    status_filter = request.GET.get("status", "")
-    try:
-        page = max(int(request.GET.get("page", 1)), 1)
-    except (TypeError, ValueError):
-        page = 1
-    per_page = 20
-    include_results = should_render_inertia_prop(request, "results")
-    include_pagination = should_render_inertia_prop(request, "pagination")
-    include_filters = should_render_inertia_prop(request, "filters")
-    include_program_options = should_render_inertia_prop(request, "programOptions")
-    include_status_options = should_render_inertia_prop(request, "statusOptions")
+def student_assignments(request):
+    from apps.core.views import _get_student_dashboard_data
 
-    user_enrollments = Enrollment.objects.filter(user=user).select_related("program")
-    enrollment_ids = list(user_enrollments.values_list("id", flat=True))
-
-    results = AssessmentResult.objects.filter(
-        enrollment_id__in=enrollment_ids,
-        is_published=True,
-    ).select_related("enrollment__program", "node")
-
-    # Apply filters
-    if program_filter:
-        results = results.filter(enrollment__program_id=program_filter)
-
-    if status_filter:
-        # Filter by status in result_data JSON
-        results = results.filter(result_data__status=status_filter)
-
-    results = results.order_by("-published_at", "-created_at")
-
-    total_count = results.count()
-    total_pages = (total_count + per_page - 1) // per_page
-    offset = (page - 1) * per_page
-    results = results[offset : offset + per_page]
-
-    results_data = []
-    if include_results:
-        for result in results:
-            result_data = result.result_data or {}
-            results_data.append(
-                {
-                    "id": result.id,
-                    "nodeTitle": result.node.title,
-                    "nodeType": result.node.node_type,
-                    "programName": result.enrollment.program.name,
-                    "programId": result.enrollment.program.id,
-                    "total": result_data.get("total"),
-                    "status": result_data.get("status"),
-                    "letterGrade": result_data.get("letter_grade"),
-                    "components": result_data.get("components", {}),
-                    "lecturerComments": result.lecturer_comments,
-                    "publishedAt": (
-                        result.published_at.isoformat()
-                        if result.published_at
-                        else None
-                    ),
-                }
-            )
-
-    props = {}
-    if include_results:
-        props["results"] = results_data
-    if include_pagination:
-        props["pagination"] = {
-            "page": page,
-            "perPage": per_page,
-            "totalCount": total_count,
-            "totalPages": total_pages,
-            "hasNext": page < total_pages,
-            "hasPrev": page > 1,
-        }
-    if include_filters:
-        props["filters"] = {
-            "program": program_filter,
-            "status": status_filter,
-        }
-    if include_program_options:
-        program_options = [{"value": "", "label": "All Programs"}]
-        for enrollment in user_enrollments:
-            program_options.append(
-                {
-                    "value": str(enrollment.program.id),
-                    "label": enrollment.program.name,
-                }
-            )
-        props["programOptions"] = program_options
-    if include_status_options:
-        props["statusOptions"] = [
-            {"value": "", "label": "All Statuses"},
-            {"value": "Pass", "label": "Pass"},
-            {"value": "Fail", "label": "Fail"},
-            {"value": "Competent", "label": "Competent"},
-            {"value": "Not Yet Competent", "label": "Not Yet Competent"},
-        ]
+    dashboard_data = _get_student_dashboard_data(request.user)
     return render(
         request,
-        "Student/Assessments",
-        props,
+        "Dashboard/Assignments",
+        {"assignments": dashboard_data.get("assignments", [])},
+    )
+
+
+@login_required
+def student_quizzes(request):
+    from apps.core.views import _get_student_dashboard_data
+
+    dashboard_data = _get_student_dashboard_data(request.user)
+    return render(
+        request,
+        "Dashboard/Quizzes",
+        {"quizzes": dashboard_data.get("quizzes", [])},
     )
 
 
@@ -1786,7 +1789,9 @@ def practicum_history(request):
     submissions_data = []
     if include_submissions:
         for submission in submissions:
-            latest_review = submission.ordered_reviews[0] if submission.ordered_reviews else None
+            latest_review = (
+                submission.ordered_reviews[0] if submission.ordered_reviews else None
+            )
             review_data = None
             if latest_review:
                 review_data = {
@@ -2094,16 +2099,19 @@ def profile_settings(request):
             elif len(new_password) < 8:
                 errors["new_password"] = "Password must be at least 8 characters"
             elif new_password == current_password:
-                errors["new_password"] = "New password cannot be the same as the current password"
+                errors["new_password"] = (
+                    "New password cannot be the same as the current password"
+                )
             elif new_password != confirm_password:
                 errors["confirm_password"] = "Passwords do not match"
 
             if not errors:
                 user.set_password(new_password)
                 user.save()
-                
+
                 # Keep the user logged in after password change (Industry Standard)
                 from django.contrib.auth import update_session_auth_hash
+
                 update_session_auth_hash(request, user)
 
                 return render(
@@ -2225,7 +2233,46 @@ def instructor_programs(request):
     Requirements: FR-2.1, FR-2.2
     """
     user = request.user
-    programs = _get_instructor_programs(user)
+    programs = list(_get_instructor_programs(user))
+    program_ids = [p.id for p in programs]
+
+    # Calculate lesson stats (excluding assessments) from CurriculumNode
+    from collections import defaultdict
+    from apps.curriculum.models import CurriculumNode
+
+    stats_by_program_id = defaultdict(
+        lambda: {"lesson_count": 0, "duration_minutes": 0}
+    )
+    assessment_types = {"quiz", "assignment", "practicum", "peer_review"}
+
+    if program_ids:
+        leaf_nodes = CurriculumNode.objects.filter(
+            program_id__in=program_ids,
+            is_published=True,
+            children__isnull=True,
+        ).values_list("program_id", "node_type", "properties")
+
+        for program_id, node_type, properties in leaf_nodes:
+            node_type_norm = (node_type or "").strip().lower()
+            props = properties if isinstance(properties, dict) else {}
+            lesson_type_norm = str(props.get("lesson_type") or "").strip().lower()
+            if (
+                node_type_norm in assessment_types
+                or lesson_type_norm in assessment_types
+            ):
+                continue
+            stats_by_program_id[program_id]["lesson_count"] += 1
+            minutes = props.get("duration_minutes", 0)
+            try:
+                minutes_int = int(minutes) if minutes is not None else 0
+            except (TypeError, ValueError):
+                minutes_int = 0
+            stats_by_program_id[program_id]["duration_minutes"] += max(0, minutes_int)
+
+    def _minutes_to_hours(total_minutes: int) -> float:
+        if not total_minutes:
+            return 0
+        return round(total_minutes / 60.0, 1)
 
     programs_data = []
     for program in programs:
@@ -2242,6 +2289,10 @@ def instructor_programs(request):
         # Get price from custom_pricing
         price_data = program.custom_pricing or {}
 
+        # Get calculated stats
+        stats = stats_by_program_id[program.id]
+        duration_hours = _minutes_to_hours(stats["duration_minutes"])
+
         programs_data.append(
             {
                 "id": program.id,
@@ -2257,6 +2308,8 @@ def instructor_programs(request):
                 "thumbnail": thumbnail_url,
                 "category": program.category or "",
                 "isPublished": program.is_published,
+                "lectureCount": stats["lesson_count"],
+                "durationHours": duration_hours,
                 "price": price_data.get("price", 0),
                 "originalPrice": price_data.get("original_price"),
                 "rating": 4.5,  # TODO: Calculate from reviews
@@ -2692,7 +2745,9 @@ def _resolve_gradebook_columns(program: Program) -> tuple[list[dict], list[dict]
         quiz_id = _safe_int(props.get("quiz_id"))
         assignment_id = _safe_int(props.get("assignment_id"))
 
-        if (is_quiz or (is_assignment and _assignment_requires_questions(props))) and quiz_id:
+        if (
+            is_quiz or (is_assignment and _assignment_requires_questions(props))
+        ) and quiz_id:
             if quiz_id not in quiz_ids:
                 quiz_ids.append(quiz_id)
 
@@ -2761,14 +2816,11 @@ def _build_gradebook_attempt_maps(
 
     official_quiz_map: dict[tuple[int, int], QuizAttempt] = {}
     if enrollment_ids and quiz_ids:
-        quiz_attempts = (
-            QuizAttempt.objects.filter(
-                enrollment_id__in=enrollment_ids,
-                quiz_id__in=quiz_ids,
-                submitted_at__isnull=False,
-            )
-            .order_by("enrollment_id", "quiz_id", "-score", "-attempt_number")
-        )
+        quiz_attempts = QuizAttempt.objects.filter(
+            enrollment_id__in=enrollment_ids,
+            quiz_id__in=quiz_ids,
+            submitted_at__isnull=False,
+        ).order_by("enrollment_id", "quiz_id", "-score", "-attempt_number")
         for attempt in quiz_attempts:
             key = (attempt.enrollment_id, attempt.quiz_id)
             official_quiz_map.setdefault(key, attempt)
@@ -2776,26 +2828,20 @@ def _build_gradebook_attempt_maps(
     official_assignment_map: dict[tuple[int, int], AssignmentSubmission] = {}
     latest_assignment_map: dict[tuple[int, int], AssignmentSubmission] = {}
     if enrollment_ids and assignment_ids:
-        official_assignment_attempts = (
-            AssignmentSubmission.objects.filter(
-                enrollment_id__in=enrollment_ids,
-                assignment_id__in=assignment_ids,
-                status__in=["graded", "returned"],
-                score__isnull=False,
-            )
-            .order_by("enrollment_id", "assignment_id", "-score", "-attempt_number")
-        )
+        official_assignment_attempts = AssignmentSubmission.objects.filter(
+            enrollment_id__in=enrollment_ids,
+            assignment_id__in=assignment_ids,
+            status__in=["graded", "returned"],
+            score__isnull=False,
+        ).order_by("enrollment_id", "assignment_id", "-score", "-attempt_number")
         for attempt in official_assignment_attempts:
             key = (attempt.enrollment_id, attempt.assignment_id)
             official_assignment_map.setdefault(key, attempt)
 
-        latest_assignment_attempts = (
-            AssignmentSubmission.objects.filter(
-                enrollment_id__in=enrollment_ids,
-                assignment_id__in=assignment_ids,
-            )
-            .order_by("enrollment_id", "assignment_id", "-attempt_number")
-        )
+        latest_assignment_attempts = AssignmentSubmission.objects.filter(
+            enrollment_id__in=enrollment_ids,
+            assignment_id__in=assignment_ids,
+        ).order_by("enrollment_id", "assignment_id", "-attempt_number")
         for attempt in latest_assignment_attempts:
             key = (attempt.enrollment_id, attempt.assignment_id)
             latest_assignment_map.setdefault(key, attempt)
@@ -2941,9 +2987,7 @@ def _match_gradebook_entries(entries: list[dict], aliases: set[str]) -> list[dic
 
 def _average_gradebook_scores(entries: list[dict]) -> Optional[float]:
     numeric_scores = [
-        float(entry["score"])
-        for entry in entries
-        if entry.get("score") is not None
+        float(entry["score"]) for entry in entries if entry.get("score") is not None
     ]
     if not numeric_scores:
         return None
@@ -3017,9 +3061,7 @@ def _calculate_competency_like_total(
     component_scores: dict,
     entries: list[dict],
 ) -> Optional[float]:
-    flags = [
-        entry["passed"] for entry in entries if entry.get("passed") is not None
-    ]
+    flags = [entry["passed"] for entry in entries if entry.get("passed") is not None]
 
     if not flags:
         for value in component_scores.values():
@@ -3122,7 +3164,9 @@ def _calculate_gradebook_totals(
                 numeric_score = float(component_score)
             except (TypeError, ValueError):
                 continue
-            weighted_total += numeric_score * normalize_weight(component.get("weight", 0))
+            weighted_total += numeric_score * normalize_weight(
+                component.get("weight", 0)
+            )
             seen_component = True
         if seen_component:
             total = weighted_total
@@ -3149,7 +3193,9 @@ def _calculate_gradebook_totals(
     }
 
 
-def _build_program_gradebook_payload(program: Program, enrollments, grading_config: dict):
+def _build_program_gradebook_payload(
+    program: Program, enrollments, grading_config: dict
+):
     from apps.certifications.models import CertificateEligibility
 
     quizzes, assignments = _resolve_gradebook_columns(program)
@@ -3207,8 +3253,12 @@ def _build_program_gradebook_payload(program: Program, enrollments, grading_conf
 
         assignment_scores = []
         for assignment in assignments:
-            official_attempt = official_assignment_map.get((enrollment.id, assignment["id"]))
-            latest_attempt = latest_assignment_map.get((enrollment.id, assignment["id"]))
+            official_attempt = official_assignment_map.get(
+                (enrollment.id, assignment["id"])
+            )
+            latest_attempt = latest_assignment_map.get(
+                (enrollment.id, assignment["id"])
+            )
 
             if official_attempt is not None:
                 assignment_scores.append(
@@ -3273,7 +3323,9 @@ def _build_program_gradebook_payload(program: Program, enrollments, grading_conf
                 "status": calculated.get("status"),
                 "letterGrade": calculated.get("letter_grade"),
                 "grades": calculated,
-                "isPublished": existing_result.is_published if existing_result else False,
+                "isPublished": existing_result.is_published
+                if existing_result
+                else False,
                 "certificateQueueStatus": (
                     eligibility.status if eligibility is not None else "ineligible"
                 ),
@@ -3320,7 +3372,9 @@ def instructor_gradebook(request, pk: int):
         .order_by("user__last_name", "user__first_name")
     )
 
-    payload = _build_program_gradebook_payload(program, list(enrollments), grading_config)
+    payload = _build_program_gradebook_payload(
+        program, list(enrollments), grading_config
+    )
 
     return render(
         request,
@@ -3354,8 +3408,7 @@ def instructor_gradebook_save(request, pk: int):
 
     data = _get_post_data(request)
     requested_ids = {
-        _safe_int(enrollment_id)
-        for enrollment_id in (data.get("grades") or {}).keys()
+        _safe_int(enrollment_id) for enrollment_id in (data.get("grades") or {}).keys()
     }
     requested_ids.discard(None)
 
@@ -3692,7 +3745,9 @@ def instructor_gradebook_student(request, pk: int, enrollment_id: int):
             assignment_id__in=assignment_ids,
         ).order_by("assignment_id", "-is_official", "-score", "-attempt_number")
         for submission in submission_qs:
-            submissions_by_assignment_id.setdefault(submission.assignment_id, submission)
+            submissions_by_assignment_id.setdefault(
+                submission.assignment_id, submission
+            )
 
         for node_id, assignment_id in assignment_submission_nodes.items():
             submission = submissions_by_assignment_id.get(assignment_id)
@@ -4122,8 +4177,7 @@ def admin_enrollments(request):
                 "status",
                 "enrolled_at",
                 "completed_at",
-            )
-            .order_by("-enrolled_at")[(page - 1) * per_page : page * per_page]
+            ).order_by("-enrolled_at")[(page - 1) * per_page : page * per_page]
         )
         program_counts = _get_completable_node_counts(
             [enrollment.program_id for enrollment in enrollments]
@@ -4476,10 +4530,14 @@ def instructor_enrollment_requests(request, pk: int):
     if user.is_staff:
         program = get_object_or_404(Program, pk=pk)
     else:
-        assignment = InstructorAssignment.objects.filter(
-            instructor=user,
-            program_id=pk,
-        ).select_related("program").first()
+        assignment = (
+            InstructorAssignment.objects.filter(
+                instructor=user,
+                program_id=pk,
+            )
+            .select_related("program")
+            .first()
+        )
         if not assignment:
             messages.error(
                 request,
@@ -4559,10 +4617,13 @@ def instructor_enrollment_request_approve(request, pk: int, request_id: int):
     user = request.user
 
     # Verify access (assigned instructor or staff)
-    has_access = user.is_staff or InstructorAssignment.objects.filter(
-        instructor=user,
-        program_id=pk,
-    ).exists()
+    has_access = (
+        user.is_staff
+        or InstructorAssignment.objects.filter(
+            instructor=user,
+            program_id=pk,
+        ).exists()
+    )
     if not has_access:
         messages.error(
             request,
@@ -4613,10 +4674,13 @@ def instructor_enrollment_request_reject(request, pk: int, request_id: int):
     user = request.user
 
     # Verify access (assigned instructor or staff)
-    has_access = user.is_staff or InstructorAssignment.objects.filter(
-        instructor=user,
-        program_id=pk,
-    ).exists()
+    has_access = (
+        user.is_staff
+        or InstructorAssignment.objects.filter(
+            instructor=user,
+            program_id=pk,
+        ).exists()
+    )
     if not has_access:
         messages.error(
             request,

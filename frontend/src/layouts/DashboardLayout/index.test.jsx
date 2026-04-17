@@ -34,6 +34,10 @@ vi.mock("@/components/NotificationPanel", () => ({
     default: () => <div data-testid="notification-panel" />,
 }));
 
+vi.mock("@/components/MessageUnreadBadge", () => ({
+    default: () => <div data-testid="message-unread-badge" />,
+}));
+
 vi.mock("@/components/common/PlatformLogo", () => ({
     default: () => <div data-testid="platform-logo" />,
 }));

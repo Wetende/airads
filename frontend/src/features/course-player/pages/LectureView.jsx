@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import ClassroomLayout from '../layouts/ClassroomLayout';
 import CourseSidebar from '../components/Navigation/CourseSidebar';
 import StudyPanel from '../components/Tools/StudyPanel';
 import Whiteboard from '../components/Stage/Whiteboard';
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 
 const LectureView = ({ 
     program, 
@@ -15,6 +15,7 @@ const LectureView = ({
     prevNode, 
     nextNode, 
     isCompleted,
+    instructor = null,
     discussions = [],
     notes = []
 }) => {
@@ -64,6 +65,19 @@ const LectureView = ({
             onToggleDiscussions={() => setIsDiscussionsOpen(!isDiscussionsOpen)}
         >
             <Head title={node?.title || program?.name || 'Course Player'} />
+
+            {instructor?.id && (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1.5 }}>
+                    <Button
+                        component={Link}
+                        href={`/messages/new/?recipient_id=${instructor.id}`}
+                        variant="outlined"
+                        size="small"
+                    >
+                        Message Instructor
+                    </Button>
+                </Box>
+            )}
             
             {/* Main Stage */}
             {node ? (

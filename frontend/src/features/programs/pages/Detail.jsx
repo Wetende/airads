@@ -335,6 +335,9 @@ export default function Detail({ program, students, curriculum }) {
                                                         <TableCell>
                                                             Enrolled
                                                         </TableCell>
+                                                        <TableCell align="right">
+                                                            Actions
+                                                        </TableCell>
                                                     </TableRow>
                                                 </TableHead>
                                                 <TableBody>
@@ -368,6 +371,16 @@ export default function Detail({ program, students, curriculum }) {
                                                                 {new Date(
                                                                     student.enrolledAt,
                                                                 ).toLocaleDateString()}
+                                                            </TableCell>
+                                                            <TableCell align="right">
+                                                                <Button
+                                                                    component={Link}
+                                                                    href={`/messages/new/?recipient_id=${student.userId || student.id}`}
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                >
+                                                                    Message
+                                                                </Button>
                                                             </TableCell>
                                                         </TableRow>
                                                     ))}

@@ -41,7 +41,9 @@ logger = logging.getLogger(__name__)
 PAYSTACK_INITIALIZE_URL = "https://api.paystack.co/transaction/initialize"
 PAYSTACK_VERIFY_URL = "https://api.paystack.co/transaction/verify/{reference}"
 PAYSTACK_REFUND_URL = "https://api.paystack.co/refund"
-PAYSTACK_REFUND_RETRY_URL = "https://api.paystack.co/refund/retry_with_customer_details/{refund_id}"
+PAYSTACK_REFUND_RETRY_URL = (
+    "https://api.paystack.co/refund/retry_with_customer_details/{refund_id}"
+)
 PAYSTACK_TRANSFER_RECIPIENT_URL = "https://api.paystack.co/transferrecipient"
 PAYSTACK_TRANSFER_URL = "https://api.paystack.co/transfer"
 PAYSTACK_CHARGE_URL = "https://api.paystack.co/charge"
@@ -153,7 +155,9 @@ def serialize_wishlist_item(item: WishlistItem) -> dict:
             "id": item.program_id,
             "name": item.program.name if item.program_id else "",
             "code": item.program.code if item.program_id else "",
-            "thumbnail": item.program.thumbnail.url if item.program_id and item.program.thumbnail else None,
+            "thumbnail": item.program.thumbnail.url
+            if item.program_id and item.program.thumbnail
+            else None,
         },
         "amountMinor": amount_minor,
         "currency": currency,
@@ -180,9 +184,7 @@ def serialize_order_item(item: OrderItem) -> dict:
 
 def serialize_refund(refund: Refund, *, include_items: bool = True) -> dict:
     items = list(
-        refund.items.select_related("order_item").all()
-        if include_items
-        else []
+        refund.items.select_related("order_item").all() if include_items else []
     )
     return {
         "id": refund.id,
@@ -211,13 +213,13 @@ def serialize_refund(refund: Refund, *, include_items: bool = True) -> dict:
     }
 
 
-def serialize_order(order: Order, *, include_items: bool = True, include_refunds: bool = True) -> dict:
-    items = list(
-        order.items.select_related("program").all()
-        if include_items
-        else []
+def serialize_order(
+    order: Order, *, include_items: bool = True, include_refunds: bool = True
+) -> dict:
+    items = list(order.items.select_related("program").all() if include_items else [])
+    refunds = (
+        list(order.refunds.prefetch_related("items").all()) if include_refunds else []
     )
-    refunds = list(order.refunds.prefetch_related("items").all()) if include_refunds else []
     primary_item = items[0] if items else None
     return {
         "id": order.id,
@@ -314,43 +316,67 @@ class CartService:
         return Cart.objects.create(user=user, status=Cart.STATUS_ACTIVE)
 
     @staticmethod
-    def _validate_program_can_be_purchased(user: User, program: Program) -> tuple[int, str]:
+    def _validate_program_can_be_purchased(
+        user: User, program: Program
+    ) -> tuple[int, str]:
         if not program.is_published:
-            raise CommerceError("Program is not available for purchase.", code="program_unpublished", status_code=404)
+            raise CommerceError(
+                "Program is not available for purchase.",
+                code="program_unpublished",
+                status_code=404,
+            )
 
         amount_minor, currency = program_price_minor(program)
         if amount_minor <= 0:
-            raise CommerceError("Free programs cannot be added to cart.", code="program_free")
+            raise CommerceError(
+                "Free programs cannot be added to cart.", code="program_free"
+            )
 
-        if ProgramAccessGrant.objects.filter(
-            user=user,
-            program=program,
-            status=ProgramAccessGrant.STATUS_ACTIVE,
-        ).filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())).exists():
-            raise CommerceError("You already have paid access to this program.", code="already_enrolled")
+        if (
+            ProgramAccessGrant.objects.filter(
+                user=user,
+                program=program,
+                status=ProgramAccessGrant.STATUS_ACTIVE,
+            )
+            .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+            .exists()
+        ):
+            raise CommerceError(
+                "You already have paid access to this program.", code="already_enrolled"
+            )
 
         if Enrollment.objects.filter(
             user=user,
             program=program,
             status__in=["active", "completed"],
         ).exists():
-            raise CommerceError("You are already enrolled in this program.", code="already_enrolled")
+            raise CommerceError(
+                "You are already enrolled in this program.", code="already_enrolled"
+            )
 
         return amount_minor, currency
 
     @staticmethod
     def add_program(user: User, program: Program) -> Cart:
-        amount_minor, currency = CartService._validate_program_can_be_purchased(user, program)
+        amount_minor, currency = CartService._validate_program_can_be_purchased(
+            user, program
+        )
         with transaction.atomic():
-            cart = Cart.objects.select_for_update().filter(
-                user=user,
-                status=Cart.STATUS_ACTIVE,
-            ).first()
+            cart = (
+                Cart.objects.select_for_update()
+                .filter(
+                    user=user,
+                    status=Cart.STATUS_ACTIVE,
+                )
+                .first()
+            )
             if not cart:
                 cart = Cart.objects.create(user=user, status=Cart.STATUS_ACTIVE)
 
             if cart.items.filter(program=program).exists():
-                raise CommerceError("Program is already in your active cart.", code="program_in_cart")
+                raise CommerceError(
+                    "Program is already in your active cart.", code="program_in_cart"
+                )
 
             if cart.currency and cart.currency != currency:
                 raise CommerceError(
@@ -374,16 +400,26 @@ class CartService:
     @staticmethod
     def remove_program(user: User, program_id: int) -> Cart:
         with transaction.atomic():
-            cart = Cart.objects.select_for_update().filter(
-                user=user,
-                status=Cart.STATUS_ACTIVE,
-            ).first()
+            cart = (
+                Cart.objects.select_for_update()
+                .filter(
+                    user=user,
+                    status=Cart.STATUS_ACTIVE,
+                )
+                .first()
+            )
             if not cart:
-                raise CommerceError("Active cart not found.", code="cart_not_found", status_code=404)
+                raise CommerceError(
+                    "Active cart not found.", code="cart_not_found", status_code=404
+                )
 
             deleted, _ = cart.items.filter(program_id=program_id).delete()
             if deleted == 0:
-                raise CommerceError("Program is not in your cart.", code="cart_item_not_found", status_code=404)
+                raise CommerceError(
+                    "Program is not in your cart.",
+                    code="cart_item_not_found",
+                    status_code=404,
+                )
 
             if not cart.items.exists():
                 cart.currency = ""
@@ -394,10 +430,14 @@ class CartService:
     @staticmethod
     def clear_cart(user: User) -> Cart:
         with transaction.atomic():
-            cart = Cart.objects.select_for_update().filter(
-                user=user,
-                status=Cart.STATUS_ACTIVE,
-            ).first()
+            cart = (
+                Cart.objects.select_for_update()
+                .filter(
+                    user=user,
+                    status=Cart.STATUS_ACTIVE,
+                )
+                .first()
+            )
             if not cart:
                 return CartService.get_or_create_active_cart(user)
 
@@ -420,15 +460,77 @@ class WishlistService:
     @staticmethod
     def serialize_list(user: User) -> dict:
         items = WishlistService.list_items(user)
+        program_ids = [item.program_id for item in items if item.program_id]
+
+        from collections import defaultdict
+        from apps.curriculum.models import CurriculumNode
+
+        stats_by_program_id = defaultdict(
+            lambda: {"lesson_count": 0, "duration_minutes": 0}
+        )
+        assessment_types = {"quiz", "assignment", "practicum", "peer_review"}
+
+        if program_ids:
+            leaf_nodes = CurriculumNode.objects.filter(
+                program_id__in=program_ids,
+                is_published=True,
+                children__isnull=True,
+            ).values_list("program_id", "node_type", "properties")
+
+            for program_id, node_type, properties in leaf_nodes:
+                node_type_norm = (node_type or "").strip().lower()
+                props = properties if isinstance(properties, dict) else {}
+                lesson_type_norm = str(props.get("lesson_type") or "").strip().lower()
+                if (
+                    node_type_norm in assessment_types
+                    or lesson_type_norm in assessment_types
+                ):
+                    continue
+                stats_by_program_id[program_id]["lesson_count"] += 1
+                minutes = props.get("duration_minutes", 0)
+                try:
+                    minutes_int = int(minutes) if minutes is not None else 0
+                except (TypeError, ValueError):
+                    minutes_int = 0
+                stats_by_program_id[program_id]["duration_minutes"] += max(
+                    0, minutes_int
+                )
+
+        def _serialize(item):
+            base = serialize_wishlist_item(item)
+            if item.program:
+                stats = stats_by_program_id[item.program_id]
+                duration_hours = (
+                    round(stats["duration_minutes"] / 60.0, 1)
+                    if stats["duration_minutes"]
+                    else 0
+                )
+                price_data = item.program.custom_pricing or {}
+                base["program"].update(
+                    {
+                        "description": item.program.description or "",
+                        "category": item.program.category or "",
+                        "badge_type": item.program.badge_type,
+                        "lecture_count": stats["lesson_count"],
+                        "duration_hours": duration_hours,
+                        "rating": 4.5,
+                        "price": price_data.get("price", 0),
+                        "original_price": price_data.get("original_price"),
+                    }
+                )
+            return base
+
         return {
-            "items": [serialize_wishlist_item(item) for item in items],
+            "items": [_serialize(item) for item in items],
             "itemCount": len(items),
         }
 
     @staticmethod
     def add_program(user: User, program: Program) -> tuple[WishlistItem, bool]:
         if not program.is_published:
-            raise CommerceError("Program is not available.", code="program_unpublished", status_code=404)
+            raise CommerceError(
+                "Program is not available.", code="program_unpublished", status_code=404
+            )
         item, created = WishlistItem.objects.get_or_create(
             user=user,
             program=program,
@@ -437,7 +539,9 @@ class WishlistService:
 
     @staticmethod
     def remove_program(user: User, program_id: int) -> bool:
-        deleted, _ = WishlistItem.objects.filter(user=user, program_id=program_id).delete()
+        deleted, _ = WishlistItem.objects.filter(
+            user=user, program_id=program_id
+        ).delete()
         return bool(deleted)
 
     @staticmethod
@@ -458,9 +562,13 @@ class WishlistService:
         if not normalized_ids:
             return 0
 
-        programs = list(Program.objects.filter(id__in=normalized_ids, is_published=True))
+        programs = list(
+            Program.objects.filter(id__in=normalized_ids, is_published=True)
+        )
         existing_ids = set(
-            WishlistItem.objects.filter(user=user, program_id__in=[p.id for p in programs]).values_list("program_id", flat=True)
+            WishlistItem.objects.filter(
+                user=user, program_id__in=[p.id for p in programs]
+            ).values_list("program_id", flat=True)
         )
         to_create = [
             WishlistItem(user=user, program=program)
@@ -480,7 +588,9 @@ class AccessGrantService:
         return paid_at + timedelta(days=int(program.access_duration_days))
 
     @staticmethod
-    def grant_for_order_item(order_item: OrderItem, *, paid_at=None) -> ProgramAccessGrant | None:
+    def grant_for_order_item(
+        order_item: OrderItem, *, paid_at=None
+    ) -> ProgramAccessGrant | None:
         order = order_item.order
         program = order_item.program
         if not program:
@@ -576,11 +686,17 @@ class AccessGrantService:
         return grant
 
     @staticmethod
-    def revoke_for_order_item(order_item: OrderItem, *, reason: str = "") -> ProgramAccessGrant | None:
-        grant = ProgramAccessGrant.objects.filter(order_item=order_item).select_related(
-            "enrollment",
-            "program",
-        ).first()
+    def revoke_for_order_item(
+        order_item: OrderItem, *, reason: str = ""
+    ) -> ProgramAccessGrant | None:
+        grant = (
+            ProgramAccessGrant.objects.filter(order_item=order_item)
+            .select_related(
+                "enrollment",
+                "program",
+            )
+            .first()
+        )
         if not grant:
             return None
 
@@ -593,18 +709,24 @@ class AccessGrantService:
             grant.metadata = metadata
             grant.save(update_fields=["status", "revoked_at", "metadata", "updated_at"])
 
-        active_grants_exist = ProgramAccessGrant.objects.filter(
-            user=grant.user,
-            program=grant.program,
-            status=ProgramAccessGrant.STATUS_ACTIVE,
-        ).exclude(pk=grant.pk).filter(
-            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
-        ).exists()
+        active_grants_exist = (
+            ProgramAccessGrant.objects.filter(
+                user=grant.user,
+                program=grant.program,
+                status=ProgramAccessGrant.STATUS_ACTIVE,
+            )
+            .exclude(pk=grant.pk)
+            .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+            .exists()
+        )
 
-        enrollment = grant.enrollment or Enrollment.objects.filter(
-            user=grant.user,
-            program=grant.program,
-        ).first()
+        enrollment = (
+            grant.enrollment
+            or Enrollment.objects.filter(
+                user=grant.user,
+                program=grant.program,
+            ).first()
+        )
         if (
             enrollment
             and not active_grants_exist
@@ -638,33 +760,49 @@ class CheckoutService:
             Order.PROVIDER_PAYSTACK,
             Order.PROVIDER_OFFLINE_BANK_TRANSFER,
         }:
-            raise CommerceError("Unsupported payment method.", code="unsupported_payment_method")
+            raise CommerceError(
+                "Unsupported payment method.", code="unsupported_payment_method"
+            )
 
         if not CheckoutService._configuration().is_method_enabled(payment_method):
-            raise CommerceError("Payment method is disabled.", code="payment_method_disabled")
+            raise CommerceError(
+                "Payment method is disabled.", code="payment_method_disabled"
+            )
 
     @staticmethod
     def _build_reference(prefix: str = "ord") -> str:
         return f"{prefix}-{uuid.uuid4().hex[:20]}"
 
     @staticmethod
-    def _validate_programs_for_checkout(user: User, programs: list[Program]) -> list[tuple[Program, int, str]]:
+    def _validate_programs_for_checkout(
+        user: User, programs: list[Program]
+    ) -> list[tuple[Program, int, str]]:
         if not programs:
-            raise CommerceError("No programs selected for checkout.", code="empty_checkout")
+            raise CommerceError(
+                "No programs selected for checkout.", code="empty_checkout"
+            )
 
         prepared_items = []
         currencies = set()
         seen_program_ids = set()
         for program in programs:
             if program.id in seen_program_ids:
-                raise CommerceError("Duplicate programs are not allowed in checkout.", code="duplicate_program")
+                raise CommerceError(
+                    "Duplicate programs are not allowed in checkout.",
+                    code="duplicate_program",
+                )
             seen_program_ids.add(program.id)
-            amount_minor, currency = CartService._validate_program_can_be_purchased(user, program)
+            amount_minor, currency = CartService._validate_program_can_be_purchased(
+                user, program
+            )
             prepared_items.append((program, amount_minor, currency))
             currencies.add(currency)
 
         if len(currencies) != 1:
-            raise CommerceError("All checkout items must share the same currency.", code="mixed_currency")
+            raise CommerceError(
+                "All checkout items must share the same currency.",
+                code="mixed_currency",
+            )
 
         return prepared_items
 
@@ -676,19 +814,34 @@ class CheckoutService:
                 try:
                     program_id = int(raw_id)
                 except (TypeError, ValueError):
-                    raise CommerceError("programIds must be integers.", code="invalid_program_ids")
+                    raise CommerceError(
+                        "programIds must be integers.", code="invalid_program_ids"
+                    )
                 if program_id <= 0:
-                    raise CommerceError("programIds must be positive integers.", code="invalid_program_ids")
+                    raise CommerceError(
+                        "programIds must be positive integers.",
+                        code="invalid_program_ids",
+                    )
                 normalized_ids.append(program_id)
             if not normalized_ids:
-                raise CommerceError("No programs selected for checkout.", code="empty_checkout")
+                raise CommerceError(
+                    "No programs selected for checkout.", code="empty_checkout"
+                )
 
             program_map = Program.objects.in_bulk(set(normalized_ids))
-            missing_ids = [program_id for program_id in normalized_ids if program_id not in program_map]
+            missing_ids = [
+                program_id
+                for program_id in normalized_ids
+                if program_id not in program_map
+            ]
             if missing_ids:
-                raise CommerceError("Program not found.", code="program_not_found", status_code=404)
+                raise CommerceError(
+                    "Program not found.", code="program_not_found", status_code=404
+                )
             programs = [program_map[program_id] for program_id in normalized_ids]
-            prepared_items = CheckoutService._validate_programs_for_checkout(user, programs)
+            prepared_items = CheckoutService._validate_programs_for_checkout(
+                user, programs
+            )
             items = [
                 {
                     "program": {
@@ -725,19 +878,28 @@ class CheckoutService:
     def create_order_from_cart(user: User, payment_method: str) -> Order:
         CheckoutService._validate_payment_method(payment_method)
         with transaction.atomic():
-            cart = Cart.objects.select_for_update().filter(
-                user=user,
-                status=Cart.STATUS_ACTIVE,
-            ).prefetch_related("items__program").first()
+            cart = (
+                Cart.objects.select_for_update()
+                .filter(
+                    user=user,
+                    status=Cart.STATUS_ACTIVE,
+                )
+                .prefetch_related("items__program")
+                .first()
+            )
             if not cart:
-                raise CommerceError("Your cart is empty.", code="cart_not_found", status_code=404)
+                raise CommerceError(
+                    "Your cart is empty.", code="cart_not_found", status_code=404
+                )
 
             cart_items = list(cart.items.select_related("program").all())
             if not cart_items:
                 raise CommerceError("Your cart is empty.", code="empty_cart")
 
             programs = [item.program for item in cart_items]
-            prepared_items = CheckoutService._validate_programs_for_checkout(user, programs)
+            prepared_items = CheckoutService._validate_programs_for_checkout(
+                user, programs
+            )
             currency = prepared_items[0][2]
             subtotal_minor = sum(amount_minor for _, amount_minor, _ in prepared_items)
             order = Order.objects.create(
@@ -807,7 +969,11 @@ class CheckoutService:
                     Order.objects.filter(
                         user=user,
                         provider=payment_method,
-                        status__in=[Order.STATUS_CREATED, Order.STATUS_PENDING_PAYMENT, Order.STATUS_PENDING_MANUAL_PAYMENT],
+                        status__in=[
+                            Order.STATUS_CREATED,
+                            Order.STATUS_PENDING_PAYMENT,
+                            Order.STATUS_PENDING_MANUAL_PAYMENT,
+                        ],
                     )
                     .prefetch_related("items__program")
                     .order_by("-created_at")
@@ -886,10 +1052,11 @@ class CheckoutService:
             for program, amount_minor, currency in prepared_items
         )
         existing_items = sorted(
-            (item.program_id, item.amount_minor, item.currency)
-            for item in items
+            (item.program_id, item.amount_minor, item.currency) for item in items
         )
-        expected_total_minor = sum(amount_minor for _, amount_minor, _ in prepared_items)
+        expected_total_minor = sum(
+            amount_minor for _, amount_minor, _ in prepared_items
+        )
         expected_currency = prepared_items[0][2]
 
         if (
@@ -906,7 +1073,9 @@ class CheckoutService:
     def get_order(order_id: int) -> Order:
         return (
             Order.objects.select_related("user", "program", "enrollment", "cart")
-            .prefetch_related(CheckoutService.order_prefetch, CheckoutService.refund_prefetch)
+            .prefetch_related(
+                CheckoutService.order_prefetch, CheckoutService.refund_prefetch
+            )
             .get(pk=order_id)
         )
 
@@ -915,12 +1084,16 @@ class CheckoutService:
         order = (
             Order.objects.filter(user=user)
             .select_related("user", "program", "enrollment", "cart")
-            .prefetch_related(CheckoutService.order_prefetch, CheckoutService.refund_prefetch)
+            .prefetch_related(
+                CheckoutService.order_prefetch, CheckoutService.refund_prefetch
+            )
             .filter(pk=order_id)
             .first()
         )
         if not order:
-            raise CommerceError("Order not found.", code="order_not_found", status_code=404)
+            raise CommerceError(
+                "Order not found.", code="order_not_found", status_code=404
+            )
         return order
 
     @staticmethod
@@ -936,7 +1109,9 @@ class CheckoutService:
     def list_admin_orders(*, status: str = "", provider: str = ""):
         queryset = (
             Order.objects.select_related("user", "program")
-            .prefetch_related(CheckoutService.order_prefetch, CheckoutService.refund_prefetch)
+            .prefetch_related(
+                CheckoutService.order_prefetch, CheckoutService.refund_prefetch
+            )
             .order_by("-created_at")
         )
         if status:
@@ -964,12 +1139,22 @@ class CheckoutService:
             )
 
             if locked_order.status == Order.STATUS_CANCELLED:
-                raise CommerceError("Cancelled orders cannot be marked paid.", code="order_cancelled")
+                raise CommerceError(
+                    "Cancelled orders cannot be marked paid.", code="order_cancelled"
+                )
 
-            if provider_reference and locked_order.provider_reference != provider_reference:
+            if (
+                provider_reference
+                and locked_order.provider_reference != provider_reference
+            ):
                 locked_order.provider_reference = provider_reference
 
-            if locked_order.status in {Order.STATUS_CREATED, Order.STATUS_PENDING_PAYMENT, Order.STATUS_PENDING_MANUAL_PAYMENT, Order.STATUS_FAILED}:
+            if locked_order.status in {
+                Order.STATUS_CREATED,
+                Order.STATUS_PENDING_PAYMENT,
+                Order.STATUS_PENDING_MANUAL_PAYMENT,
+                Order.STATUS_FAILED,
+            }:
                 locked_order.status = Order.STATUS_PAID
 
             if not locked_order.paid_at:
@@ -1013,7 +1198,9 @@ class CheckoutService:
         return CheckoutService.get_order(order.pk)
 
     @staticmethod
-    def mark_order_failed(order: Order, *, payload: dict | None = None, reason: str = "") -> Order:
+    def mark_order_failed(
+        order: Order, *, payload: dict | None = None, reason: str = ""
+    ) -> Order:
         with transaction.atomic():
             locked_order = Order.objects.select_for_update().get(pk=order.pk)
             if locked_order.status == Order.STATUS_PAID:
@@ -1031,7 +1218,9 @@ class CheckoutService:
         return CheckoutService.get_order(order.pk)
 
     @staticmethod
-    def cancel_order(order: Order, *, actor: User | None = None, reason: str = "") -> Order:
+    def cancel_order(
+        order: Order, *, actor: User | None = None, reason: str = ""
+    ) -> Order:
         with transaction.atomic():
             locked_order = (
                 Order.objects.select_for_update()
@@ -1043,7 +1232,9 @@ class CheckoutService:
                 Order.STATUS_PARTIALLY_REFUNDED,
                 Order.STATUS_REFUNDED,
             }:
-                raise CommerceError("Paid orders cannot be cancelled.", code="order_not_cancellable")
+                raise CommerceError(
+                    "Paid orders cannot be cancelled.", code="order_not_cancellable"
+                )
 
             locked_order.status = Order.STATUS_CANCELLED
             locked_order.cancelled_at = timezone.now()
@@ -1065,8 +1256,14 @@ class CheckoutService:
     @staticmethod
     def recompute_order_refund_totals(order: Order) -> Order:
         with transaction.atomic():
-            locked_order = Order.objects.select_for_update().prefetch_related("items").get(pk=order.pk)
-            refunded_minor = sum(item.refunded_minor for item in locked_order.items.all())
+            locked_order = (
+                Order.objects.select_for_update()
+                .prefetch_related("items")
+                .get(pk=order.pk)
+            )
+            refunded_minor = sum(
+                item.refunded_minor for item in locked_order.items.all()
+            )
             locked_order.refunded_minor = refunded_minor
             locked_order.amount_minor = locked_order.total_minor
 
@@ -1078,7 +1275,9 @@ class CheckoutService:
             else:
                 locked_order.status = Order.STATUS_PARTIALLY_REFUNDED
 
-            locked_order.save(update_fields=["refunded_minor", "amount_minor", "status", "updated_at"])
+            locked_order.save(
+                update_fields=["refunded_minor", "amount_minor", "status", "updated_at"]
+            )
 
         return CheckoutService.get_order(order.pk)
 
@@ -1101,7 +1300,9 @@ class PaystackGatewayService:
                 "message": "Paystack secret key is not configured.",
             }
 
-        body = json.dumps(payload or {}).encode("utf-8") if payload is not None else None
+        body = (
+            json.dumps(payload or {}).encode("utf-8") if payload is not None else None
+        )
         req = url_request.Request(
             url,
             method=method,
@@ -1128,14 +1329,22 @@ class PaystackGatewayService:
                     "_http_status": exc.code,
                 }
             except Exception:
-                return {"status": False, "message": raw or str(exc), "_http_status": exc.code}
+                return {
+                    "status": False,
+                    "message": raw or str(exc),
+                    "_http_status": exc.code,
+                }
         except Exception as exc:  # pragma: no cover - network exception fallback
             return {"status": False, "message": str(exc)}
 
     @staticmethod
-    def initialize_payment(order: Order, *, callback_url: str, channels: list[str] | None = None) -> dict:
+    def initialize_payment(
+        order: Order, *, callback_url: str, channels: list[str] | None = None
+    ) -> dict:
         if order.provider != Order.PROVIDER_PAYSTACK:
-            raise CommerceError("Order is not configured for Paystack.", code="invalid_provider")
+            raise CommerceError(
+                "Order is not configured for Paystack.", code="invalid_provider"
+            )
 
         CheckoutService.validate_failed_order_retry(order)
 
@@ -1145,7 +1354,10 @@ class PaystackGatewayService:
             Order.STATUS_PARTIALLY_REFUNDED,
             Order.STATUS_CANCELLED,
         }:
-            raise CommerceError("Order can no longer be initialized for payment.", code="order_not_payable")
+            raise CommerceError(
+                "Order can no longer be initialized for payment.",
+                code="order_not_payable",
+            )
 
         payload = {
             "email": order.user.email or f"user-{order.user_id}@example.com",
@@ -1162,7 +1374,9 @@ class PaystackGatewayService:
         }
         if callback_url:
             payload["callback_url"] = callback_url
-        response = PaystackGatewayService._request("POST", PAYSTACK_INITIALIZE_URL, payload)
+        response = PaystackGatewayService._request(
+            "POST", PAYSTACK_INITIALIZE_URL, payload
+        )
         PaymentAttempt.objects.create(
             order=order,
             provider=Order.PROVIDER_PAYSTACK,
@@ -1203,7 +1417,9 @@ class PaystackGatewayService:
     @staticmethod
     def charge_mpesa(order: Order, *, phone_number: str) -> dict:
         if order.provider != Order.PROVIDER_PAYSTACK:
-            raise CommerceError("Order is not configured for Paystack.", code="invalid_provider")
+            raise CommerceError(
+                "Order is not configured for Paystack.", code="invalid_provider"
+            )
 
         CheckoutService.validate_failed_order_retry(order)
 
@@ -1213,23 +1429,22 @@ class PaystackGatewayService:
             Order.STATUS_PARTIALLY_REFUNDED,
             Order.STATUS_CANCELLED,
         }:
-            raise CommerceError("Order can no longer be charged.", code="order_not_payable")
+            raise CommerceError(
+                "Order can no longer be charged.", code="order_not_payable"
+            )
 
         payload = {
             "email": order.user.email or f"user-{order.user_id}@example.com",
             "amount": order.total_minor,
             "currency": order.currency,
             "reference": order.reference,
-            "mobile_money": {
-                "phone": phone_number,
-                "provider": "mpesa"
-            },
+            "mobile_money": {"phone": phone_number, "provider": "mpesa"},
             "metadata": {
                 "user_id": order.user_id,
                 "order_id": order.id,
                 "order_reference": order.reference,
                 "item_ids": list(order.items.values_list("id", flat=True)),
-                "custom_flow": "charge_mpesa"
+                "custom_flow": "charge_mpesa",
             },
         }
 
@@ -1307,7 +1522,9 @@ class PaystackGatewayService:
         state: str = "verify",
         payload_source: str = "verify",
     ) -> tuple[Order, dict, bool]:
-        response = PaystackGatewayService.verify_payment(reference, order=order, state=state)
+        response = PaystackGatewayService.verify_payment(
+            reference, order=order, state=state
+        )
         response_data = response.get("data") or {}
         transaction_status = str(response_data.get("status") or "").lower()
         finalized = False
@@ -1343,7 +1560,9 @@ class PaystackGatewayService:
         paid_at = timezone.now()
         if not paid_at_raw:
             return paid_at
-        parsed = timezone.datetime.fromisoformat(str(paid_at_raw).replace("Z", "+00:00"))
+        parsed = timezone.datetime.fromisoformat(
+            str(paid_at_raw).replace("Z", "+00:00")
+        )
         if parsed.tzinfo is None:
             parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
         return parsed
@@ -1408,11 +1627,18 @@ class PaystackGatewayService:
 
         if transaction_status != "success":
             return False, "transaction_status_not_success"
-        if transaction_reference and not PaystackGatewayService._transaction_matches_order(order, transaction_reference):
+        if (
+            transaction_reference
+            and not PaystackGatewayService._transaction_matches_order(
+                order, transaction_reference
+            )
+        ):
             return False, "reference_mismatch"
         if amount_minor != order.total_minor:
             return False, "amount_mismatch"
-        if currency and currency != PaystackGatewayService._normalize_currency(order.currency):
+        if currency and currency != PaystackGatewayService._normalize_currency(
+            order.currency
+        ):
             return False, "currency_mismatch"
         return True, ""
 
@@ -1435,7 +1661,9 @@ class PaystackGatewayService:
         *,
         source: str,
     ) -> bool:
-        is_valid, failure_code = PaystackGatewayService._validate_successful_transaction(order, data)
+        is_valid, failure_code = (
+            PaystackGatewayService._validate_successful_transaction(order, data)
+        )
         if not is_valid:
             write_order_event(
                 order,
@@ -1467,7 +1695,9 @@ class PaystackGatewayService:
         return True
 
     @staticmethod
-    def _handle_charge_event(order: Order, event: str, data: dict, payload: dict) -> bool:
+    def _handle_charge_event(
+        order: Order, event: str, data: dict, payload: dict
+    ) -> bool:
         PaystackGatewayService._record_charge_attempt(order, event, payload)
 
         if event == "charge.success":
@@ -1486,7 +1716,9 @@ class PaystackGatewayService:
         return True
 
     @staticmethod
-    def _build_transfer_recipient_payload(settlement_party: SettlementParty, *, currency: str) -> dict:
+    def _build_transfer_recipient_payload(
+        settlement_party: SettlementParty, *, currency: str
+    ) -> dict:
         destination_details = settlement_party.destination_details or {}
         account_number = str(destination_details.get("account_number") or "").strip()
         bank_code = str(destination_details.get("bank_code") or "").strip()
@@ -1529,7 +1761,8 @@ class PaystackGatewayService:
             payout=payout,
             provider=Order.PROVIDER_PAYSTACK,
             state="transfer_recipient_create",
-            provider_reference=settlement_party.paystack_recipient_code or settlement_party.display_name,
+            provider_reference=settlement_party.paystack_recipient_code
+            or settlement_party.display_name,
             request_payload=payload,
             response_payload=response if isinstance(response, dict) else {},
         )
@@ -1538,12 +1771,16 @@ class PaystackGatewayService:
         recipient_code = str(response_data.get("recipient_code") or "")
         if response.get("status") and recipient_code:
             settlement_party.paystack_recipient_code = recipient_code
-            settlement_party.save(update_fields=["paystack_recipient_code", "updated_at"])
+            settlement_party.save(
+                update_fields=["paystack_recipient_code", "updated_at"]
+            )
         return response
 
     @staticmethod
     def initiate_transfer(payout: BeneficiaryPayout) -> dict:
-        payout = BeneficiaryPayout.objects.select_related("settlement_party").get(pk=payout.pk)
+        payout = BeneficiaryPayout.objects.select_related("settlement_party").get(
+            pk=payout.pk
+        )
         settlement_party = payout.settlement_party
 
         if not settlement_party.paystack_recipient_code:
@@ -1554,7 +1791,8 @@ class PaystackGatewayService:
             )
             if not recipient_response.get("status"):
                 raise CommerceError(
-                    recipient_response.get("message") or "Unable to create payout recipient.",
+                    recipient_response.get("message")
+                    or "Unable to create payout recipient.",
                     code="paystack_recipient_create_failed",
                     status_code=502,
                 )
@@ -1565,9 +1803,12 @@ class PaystackGatewayService:
             "amount": payout.amount_minor,
             "recipient": settlement_party.paystack_recipient_code,
             "reference": reference,
-            "reason": payout.metadata.get("notes") or f"Payout for {settlement_party.display_name}",
+            "reason": payout.metadata.get("notes")
+            or f"Payout for {settlement_party.display_name}",
         }
-        response = PaystackGatewayService._request("POST", PAYSTACK_TRANSFER_URL, payload)
+        response = PaystackGatewayService._request(
+            "POST", PAYSTACK_TRANSFER_URL, payload
+        )
         PaymentAttempt.objects.create(
             payout=payout,
             provider=Order.PROVIDER_PAYSTACK,
@@ -1580,13 +1821,18 @@ class PaystackGatewayService:
 
     @staticmethod
     def create_refund(refund: Refund) -> dict:
-        transaction_reference = refund.order.provider_reference or refund.order.reference
+        transaction_reference = (
+            refund.order.provider_reference or refund.order.reference
+        )
         payload = {
             "transaction": transaction_reference,
             "amount": refund.amount_minor,
             "currency": refund.order.currency,
-            "customer_note": refund.reason or f"Refund for order {refund.order.reference}",
-            "merchant_note": refund.notes or refund.reason or f"Refund for order {refund.order.reference}",
+            "customer_note": refund.reason
+            or f"Refund for order {refund.order.reference}",
+            "merchant_note": refund.notes
+            or refund.reason
+            or f"Refund for order {refund.order.reference}",
         }
         response = PaystackGatewayService._request("POST", PAYSTACK_REFUND_URL, payload)
         PaymentAttempt.objects.create(
@@ -1603,7 +1849,10 @@ class PaystackGatewayService:
     @staticmethod
     def retry_refund(refund: Refund, *, refund_account_details: dict) -> dict:
         if not refund.provider_refund_id:
-            raise CommerceError("Refund is missing a Paystack refund id.", code="refund_retry_unavailable")
+            raise CommerceError(
+                "Refund is missing a Paystack refund id.",
+                code="refund_retry_unavailable",
+            )
 
         payload = {"refund_account_details": refund_account_details or {}}
         response = PaystackGatewayService._request(
@@ -1692,7 +1941,9 @@ class PaystackGatewayService:
             event_obj.reference = reference or event_obj.reference
             event_obj.refund_reference = refund_reference or event_obj.refund_reference
             event_obj.signature_valid = True
-            event_obj.payload = payload if isinstance(payload, dict) else event_obj.payload
+            event_obj.payload = (
+                payload if isinstance(payload, dict) else event_obj.payload
+            )
             event_obj.save(
                 update_fields=[
                     "event_type",
@@ -1729,7 +1980,9 @@ class PaystackGatewayService:
                     .first()
                 )
                 if order:
-                    PaystackGatewayService._handle_charge_event(order, event, data, payload)
+                    PaystackGatewayService._handle_charge_event(
+                        order, event, data, payload
+                    )
                 handled = True
             elif event in {
                 "refund.pending",
@@ -1754,7 +2007,9 @@ class PaystackGatewayService:
                 if reference:
                     order = (
                         Order.objects.select_for_update()
-                        .filter(Q(reference=reference) | Q(provider_reference=reference))
+                        .filter(
+                            Q(reference=reference) | Q(provider_reference=reference)
+                        )
                         .first()
                     )
                     if order:
@@ -1764,7 +2019,9 @@ class PaystackGatewayService:
                             state="webhook_bank.transfer.rejected",
                             provider_reference=reference,
                             request_payload={"event": event},
-                            response_payload=payload if isinstance(payload, dict) else {},
+                            response_payload=payload
+                            if isinstance(payload, dict)
+                            else {},
                         )
                         if order.status not in {
                             Order.STATUS_PAID,
@@ -1826,9 +2083,11 @@ class RefundService:
 
     @staticmethod
     def _has_open_refund_for_items(order_item_ids: list[int]) -> bool:
-        return RefundItem.objects.filter(order_item_id__in=order_item_ids).exclude(
-            refund__status__in=[Refund.STATUS_FAILED, Refund.STATUS_CANCELLED]
-        ).exists()
+        return (
+            RefundItem.objects.filter(order_item_id__in=order_item_ids)
+            .exclude(refund__status__in=[Refund.STATUS_FAILED, Refund.STATUS_CANCELLED])
+            .exists()
+        )
 
     @staticmethod
     def request_refund(
@@ -1841,10 +2100,14 @@ class RefundService:
         refund_account_details: dict | None = None,
     ) -> Refund:
         if order.status not in {Order.STATUS_PAID, Order.STATUS_PARTIALLY_REFUNDED}:
-            raise CommerceError("Only paid orders can be refunded.", code="order_not_refundable")
+            raise CommerceError(
+                "Only paid orders can be refunded.", code="order_not_refundable"
+            )
 
         if order_item_ids == []:
-            raise CommerceError("No order items selected for refund.", code="refund_items_missing")
+            raise CommerceError(
+                "No order items selected for refund.", code="refund_items_missing"
+            )
 
         with transaction.atomic():
             locked_order = (
@@ -1853,8 +2116,13 @@ class RefundService:
                 .prefetch_related("items__program")
                 .get(pk=order.pk)
             )
-            if locked_order.status not in {Order.STATUS_PAID, Order.STATUS_PARTIALLY_REFUNDED}:
-                raise CommerceError("Only paid orders can be refunded.", code="order_not_refundable")
+            if locked_order.status not in {
+                Order.STATUS_PAID,
+                Order.STATUS_PARTIALLY_REFUNDED,
+            }:
+                raise CommerceError(
+                    "Only paid orders can be refunded.", code="order_not_refundable"
+                )
 
             selected_item_ids = (
                 order_item_ids
@@ -1867,22 +2135,31 @@ class RefundService:
                 .select_related("program")
             )
             if not target_items:
-                raise CommerceError("No order items selected for refund.", code="refund_items_missing")
+                raise CommerceError(
+                    "No order items selected for refund.", code="refund_items_missing"
+                )
 
-            if RefundService._has_open_refund_for_items([item.id for item in target_items]):
+            if RefundService._has_open_refund_for_items(
+                [item.id for item in target_items]
+            ):
                 raise CommerceError(
                     "A refund is already in progress for one or more selected items.",
                     code="refund_already_in_progress",
                 )
 
             for item in target_items:
-                if item.status == OrderItem.STATUS_REFUNDED or item.refunded_minor >= item.amount_minor:
+                if (
+                    item.status == OrderItem.STATUS_REFUNDED
+                    or item.refunded_minor >= item.amount_minor
+                ):
                     raise CommerceError(
                         f"Program '{item.program_name}' has already been refunded.",
                         code="item_already_refunded",
                     )
 
-            amount_minor = sum(item.amount_minor - item.refunded_minor for item in target_items)
+            amount_minor = sum(
+                item.amount_minor - item.refunded_minor for item in target_items
+            )
             refund = Refund.objects.create(
                 order=locked_order,
                 requested_by=actor,
@@ -1916,7 +2193,12 @@ class RefundService:
                 locked_refund.processed_by = actor
                 locked_refund.processed_at = timezone.now()
                 locked_refund.save(
-                    update_fields=["status", "processed_by", "processed_at", "updated_at"]
+                    update_fields=[
+                        "status",
+                        "processed_by",
+                        "processed_at",
+                        "updated_at",
+                    ]
                 )
             RefundService.apply_processed_refund(refund.id, actor=actor)
             return Refund.objects.prefetch_related("items").get(pk=refund.id)
@@ -1956,7 +2238,11 @@ class RefundService:
                 ]
             )
 
-        if response.get("status") and str((response.get("data") or {}).get("status") or "").lower() == "processed":
+        if (
+            response.get("status")
+            and str((response.get("data") or {}).get("status") or "").lower()
+            == "processed"
+        ):
             RefundService.apply_processed_refund(refund.id, actor=actor)
 
         return Refund.objects.prefetch_related("items").get(pk=refund.id)
@@ -1970,7 +2256,12 @@ class RefundService:
                 refund.processed_at = refund.processed_at or timezone.now()
                 refund.processed_by = refund.processed_by or actor
                 refund.save(
-                    update_fields=["status", "processed_at", "processed_by", "updated_at"]
+                    update_fields=[
+                        "status",
+                        "processed_at",
+                        "processed_by",
+                        "updated_at",
+                    ]
                 )
 
             processed_at = refund.processed_at or timezone.now()
@@ -1979,12 +2270,16 @@ class RefundService:
                 if refund_item.status != RefundItem.STATUS_PROCESSED:
                     refund_item.status = RefundItem.STATUS_PROCESSED
                     refund_item.processed_at = processed_at
-                    refund_item.save(update_fields=["status", "processed_at", "updated_at"])
+                    refund_item.save(
+                        update_fields=["status", "processed_at", "updated_at"]
+                    )
 
                 if order_item.refunded_minor < order_item.amount_minor:
                     order_item.refunded_minor = order_item.amount_minor
                     order_item.status = OrderItem.STATUS_REFUNDED
-                    order_item.save(update_fields=["refunded_minor", "status", "updated_at"])
+                    order_item.save(
+                        update_fields=["refunded_minor", "status", "updated_at"]
+                    )
 
                 AccessGrantService.revoke_for_order_item(
                     order_item,
@@ -2012,9 +2307,14 @@ class RefundService:
         refund_account_details: dict,
     ) -> Refund:
         if refund.provider != Order.PROVIDER_PAYSTACK:
-            raise CommerceError("Only Paystack refunds can be retried.", code="refund_retry_invalid_provider")
+            raise CommerceError(
+                "Only Paystack refunds can be retried.",
+                code="refund_retry_invalid_provider",
+            )
         if refund.status != Refund.STATUS_NEEDS_ATTENTION:
-            raise CommerceError("Refund does not require retry.", code="refund_retry_invalid_status")
+            raise CommerceError(
+                "Refund does not require retry.", code="refund_retry_invalid_status"
+            )
 
         response = PaystackGatewayService.retry_refund(
             refund,
@@ -2027,7 +2327,9 @@ class RefundService:
             locked_refund.processed_by = actor
             locked_refund.metadata = {
                 **(locked_refund.metadata or {}),
-                "paystack_retry_response": response if isinstance(response, dict) else {},
+                "paystack_retry_response": response
+                if isinstance(response, dict)
+                else {},
                 "refund_account_details": refund_account_details,
             }
             if response.get("status"):
@@ -2043,10 +2345,20 @@ class RefundService:
             else:
                 locked_refund.status = Refund.STATUS_FAILED
             locked_refund.save(
-                update_fields=["processed_by", "status", "processed_at", "metadata", "updated_at"]
+                update_fields=[
+                    "processed_by",
+                    "status",
+                    "processed_at",
+                    "metadata",
+                    "updated_at",
+                ]
             )
 
-        if response.get("status") and str((response.get("data") or {}).get("status") or "").lower() == "processed":
+        if (
+            response.get("status")
+            and str((response.get("data") or {}).get("status") or "").lower()
+            == "processed"
+        ):
             RefundService.apply_processed_refund(refund.id, actor=actor)
 
         return Refund.objects.prefetch_related("items").get(pk=refund.id)
@@ -2058,9 +2370,11 @@ class RefundService:
         if not refund_reference:
             return None
 
-        refund = Refund.objects.select_related("order").filter(
-            provider_refund_id=refund_reference
-        ).first()
+        refund = (
+            Refund.objects.select_related("order")
+            .filter(provider_refund_id=refund_reference)
+            .first()
+        )
         if not refund:
             return None
 
@@ -2096,7 +2410,9 @@ class RefundService:
                             timezone.get_current_timezone(),
                         )
                 locked_refund.processed_at = processed_at
-                locked_refund.save(update_fields=["status", "processed_at", "metadata", "updated_at"])
+                locked_refund.save(
+                    update_fields=["status", "processed_at", "metadata", "updated_at"]
+                )
             elif event == "refund.failed" or response_status == "failed":
                 locked_refund.status = Refund.STATUS_FAILED
                 locked_refund.save(update_fields=["status", "metadata", "updated_at"])
@@ -2116,7 +2432,10 @@ class RefundService:
                 locked_refund.status = Refund.STATUS_PROCESSING
                 locked_refund.save(update_fields=["status", "metadata", "updated_at"])
                 return locked_refund
-            elif event in {"refund.needs_attention", "refund.needs-attention"} or response_status in {"needs_attention", "needs-attention"}:
+            elif event in {
+                "refund.needs_attention",
+                "refund.needs-attention",
+            } or response_status in {"needs_attention", "needs-attention"}:
                 locked_refund.status = Refund.STATUS_NEEDS_ATTENTION
                 locked_refund.save(update_fields=["status", "metadata", "updated_at"])
                 return locked_refund
@@ -2222,7 +2541,9 @@ class RevenueLedgerService:
                     "currency": refund_item.order_item.currency,
                     "share_bps_snapshot": payment_entry.share_bps_snapshot,
                     "settlement_party_snapshot": payment_entry.settlement_party_snapshot
-                    or RevenueLedgerService._party_snapshot(payment_entry.settlement_party),
+                    or RevenueLedgerService._party_snapshot(
+                        payment_entry.settlement_party
+                    ),
                     "metadata": {
                         "refund_id": refund_item.refund_id,
                     },
@@ -2253,7 +2574,12 @@ class RevenueLedgerService:
             currency = row["currency"] or "KES"
             balances.setdefault(
                 currency,
-                {"creditsMinor": 0, "debitsMinor": 0, "reservedMinor": 0, "availableMinor": 0},
+                {
+                    "creditsMinor": 0,
+                    "debitsMinor": 0,
+                    "reservedMinor": 0,
+                    "availableMinor": 0,
+                },
             )
             if row["direction"] == RevenueLedgerEntry.DIRECTION_CREDIT:
                 balances[currency]["creditsMinor"] = row["total_minor"] or 0
@@ -2264,7 +2590,12 @@ class RevenueLedgerService:
             currency = row["currency"] or "KES"
             balances.setdefault(
                 currency,
-                {"creditsMinor": 0, "debitsMinor": 0, "reservedMinor": 0, "availableMinor": 0},
+                {
+                    "creditsMinor": 0,
+                    "debitsMinor": 0,
+                    "reservedMinor": 0,
+                    "availableMinor": 0,
+                },
             )
             balances[currency]["reservedMinor"] = row["total_minor"] or 0
 
@@ -2276,7 +2607,9 @@ class RevenueLedgerService:
         return balances
 
     @staticmethod
-    def available_balance_minor(settlement_party: SettlementParty, currency: str) -> int:
+    def available_balance_minor(
+        settlement_party: SettlementParty, currency: str
+    ) -> int:
         balances = RevenueLedgerService.balance_by_currency(settlement_party)
         return balances.get(currency.upper(), {}).get("availableMinor", 0)
 
@@ -2292,7 +2625,9 @@ class PayoutService:
 
     @staticmethod
     def _payout_base_queryset():
-        return BeneficiaryPayout.objects.select_related("settlement_party").order_by("-created_at")
+        return BeneficiaryPayout.objects.select_related("settlement_party").order_by(
+            "-created_at"
+        )
 
     @staticmethod
     def list_payouts():
@@ -2302,12 +2637,16 @@ class PayoutService:
     def get_payout(payout_id: int) -> BeneficiaryPayout:
         payout = PayoutService._payout_base_queryset().filter(pk=payout_id).first()
         if not payout:
-            raise CommerceError("Payout not found.", code="payout_not_found", status_code=404)
+            raise CommerceError(
+                "Payout not found.", code="payout_not_found", status_code=404
+            )
         return payout
 
     @staticmethod
     def list_settlement_parties():
-        return SettlementParty.objects.filter(active=True).order_by("party_type", "display_name")
+        return SettlementParty.objects.filter(active=True).order_by(
+            "party_type", "display_name"
+        )
 
     @staticmethod
     def settlement_party_payloads():
@@ -2345,9 +2684,14 @@ class PayoutService:
                     code="settlement_party_inactive",
                 )
             if amount_minor <= 0:
-                raise CommerceError("Payout amount must be greater than zero.", code="invalid_payout_amount")
+                raise CommerceError(
+                    "Payout amount must be greater than zero.",
+                    code="invalid_payout_amount",
+                )
 
-            available_minor = RevenueLedgerService.available_balance_minor(locked_party, currency)
+            available_minor = RevenueLedgerService.available_balance_minor(
+                locked_party, currency
+            )
             if available_minor < amount_minor:
                 raise CommerceError(
                     "Payout amount exceeds available balance.",
@@ -2364,12 +2708,16 @@ class PayoutService:
                 metadata={
                     "notes": notes,
                     "destination_snapshot": locked_party.destination_details or {},
-                    "settlement_party_snapshot": RevenueLedgerService._party_snapshot(locked_party),
+                    "settlement_party_snapshot": RevenueLedgerService._party_snapshot(
+                        locked_party
+                    ),
                 },
             )
 
     @staticmethod
-    def send_payout(payout: BeneficiaryPayout, *, actor: User | None) -> BeneficiaryPayout:
+    def send_payout(
+        payout: BeneficiaryPayout, *, actor: User | None
+    ) -> BeneficiaryPayout:
         with transaction.atomic():
             locked_payout = PayoutService._lock_payout(payout.id)
             if locked_payout.status != BeneficiaryPayout.STATUS_PENDING_APPROVAL:
@@ -2378,7 +2726,9 @@ class PayoutService:
                     code="payout_not_sendable",
                 )
             locked_payout.processed_by = actor
-            locked_payout.reference = locked_payout.reference or f"payout-{uuid.uuid4().hex[:20]}"
+            locked_payout.reference = (
+                locked_payout.reference or f"payout-{uuid.uuid4().hex[:20]}"
+            )
             locked_payout.status = BeneficiaryPayout.STATUS_PROCESSING
             locked_payout.failure_reason = ""
             locked_payout.save(
@@ -2392,7 +2742,9 @@ class PayoutService:
             )
 
         try:
-            response = PaystackGatewayService.initiate_transfer(PayoutService.get_payout(payout.id))
+            response = PaystackGatewayService.initiate_transfer(
+                PayoutService.get_payout(payout.id)
+            )
         except Exception as error:
             failure_reason = (
                 error.message
@@ -2403,7 +2755,9 @@ class PayoutService:
                 locked_payout = PayoutService._lock_payout(payout.id)
                 locked_payout.status = BeneficiaryPayout.STATUS_FAILED
                 locked_payout.failure_reason = failure_reason
-                locked_payout.save(update_fields=["status", "failure_reason", "updated_at"])
+                locked_payout.save(
+                    update_fields=["status", "failure_reason", "updated_at"]
+                )
             raise
 
         response_data = response.get("data") or {}
@@ -2412,7 +2766,9 @@ class PayoutService:
         with transaction.atomic():
             locked_payout = PayoutService._lock_payout(payout.id)
             locked_payout.provider_reference = str(
-                response_data.get("transfer_code") or locked_payout.provider_reference or ""
+                response_data.get("transfer_code")
+                or locked_payout.provider_reference
+                or ""
             )
             locked_payout.metadata = {
                 **(locked_payout.metadata or {}),
@@ -2429,13 +2785,17 @@ class PayoutService:
                     locked_payout.processed_at = timezone.now()
                 elif transfer_status == "failed":
                     locked_payout.status = BeneficiaryPayout.STATUS_FAILED
-                    locked_payout.failure_reason = response.get("message") or "Transfer failed."
+                    locked_payout.failure_reason = (
+                        response.get("message") or "Transfer failed."
+                    )
                 else:
                     locked_payout.status = BeneficiaryPayout.STATUS_PROCESSING
                     locked_payout.failure_reason = ""
             else:
                 locked_payout.status = BeneficiaryPayout.STATUS_FAILED
-                locked_payout.failure_reason = response.get("message") or "Transfer failed."
+                locked_payout.failure_reason = (
+                    response.get("message") or "Transfer failed."
+                )
 
             locked_payout.save(
                 update_fields=[
@@ -2457,7 +2817,11 @@ class PayoutService:
         if not reference:
             return None
 
-        payout = BeneficiaryPayout.objects.select_related("settlement_party").filter(reference=reference).first()
+        payout = (
+            BeneficiaryPayout.objects.select_related("settlement_party")
+            .filter(reference=reference)
+            .first()
+        )
         if not payout:
             return None
 

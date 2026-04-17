@@ -51,9 +51,13 @@ import ApprovalIcon from "@mui/icons-material/Approval";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import CampaignIcon from "@mui/icons-material/Campaign";
+import MailOutlineIcon from "@mui/icons-material/MailOutline";
+import QuizIcon from "@mui/icons-material/Quiz";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 
 // Custom Components
 import NotificationPanel from "@/components/NotificationPanel";
+import MessageUnreadBadge from "@/components/MessageUnreadBadge";
 import PlatformLogo from "@/components/common/PlatformLogo";
 import useLogout from "@/hooks/useLogout";
 import { useThemeMode } from "@/theme";
@@ -66,6 +70,7 @@ const SIDEBAR_HEADER_HEIGHT = 56;
 const roleNavigation = {
     student: [
         {
+            title: "Main",
             items: [
                 {
                     label: "Dashboard",
@@ -73,19 +78,29 @@ const roleNavigation = {
                     icon: DashboardIcon,
                 },
                 {
-                    label: "My Programs",
+                    label: "Enrolled Courses",
                     href: "/student/programs/",
                     icon: SchoolIcon,
                 },
                 {
-                    label: "Assessments",
-                    href: "/student/assessments/",
+                    label: "My Assignments",
+                    href: "/student/assignments/",
                     icon: AssignmentIcon,
                 },
                 {
-                    label: "Practicum",
-                    href: "/student/practicum/",
-                    icon: RateReviewIcon,
+                    label: "My Quizzes",
+                    href: "/student/quizzes/",
+                    icon: QuizIcon,
+                },
+            ],
+        },
+        {
+            title: "Communication",
+            items: [
+                {
+                    label: "Messages",
+                    href: "/messages/",
+                    icon: MailOutlineIcon,
                 },
             ],
         },
@@ -93,24 +108,39 @@ const roleNavigation = {
             title: "Progress",
             items: [
                 {
-                    label: "Certificates",
+                    label: "My Certificates",
                     href: "/student/certificates/",
                     icon: CardMembershipIcon,
-                },
-                {
-                    label: "Orders",
-                    href: "/student/orders/",
-                    icon: ReceiptIcon,
                 },
             ],
         },
         {
-            title: "Account",
+            title: "Account & Settings",
             items: [
                 {
                     label: "Profile",
                     href: "/student/profile/",
                     icon: PersonIcon,
+                },
+                {
+                    label: "My Wishlist",
+                    href: "/wishlist/",
+                    icon: FavoriteBorderIcon,
+                },
+                {
+                    label: "My Orders",
+                    href: "/student/orders/",
+                    icon: ReceiptIcon,
+                },
+                {
+                    label: "Settings",
+                    href: "/profile/",
+                    icon: SettingsIcon,
+                },
+                {
+                    label: "Logout",
+                    action: "logout",
+                    icon: LogoutIcon,
                 },
             ],
         },
@@ -163,6 +193,11 @@ const roleNavigation = {
                     href: "/instructor/announcements/",
                     icon: CampaignIcon,
                 },
+                {
+                    label: "Messages",
+                    href: "/messages/",
+                    icon: MailOutlineIcon,
+                },
             ],
         },
         {
@@ -179,6 +214,26 @@ const roleNavigation = {
                     href: "/instructor/practicum/",
                     icon: RateReviewIcon,
                     requiresFeature: "practicum",
+                },
+            ],
+        },
+        {
+            title: "Account & Settings",
+            items: [
+                {
+                    label: "Profile",
+                    href: "/profile/",
+                    icon: PersonIcon,
+                },
+                {
+                    label: "Settings",
+                    href: "/profile/",
+                    icon: SettingsIcon,
+                },
+                {
+                    label: "Logout",
+                    action: "logout",
+                    icon: LogoutIcon,
                 },
             ],
         },
@@ -252,6 +307,11 @@ const roleNavigation = {
                     label: "Announcements",
                     href: "/admin/announcements/",
                     icon: CampaignIcon,
+                },
+                {
+                    label: "Messages",
+                    href: "/messages/",
+                    icon: MailOutlineIcon,
                 },
             ],
         },
@@ -518,7 +578,7 @@ export default function DashboardLayout({
 
                                     return (
                                         <ListItem
-                                            key={item.href}
+                                            key={item.href || item.label}
                                             disablePadding
                                             sx={{ px: 1, py: 0 }}
                                         >
@@ -715,6 +775,7 @@ export default function DashboardLayout({
 
 
                             {/* Notifications Panel */}
+                            <MessageUnreadBadge />
                             <NotificationPanel />
 
                             {/* User Avatar & Menu */}
@@ -796,6 +857,8 @@ export default function DashboardLayout({
                         p: { xs: 2, md: 3 },
                         bgcolor: "background.default",
                         minHeight: `calc(100vh - ${SIDEBAR_HEADER_HEIGHT}px)`,
+                        width: "100%",
+                        maxWidth: "100%",
                     }}
                 >
                     {children}

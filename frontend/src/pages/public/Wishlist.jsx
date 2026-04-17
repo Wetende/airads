@@ -19,6 +19,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { formatAmount } from "@/services/commerceApi";
 
+import PublicProgramCard from "@/components/cards/PublicProgramCard";
+
 export default function Wishlist() {
     const { auth, platform } = usePage().props;
     const { addToCart } = useCart();
@@ -87,45 +89,10 @@ export default function Wishlist() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <Grid container spacing={2}>
+                        <Grid container spacing={3}>
                             {items.map((item) => (
-                                <Grid key={item.id} size={{ xs: 12, md: 6 }}>
-                                    <Card>
-                                        <CardContent>
-                                            <Stack spacing={1.5}>
-                                                <Typography component={Link} href={`/programs/${item.program?.id}/`} sx={{ textDecoration: "none", fontWeight: 700, color: "text.primary" }}>
-                                                    {item.program?.name || "Program"}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {formatAmount(item.amountMinor || 0, item.currency || "KES")}
-                                                </Typography>
-                                                <Stack direction="row" spacing={1}>
-                                                    <Button
-                                                        variant="contained"
-                                                        onClick={() => handleBuyNow(item.program?.id)}
-                                                        disabled={!item.program?.id}
-                                                    >
-                                                        Buy Now
-                                                    </Button>
-                                                    <Button
-                                                        variant="outlined"
-                                                        onClick={() => handleAddToCart(item.program?.id)}
-                                                        disabled={!item.program?.id}
-                                                    >
-                                                        Add to Cart
-                                                    </Button>
-                                                    <Button
-                                                        color="error"
-                                                        startIcon={<IconTrash size={16} />}
-                                                        onClick={() => handleRemove(item.program?.id)}
-                                                        disabled={!item.program?.id}
-                                                    >
-                                                        Remove
-                                                    </Button>
-                                                </Stack>
-                                            </Stack>
-                                        </CardContent>
-                                    </Card>
+                                <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                                    <PublicProgramCard program={item.program} />
                                 </Grid>
                             ))}
                         </Grid>

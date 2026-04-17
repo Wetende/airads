@@ -233,32 +233,34 @@ export default function Certificates({ certificates }) {
         <DashboardLayout role="student">
             <Head title="My Certificates" />
 
-            <Stack spacing={3}>
-                <motion.div {...fadeIn}>
-                    <Typography variant="h4" component="h1" gutterBottom>
-                        My Certificates
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                        View, download, and share your earned certificates
-                    </Typography>
-                </motion.div>
-
-                {certificates.length === 0 ? (
+            <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+                <Stack spacing={3}>
                     <motion.div {...fadeIn}>
-                        <Alert severity="info" icon={<VerifiedIcon />}>
-                            You haven't earned any certificates yet. Complete a
-                            program to receive your certificate!
-                        </Alert>
+                        <Typography variant="h4" component="h1" gutterBottom>
+                            My Certificates
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary">
+                            View, download, and share your earned certificates
+                        </Typography>
                     </motion.div>
-                ) : (
-                    certificates.map((certificate) => (
-                        <CertificateCard
-                            key={certificate.id}
-                            certificate={certificate}
-                        />
-                    ))
-                )}
-            </Stack>
+
+                    {certificates.length === 0 ? (
+                        <motion.div {...fadeIn}>
+                            <Alert severity="info" icon={<VerifiedIcon />}>
+                                You haven't earned any certificates yet. Complete a
+                                program to receive your certificate!
+                            </Alert>
+                        </motion.div>
+                    ) : (
+                        certificates.map((certificate) => (
+                            <CertificateCard
+                                key={certificate.id}
+                                certificate={certificate}
+                            />
+                        ))
+                    )}
+                </Stack>
+            </Box>
         </DashboardLayout>
     );
 }

@@ -16,8 +16,9 @@ import {
     LinearProgress,
     Stack,
     useTheme,
+    Rating,
 } from "@mui/material";
-import { IconClock } from "@tabler/icons-react";
+import { IconClock, IconList } from "@tabler/icons-react";
 
 // Badge colors using theme palette
 const getBadgeColor = (type, theme) => {
@@ -129,69 +130,94 @@ export default function EnrolledCourseCard({ enrollment }) {
                     {enrollment.programName}
                 </Typography>
 
-                {/* Duration + Progress Row */}
-                <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    sx={{ mb: 1 }}
+                {/* Progress Bar & Text */}
+                <Box sx={{ mb: 2 }}>
+                    <LinearProgress
+                        variant="determinate"
+                        value={enrollment.progressPercent}
+                        sx={{
+                            height: 6,
+                            borderRadius: 3,
+                            mb: 1,
+                            bgcolor: theme.palette.grey[200],
+                            "& .MuiLinearProgress-bar": {
+                                bgcolor: progressColor,
+                                borderRadius: 3,
+                            },
+                        }}
+                    />
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                    >
+                        Progress: {enrollment.progressPercent}%
+                    </Typography>
+                </Box>
+
+                {/* Lectures & Hours Pill */}
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 3,
+                        bgcolor: theme.palette.grey[100],
+                        borderRadius: 2,
+                        p: 1.5,
+                        mb: 2,
+                    }}
                 >
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                        <IconClock
-                            size={14}
-                            color={theme.palette.text.secondary}
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                            {enrollment.durationHours || 0} hours
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <IconList size={18} color={theme.palette.text.secondary} />
+                        <Typography variant="body2" color="text.secondary">
+                            {enrollment.lectureCount || 0} Lectures
                         </Typography>
                     </Stack>
-                    <Typography
-                        variant="caption"
-                        fontWeight={600}
-                        sx={{ color: progressColor }}
-                    >
-                        {enrollment.progressPercent}% Complete
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <IconClock size={18} color={theme.palette.text.secondary} />
+                        <Typography variant="body2" color="text.secondary">
+                            {enrollment.durationHours || 0} Hours
+                        </Typography>
+                    </Stack>
+                </Box>
+
+                {/* Star Rating */}
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                    <Rating
+                        value={enrollment.ratingAverage || 0}
+                        precision={0.1}
+                        readOnly
+                        size="small"
+                        sx={{ color: "#FFB300" }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                        {enrollment.ratingAverage || "0.0"}
                     </Typography>
                 </Stack>
 
-                {/* Progress Bar */}
-                <LinearProgress
-                    variant="determinate"
-                    value={enrollment.progressPercent}
-                    sx={{
-                        height: 6,
-                        borderRadius: 3,
-                        mb: 2,
-                        bgcolor: theme.palette.grey[200],
-                        "& .MuiLinearProgress-bar": {
-                            bgcolor: progressColor,
-                            borderRadius: 3,
-                        },
-                    }}
-                />
-
                 {/* Action Button - goes directly to student course player */}
-                <Button
-                    component={Link}
-                    href={`/student/programs/${enrollment.programId}/`}
-                    variant="contained"
-                    fullWidth
-                    sx={{
-                        bgcolor: isCompleted
-                            ? theme.palette.success.main
-                            : theme.palette.primary.main,
-                        color: "white",
-                        fontWeight: 700,
-                        py: 1,
-                        "&:hover": {
+                <Stack spacing={1}>
+                    <Button
+                        component={Link}
+                        href={`/student/programs/${enrollment.programId}/`}
+                        variant="contained"
+                        fullWidth
+                        sx={{
                             bgcolor: isCompleted
-                                ? theme.palette.success.dark
-                                : theme.palette.primary.dark,
-                        },
-                    }}
-                >
-                    {isCompleted ? "COMPLETED" : "CONTINUE"}
-                </Button>
+                                ? theme.palette.success.main
+                                : theme.palette.primary.main,
+                            color: "white",
+                            fontWeight: 700,
+                            py: 1,
+                            "&:hover": {
+                                bgcolor: isCompleted
+                                    ? theme.palette.success.dark
+                                    : theme.palette.primary.dark,
+                            },
+                        }}
+                    >
+                        {isCompleted ? "COMPLETED" : "CONTINUE"}
+                    </Button>
+                </Stack>
 
                 {/* Started Date */}
                 {enrollment.enrolledAt && (

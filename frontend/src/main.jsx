@@ -34,6 +34,8 @@ const featureMap = {
 
     // Dashboard
     Dashboard: "./features/dashboard/pages/Dashboard.jsx",
+    "Dashboard/Assignments": "./features/dashboard/pages/Assignments.jsx",
+    "Dashboard/Quizzes": "./features/dashboard/pages/Quizzes.jsx",
 
     // Course Builder
     "Instructor/Program/Manage": "./features/course-builder/pages/Builder.jsx",
@@ -41,6 +43,8 @@ const featureMap = {
     // Learning Player / Student (Course Player)
     "Student/CoursePlayer": "./features/course-player/pages/LectureView.jsx",
     "Student/Assessments": "./features/course-player/pages/Assessments.jsx",
+    "Student/Assignments": "./features/dashboard/pages/Assignments.jsx",
+    "Student/Quizzes": "./features/dashboard/pages/Quizzes.jsx",
     "Student/Certificates": "./features/course-player/pages/Certificates.jsx",
     "Student/Profile": "./features/course-player/pages/Profile.jsx",
     "Student/Quiz/Take": "./features/quizzes/pages/Take.jsx",
@@ -79,13 +83,14 @@ const featureMap = {
         "./features/practicum/pages/instructor/Review.jsx",
     "Instructor/Apply": "./features/auth/pages/InstructorApply.jsx",
     "Notifications/Index": "./features/notifications/pages/Index.jsx",
+    "Messages/Inbox": "./features/messages/pages/Inbox.jsx",
+    "Messages/Conversation": "./features/messages/pages/Conversation.jsx",
+    "Messages/NewConversation": "./features/messages/pages/NewConversation.jsx",
 
     // Student Features
-    "Student/Assignments/View":
-        "./features/assignments/pages/student/View.jsx",
+    "Student/Assignments/View": "./features/assignments/pages/student/View.jsx",
     "Student/Practicum/Index": "./features/practicum/pages/student/Index.jsx",
-    "Student/Practicum/Upload":
-        "./features/practicum/pages/student/Upload.jsx",
+    "Student/Practicum/Upload": "./features/practicum/pages/student/Upload.jsx",
     "Student/Programs/Index":
         "./features/course-player/pages/Programs/Index.jsx",
 
@@ -94,8 +99,7 @@ const featureMap = {
         "./features/assessments/pages/Rubrics/Index.jsx",
     "Assessments/Rubrics/Create":
         "./features/assessments/pages/Rubrics/Create.jsx",
-    "Assessments/Rubrics/Edit":
-        "./features/assessments/pages/Rubrics/Edit.jsx",
+    "Assessments/Rubrics/Edit": "./features/assessments/pages/Rubrics/Edit.jsx",
     "Rubrics/Index": "./features/rubrics/pages/Index.jsx",
     "Rubrics/Form": "./features/rubrics/pages/Form.jsx",
 

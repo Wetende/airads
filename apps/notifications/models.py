@@ -19,6 +19,7 @@ class Notification(TimeStampedModel):
         ('assignment_graded', 'Assignment Graded'),
         ('quiz_graded', 'Quiz Graded'),
         ('announcement', 'New Announcement'),
+        ('direct_message', 'Direct Message'),
         ('instructor_approved', 'Instructor Approved'),
         ('instructor_rejected', 'Instructor Rejected'),
         ('program_approved', 'Program Approved'),

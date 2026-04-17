@@ -152,6 +152,16 @@ export default function InstructorStudentDetail({ student, enrollments = [] }) {
                     color="primary"
                     variant="outlined"
                   />
+                  <Button
+                    component={Link}
+                    href={`/messages/new/?recipient_id=${student.id}`}
+                    startIcon={<MessageIcon />}
+                    variant="outlined"
+                    size="small"
+                    sx={{ mt: 1, display: 'block' }}
+                  >
+                    Message Student
+                  </Button>
                 </Box>
               </Stack>
             </CardContent>

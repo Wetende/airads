@@ -35,11 +35,16 @@ urlpatterns = [
         name="student.session.note.delete",
     ),
 
-    # Assessment Results
+    # Assignments and Quizzes
     path(
-        "student/assessments/",
-        views.assessment_results,
-        name="student.assessments",
+        "student/assignments/",
+        views.student_assignments,
+        name="student.assignments",
+    ),
+    path(
+        "student/quizzes/",
+        views.student_quizzes,
+        name="student.quizzes",
     ),
     # Practicum
     path(

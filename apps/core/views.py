@@ -166,30 +166,75 @@ def landing_page(request):
             .values_list("program_id", "count")
         )
 
-        programs_data = [
-            {
-                "id": program.id,
-                "name": program.name,
-                "code": program.code or "",
-                "description": program.description or "",
-                "thumbnail": program.thumbnail.url if program.thumbnail else None,
-                "badge_type": program.badge_type,
-                "category": program.category,
-                "rating": 4.5,
-                "price": (
-                    program.custom_pricing.get("price", 0)
-                    if program.custom_pricing
-                    else 0
-                ),
-                "original_price": (
-                    program.custom_pricing.get("original_price")
-                    if program.custom_pricing
-                    else None
-                ),
-                "enrollmentCount": enrollment_counts.get(program.id, 0),
-            }
-            for program in programs
-        ]
+        from collections import defaultdict
+        from apps.curriculum.models import CurriculumNode
+
+        stats_by_program_id = defaultdict(
+            lambda: {"lesson_count": 0, "duration_minutes": 0}
+        )
+        assessment_types = {"quiz", "assignment", "practicum", "peer_review"}
+
+        if program_ids:
+            leaf_nodes = CurriculumNode.objects.filter(
+                program_id__in=program_ids,
+                is_published=True,
+                children__isnull=True,
+            ).values_list("program_id", "node_type", "properties")
+
+            for program_id, node_type, properties in leaf_nodes:
+                node_type_norm = (node_type or "").strip().lower()
+                props = properties if isinstance(properties, dict) else {}
+                lesson_type_norm = str(props.get("lesson_type") or "").strip().lower()
+                if (
+                    node_type_norm in assessment_types
+                    or lesson_type_norm in assessment_types
+                ):
+                    continue
+                stats_by_program_id[program_id]["lesson_count"] += 1
+                minutes = props.get("duration_minutes", 0)
+                try:
+                    minutes_int = int(minutes) if minutes is not None else 0
+                except (TypeError, ValueError):
+                    minutes_int = 0
+                stats_by_program_id[program_id]["duration_minutes"] += max(
+                    0, minutes_int
+                )
+
+        def _minutes_to_hours(total_minutes: int) -> float:
+            if not total_minutes:
+                return 0
+            return round(total_minutes / 60.0, 1)
+
+        programs_data = []
+        for program in programs:
+            stats = stats_by_program_id[program.id]
+            duration_hours = _minutes_to_hours(stats["duration_minutes"])
+
+            programs_data.append(
+                {
+                    "id": program.id,
+                    "name": program.name,
+                    "code": program.code or "",
+                    "description": program.description or "",
+                    "thumbnail": program.thumbnail.url if program.thumbnail else None,
+                    "badge_type": program.badge_type,
+                    "category": program.category,
+                    "lecture_count": stats["lesson_count"],
+                    "duration_hours": duration_hours,
+                    "rating": 4.5,
+                    "price": (
+                        program.custom_pricing.get("price", 0)
+                        if program.custom_pricing
+                        else 0
+                    ),
+                    "original_price": (
+                        program.custom_pricing.get("original_price")
+                        if program.custom_pricing
+                        else None
+                    ),
+                    "enrollmentCount": enrollment_counts.get(program.id, 0),
+                }
+            )
 
         landing_payload = {
             "programs": programs_data,
@@ -280,8 +325,7 @@ def public_programs_list(request):
                 "custom_pricing",
                 "rating_average",
                 "rating_count",
-            )
-            .order_by("name")[offset : offset + per_page]
+            ).order_by("name")[offset : offset + per_page]
         )
         program_ids = [program.id for program in programs]
 
@@ -302,7 +346,12 @@ def public_programs_list(request):
 
         for program_id, node_type, properties in leaf_nodes:
             node_type_norm = (node_type or "").strip().lower()
-            is_assessment = node_type_norm in assessment_types
+            props = properties if isinstance(properties, dict) else {}
+            lesson_type_norm = str(props.get("lesson_type") or "").strip().lower()
+            is_assessment = (
+                node_type_norm in assessment_types
+                or lesson_type_norm in assessment_types
+            )
 
             if is_assessment:
                 stats_by_program_id[program_id]["assessment_count"] += 1
@@ -310,7 +359,6 @@ def public_programs_list(request):
                 stats_by_program_id[program_id]["lesson_count"] += 1
 
             if not is_assessment:
-                props = properties if isinstance(properties, dict) else {}
                 minutes = props.get("duration_minutes", 0)
                 try:
                     minutes_int = int(minutes) if minutes is not None else 0
@@ -342,9 +390,7 @@ def public_programs_list(request):
                     stats_by_program_id[program.id]["duration_minutes"]
                 ),
                 "lecture_count": stats_by_program_id[program.id]["lesson_count"],
-                "assessment_count": stats_by_program_id[program.id][
-                    "assessment_count"
-                ],
+                "assessment_count": stats_by_program_id[program.id]["assessment_count"],
                 "video_hours": program.video_hours,
                 "price": price_data.get("price", 0),
                 "original_price": price_data.get("original_price"),
@@ -363,7 +409,9 @@ def public_programs_list(request):
     if include_programs:
         props["programs"] = programs_data
     if include_grouped_programs:
-        props["groupedPrograms"] = _group_programs_by_level(programs_data, course_levels)
+        props["groupedPrograms"] = _group_programs_by_level(
+            programs_data, course_levels
+        )
     if include_course_levels:
         props["courseLevels"] = course_levels
     if include_filters:
@@ -488,14 +536,17 @@ def public_program_detail(request, pk: int):
 
     for node_type, properties in leaf_nodes_qs:
         node_type_norm = (node_type or "").strip().lower()
-        is_assessment = node_type_norm in assessment_types
+        props = properties if isinstance(properties, dict) else {}
+        lesson_type_norm = str(props.get("lesson_type") or "").strip().lower()
+        is_assessment = (
+            node_type_norm in assessment_types or lesson_type_norm in assessment_types
+        )
 
         if is_assessment:
             assessment_count += 1
             continue
 
         lesson_count += 1
-        props = properties if isinstance(properties, dict) else {}
         minutes = props.get("duration_minutes", 0)
         try:
             minutes_int = int(minutes) if minutes is not None else 0
@@ -1300,20 +1351,66 @@ def dashboard(request):
 
 def _get_student_dashboard_data(user) -> dict:
     """Get dashboard data for students."""
+    from apps.assessments.models import (
+        Assignment,
+        AssignmentSubmission,
+        QuizAttempt,
+    )
     from apps.curriculum.models import CurriculumNode
     from apps.progression.models import Enrollment, NodeCompletion
 
     # Get active enrollments with progress
-    enrollments = Enrollment.objects.filter(
-        user=user, status__in=["active", "completed"]
-    ).select_related("program")
+    enrollments = list(
+        Enrollment.objects.filter(
+            user=user, status__in=["active", "completed"]
+        ).select_related("program")
+    )
+
+    # Batch-compute lecture counts (leaf nodes) per program
+    program_ids = [e.program_id for e in enrollments]
+    enrollment_ids = [e.id for e in enrollments]
+    assessment_types = ["quiz", "assignment", "practicum", "peer_review"]
+
+    from django.db.models import Count, Q
+
+    leaf_counts = dict(
+        CurriculumNode.objects.filter(
+            program_id__in=program_ids,
+            is_published=True,
+            children__isnull=True,
+        )
+        .values("program_id")
+        .annotate(cnt=Count("id"))
+        .values_list("program_id", "cnt")
+    )
+
+    lesson_counts = dict(
+        CurriculumNode.objects.filter(
+            program_id__in=program_ids,
+            is_published=True,
+            children__isnull=True,
+        )
+        .exclude(
+            Q(node_type__in=assessment_types)
+            | Q(properties__lesson_type__in=assessment_types)
+        )
+        .values("program_id")
+        .annotate(cnt=Count("id"))
+        .values_list("program_id", "cnt")
+    )
+
+    completion_counts = dict(
+        NodeCompletion.objects.filter(enrollment_id__in=enrollment_ids)
+        .values("enrollment_id")
+        .annotate(cnt=Count("id"))
+        .values_list("enrollment_id", "cnt")
+    )
 
     enrollment_data = []
     for enrollment in enrollments:
-        total_nodes = CurriculumNode.objects.filter(
-            program=enrollment.program, is_published=True, children__isnull=True
-        ).count()
-        completed_nodes = enrollment.completions.count()
+        total_nodes = leaf_counts.get(enrollment.program_id, 0)
+        lesson_count = lesson_counts.get(enrollment.program_id, 0)
+        completed_nodes = completion_counts.get(enrollment.id, 0)
         progress = (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
         if enrollment.status in {"active", "completed"}:
             target_status = "completed" if progress >= 100 else "active"
@@ -1322,18 +1419,25 @@ def _get_student_dashboard_data(user) -> dict:
                 enrollment.completed_at = (
                     timezone.now() if target_status == "completed" else None
                 )
-                enrollment.save(
-                    update_fields=["status", "completed_at", "updated_at"]
-                )
+                enrollment.save(update_fields=["status", "completed_at", "updated_at"])
 
+        program = enrollment.program
         enrollment_data.append(
             {
                 "id": enrollment.id,
-                "programId": enrollment.program.id,
-                "programName": enrollment.program.name,
-                "programCode": enrollment.program.code or "",
+                "programId": program.id,
+                "programName": program.name,
+                "programCode": program.code or "",
                 "progressPercent": round(progress, 1),
                 "status": enrollment.status,
+                "thumbnail": (program.thumbnail.url if program.thumbnail else None),
+                "category": program.category or "",
+                "durationHours": program.duration_hours or 0,
+                "lectureCount": lesson_count,
+                "ratingAverage": float(program.rating_average or 0),
+                "ratingCount": program.rating_count or 0,
+                "badgeType": program.badge_type,
+                "enrolledAt": enrollment.enrolled_at.isoformat(),
             }
         )
 
@@ -1353,9 +1457,100 @@ def _get_student_dashboard_data(user) -> dict:
         for c in recent_completions
     ]
 
+    # ---- Assignments across all enrolled programs ----
+    assignments_qs = (
+        Assignment.objects.filter(
+            program_id__in=program_ids,
+            is_published=True,
+        )
+        .select_related("program")
+        .order_by("-due_date", "-created_at")
+    )
+
+    # Map enrollment per program for quick lookup
+    enrollment_by_program = {e.program_id: e for e in enrollments}
+
+    assignments_data = []
+    for assignment in assignments_qs:
+        enrollment_for_program = enrollment_by_program.get(assignment.program_id)
+        submission = None
+        if enrollment_for_program:
+            submission = (
+                AssignmentSubmission.objects.filter(
+                    enrollment=enrollment_for_program,
+                    assignment=assignment,
+                )
+                .order_by("-attempt_number")
+                .first()
+            )
+
+        assignments_data.append(
+            {
+                "id": assignment.id,
+                "title": assignment.title,
+                "programName": assignment.program.name,
+                "programId": assignment.program.id,
+                "dueDate": (
+                    assignment.due_date.isoformat() if assignment.due_date else None
+                ),
+                "submissionStatus": submission.status if submission else "not_started",
+                "score": float(submission.score)
+                if submission and submission.score is not None
+                else None,
+                "passed": submission.passed if submission else None,
+                "submittedAt": (
+                    submission.submitted_at.isoformat()
+                    if submission and submission.submitted_at
+                    else None
+                ),
+            }
+        )
+
+    # ---- Quizzes across all enrolled programs ----
+    quiz_attempts = (
+        QuizAttempt.objects.filter(
+            enrollment_id__in=enrollment_ids,
+            submitted_at__isnull=False,
+        )
+        .select_related("quiz__node__program", "enrollment__program")
+        .order_by("-submitted_at")
+    )
+
+    # Group by quiz to get summary
+    quiz_map = {}
+    for attempt in quiz_attempts:
+        quiz = attempt.quiz
+        key = quiz.id
+        if key not in quiz_map:
+            quiz_map[key] = {
+                "id": quiz.id,
+                "title": quiz.title,
+                "programName": attempt.enrollment.program.name,
+                "programId": attempt.enrollment.program.id,
+                "questionCount": quiz.questions.count(),
+                "attempts": 0,
+                "bestScore": None,
+                "passed": False,
+            }
+
+        entry = quiz_map[key]
+        entry["attempts"] += 1
+
+        score_val = float(attempt.score) if attempt.score is not None else None
+        if score_val is not None:
+            if entry["bestScore"] is None or score_val > entry["bestScore"]:
+                entry["bestScore"] = score_val
+
+        if attempt.passed:
+            entry["passed"] = True
+
+    quizzes_data = list(quiz_map.values())
+
     return {
         "enrollments": enrollment_data,
         "recentActivity": recent_activity,
+        "assignments": assignments_data,
+        "quizzes": quizzes_data,
         "upcomingDeadlines": [],
     }
 
@@ -1365,7 +1560,11 @@ def _get_instructor_dashboard_data(user) -> dict:
     from datetime import timedelta
 
     from apps.practicum.models import PracticumSubmission
-    from apps.progression.models import Enrollment, EnrollmentRequest, InstructorAssignment
+    from apps.progression.models import (
+        Enrollment,
+        EnrollmentRequest,
+        InstructorAssignment,
+    )
 
     # Get assigned programs
     assignments = InstructorAssignment.objects.filter(instructor=user)
@@ -1419,9 +1618,7 @@ def _get_instructor_dashboard_data(user) -> dict:
 
     # Get recent pending enrollment requests
     pending_enrollment_requests = (
-        EnrollmentRequest.objects.filter(
-            program_id__in=program_ids, status="pending"
-        )
+        EnrollmentRequest.objects.filter(program_id__in=program_ids, status="pending")
         .select_related("user", "program")
         .order_by("-created_at")[:5]
     )
@@ -1473,8 +1670,12 @@ def _get_admin_dashboard_data(user) -> dict:
     certificates_issued = Certificate.objects.count()
     active_enrollments = Enrollment.objects.filter(status="active").count()
     completed_enrollments = Enrollment.objects.filter(status="completed").count()
-    pending_enrollment_requests = EnrollmentRequest.objects.filter(status="pending").count()
-    pending_practicum_submissions = PracticumSubmission.objects.filter(status="pending").count()
+    pending_enrollment_requests = EnrollmentRequest.objects.filter(
+        status="pending"
+    ).count()
+    pending_practicum_submissions = PracticumSubmission.objects.filter(
+        status="pending"
+    ).count()
 
     # Recent activity (simplified)
     recent_enrollments = (
@@ -1614,8 +1815,7 @@ def admin_programs(request):
                 "level",
                 "is_published",
                 "created_at",
-            )
-            .order_by("-created_at")[(page - 1) * per_page : page * per_page]
+            ).order_by("-created_at")[(page - 1) * per_page : page * per_page]
         )
         program_ids = [program.id for program in programs]
 
@@ -1654,7 +1854,9 @@ def admin_programs(request):
     if include_programs:
         props["programs"] = programs_data
     if include_grouped_programs:
-        props["groupedPrograms"] = _group_programs_by_level(programs_data, course_levels)
+        props["groupedPrograms"] = _group_programs_by_level(
+            programs_data, course_levels
+        )
     if include_blueprints:
         from apps.blueprints.models import AcademicBlueprint
 
@@ -1735,9 +1937,7 @@ def admin_program_detail(request, pk: int):
                 return err
         return None
 
-    structural_error = _find_error(
-        lambda err: "at least one Session/Lesson" in err
-    )
+    structural_error = _find_error(lambda err: "at least one Session/Lesson" in err)
     instructor_error = _find_error(
         lambda err: "at least one assigned Instructor" in err
     )
@@ -1746,17 +1946,16 @@ def admin_program_detail(request, pk: int):
     )
     thumbnail_error = _find_error(lambda err: "Thumbnail image" in err)
     mode_error = _find_error(
-        lambda err: "assessment weight" in err.lower()
-        or "invalid program level" in err.lower()
+        lambda err: (
+            "assessment weight" in err.lower() or "invalid program level" in err.lower()
+        )
     )
     weight_total_match = (
         re.search(r"Total assessment weight is\s+(\d+)%", mode_error or "")
         if mode_error
         else None
     )
-    current_weight_total = (
-        weight_total_match.group(1) if weight_total_match else None
-    )
+    current_weight_total = weight_total_match.group(1) if weight_total_match else None
 
     # Structure readiness report for frontend
     readiness = {
@@ -2660,7 +2859,9 @@ def instructor_programs(request):
     )
     include_filters = should_render_inertia_prop(request, "filters")
 
-    programs_query = Program.objects.filter(id__in=program_ids).select_related("blueprint")
+    programs_query = Program.objects.filter(id__in=program_ids).select_related(
+        "blueprint"
+    )
     if status == "published":
         programs_query = programs_query.filter(is_published=True)
     elif status == "draft":
@@ -2726,7 +2927,9 @@ def instructor_programs(request):
     if include_programs:
         props["programs"] = programs_data
     if include_grouped_programs:
-        props["groupedPrograms"] = _group_programs_by_level(programs_data, course_levels)
+        props["groupedPrograms"] = _group_programs_by_level(
+            programs_data, course_levels
+        )
     if include_course_levels:
         props["courseLevels"] = course_levels
     if include_filters:
@@ -4037,7 +4240,9 @@ def _ensure_quiz_attempt_runtime_state(quiz, attempt) -> dict:
     )
     changed = not isinstance(attempt.runtime_state, dict)
 
-    quiz_questions = list(quiz.questions.all().prefetch_related("options").order_by("position"))
+    quiz_questions = list(
+        quiz.questions.all().prefetch_related("options").order_by("position")
+    )
     question_ids = [question.id for question in quiz_questions]
 
     normalized_question_order = _normalize_order_from_runtime(
@@ -4059,7 +4264,9 @@ def _ensure_quiz_attempt_runtime_state(quiz, attempt) -> dict:
     for question in quiz_questions:
         if question.question_type not in {"mcq", "mcq_multi"}:
             continue
-        option_ids = [option.id for option in question.options.all().order_by("position")]
+        option_ids = [
+            option.id for option in question.options.all().order_by("position")
+        ]
         if quiz.shuffle_options:
             ordered_ids = _normalize_order_from_runtime(
                 existing_option_order.get(str(question.id)),
@@ -4077,7 +4284,9 @@ def _ensure_quiz_attempt_runtime_state(quiz, attempt) -> dict:
 
     max_index = max(0, len(normalized_question_order) - 1)
     current_index = _safe_int(runtime_state.get("current_question_index"))
-    normalized_index = 0 if current_index is None else max(0, min(current_index, max_index))
+    normalized_index = (
+        0 if current_index is None else max(0, min(current_index, max_index))
+    )
     if runtime_state.get("current_question_index") != normalized_index:
         runtime_state["current_question_index"] = normalized_index
         changed = True
@@ -4093,7 +4302,9 @@ def _serialize_quiz_questions_for_attempt(quiz, attempt, runtime_state=None) -> 
     import random
 
     state = runtime_state if isinstance(runtime_state, dict) else {}
-    option_order = state.get("option_order") if isinstance(state.get("option_order"), dict) else {}
+    option_order = (
+        state.get("option_order") if isinstance(state.get("option_order"), dict) else {}
+    )
 
     quiz_questions = list(
         quiz.questions.all()
@@ -4107,7 +4318,9 @@ def _serialize_quiz_questions_for_attempt(quiz, attempt, runtime_state=None) -> 
         state.get("question_order"),
         [question.id for question in quiz_questions],
     )
-    ordered_questions = [questions_by_id[qid] for qid in ordered_question_ids if qid in questions_by_id]
+    ordered_questions = [
+        questions_by_id[qid] for qid in ordered_question_ids if qid in questions_by_id
+    ]
 
     questions = []
     for q in ordered_questions:
@@ -4126,7 +4339,11 @@ def _serialize_quiz_questions_for_attempt(quiz, attempt, runtime_state=None) -> 
                     option_order.get(str(q.id)),
                     [opt.id for opt in opts],
                 )
-                opts = [opts_by_id[opt_id] for opt_id in ordered_option_ids if opt_id in opts_by_id]
+                opts = [
+                    opts_by_id[opt_id]
+                    for opt_id in ordered_option_ids
+                    if opt_id in opts_by_id
+                ]
             q_data["options"] = [
                 {"id": o.id, "text": o.text, "position": o.position} for o in opts
             ]
@@ -4173,7 +4390,10 @@ def _serialize_quiz_questions_for_attempt(quiz, attempt, runtime_state=None) -> 
 def _is_quiz_json_mode(request, data=None) -> bool:
     if str(request.GET.get("response") or "").strip().lower() == "json":
         return True
-    if isinstance(data, dict) and str(data.get("response") or "").strip().lower() == "json":
+    if (
+        isinstance(data, dict)
+        and str(data.get("response") or "").strip().lower() == "json"
+    ):
         return True
     return False
 
@@ -4197,7 +4417,9 @@ def student_quiz_start(request, quiz_id: int):
         return redirect("/dashboard/")
 
     if not quiz.is_published:
-        node_props = quiz.node.properties if isinstance(quiz.node.properties, dict) else {}
+        node_props = (
+            quiz.node.properties if isinstance(quiz.node.properties, dict) else {}
+        )
         linked_quiz_id = _safe_int(node_props.get("quiz_id"))
         # Backward compatibility: some historical records kept quiz unpublished while
         # the linked curriculum node was already published and visible to students.
@@ -4386,7 +4608,9 @@ def student_quiz_submit(request, quiz_id: int):
             )
             merged_runtime_state.update(incoming_runtime_state)
             max_index = max(0, quiz.questions.count() - 1)
-            current_index = _safe_int(merged_runtime_state.get("current_question_index"))
+            current_index = _safe_int(
+                merged_runtime_state.get("current_question_index")
+            )
             merged_runtime_state["current_question_index"] = (
                 0 if current_index is None else max(0, min(current_index, max_index))
             )
@@ -4472,9 +4696,7 @@ def student_quiz_submit(request, quiz_id: int):
                 completion_type=completion_type,
             )
 
-        redirect_url = (
-            f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
-        )
+        redirect_url = f"/student/quiz/{quiz_id}/results/?enrollment_id={enrollment.id}&node_id={quiz.node_id}"
         try:
             from apps.progression.views import _get_sibling_navigation
 
@@ -4676,8 +4898,7 @@ def student_quiz_results(request, quiz_id: int):
     # results render inside the CoursePlayer layout (with sidebar/curriculum).
     if in_course_player_context:
         session_url = (
-            f"/student/programs/{enrollment.id}/session/{quiz.node_id}/"
-            f"?show_results=1"
+            f"/student/programs/{enrollment.id}/session/{quiz.node_id}/?show_results=1"
         )
         return redirect(session_url)
 
@@ -5000,7 +5221,8 @@ def instructor_assignments_global(request):
                 filter=Q(submissions__is_official=True, submissions__passed=False),
             ),
             pending_count=Count(
-                "submissions", filter=Q(submissions__status__in=["started", "submitted"])
+                "submissions",
+                filter=Q(submissions__status__in=["started", "submitted"]),
             ),
         )
         .order_by("-created_at")
@@ -5320,12 +5542,16 @@ def instructor_assignment_grade(request, submission_id: int):
     from apps.notifications.services import NotificationService
 
     try:
-        submission = AssignmentSubmission.objects.select_related(
-            "assignment", "assignment__program", "enrollment", "enrollment__user"
-        ).prefetch_related(
-            "media_assets",
-            "review_media_assets",
-        ).get(pk=submission_id)
+        submission = (
+            AssignmentSubmission.objects.select_related(
+                "assignment", "assignment__program", "enrollment", "enrollment__user"
+            )
+            .prefetch_related(
+                "media_assets",
+                "review_media_assets",
+            )
+            .get(pk=submission_id)
+        )
     except AssignmentSubmission.DoesNotExist:
         messages.error(request, "Submission not found")
         return redirect("/dashboard/")
@@ -5348,9 +5574,7 @@ def instructor_assignment_grade(request, submission_id: int):
         def _save_review_media(uploaded_file, media_type="file"):
             original_name = uploaded_file.name
             ext = (
-                original_name.rsplit(".", 1)[-1].lower()
-                if "." in original_name
-                else ""
+                original_name.rsplit(".", 1)[-1].lower() if "." in original_name else ""
             )
             if (
                 submission.assignment.allowed_file_types
@@ -5358,7 +5582,9 @@ def instructor_assignment_grade(request, submission_id: int):
             ):
                 raise ValueError(f"File type .{ext} is not allowed")
 
-            max_size_bytes = int(submission.assignment.max_file_size_mb or 0) * 1024 * 1024
+            max_size_bytes = (
+                int(submission.assignment.max_file_size_mb or 0) * 1024 * 1024
+            )
             if (
                 max_size_bytes > 0
                 and int(getattr(uploaded_file, "size", 0) or 0) > max_size_bytes
@@ -5422,8 +5648,8 @@ def instructor_assignment_grade(request, submission_id: int):
             if final_score is None:
                 submission.passed = None
             else:
-                submission.passed = (
-                    float(final_score) >= float(submission.assignment.pass_threshold)
+                submission.passed = float(final_score) >= float(
+                    submission.assignment.pass_threshold
                 )
         else:
             submission.passed = None
@@ -5467,7 +5693,9 @@ def instructor_assignment_grade(request, submission_id: int):
                 "filePath": submission.file_path,
                 "fileName": submission.file_name,
                 "textContent": submission.text_content,
-                "score": float(submission.score) if submission.score is not None else None,
+                "score": float(submission.score)
+                if submission.score is not None
+                else None,
                 "finalScore": submission.get_final_score(),
                 "passed": submission.passed,
                 "feedback": submission.feedback,
@@ -5534,13 +5762,10 @@ def student_assignments(request, program_id: int):
 
     # Get latest attempt per assignment for display.
     submissions = {}
-    for submission in (
-        AssignmentSubmission.objects.filter(
-            enrollment=enrollment,
-            assignment__in=assignments,
-        )
-        .order_by("assignment_id", "-attempt_number")
-    ):
+    for submission in AssignmentSubmission.objects.filter(
+        enrollment=enrollment,
+        assignment__in=assignments,
+    ).order_by("assignment_id", "-attempt_number"):
         submissions.setdefault(submission.assignment_id, submission)
 
     return render(
@@ -5779,9 +6004,7 @@ def student_assignment_view(request, assignment_id: int):
                     "fileName": existing.file_name,
                     "textContent": existing.text_content,
                     "score": (
-                        float(existing.score)
-                        if existing.score is not None
-                        else None
+                        float(existing.score) if existing.score is not None else None
                     ),
                     "finalScore": existing.get_final_score(),
                     "passed": existing.passed,
@@ -5889,7 +6112,9 @@ def student_assignment_submit(request, assignment_id: int):
         attempt_limit_props,
     )
     if attempts_remaining is not None and attempts_remaining <= 0:
-        messages.error(request, "You have used all allowed attempts for this assignment")
+        messages.error(
+            request, "You have used all allowed attempts for this assignment"
+        )
         if in_course_player_context and context_node:
             return redirect(
                 f"/student/programs/{enrollment.id}/session/{context_node.id}/"
@@ -5922,7 +6147,10 @@ def student_assignment_submit(request, assignment_id: int):
             raise ValueError(f"File type .{ext} is not allowed")
 
         max_size_bytes = int(assignment.max_file_size_mb or 0) * 1024 * 1024
-        if max_size_bytes > 0 and int(getattr(uploaded_file, "size", 0) or 0) > max_size_bytes:
+        if (
+            max_size_bytes > 0
+            and int(getattr(uploaded_file, "size", 0) or 0) > max_size_bytes
+        ):
             raise ValueError(
                 f"{original_name} exceeds the maximum size of {assignment.max_file_size_mb} MB"
             )
@@ -5979,7 +6207,9 @@ def student_assignment_submit(request, assignment_id: int):
     # Get text content
     text_content = request.POST.get("text_content", "")
     if not uploaded_media and not str(text_content or "").strip():
-        messages.error(request, "Add a response, file, or media attachment before submitting")
+        messages.error(
+            request, "Add a response, file, or media attachment before submitting"
+        )
         if in_course_player_context and context_node:
             return redirect(
                 f"/student/programs/{enrollment.id}/session/{context_node.id}/"
@@ -6015,7 +6245,9 @@ def student_assignment_submit(request, assignment_id: int):
         )
 
     refresh_assignment_official_flags(enrollment, assignment)
-    messages.success(request, f"Assignment submitted (attempt #{new_attempt.attempt_number})")
+    messages.success(
+        request, f"Assignment submitted (attempt #{new_attempt.attempt_number})"
+    )
 
     if in_course_player_context and context_node:
         completion_state = _assignment_node_completion_state(context_node, enrollment)
@@ -7095,8 +7327,12 @@ def _sync_quiz_questions(node, questions_data: list):
                     continue
                 normalized.append(
                     {
-                        "left_text": _normalize_question_text(pair.get("left_text", "")),
-                        "right_text": _normalize_question_text(pair.get("right_text", "")),
+                        "left_text": _normalize_question_text(
+                            pair.get("left_text", "")
+                        ),
+                        "right_text": _normalize_question_text(
+                            pair.get("right_text", "")
+                        ),
                         "explanation": _normalize_question_text(
                             pair.get("explanation", "")
                         ),

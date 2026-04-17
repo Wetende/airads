@@ -199,7 +199,7 @@ export default function ProgramManageCard({
                     <Stack direction="row" alignItems="center" spacing={0.5}>
                         <IconList size={15} />
                         <Typography variant="caption" fontWeight={600} fontSize="0.72rem">
-                            {program.lessonsCount || program.lessons_count || 0} Lectures
+                            {program.lectureCount || program.lecture_count || program.lessonsCount || program.lessons_count || 0} Lectures
                         </Typography>
                     </Stack>
                     <Stack direction="row" alignItems="center" spacing={0.5}>

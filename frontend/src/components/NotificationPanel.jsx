@@ -32,6 +32,7 @@ import InfoIcon from "@mui/icons-material/Info";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import PersonIcon from "@mui/icons-material/Person";
 import SchoolIcon from "@mui/icons-material/School";
+import MailOutlineIcon from "@mui/icons-material/MailOutline";
 
 const POLL_INTERVAL_MS = 60_000;
 const COUNT_CACHE_KEY = "crossview.notification.unread_count";
@@ -45,6 +46,7 @@ const notificationIcons = {
     assignment_graded: <GradeIcon color="primary" />,
     quiz_graded: <GradeIcon color="primary" />,
     announcement: <AnnouncementIcon color="info" />,
+    direct_message: <MailOutlineIcon color="info" />,
     instructor_approved: <PersonIcon color="success" />,
     instructor_rejected: <PersonIcon color="error" />,
     program_approved: <SchoolIcon color="success" />,

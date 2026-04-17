@@ -6,6 +6,7 @@
 import { Head, Link } from '@inertiajs/react';
 import {
   Box,
+  Button,
   Card,
   CardContent,
   Grid,
@@ -25,6 +26,7 @@ import {
 import {
   Email as EmailIcon,
   CalendarToday as CalendarIcon,
+  Message as MessageIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import InstructorLayout from '@/layouts/InstructorLayout';
@@ -104,6 +106,16 @@ export default function InstructorStudentShow({
                   </Stack>
                 </Box>
                 <Box sx={{ minWidth: 200 }}>
+                  <Button
+                    component={Link}
+                    href={`/messages/new/?recipient_id=${student.id}`}
+                    startIcon={<MessageIcon />}
+                    variant="outlined"
+                    size="small"
+                    sx={{ mb: 1 }}
+                  >
+                    Message Student
+                  </Button>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     Overall Progress
                   </Typography>
