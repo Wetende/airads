@@ -87,6 +87,14 @@ class PlatformSettings(TimeStampedModel):
     secondary_color = models.CharField(max_length=7, default="#1E40AF")
     custom_css = models.TextField(blank=True, default="")
 
+    # Regional / Locale
+    currency_code = models.CharField(
+        max_length=10, default="KES", help_text="e.g. USD, KES, NGN"
+    )
+    currency_symbol = models.CharField(
+        max_length=10, default="KSh ", help_text="e.g. $, KSh, ₦"
+    )
+
     # Feature Flags (JSON for flexibility)
     features = models.JSONField(
         default=dict,
@@ -192,6 +200,8 @@ class PlatformSettings(TimeStampedModel):
             "secondaryColor": settings.secondary_color,
             "deploymentMode": settings.deployment_mode,
             "isSetupComplete": settings.is_setup_complete,
+            "currencyCode": settings.currency_code,
+            "currencySymbol": settings.currency_symbol,
             "features": features,
             "publicContent": public_content,
             "socialLinks": social_links,
