@@ -1,4 +1,5 @@
 import { Link } from "@inertiajs/react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import {
     Box,
@@ -17,9 +18,13 @@ import {
     IconSchool,
     IconCertificate,
 } from "@tabler/icons-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ButtonAnimationWrapper from "../../common/ButtonAnimationWrapper";
-import heroBgImage from "../../../assets/images/hero1.jpg";
+import heroBgImage1 from "../../../assets/images/graduationgroup.png";
+import heroBgImage2 from "../../../assets/images/graduation1.png";
+import heroBgImage3 from "../../../assets/images/graduation.png";
+
+const heroImages = [heroBgImage1, heroBgImage2, heroBgImage3];
 
 // --- Animation Variants ---
 const fadeInUp = {
@@ -187,18 +192,44 @@ export default function HeroSection({ platform }) {
             : {};
     const heroHeadline = publicContent.heroHeadline;
 
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <Box
             sx={{
                 pt: { xs: 14, md: 16 },
                 pb: { xs: 10, md: 14 },
-                backgroundImage: `linear-gradient(135deg, ${hexToRgba(primaryColor, 0.3)} 0%, ${hexToRgba(secondaryColor, 0.45)} 100%), url(${heroBgImage})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
                 position: "relative",
                 overflow: "hidden",
             }}
         >
+            <AnimatePresence>
+                <motion.div
+                    key={currentImageIndex}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1 }}
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundImage: `linear-gradient(to right, rgba(0, 0, 0, 0.50) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 0.35) 100%), linear-gradient(135deg, ${hexToRgba(primaryColor, 0.35)} 0%, ${hexToRgba(secondaryColor, 0.5)} 100%), url(${heroImages[currentImageIndex]})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        zIndex: 0,
+                    }}
+                />
+            </AnimatePresence>
             {/* Background decoration */}
             <Box
                 sx={{
