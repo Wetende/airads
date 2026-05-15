@@ -247,7 +247,7 @@ def landing_page(request):
 
     return render(
         request,
-        "Public/Landing",
+        "Public/Home",
         landing_payload,
     )
 
@@ -9119,7 +9119,7 @@ def instructor_discussion_reply(request):
         messages.error(request, "This discussion is locked")
         return redirect(referer)
 
-    post = DiscussionPost.objects.create(
+    post =     DiscussionPost.objects.create(
         thread=thread,
         user=request.user,
         content=content,
@@ -9128,3 +9128,85 @@ def instructor_discussion_reply(request):
 
     messages.success(request, "Reply posted")
     return redirect(referer)
+
+
+# ─── AIRADS College Public Pages ───
+
+def airads_campuses(request):
+    return render(request, "Public/Campuses")
+
+
+def airads_campus_detail(request, slug):
+    slug_to_component = {
+        "eldoret": "Public/Eldoret",
+        "bungoma": "Public/Bungoma",
+        "kericho": "Public/Kericho",
+        "kisumu": "Public/Kisumu",
+        "lodwar": "Public/Lodwar",
+        "maralal": "Public/Maralal",
+        "nakuru": "Public/Nakuru",
+        "virtual": "Public/Virtual",
+    }
+    component = slug_to_component.get(slug, "Public/NotFound")
+    return render(request, component)
+
+
+def airads_schools(request):
+    return render(request, "Public/Schools")
+
+
+def airads_school_detail(request, slug):
+    slug_to_component = {
+        "engineering-ict": "Public/SchoolOfEngineeringICT",
+        "hospitality-tourism": "Public/SchoolOfHospitalityTourism",
+        "health-social": "Public/SchoolOfHealthSocial",
+        "beauty-hairdressing": "Public/SchoolOfBeautyHairdressing",
+        "media": "Public/SchoolOfMedia",
+        "nita-courses": "Public/NitaCourses",
+    }
+    component = slug_to_component.get(slug, "Public/NotFound")
+    return render(request, component)
+
+
+def airads_news(request):
+    return render(request, "Public/News")
+
+
+def airads_events(request):
+    return render(request, "Public/Events")
+
+
+def airads_students_portal(request):
+    return render(request, "Public/StudentsPortal")
+
+
+def airads_admissions(request):
+    return render(request, "Public/Admissions")
+
+
+def airads_application_procedure(request):
+    return render(request, "Public/ApplicationProcedure")
+
+
+def airads_application_form(request):
+    return render(request, "Public/ApplicationForm")
+
+
+def airads_career_guide(request):
+    return render(request, "Public/CareerGuide")
+
+
+def airads_mission(request):
+    return render(request, "Public/Mission")
+
+
+def airads_history(request):
+    return render(request, "Public/History")
+
+
+def airads_study(request):
+    return render(request, "Public/StudyAirads")
+
+
+def airads_upload(request):
+    return render(request, "Public/Upload")

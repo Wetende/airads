@@ -74,7 +74,7 @@ export default function EnrolledCourseCard({ enrollment }) {
                     height="140"
                     image={
                         enrollment.thumbnail ||
-                        "/static/images/course-placeholder.svg"
+                        "/static/static/images/course-placeholder.svg"
                     }
                     alt={enrollment.programName}
                     sx={{ objectFit: "cover" }}

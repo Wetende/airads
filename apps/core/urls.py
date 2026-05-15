@@ -11,14 +11,25 @@ app_name = "core"
 urlpatterns = [
     # Public pages
     path("", views.landing_page, name="landing"),
-    path(
-        "verify-certificate/", views.verify_certificate_page, name="verify_certificate"
-    ),
     path("about/", views.about_page, name="about"),
     path("contact/", views.contact_page, name="contact"),
-    path("programs/", views.public_programs_list, name="programs"),
-    path("programs/<int:pk>/", views.public_program_detail, name="program_detail"),
-    path("programs/<int:pk>/review/", views.program_review_submit, name="program_review_submit"),
+
+    # AIRADS Public Pages
+    path("campuses/", views.airads_campuses, name="airads.campuses"),
+    path("campuses/<slug:slug>/", views.airads_campus_detail, name="airads.campus_detail"),
+    path("schools/", views.airads_schools, name="airads.schools"),
+    path("schools/<slug:slug>/", views.airads_school_detail, name="airads.school_detail"),
+    path("news/", views.airads_news, name="airads.news"),
+    path("news/latest/", views.airads_events, name="airads.events"),
+    path("students/", views.airads_students_portal, name="airads.students"),
+    path("admissions/", views.airads_admissions, name="airads.admissions"),
+    path("admissions/procedure/", views.airads_application_procedure, name="airads.application_procedure"),
+    path("admissions/forms/", views.airads_application_form, name="airads.application_form"),
+    path("admissions/career-guide/", views.airads_career_guide, name="airads.career_guide"),
+    path("about/mission/", views.airads_mission, name="airads.mission"),
+    path("about/history/", views.airads_history, name="airads.history"),
+    path("about/study-airads/", views.airads_study, name="airads.study"),
+    path("upload/", views.airads_upload, name="airads.upload"),
     # Authentication
     path("login/", views.login_page, name="login"),
     path("register/", views.register_page, name="register"),

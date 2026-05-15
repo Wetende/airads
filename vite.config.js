@@ -26,7 +26,7 @@ export default defineConfig(({ command }) => ({
         },
     },
     resolve: {
-        extensions: [".js", ".jsx", ".json"],
+        extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
         alias: {
             "@": resolve("./frontend/src"),
         },

@@ -1,363 +1,319 @@
-import { Head, usePage } from "@inertiajs/react";
-import {
-    Box,
-    Container,
-    Typography,
-    Grid,
-    Stack,
-    Button,
-    TextField,
-    ThemeProvider,
-    createTheme,
-    CssBaseline,
-} from "@mui/material";
-import { motion } from "framer-motion";
-import { useState } from "react";
-import PublicNavbar from "../../components/common/PublicNavbar";
-import Footer from "@/components/common/Footer";
+import React from 'react';
+import { Head } from "@inertiajs/react";
+import { Box, Container, Typography, Grid, Paper, TextField, Button, MenuItem, FormControl, InputLabel, Select } from "@mui/material";
+import { LocationOn, Phone, Email, Language, Send } from "@mui/icons-material";
+import TopNavbar from "../../components/common/TopNavbar";
+import MainNavbar from "../../components/common/MainNavbar";
+import Footer from "../../components/common/AIRADSFooter";
 
-// ─── Unsplash hero image ──────────────────────────────────────────
-const HERO_IMAGE =
-    "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=800&q=80";
+const Contact = () => {
+  const campusContacts = [
+    { name: "ELDORET Campus", phone: "0715-696-979" },
+    { name: "NAKURU Campus", phone: "" },
+    { name: "KERICHO Campus", phone: "0729-976-885" },
+    { name: "KISUMU Campus", phone: "0715-505-262" },
+    { name: "BUNGOMA Campus", phone: "0715-771-316" },
+    { name: "LODWAR Campus", phone: "0723-555-999" },
+    { name: "MARALAL Campus", phone: "0723-555-999" }
+  ];
 
-// ─── Animation variants ───────────────────────────────────────────
-const fadeInUp = {
-    initial: { opacity: 0, y: 40 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, margin: "-80px" },
-    transition: { duration: 0.7, ease: [0.215, 0.61, 0.355, 1] },
+  return (
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', backgroundImage: 'linear-gradient(to bottom right, #f8fafc, #ffffff, #eff6ff)' }}>
+      <Head title="Contact - AIRADS College" />
+      <TopNavbar />
+      <MainNavbar />
+      
+      <Box component="main" sx={{ flexGrow: 1, py: { xs: 8, md: 12 }, mt: { xs: 8, md: 12 } }}>
+        <Container maxWidth="lg">
+          {/* Hero Section */}
+          <Box sx={{ textAlign: 'center', mb: { xs: 10, md: 12 } }}>
+            <Box sx={{ position: 'relative', display: 'inline-block' }}>
+              <Typography variant="h2" component="h1" sx={{ fontWeight: 900, mb: 4, background: 'linear-gradient(to right, #1e40af, #2563eb, #dc2626)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: { xs: '3rem', md: '4.5rem' } }}>
+                Contact Us
+              </Typography>
+              <Box sx={{ position: 'absolute', top: -16, left: '50%', transform: 'translateX(-50%)', width: 120, height: 4, borderRadius: 2, background: 'linear-gradient(to right, #2563eb, #dc2626)', opacity: 0.5 }} />
+            </Box>
+            <Typography variant="h5" sx={{ color: 'text.secondary', maxWidth: 800, mx: 'auto', fontWeight: 300, lineHeight: 1.6 }}>
+              Get in touch with us for admissions, inquiries, or any information about 
+              <Box component="span" sx={{ fontWeight: 600, color: '#1e40af' }}> AIRADS College</Box>.
+            </Typography>
+            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+              <Box sx={{ width: 96, height: 4, background: 'linear-gradient(to right, #2563eb, #dc2626)', borderRadius: 2 }} />
+            </Box>
+          </Box>
+
+          <Grid container spacing={8} sx={{ mb: 12 }}>
+            {/* Contact Information */}
+            <Grid item xs={12} lg={6}>
+              <Box sx={{ mb: 6, textAlign: { xs: 'center', lg: 'left' } }}>
+                <Typography variant="h4" component="h2" sx={{ fontWeight: 900, color: '#1e40af', mb: 2, position: 'relative', display: 'inline-block' }}>
+                  Our Contacts
+                  <Box sx={{ position: 'absolute', bottom: -8, left: 0, width: 80, height: 4, background: 'linear-gradient(to right, #2563eb, #dc2626)', borderRadius: 2, margin: { xs: '0 auto', lg: 0 } }} />
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', mt: 3, fontSize: '1.125rem' }}>
+                  We're here to help you every step of the way
+                </Typography>
+              </Box>
+              
+              {/* Head Office Card */}
+              <Paper sx={{ p: { xs: 3, md: 5 }, borderRadius: 6, mb: 6, border: '1px solid #f1f5f9', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s', '&:hover': { transform: 'scale(1.02)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+                  <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(to right, #2563eb, #dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', mr: 2 }}>
+                    HQ
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1e40af' }}>
+                    Head Office
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: '#eff6ff' } }}>
+                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: '#2563eb' }}>
+                      <LocationOn />
+                    </Box>
+                    <Typography variant="body1" sx={{ fontWeight: 500, color: 'text.primary' }}>
+                      Institute Plaza 3rd & 4th Floor
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: '#f0fdf4' } }}>
+                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: '#16a34a' }}>
+                      <Phone />
+                    </Box>
+                    <Typography component="a" href="tel:+254723555999" variant="body1" sx={{ fontWeight: 500, color: 'text.primary', textDecoration: 'none', '&:hover': { color: '#16a34a' } }}>
+                      +254 723 555 999
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: '#faf5ff' } }}>
+                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: '#9333ea' }}>
+                      <Email />
+                    </Box>
+                    <Typography component="a" href="mailto:info@airads.ac.ke" variant="body1" sx={{ fontWeight: 500, color: 'text.primary', textDecoration: 'none', '&:hover': { color: '#9333ea' } }}>
+                      info@airads.ac.ke
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: '#eef2ff' } }}>
+                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: '#4f46e5' }}>
+                      <Language />
+                    </Box>
+                    <Typography component="a" href="https://www.airads.ac.ke" target="_blank" rel="noopener noreferrer" variant="body1" sx={{ fontWeight: 500, color: 'text.primary', textDecoration: 'none', '&:hover': { color: '#4f46e5' } }}>
+                      www.airads.ac.ke
+                    </Typography>
+                  </Box>
+                </Box>
+              </Paper>
+
+              {/* Campus Contacts Card */}
+              <Paper sx={{ p: { xs: 3, md: 5 }, borderRadius: 6, border: '1px solid #f1f5f9', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s', '&:hover': { boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+                  <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(to right, #22c55e, #2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.5rem', mr: 2 }}>
+                    📱
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1e40af' }}>
+                    Campus Contact Numbers
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {campusContacts.map((campus, index) => (
+                    <Box 
+                      key={index} 
+                      sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, background: 'linear-gradient(to right, #f8fafc, #eff6ff)', borderRadius: 3, transition: 'all 0.3s', '&:hover': { background: 'linear-gradient(to right, #eff6ff, #dbeafe)', transform: 'scale(1.02)' } }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: '#bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#1d4ed8' }}>{index + 1}</Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary' }}>{campus.name}</Typography>
+                      </Box>
+                      {campus.phone ? (
+                        <Typography 
+                          component="a" 
+                          href={`tel:${campus.phone}`} 
+                          variant="body2" 
+                          sx={{ fontWeight: 'bold', color: '#1d4ed8', px: 2, py: 0.5, borderRadius: 4, bgcolor: '#dbeafe', textDecoration: 'none', transition: 'background-color 0.2s', '&:hover': { bgcolor: '#bfdbfe', color: '#1e3a8a' } }}
+                        >
+                          {campus.phone}
+                        </Typography>
+                      ) : (
+                        <Typography variant="body2" sx={{ color: 'text.secondary', px: 2, py: 0.5 }}>N/A</Typography>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* Inquiry Form */}
+            <Grid item xs={12} lg={6}>
+              <Box sx={{ mb: 6, textAlign: { xs: 'center', lg: 'left' } }}>
+                <Typography variant="h4" component="h2" sx={{ fontWeight: 900, color: '#1e40af', mb: 2, position: 'relative', display: 'inline-block' }}>
+                  Send us an Inquiry
+                  <Box sx={{ position: 'absolute', bottom: -8, left: 0, width: 80, height: 4, background: 'linear-gradient(to right, #2563eb, #dc2626)', borderRadius: 2, margin: { xs: '0 auto', lg: 0 } }} />
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', mt: 3, fontSize: '1.125rem' }}>
+                  We'll get back to you within 24 hours
+                </Typography>
+              </Box>
+              
+              <Paper component="form" sx={{ p: { xs: 3, md: 5 }, borderRadius: 6, border: '1px solid #f1f5f9', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s', '&:hover': { boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' } }}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField 
+                      fullWidth 
+                      label="Full Name" 
+                      variant="outlined" 
+                      placeholder="Enter your full name"
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField 
+                      fullWidth 
+                      label="Email Address" 
+                      type="email"
+                      variant="outlined" 
+                      placeholder="Enter your email"
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField 
+                      fullWidth 
+                      label="Phone Number" 
+                      type="tel"
+                      variant="outlined" 
+                      placeholder="Enter your phone number"
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}>
+                      <InputLabel>Subject</InputLabel>
+                      <Select label="Subject" defaultValue="General Inquiry">
+                        <MenuItem value="General Inquiry">General Inquiry</MenuItem>
+                        <MenuItem value="Admissions">Admissions</MenuItem>
+                        <MenuItem value="Course Information">Course Information</MenuItem>
+                        <MenuItem value="Campus Visit">Campus Visit</MenuItem>
+                        <MenuItem value="Financial Aid">Financial Aid</MenuItem>
+                        <MenuItem value="Other">Other</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField 
+                      fullWidth 
+                      label="Message" 
+                      multiline
+                      rows={6}
+                      variant="outlined" 
+                      placeholder="Tell us how we can help you..."
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button 
+                      type="submit"
+                      variant="contained"
+                      fullWidth
+                      endIcon={<Send />}
+                      sx={{ 
+                        py: 2, 
+                        borderRadius: 3, 
+                        background: 'linear-gradient(to right, #1d4ed8, #1e40af, #dc2626)', 
+                        fontWeight: 'bold', 
+                        fontSize: '1.125rem',
+                        transition: 'all 0.3s',
+                        '&:hover': { background: 'linear-gradient(to right, #1e40af, #1e3a8a, #b91c1c)', transform: 'scale(1.02)', boxShadow: 6 }
+                      }}
+                    >
+                      Send Message
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          {/* Additional Contact Methods */}
+          <Paper 
+            sx={{ 
+              p: { xs: 4, md: 8 }, 
+              borderRadius: 6, 
+              background: 'linear-gradient(to right, #1e3a8a, #1e40af, #b91c1c)', 
+              color: 'white', 
+              textAlign: 'center', 
+              boxShadow: 24, 
+              position: 'relative', 
+              overflow: 'hidden' 
+            }}
+          >
+            {/* Background Pattern */}
+            <Box sx={{ position: 'absolute', inset: 0, opacity: 0.1 }}>
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: 160, height: 160, bgcolor: 'white', borderRadius: '50%', transform: 'translate(-80px, -80px)' }} />
+              <Box sx={{ position: 'absolute', top: 0, right: 0, width: 240, height: 240, bgcolor: 'white', borderRadius: '50%', transform: 'translate(120px, -120px)' }} />
+              <Box sx={{ position: 'absolute', bottom: 0, left: '50%', width: 320, height: 320, bgcolor: 'white', borderRadius: '50%', transform: 'translate(-160px, 160px)' }} />
+            </Box>
+            
+            <Box sx={{ position: 'relative', zIndex: 10 }}>
+              <Typography variant="h3" component="h3" sx={{ fontWeight: 900, mb: 2, fontSize: { xs: '2rem', md: '3rem' } }}>
+                Other Ways to Reach Us
+              </Typography>
+              <Typography variant="h6" sx={{ opacity: 0.9, mb: 6, maxWidth: 800, mx: 'auto', fontWeight: 300 }}>
+                Choose your preferred communication method for faster support
+              </Typography>
+              
+              <Grid container spacing={4}>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ transition: 'all 0.3s', '&:hover': { transform: 'scale(1.1)' } }}>
+                    <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
+                      💬
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>WhatsApp</Typography>
+                    <Typography variant="body1" sx={{ opacity: 0.9, lineHeight: 1.6 }}>
+                      Send us a WhatsApp message for quick responses and instant support
+                    </Typography>
+                  </Box>
+                </Grid>
+                
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ transition: 'all 0.3s', '&:hover': { transform: 'scale(1.1)' } }}>
+                    <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
+                      📱
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>Facebook Messenger</Typography>
+                    <Typography variant="body1" sx={{ opacity: 0.9, lineHeight: 1.6 }}>
+                      Connect with us through Facebook Messenger for social support
+                    </Typography>
+                  </Box>
+                </Grid>
+                
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ transition: 'all 0.3s', '&:hover': { transform: 'scale(1.1)' } }}>
+                    <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
+                      📞
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>Call/SMS</Typography>
+                    <Typography variant="body1" sx={{ opacity: 0.9, lineHeight: 1.6 }}>
+                      Call or send SMS to any of our campus numbers for direct communication
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+              
+              <Box sx={{ mt: 8, display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap' }}>
+                <Button variant="contained" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: 'white', px: 4, py: 1.5, borderRadius: 8, fontWeight: 600, '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)', transform: 'scale(1.05)' } }}>
+                  📞 Call Now
+                </Button>
+                <Button variant="contained" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: 'white', px: 4, py: 1.5, borderRadius: 8, fontWeight: 600, '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)', transform: 'scale(1.05)' } }}>
+                  💬 WhatsApp
+                </Button>
+              </Box>
+            </Box>
+          </Paper>
+        </Container>
+      </Box>
+
+      <Footer />
+    </Box>
+  );
 };
 
-// Force light theme for public pages
-const lightTheme = createTheme({
-    palette: {
-        mode: "light",
-        background: { default: "#FAFAFA", paper: "#FFFFFF" },
-        text: { primary: "#1F2937", secondary: "#6B7280" },
-    },
-});
-
-export default function Contact() {
-    const { platform, auth } = usePage().props;
-
-    const primaryColor = platform?.primaryColor || "#2563EB";
-    const secondaryColor = platform?.secondaryColor || "#1E40AF";
-    const institutionName = platform?.institutionName || "Our Institution";
-    const contactEmail = platform?.email || "admin@example.com";
-    const contactPhone = platform?.phone || "";
-    const contactAddress = platform?.address || "";
-
-    const [form, setForm] = useState({ name: "", email: "", message: "" });
-    const [submitted, setSubmitted] = useState(false);
-
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // TODO: integrate with backend contact endpoint
-        setSubmitted(true);
-        setTimeout(() => setSubmitted(false), 4000);
-        setForm({ name: "", email: "", message: "" });
-    };
-
-    return (
-        <ThemeProvider theme={lightTheme}>
-            <CssBaseline />
-            <Head title={`Contact - ${institutionName}`}>
-                <meta
-                    name="description"
-                    content={`Contact ${institutionName} to learn more about programs, enrollment, and learner support.`}
-                />
-            </Head>
-
-            <Box sx={{ minHeight: "100vh", bgcolor: "#FAFAFA", overflowX: "hidden" }}>
-                {/* ═══════ NAVBAR ═══════ */}
-                <PublicNavbar activeLink="/contact/" auth={auth} />
-
-                {/* ═══════ SECTION 1: Hero Banner ═══════ */}
-                <Box
-                    sx={{
-                        position: "relative",
-                        pt: { xs: 14, md: 16 },
-                        pb: { xs: 8, md: 12 },
-                        bgcolor: primaryColor,
-                        overflow: "hidden",
-                    }}
-                >
-                    <Container maxWidth="lg">
-                        <Grid container spacing={6} alignItems="center" justifyContent="space-between">
-                            {/* Title Side */}
-                            <Grid size={{ xs: 12, md: 4 }}>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.7, delay: 0.1 }}
-                                >
-                                    <Typography
-                                        variant="h1"
-                                        sx={{
-                                            color: "white",
-                                            fontSize: { xs: 42, md: 56 },
-                                            fontWeight: 700,
-                                            mb: 2,
-                                        }}
-                                    >
-                                        Contact
-                                    </Typography>
-                                    <Box
-                                        sx={{
-                                            width: 60,
-                                            height: 4,
-                                            bgcolor: "white",
-                                            borderRadius: 2,
-                                            opacity: 0.7,
-                                        }}
-                                    />
-                                </motion.div>
-                            </Grid>
-
-                            {/* Image Side — pushed right */}
-                            <Grid size={{ xs: 12, md: 7 }} sx={{ display: "flex", justifyContent: "flex-end" }}>
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.8, delay: 0.3 }}
-                                    style={{ width: "100%", maxWidth: 520 }}
-                                >
-                                    <Box
-                                        component="img"
-                                        src={HERO_IMAGE}
-                                        alt="Contact us"
-                                        sx={{
-                                            width: "100%",
-                                            height: { xs: 250, md: 320 },
-                                            objectFit: "cover",
-                                            borderRadius: 3,
-                                            boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-                                        }}
-                                    />
-                                </motion.div>
-                            </Grid>
-                        </Grid>
-                    </Container>
-                </Box>
-
-                {/* ═══════ SECTION 2: Contact Us — Info + Form ═══════ */}
-                <Box sx={{ py: { xs: 8, md: 14 }, bgcolor: "white" }}>
-                    <Container maxWidth="lg">
-                        {/* Section Heading — centered */}
-                        <motion.div {...fadeInUp}>
-                            <Stack spacing={1.5} textAlign="center" alignItems="center" sx={{ mb: { xs: 6, md: 10 } }}>
-                                <Typography
-                                    variant="h2"
-                                    sx={{ color: primaryColor, fontWeight: 700 }}
-                                >
-                                    Contact Us
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        width: 50,
-                                        height: 4,
-                                        bgcolor: primaryColor,
-                                        borderRadius: 2,
-                                    }}
-                                />
-                            </Stack>
-                        </motion.div>
-
-                        {/* Two-column grid: info left, form right */}
-                        <Grid container spacing={{ xs: 6, md: 10 }}>
-                            {/* LEFT — Contact Info */}
-                            <Grid size={{ xs: 12, md: 5 }}>
-                                <motion.div {...fadeInUp}>
-                                    <Typography
-                                        variant="h5"
-                                        sx={{
-                                            fontStyle: "italic",
-                                            color: "text.secondary",
-                                            mb: 5,
-                                            lineHeight: 1.6,
-                                        }}
-                                    >
-                                        If you have any questions, feel free to reach out to us. We&apos;d love to hear from you.
-                                    </Typography>
-
-                                    {/* Address */}
-                                    <Box sx={{ mb: 4 }}>
-                                        <Typography
-                                            variant="subtitle1"
-                                            sx={{ fontWeight: 700, color: primaryColor, mb: 0.5 }}
-                                        >
-                                            Address
-                                        </Typography>
-                                        <Typography
-                                            variant="body1"
-                                            color="text.secondary"
-                                            sx={{ whiteSpace: "pre-line" }}
-                                        >
-                                            {contactAddress || "Address details coming soon."}
-                                        </Typography>
-                                    </Box>
-
-                                    {/* Email */}
-                                    <Box>
-                                        <Typography
-                                            variant="subtitle1"
-                                            sx={{ fontWeight: 700, color: primaryColor, mb: 0.5 }}
-                                        >
-                                            Email
-                                        </Typography>
-                                        <Typography variant="body1" color="text.secondary">
-                                            {contactEmail}
-                                        </Typography>
-                                    </Box>
-
-                                    {contactPhone && (
-                                        <Box sx={{ mt: 4 }}>
-                                            <Typography
-                                                variant="subtitle1"
-                                                sx={{
-                                                    fontWeight: 700,
-                                                    color: primaryColor,
-                                                    mb: 0.5,
-                                                }}
-                                            >
-                                                Phone
-                                            </Typography>
-                                            <Typography
-                                                variant="body1"
-                                                color="text.secondary"
-                                            >
-                                                {contactPhone}
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                </motion.div>
-                            </Grid>
-
-                            {/* RIGHT — Contact Form */}
-                            <Grid size={{ xs: 12, md: 7 }}>
-                                <motion.div {...fadeInUp}>
-                                    <Typography
-                                        variant="h4"
-                                        sx={{ fontWeight: 700, mb: 4, color: "text.primary" }}
-                                    >
-                                        Leave A Message
-                                    </Typography>
-
-                                    <Box
-                                        component="form"
-                                        onSubmit={handleSubmit}
-                                        sx={{ display: "flex", flexDirection: "column", gap: 3 }}
-                                    >
-                                        <TextField
-                                            name="name"
-                                            label="Name"
-                                            variant="outlined"
-                                            fullWidth
-                                            required
-                                            value={form.name}
-                                            onChange={handleChange}
-                                            sx={{
-                                                "& .MuiOutlinedInput-root": {
-                                                    borderRadius: 1,
-                                                    bgcolor: "#F9FAFB",
-                                                },
-                                            }}
-                                        />
-                                        <TextField
-                                            name="email"
-                                            label="Email"
-                                            type="email"
-                                            variant="outlined"
-                                            fullWidth
-                                            required
-                                            value={form.email}
-                                            onChange={handleChange}
-                                            sx={{
-                                                "& .MuiOutlinedInput-root": {
-                                                    borderRadius: 1,
-                                                    bgcolor: "#F9FAFB",
-                                                },
-                                            }}
-                                        />
-                                        <TextField
-                                            name="message"
-                                            label="Message"
-                                            variant="outlined"
-                                            fullWidth
-                                            required
-                                            multiline
-                                            rows={5}
-                                            value={form.message}
-                                            onChange={handleChange}
-                                            sx={{
-                                                "& .MuiOutlinedInput-root": {
-                                                    borderRadius: 1,
-                                                    bgcolor: "#F9FAFB",
-                                                },
-                                            }}
-                                        />
-
-                                        <Box>
-                                            <Button
-                                                type="submit"
-                                                variant="contained"
-                                                size="large"
-                                                sx={{
-                                                    px: 5,
-                                                    py: 1.5,
-                                                    borderRadius: 1,
-                                                    bgcolor: primaryColor,
-                                                    fontSize: 14,
-                                                    fontWeight: 700,
-                                                    letterSpacing: 1,
-                                                    textTransform: "uppercase",
-                                                    "&:hover": {
-                                                        bgcolor: secondaryColor,
-                                                        transform: "translateY(-2px)",
-                                                    },
-                                                    transition: "all 0.3s ease",
-                                                }}
-                                            >
-                                                Send Message
-                                            </Button>
-                                        </Box>
-
-                                        {submitted && (
-                                            <Typography
-                                                variant="body2"
-                                                sx={{ color: "success.main", fontWeight: 600 }}
-                                            >
-                                                ✓ Message sent! We&apos;ll get back to you soon.
-                                            </Typography>
-                                        )}
-                                    </Box>
-                                </motion.div>
-                            </Grid>
-                        </Grid>
-                    </Container>
-                </Box>
-
-                {/* ═══════ SECTION 3: Map ═══════ */}
-                <Box sx={{ width: "100%", height: { xs: 300, md: 450 } }}>
-                    <iframe
-                        title="Location Map"
-                        src="https://www.google.com/maps?q=0.5119850,35.2689220&z=16&output=embed"
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        allowFullScreen=""
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                    />
-                </Box>
-
-                {/* ═══════ SECTION 4: Footer ═══════ */}
-                <Footer />
-            </Box>
-        </ThemeProvider>
-    );
-}
+export default Contact;

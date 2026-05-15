@@ -98,7 +98,7 @@ export default function PublicProgramCard({
                     component="img"
                     image={
                         program.thumbnail ||
-                        "/static/images/course-placeholder.svg"
+                        "/static/static/images/course-placeholder.svg"
                     }
                     alt={program.name}
                     sx={{ aspectRatio: "16/9", objectFit: "cover" }}
