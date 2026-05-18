@@ -1,11 +1,15 @@
 import React from 'react';
 import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper } from "@mui/material";
+import { EmojiEvents, School, Public } from "@mui/icons-material";
 import TopNavbar from "../../components/common/TopNavbar";
 import MainNavbar from "../../components/common/MainNavbar";
 import Footer from "../../components/common/AIRADSFooter";
+import { usePublicBrand } from "../../hooks/usePublicBrand";
 
 const About = () => {
+  const brand = usePublicBrand();
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <Head title="About - AIRADS College" />
@@ -15,7 +19,7 @@ const About = () => {
       <Box component="main" sx={{ flexGrow: 1, py: 10 }}>
         <Container maxWidth="lg">
           <Box sx={{ textAlign: 'center', mb: 8 }}>
-            <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold', color: '#1e40af', mb: 3, fontSize: { xs: '2rem', md: '3rem' } }}>
+            <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold', color: brand.secondary, mb: 3, fontSize: { xs: '2rem', md: '3rem' } }}>
               About AIRADS College
             </Typography>
             <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 800, mx: 'auto', fontWeight: 'normal', lineHeight: 1.6 }}>
@@ -26,14 +30,14 @@ const About = () => {
 
           <Grid container spacing={6} alignItems="center" sx={{ mb: 8 }}>
             <Grid item xs={12} lg={6}>
-              <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', color: '#1e40af', mb: 3 }}>
+              <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', color: brand.secondary, mb: 3 }}>
                 Our Mission
               </Typography>
               <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.8 }}>
                 To provide quality, relevant, and accessible technical and vocational education and training 
                 that empowers learners with practical skills for sustainable development.
               </Typography>
-              <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', color: '#1e40af', mb: 3, mt: 4 }}>
+              <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', color: brand.secondary, mb: 3, mt: 4 }}>
                 Our Vision
               </Typography>
               <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
@@ -47,7 +51,7 @@ const About = () => {
                 sx={{ 
                   p: 4, 
                   borderRadius: 4, 
-                  background: 'linear-gradient(to bottom right, #dbeafe, #fef2f2)' 
+                  bgcolor: brand.softBlue
                 }}
               >
                 <Box 
@@ -66,29 +70,29 @@ const About = () => {
             </Grid>
           </Grid>
 
-          <Paper elevation={0} sx={{ bgcolor: '#eff6ff', p: { xs: 4, md: 6 }, borderRadius: 4 }}>
-            <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', color: '#1e40af', mb: 6, textAlign: 'center' }}>
+          <Paper elevation={0} sx={{ bgcolor: brand.softBlue, p: { xs: 4, md: 6 }, borderRadius: 4 }}>
+            <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', color: brand.secondary, mb: 6, textAlign: 'center' }}>
               Why Study at AIRADS?
             </Typography>
             <Grid container spacing={4}>
               <Grid item xs={12} md={4}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h2" sx={{ mb: 2 }}>🏆</Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: '#1e40af' }}>Excellence</Typography>
+                  <EmojiEvents sx={{ fontSize: 64, color: brand.primary, mb: 2 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: brand.secondary }}>Excellence</Typography>
                   <Typography variant="body1" sx={{ color: 'text.secondary' }}>90-100% pass rate for 18 years consistently</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={4}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h2" sx={{ mb: 2 }}>👨‍🏫</Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: '#1e40af' }}>Expert Faculty</Typography>
+                  <School sx={{ fontSize: 64, color: brand.primary, mb: 2 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: brand.secondary }}>Expert Faculty</Typography>
                   <Typography variant="body1" sx={{ color: 'text.secondary' }}>Qualified and experienced trainers</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={4}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h2" sx={{ mb: 2 }}>🌍</Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: '#1e40af' }}>Accessibility</Typography>
+                  <Public sx={{ fontSize: 64, color: brand.primary, mb: 2 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: brand.secondary }}>Accessibility</Typography>
                   <Typography variant="body1" sx={{ color: 'text.secondary' }}>7 campuses across Kenya</Typography>
                 </Box>
               </Grid>

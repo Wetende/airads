@@ -1,12 +1,16 @@
-import MainNavbar from '../../components/common/MainNavbar';
-import TopNavbar from '../../components/common/TopNavbar';
-import Footer from '../../components/common/AIRADSFooter';
+import MainNavbar from '../../../components/common/MainNavbar';
+import TopNavbar from '../../../components/common/TopNavbar';
+import Footer from '../../../components/common/AIRADSFooter';
 import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, Card, CardContent, Button } from '@mui/material';
-import { School, Business, MenuBook, Wifi, BusinessCenter, EmojiEvents, Phone, WhatsApp, LocationOn, Email, Star, Lightbulb, People, Cog, Computer, Users, Trophy } from '@mui/icons-material';
+import { School, Business, MenuBook, Wifi, BusinessCenter, EmojiEvents, Phone, WhatsApp, LocationOn, Email, Star, Lightbulb, People, Settings as Cog, Computer, Groups as Users, EmojiEvents as Trophy } from '@mui/icons-material';
+import { usePublicBrand } from "../../../hooks/usePublicBrand";
+import { Activity, Award, Badge, CardDescription, CardHeader, CardTitle, Clock, Heart, Mail, Shield, Stethoscope, Users2 } from "./schoolUi";
 
 // PageLayout Component
 const PageLayout = ({ children, title, subtitle, backgroundImage }) => {
+  const brand = usePublicBrand();
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
       <TopNavbar />
@@ -19,11 +23,10 @@ const PageLayout = ({ children, title, subtitle, backgroundImage }) => {
           py: { xs: 12, md: 16 }, 
           px: 2, 
           overflow: 'hidden',
-          background: backgroundImage 
-            ? `linear-gradient(135deg, rgba(30, 58, 138, 0.9) 0%, rgba(59, 130, 246, 0.9) 100%), url(${backgroundImage})` 
-            : `linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)`,
+          bgcolor: brand.secondary,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
+          backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
           mt: { xs: 8, md: 12 }
         }}
       >
@@ -55,17 +58,19 @@ const PageLayout = ({ children, title, subtitle, backgroundImage }) => {
 
 // FeatureCard Component
 const FeatureCard = ({ icon: Icon, title, description, className }) => {
+  const brand = usePublicBrand();
+
   return (
     <Card elevation={0} sx={{ height: '100%', borderRadius: 4, transition: 'transform 0.3s, box-shadow 0.3s', '&:hover': { transform: 'translateY(-8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' } }}>
       <CardContent sx={{ p: 4, textAlign: 'center' }}>
         <Box sx={{ 
           width: 64, height: 64, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3,
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: 'white',
+          bgcolor: brand.secondary, color: 'white',
           transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.1)' }
         }}>
           <Icon fontSize="large" />
         </Box>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1e3a8a' }}>{title}</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: brand.secondary }}>{title}</Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>{description}</Typography>
       </CardContent>
     </Card>
@@ -74,19 +79,21 @@ const FeatureCard = ({ icon: Icon, title, description, className }) => {
 
 // ContactCard Component
 const ContactCard = ({ phone, whatsapp, email, address, className }) => {
+  const brand = usePublicBrand();
+
   return (
     <Card elevation={0} sx={{ borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       <CardContent sx={{ p: 4 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 4, color: '#1e3a8a' }}>Contact Information</Typography>
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: 4, color: brand.secondary }}>Contact Information</Typography>
         
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: 'white', flexShrink: 0 }}>
+            <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: brand.secondary, color: 'white', flexShrink: 0 }}>
               <Phone />
             </Box>
             <Box>
               <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Phone</Typography>
-              <Typography component="a" href={`tel:${phone}`} variant="body1" sx={{ fontWeight: 500, color: '#1e3a8a', textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
+              <Typography component="a" href={`tel:${phone}`} variant="body1" sx={{ fontWeight: 500, color: brand.secondary, textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
                 {phone}
               </Typography>
             </Box>
@@ -108,12 +115,12 @@ const ContactCard = ({ phone, whatsapp, email, address, className }) => {
 
           {email && (
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#1e3a8a', color: 'white', flexShrink: 0 }}>
+              <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: brand.secondary, color: 'white', flexShrink: 0 }}>
                 <Email />
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Email</Typography>
-                <Typography component="a" href={`mailto:${email}`} variant="body1" sx={{ fontWeight: 500, color: '#1e3a8a', textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
+                <Typography component="a" href={`mailto:${email}`} variant="body1" sx={{ fontWeight: 500, color: brand.secondary, textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
                   {email}
                 </Typography>
               </Box>
@@ -127,7 +134,7 @@ const ContactCard = ({ phone, whatsapp, email, address, className }) => {
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Address</Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, color: '#1e3a8a' }}>{address}</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500, color: brand.secondary }}>{address}</Typography>
               </Box>
             </Box>
           )}
@@ -137,14 +144,14 @@ const ContactCard = ({ phone, whatsapp, email, address, className }) => {
           <Button 
             variant="contained"
             fullWidth
-            sx={{ py: 1.5, background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
+            sx={{ py: 1.5, bgcolor: brand.secondary, borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
           >
             Apply Now
           </Button>
           <Button 
             variant="outlined"
             fullWidth
-            sx={{ py: 1.5, borderColor: '#1e3a8a', color: '#1e3a8a', borderRadius: 2, fontWeight: 600, textTransform: 'none', '&:hover': { bgcolor: '#1e3a8a', color: 'white' } }}
+            sx={{ py: 1.5, borderColor: brand.secondary, color: brand.secondary, borderRadius: 2, fontWeight: 600, textTransform: 'none', '&:hover': { bgcolor: brand.secondary, color: 'white' } }}
           >
             Learn More
           </Button>
@@ -155,6 +162,8 @@ const ContactCard = ({ phone, whatsapp, email, address, className }) => {
 };
 
 const SchoolOfHealthSocial = () => {
+  const brand = usePublicBrand();
+
   const courses = [
     {
       title: "Diploma in Community Health and Development",
@@ -236,7 +245,7 @@ const SchoolOfHealthSocial = () => {
       <MainNavbar />
       
       {/* Hero Section */}
-      <section className="mt-24 relative bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-20">
+      <section className="mt-24 relative text-white py-20" style={{ backgroundColor: brand.secondary }}>
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
@@ -390,8 +399,7 @@ const SchoolOfHealthSocial = () => {
             <Typography variant="body1" sx={{ color: "text.secondary", mb: 2, lineHeight: 1.8 }}>
               Our graduates serve in various healthcare and social service roles across Kenya
             </Typography>
-          </Box>
-</Grid>
+          </div>
 
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -407,7 +415,7 @@ const SchoolOfHealthSocial = () => {
       </section>
 
       {/* Contact & Apply Section */}
-      <section className="py-16 bg-emerald-600 text-white">
+      <section className="py-16 text-white" style={{ backgroundColor: brand.secondary }}>
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Make a Difference in Community Health</h2>
           <Typography variant="body1" sx={{ color: "text.secondary", mb: 2, lineHeight: 1.8 }}>

@@ -1,27 +1,26 @@
-import MainNavbar from '../../components/common/MainNavbar';
-import TopNavbar from '../../components/common/TopNavbar';
-import Footer from '../../components/common/AIRADSFooter';
+import MainNavbar from '../../../components/common/MainNavbar';
+import TopNavbar from '../../../components/common/TopNavbar';
+import Footer from '../../../components/common/AIRADSFooter';
 import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, Card, CardContent, Button } from '@mui/material';
-import { School, Business, MenuBook, Wifi, BusinessCenter, EmojiEvents, Phone, WhatsApp, LocationOn, Email, Star, Lightbulb, People, Cog, Computer, Users, Trophy } from '@mui/icons-material';
+import { School, Business, MenuBook, Wifi, BusinessCenter, EmojiEvents, Phone, WhatsApp, LocationOn, Email, Star, Lightbulb, People, Settings as Cog, Computer, Groups as Users, EmojiEvents as Trophy } from '@mui/icons-material';
+import { usePublicBrand } from "../../../hooks/usePublicBrand";
 
-// PageLayout Component
-const PageLayout = ({ children, title, subtitle, backgroundImage }) => {
+const PageLayout = ({ children, title, subtitle }) => {
+  const brand = usePublicBrand();
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
       <TopNavbar />
       <MainNavbar />
-      
-      {/* Hero Section */}
-      <Box 
-        sx={{ 
-          position: 'relative', 
-          py: { xs: 12, md: 16 }, 
-          px: 2, 
+
+      <Box
+        sx={{
+          position: 'relative',
+          py: { xs: 12, md: 16 },
+          px: 2,
           overflow: 'hidden',
-          background: backgroundImage 
-            ? `linear-gradient(135deg, rgba(30, 58, 138, 0.9) 0%, rgba(59, 130, 246, 0.9) 100%), url(${backgroundImage})` 
-            : `linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)`,
+          bgcolor: brand.secondary,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           mt: { xs: 8, md: 12 }
@@ -37,56 +36,56 @@ const PageLayout = ({ children, title, subtitle, backgroundImage }) => {
             </Typography>
           )}
         </Container>
-        
-        {/* Decorative Elements */}
+
         <Box sx={{ position: 'absolute', top: 80, left: 40, width: 128, height: 128, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(40px)' }} />
         <Box sx={{ position: 'absolute', bottom: 80, right: 40, width: 96, height: 96, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(40px)' }} />
       </Box>
 
-      {/* Content */}
       <Box component="main" sx={{ position: 'relative', zIndex: 10, flexGrow: 1, mt: -6 }}>
         {children}
       </Box>
-      
+
       <Footer />
     </Box>
   );
 };
 
-// FeatureCard Component
-const FeatureCard = ({ icon: Icon, title, description, className }) => {
+const FeatureCard = ({ icon: Icon, title, description }) => {
+  const brand = usePublicBrand();
+
   return (
     <Card elevation={0} sx={{ height: '100%', borderRadius: 4, transition: 'transform 0.3s, box-shadow 0.3s', '&:hover': { transform: 'translateY(-8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' } }}>
       <CardContent sx={{ p: 4, textAlign: 'center' }}>
-        <Box sx={{ 
+        <Box sx={{
           width: 64, height: 64, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3,
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: 'white',
+          bgcolor: brand.secondary, color: 'white',
           transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.1)' }
         }}>
           <Icon fontSize="large" />
         </Box>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1e3a8a' }}>{title}</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: brand.secondary }}>{title}</Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>{description}</Typography>
       </CardContent>
     </Card>
   );
 };
 
-// ContactCard Component
-const ContactCard = ({ phone, whatsapp, email, address, className }) => {
+const ContactCard = ({ phone, whatsapp, email, address }) => {
+  const brand = usePublicBrand();
+
   return (
     <Card elevation={0} sx={{ borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       <CardContent sx={{ p: 4 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 4, color: '#1e3a8a' }}>Contact Information</Typography>
-        
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: 4, color: brand.secondary }}>Contact Information</Typography>
+
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: 'white', flexShrink: 0 }}>
+            <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: brand.secondary, color: 'white', flexShrink: 0 }}>
               <Phone />
             </Box>
             <Box>
               <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Phone</Typography>
-              <Typography component="a" href={`tel:${phone}`} variant="body1" sx={{ fontWeight: 500, color: '#1e3a8a', textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
+              <Typography component="a" href={`tel:${phone}`} variant="body1" sx={{ fontWeight: 500, color: brand.secondary, textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
                 {phone}
               </Typography>
             </Box>
@@ -108,12 +107,12 @@ const ContactCard = ({ phone, whatsapp, email, address, className }) => {
 
           {email && (
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#1e3a8a', color: 'white', flexShrink: 0 }}>
+              <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: brand.secondary, color: 'white', flexShrink: 0 }}>
                 <Email />
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Email</Typography>
-                <Typography component="a" href={`mailto:${email}`} variant="body1" sx={{ fontWeight: 500, color: '#1e3a8a', textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
+                <Typography component="a" href={`mailto:${email}`} variant="body1" sx={{ fontWeight: 500, color: brand.secondary, textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
                   {email}
                 </Typography>
               </Box>
@@ -122,29 +121,29 @@ const ContactCard = ({ phone, whatsapp, email, address, className }) => {
 
           {address && (
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#64748b', color: 'white', flexShrink: 0 }}>
+              <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: brand.mutedText, color: 'white', flexShrink: 0 }}>
                 <LocationOn />
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Address</Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, color: '#1e3a8a' }}>{address}</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500, color: brand.secondary }}>{address}</Typography>
               </Box>
             </Box>
           )}
         </Box>
 
         <Box sx={{ mt: 5, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Button 
+          <Button
             variant="contained"
             fullWidth
-            sx={{ py: 1.5, background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
+            sx={{ py: 1.5, bgcolor: brand.secondary, borderRadius: 2, fontWeight: 600, textTransform: 'none', '&:hover': { bgcolor: brand.primaryHover } }}
           >
             Apply Now
           </Button>
-          <Button 
+          <Button
             variant="outlined"
             fullWidth
-            sx={{ py: 1.5, borderColor: '#1e3a8a', color: '#1e3a8a', borderRadius: 2, fontWeight: 600, textTransform: 'none', '&:hover': { bgcolor: '#1e3a8a', color: 'white' } }}
+            sx={{ py: 1.5, borderColor: brand.secondary, color: brand.secondary, borderRadius: 2, fontWeight: 600, textTransform: 'none', '&:hover': { bgcolor: brand.secondary, color: 'white' } }}
           >
             Learn More
           </Button>
@@ -155,6 +154,8 @@ const ContactCard = ({ phone, whatsapp, email, address, className }) => {
 };
 
 const Eldoret = () => {
+  const brand = usePublicBrand();
+
   const features = [
     {
       icon: Business,
@@ -195,68 +196,65 @@ const Eldoret = () => {
       <Container maxWidth="lg" sx={{ pb: 10 }}>
         <Head title="Eldoret Campus - AIRADS College" />
         <Grid container spacing={6}>
-          <Grid item xs={12} lg={8}><Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-              
-                <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: '#1e3a8a' }}>About Eldoret Campus</Typography>
-                
-                  <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2, lineHeight: 1.8 }}>
-                    Our Eldoret campus stands as a beacon of technical excellence in the Rift Valley region. 
-                    Located in one of Kenya's fastest-growing cities, the campus serves as a hub for engineering, 
-                    ICT, and technical education with modern facilities that rival the best institutions in the country.
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2, lineHeight: 1.8 }}>
-                    With a focus on practical, hands-on learning, our Eldoret campus is equipped with industry-standard 
-                    workshops, computer laboratories, and modern equipment that ensure students graduate with skills 
-                    that are immediately applicable in the workplace.
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                    The campus has built strong partnerships with local industries and maintains our institutional 
-                    commitment to excellence with consistent high pass rates and graduate employment success.
-                  </Typography>
-                </Box>
-</Grid>
+          <Grid item xs={12} lg={8}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>About Eldoret Campus</Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2, lineHeight: 1.8 }}>
+                  Our Eldoret campus stands as a beacon of technical excellence in the Rift Valley region.
+                  Located in one of Kenya's fastest-growing cities, the campus serves as a hub for engineering,
+                  ICT, and technical education with modern facilities that rival the best institutions in the country.
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2, lineHeight: 1.8 }}>
+                  With a focus on practical, hands-on learning, our Eldoret campus is equipped with industry-standard
+                  workshops, computer laboratories, and modern equipment that ensure students graduate with skills
+                  that are immediately applicable in the workplace.
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                  The campus has built strong partnerships with local industries and maintains our institutional
+                  commitment to excellence with consistent high pass rates and graduate employment success.
+                </Typography>
               </Paper>
 
-            <Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: 'center', color: '#1e3a8a' }}>Why Choose Eldoret Campus?</Typography>
-              <Grid container spacing={3}>
-                {features.map((feature, index) => (
-                  <Grid item xs={12} sm={6} key={index}><FeatureCard {...feature} /></Grid>
-                ))}
-              </Grid>
-            </Box>
+              <Box>
+                <Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: 'center', color: brand.secondary }}>Why Choose Eldoret Campus?</Typography>
+                <Grid container spacing={3}>
+                  {features.map((feature, index) => (
+                    <Grid item xs={12} sm={6} key={index}>
+                      <FeatureCard {...feature} />
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
 
-            <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-              
-                <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: '#1e3a8a' }}>Specialized Programs</Typography>
+              <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>Specialized Programs</Typography>
                 <Grid container spacing={2}>
                   {specialPrograms.map((program, index) => (
                     <Grid item xs={12} sm={6} key={index}>
-<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, borderRadius: 2, bgcolor: '#f1f5f9' }}>
-                      <Star sx={{ color: '#1e3a8a' }} />
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e3a8a' }}>{program}</Typography>
-                    </Box>
-</Grid>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, borderRadius: 2, bgcolor: brand.softBlue }}>
+                        <Star sx={{ color: brand.secondary }} />
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: brand.secondary }}>{program}</Typography>
+                      </Box>
+                    </Grid>
                   ))}
                 </Grid>
               </Paper>
 
-            <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-              
-                <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: '#1e3a8a' }}>Campus Excellence</Typography>
+              <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>Campus Excellence</Typography>
                 <Grid container spacing={4}>
                   <Grid item xs={12} sm={6}>
-<Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1e3a8a' }}>Academic Excellence</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: brand.secondary }}>Academic Excellence</Typography>
                     <Box component="ul" sx={{ pl: 0, listStyle: 'none', color: 'text.secondary' }}>
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• 90-100% KNEC pass rate</Typography>
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• TVETA approved programs</Typography>
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Industry-aligned curriculum</Typography>
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Qualified instructors</Typography>
                     </Box>
-</Grid>
+                  </Grid>
                   <Grid item xs={12} sm={6}>
-<Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#1e3a8a' }}>Facilities & Resources</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: brand.secondary }}>Facilities & Resources</Typography>
                     <Box component="ul" sx={{ pl: 0, listStyle: 'none', color: 'text.secondary' }}>
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Modern workshops & labs</Typography>
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Free WiFi & internet</Typography>
@@ -264,49 +262,49 @@ const Eldoret = () => {
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Library & study areas</Typography>
                     </Box>
                   </Grid>
-</Paper>
+                </Grid>
+              </Paper>
 
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={4}>
-<Card elevation={0} sx={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: 'white', textAlign: 'center', borderRadius: 4 }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>800+</Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>Students</Typography>
-                
-              </CardContent>
-</Card>
-</Grid>
-              <Grid item xs={12} sm={4}>
-<Card elevation={0} sx={{ bgcolor: '#22c55e', color: 'white', textAlign: 'center', borderRadius: 4 }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>18</Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>Years</Typography>
-                
-              </CardContent>
-</Card>
-</Grid>
-              <Grid item xs={12} sm={4}>
-<Card elevation={0} sx={{ bgcolor: '#1e3a8a', color: 'white', textAlign: 'center', borderRadius: 4 }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>95%</Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>Employment</Typography>
-                
-              </CardContent>
-</Card>
-</Grid>
-</Grid>
-          </Box></Grid>
-<Grid item xs={12} lg={4}>
-<ContactCard
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={4}>
+                  <Card elevation={0} sx={{ bgcolor: brand.secondary, color: 'white', textAlign: 'center', borderRadius: 4 }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>800+</Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>Students</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Card elevation={0} sx={{ bgcolor: brand.accent, color: 'white', textAlign: 'center', borderRadius: 4 }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>18</Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>Years</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Card elevation={0} sx={{ bgcolor: brand.secondary, color: 'white', textAlign: 'center', borderRadius: 4 }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>95%</Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>Employment</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </Box>
+          </Grid>
+
+          <Grid item xs={12} lg={4}>
+            <ContactCard
               phone="0715-696-979"
               whatsapp="0715-696-979"
               email="eldoret@airads.ac.ke"
               address="Eldoret Town, Uasin Gishu County"
             />
           </Grid>
-</Grid>
-</Container>
-</PageLayout>
+        </Grid>
+      </Container>
+    </PageLayout>
   );
 };
 

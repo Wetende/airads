@@ -2,11 +2,14 @@ import React from 'react';
 import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Card, CardContent, Button, Chip } from "@mui/material";
 import { ArrowForward } from "@mui/icons-material";
+import { usePublicBrand } from "../../hooks/usePublicBrand";
 import TopNavbar from "../../components/common/TopNavbar";
 import MainNavbar from "../../components/common/MainNavbar";
 import Footer from "../../components/common/AIRADSFooter";
 
 const Schools = () => {
+  const brand = usePublicBrand();
+
   const schools = [
     {
       name: "School of Engineering & ICT",
@@ -51,18 +54,18 @@ const Schools = () => {
       <Head title="Schools - AIRADS College" />
       <TopNavbar />
       <MainNavbar />
-      
+
       <Box component="main" sx={{ flexGrow: 1, py: { xs: 8, md: 12 }, mt: { xs: 8, md: 12 } }}>
         <Container maxWidth="lg">
           <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 } }}>
             <Box sx={{ position: 'relative', display: 'inline-block' }}>
-              <Typography variant="h2" component="h1" sx={{ fontWeight: 900, mb: 4, background: 'linear-gradient(to right, #1e40af, #2563eb, #dc2626)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: { xs: '3rem', md: '4rem' } }}>
+              <Typography variant="h2" component="h1" sx={{ fontWeight: 900, mb: 4, color: brand.secondary, fontSize: { xs: '3rem', md: '4rem' } }}>
                 Our Schools
               </Typography>
-              <Box sx={{ position: 'absolute', top: -16, left: '50%', transform: 'translateX(-50%)', width: 120, height: 4, borderRadius: 2, background: 'linear-gradient(to right, #2563eb, #dc2626)', opacity: 0.5 }} />
+              <Box sx={{ position: 'absolute', top: -16, left: '50%', transform: 'translateX(-50%)', width: 120, height: 4, borderRadius: 2, bgcolor: brand.primary, opacity: 0.5 }} />
             </Box>
             <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 800, mx: 'auto', fontWeight: 300, lineHeight: 1.6 }}>
-              AIRADS College offers diverse academic programs through specialized schools, each designed to provide 
+              AIRADS College offers diverse academic programs through specialized schools, each designed to provide
               industry-relevant skills and knowledge.
             </Typography>
           </Box>
@@ -70,10 +73,10 @@ const Schools = () => {
           <Grid container spacing={5}>
             {schools.map((school, index) => (
               <Grid item xs={12} lg={6} key={index}>
-                <Card 
-                  sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
                     flexDirection: 'column',
                     borderRadius: 4,
                     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
@@ -85,29 +88,29 @@ const Schools = () => {
                   }}
                 >
                   <Box sx={{ position: 'relative', pt: '40%', overflow: 'hidden' }}>
-                    <Box 
-                      sx={{ 
-                        position: 'absolute', 
-                        top: 0, left: 0, width: '100%', height: '100%', 
-                        backgroundImage: `url(${school.image})`, 
-                        backgroundSize: 'cover', 
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0, left: 0, width: '100%', height: '100%',
+                        backgroundImage: `url(${school.image})`,
+                        backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         transition: 'transform 0.5s ease',
                         '&:hover': { transform: 'scale(1.1)' }
-                      }} 
+                      }}
                     />
-                    <Box 
-                      sx={{ 
-                        position: 'absolute', 
-                        top: 0, left: 0, width: '100%', height: '100%', 
-                        background: 'linear-gradient(to bottom, rgba(30, 58, 138, 0.6), rgba(185, 28, 28, 0.4))',
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0, left: 0, width: '100%', height: '100%',
+                        bgcolor: 'rgba(15, 23, 42, 0.45)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         p: 4
                       }}
                     >
-                      <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                      <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>
                         {school.name}
                       </Typography>
                     </Box>
@@ -116,32 +119,32 @@ const Schools = () => {
                     <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.8 }}>
                       {school.description}
                     </Typography>
-                    
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e40af', mb: 2 }}>
+
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: brand.secondary, mb: 2 }}>
                       Key Programs:
                     </Typography>
-                    
+
                     <Grid container spacing={1.5} sx={{ mb: 4, flexGrow: 1 }}>
                       {school.programs.map((program, programIndex) => (
                         <Grid item xs={12} sm={6} key={programIndex}>
-                          <Box sx={{ bgcolor: '#eff6ff', color: '#1e40af', px: 2, py: 1.5, borderRadius: 2, fontSize: '0.875rem', fontWeight: 500, height: '100%', display: 'flex', alignItems: 'center' }}>
+                          <Box sx={{ bgcolor: brand.softBlue, color: brand.secondary, px: 2, py: 1.5, borderRadius: 2, fontSize: '0.875rem', fontWeight: 500, height: '100%', display: 'flex', alignItems: 'center' }}>
                             {program}
                           </Box>
                         </Grid>
                       ))}
                     </Grid>
-                    
-                    <Button 
-                      variant="contained" 
-                      fullWidth 
+
+                    <Button
+                      variant="contained"
+                      fullWidth
                       endIcon={<ArrowForward />}
-                      sx={{ 
-                        py: 2, 
-                        bgcolor: '#1e40af', 
-                        fontWeight: 'bold', 
+                      sx={{
+                        py: 2,
+                        bgcolor: brand.primary,
+                        fontWeight: 'bold',
                         fontSize: '1rem',
                         borderRadius: 2,
-                        '&:hover': { bgcolor: '#1d4ed8' }
+                        '&:hover': { bgcolor: brand.primaryHover }
                       }}
                     >
                       Explore Programs
@@ -152,25 +155,25 @@ const Schools = () => {
             ))}
           </Grid>
 
-          <Box sx={{ mt: 10, p: { xs: 4, md: 8 }, borderRadius: 6, background: 'linear-gradient(to right, #1e40af, #dc2626)', color: 'white', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+          <Box sx={{ mt: 10, p: { xs: 4, md: 8 }, borderRadius: 6, bgcolor: brand.secondary, color: 'white', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
             <Typography variant="h3" sx={{ fontWeight: 900, mb: 2, fontSize: { xs: '2rem', md: '3rem' } }}>
               Ready to Start Your Journey?
             </Typography>
             <Typography variant="h6" sx={{ opacity: 0.9, mb: 5, fontWeight: 300 }}>
               Choose your path and join thousands of successful graduates
             </Typography>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               size="large"
-              sx={{ 
-                bgcolor: 'white', 
-                color: '#1e40af', 
-                fontWeight: 800, 
-                px: 6, 
-                py: 2, 
+              sx={{
+                bgcolor: brand.accent,
+                color: 'white',
+                fontWeight: 800,
+                px: 6,
+                py: 2,
                 fontSize: '1.25rem',
                 borderRadius: 2,
-                '&:hover': { bgcolor: 'grey.100', transform: 'scale(1.05)' },
+                '&:hover': { bgcolor: brand.accentHover },
                 transition: 'all 0.3s'
               }}
             >

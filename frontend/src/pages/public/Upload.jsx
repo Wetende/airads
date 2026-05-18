@@ -30,6 +30,7 @@ import {
   Close,
   Logout,
   CalendarToday,
+  AccessTime,
   Add,
   Edit,
   Save,
@@ -40,8 +41,10 @@ import {
   DarkMode,
   LightMode,
 } from "@mui/icons-material";
+import { usePublicBrand } from "../../hooks/usePublicBrand";
 
 const UploadPage = ({ onLogout }) => {
+  const brand = usePublicBrand();
   const [pdfFiles, setPdfFiles] = useState({});
   const [events, setEvents] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
@@ -65,12 +68,12 @@ const UploadPage = ({ onLogout }) => {
 
   // Campus mapping - EXACTLY matching ApplicationForm.jsx keys
   const expectedFiles = [
-    { name: "Bungoma.pdf", campus: "bungoma", displayName: "Bungoma Campus", color: "from-blue-400 to-blue-600" },
-    { name: "Eldoret.pdf", campus: "eldoret", displayName: "Eldoret Campus", color: "from-red-400 to-red-600" },
-    { name: "airads kisumu.pdf", campus: "kisumu", displayName: "Kisumu City Campus", color: "from-blue-400 to-blue-600" },
-    { name: "LODWAR Campus.pdf", campus: "lodwar", displayName: "Lodwar Campus", color: "from-red-400 to-red-600" },
-    { name: "Nakuru.pdf", campus: "nakuru", displayName: "Nakuru Campus", color: "from-blue-400 to-blue-600" },
-    { name: "Airads Kericho.pdf", campus: "kericho", displayName: "Kericho Campus", color: "from-red-400 to-red-600" }
+    { name: "Bungoma.pdf", campus: "bungoma", displayName: "Bungoma Campus" },
+    { name: "Eldoret.pdf", campus: "eldoret", displayName: "Eldoret Campus" },
+    { name: "airads kisumu.pdf", campus: "kisumu", displayName: "Kisumu City Campus" },
+    { name: "LODWAR Campus.pdf", campus: "lodwar", displayName: "Lodwar Campus" },
+    { name: "Nakuru.pdf", campus: "nakuru", displayName: "Nakuru Campus" },
+    { name: "Airads Kericho.pdf", campus: "kericho", displayName: "Kericho Campus" }
   ];
 
   // Initialize dark mode from localStorage
@@ -429,9 +432,9 @@ const UploadPage = ({ onLogout }) => {
 
   // Sidebar navigation items
   const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart, color: '#2563eb' },
-    { id: 'files', label: 'PDF Management', icon: Description, color: '#16a34a' },
-    { id: 'events', label: 'Events Management', icon: CalendarToday, color: '#ef4444' }
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart },
+    { id: 'files', label: 'PDF Management', icon: Description },
+    { id: 'events', label: 'Events Management', icon: CalendarToday }
   ];
 
   const theme = useMemo(() => createTheme({
@@ -447,9 +450,7 @@ const UploadPage = ({ onLogout }) => {
         <Box
           sx={{
             minHeight: '100vh',
-            background: darkMode
-              ? 'linear-gradient(to bottom right, #111827, #1f2937, #111827)'
-              : 'linear-gradient(to bottom right, #60a5fa, #f1f5f9, #f87171)',
+            bgcolor: darkMode ? '#111827' : brand.softBlue,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -472,7 +473,7 @@ const UploadPage = ({ onLogout }) => {
                   mx: 'auto',
                   mb: 2,
                   p: 1.5,
-                  background: 'linear-gradient(to right, #3b82f6, #ef4444)',
+                  bgcolor: brand.primary,
                   borderRadius: '50%',
                   color: '#fff',
                   display: 'inline-flex',
@@ -507,12 +508,12 @@ const UploadPage = ({ onLogout }) => {
                 variant="contained"
                 fullWidth
                 sx={{
-                  background: 'linear-gradient(to right, #3b82f6, #ef4444)',
+                  bgcolor: brand.primary,
                   color: '#fff',
                   py: 1.5,
                   fontWeight: 500,
                   '&:hover': {
-                    background: 'linear-gradient(to right, #2563eb, #dc2626)',
+                    bgcolor: brand.primaryHover,
                     boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
                   },
                 }}
@@ -535,14 +536,10 @@ const UploadPage = ({ onLogout }) => {
     );
   }
 
-  const gradientBg = darkMode
-    ? 'linear-gradient(to bottom right, #111827, #1f2937, #111827)'
-    : 'linear-gradient(to bottom right, #eff6ff, #f8fafc, #fef2f2)';
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', minHeight: '100vh', background: gradientBg }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: darkMode ? '#0f172a' : brand.softBlue }}>
         <Head title="Upload - AIRADS College" />
         {/* Sidebar */}
         <Box
@@ -569,7 +566,7 @@ const UploadPage = ({ onLogout }) => {
                 <Box
                   sx={{
                     p: 1,
-                    background: 'linear-gradient(to right, #3b82f6, #ef4444)',
+                    bgcolor: brand.primary,
                     borderRadius: '8px',
                     color: '#fff',
                     display: 'flex',
@@ -620,13 +617,11 @@ const UploadPage = ({ onLogout }) => {
                       borderRadius: '8px',
                       textTransform: 'none',
                       minWidth: 0,
-                      background: activeTab === item.id
-                        ? 'linear-gradient(to right, #3b82f6, #ef4444)'
-                        : 'transparent',
+                      bgcolor: activeTab === item.id ? brand.primary : 'transparent',
                       color: activeTab === item.id ? '#fff' : 'text.secondary',
                       boxShadow: activeTab === item.id ? '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)' : 'none',
                       '&:hover': {
-                        bgcolor: activeTab === item.id ? undefined : 'action.hover',
+                        bgcolor: activeTab === item.id ? brand.primaryHover : 'action.hover',
                       },
                     }}
                   >
@@ -635,7 +630,6 @@ const UploadPage = ({ onLogout }) => {
                         height: 20,
                         width: 20,
                         mr: sidebarOpen ? 1.5 : 0,
-                        color: activeTab === item.id ? '#fff' : item.color,
                       }}
                     />
                     {sidebarOpen && (
@@ -661,8 +655,8 @@ const UploadPage = ({ onLogout }) => {
               fullWidth
               sx={{
                 justifyContent: sidebarOpen ? 'flex-start' : 'center',
-                bgcolor: '#ef4444',
-                '&:hover': { bgcolor: '#dc2626' },
+                bgcolor: brand.accent,
+                '&:hover': { bgcolor: brand.accentHover },
                 textTransform: 'none',
                 py: 1.5,
                 borderRadius: '8px',
@@ -714,10 +708,10 @@ const UploadPage = ({ onLogout }) => {
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 3, mb: 4 }}>
                   <Paper sx={{ borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)', p: 3 }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                      <Box sx={{ p: 1.5, background: 'linear-gradient(to right, #3b82f6, #2563eb)', borderRadius: '8px', color: '#fff', display: 'flex' }}>
+                      <Box sx={{ p: 1.5, bgcolor: brand.primary, borderRadius: '8px', color: '#fff', display: 'flex' }}>
                         <Description sx={{ height: 24, width: 24 }} />
                       </Box>
-                      <Typography variant="h5" fontWeight="bold" color="primary">
+                      <Typography variant="h5" fontWeight="bold" sx={{ color: brand.primary }}>
                         {Object.keys(pdfFiles).length}
                       </Typography>
                     </Stack>
@@ -727,10 +721,10 @@ const UploadPage = ({ onLogout }) => {
 
                   <Paper sx={{ borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)', p: 3 }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                      <Box sx={{ p: 1.5, background: 'linear-gradient(to right, #ef4444, #dc2626)', borderRadius: '8px', color: '#fff', display: 'flex' }}>
+                      <Box sx={{ p: 1.5, bgcolor: brand.accent, borderRadius: '8px', color: '#fff', display: 'flex' }}>
                         <CalendarToday sx={{ height: 24, width: 24 }} />
                       </Box>
-                      <Typography variant="h5" fontWeight="bold" color="error">
+                      <Typography variant="h5" fontWeight="bold" sx={{ color: brand.accent }}>
                         {events.length}
                       </Typography>
                     </Stack>
@@ -740,10 +734,10 @@ const UploadPage = ({ onLogout }) => {
 
                   <Paper sx={{ borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)', p: 3 }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                      <Box sx={{ p: 1.5, background: 'linear-gradient(to right, #22c55e, #16a34a)', borderRadius: '8px', color: '#fff', display: 'flex' }}>
+                      <Box sx={{ p: 1.5, bgcolor: '#16a34a', borderRadius: '8px', color: '#fff', display: 'flex' }}>
                         <People sx={{ height: 24, width: 24 }} />
                       </Box>
-                      <Typography variant="h5" fontWeight="bold" color="success.main">
+                      <Typography variant="h5" fontWeight="bold" sx={{ color: '#16a34a' }}>
                         6
                       </Typography>
                     </Stack>
@@ -753,10 +747,10 @@ const UploadPage = ({ onLogout }) => {
 
                   <Paper sx={{ borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)', p: 3 }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                      <Box sx={{ p: 1.5, background: 'linear-gradient(to right, #a855f7, #9333ea)', borderRadius: '8px', color: '#fff', display: 'flex' }}>
+                      <Box sx={{ p: 1.5, bgcolor: brand.secondary, borderRadius: '8px', color: '#fff', display: 'flex' }}>
                         <Folder sx={{ height: 24, width: 24 }} />
                       </Box>
-                      <Typography variant="h5" fontWeight="bold" color="secondary">
+                      <Typography variant="h5" fontWeight="bold" sx={{ color: brand.secondary }}>
                         {Math.round((Object.keys(pdfFiles).length / 6) * 100)}%
                       </Typography>
                     </Stack>
@@ -802,8 +796,8 @@ const UploadPage = ({ onLogout }) => {
                             size="small"
                             sx={{
                               fontSize: '0.75rem',
-                              bgcolor: status === 'uploaded' ? '#dcfce7' : '#fee2e2',
-                              color: status === 'uploaded' ? '#166534' : '#991b1b',
+                              bgcolor: status === 'uploaded' ? '#dcfce7' : brand.softRed,
+                              color: status === 'uploaded' ? '#166534' : brand.accent,
                               fontWeight: 500,
                             }}
                           />
@@ -856,7 +850,7 @@ const UploadPage = ({ onLogout }) => {
                           ? 'success.main'
                           : 'divider',
                       bgcolor: dragActive
-                        ? (darkMode ? 'rgba(59,130,246,0.1)' : '#eff6ff')
+                        ? (darkMode ? 'rgba(59,130,246,0.1)' : brand.softBlue)
                         : 'transparent',
                       '&:hover': {
                         borderColor: selectedCampus ? 'success.main' : 'primary.main',
@@ -904,18 +898,17 @@ const UploadPage = ({ onLogout }) => {
                       disabled={!selectedCampus}
                       variant="contained"
                       sx={{
-                        background: selectedCampus
-                          ? 'linear-gradient(to right, #3b82f6, #ef4444)'
-                          : undefined,
+                        bgcolor: selectedCampus ? brand.primary : undefined,
                         color: '#fff',
                         px: 3,
                         py: 1.5,
                         fontWeight: 500,
                         borderRadius: '8px',
                         textTransform: 'none',
-                        '&:hover': {
+                        '&:hover': selectedCampus ? {
+                          bgcolor: brand.primaryHover,
                           boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
-                        },
+                        } : {},
                       }}
                     >
                       {selectedCampus ? 'Select PDF Files' : 'Select Campus First'}
@@ -945,7 +938,7 @@ const UploadPage = ({ onLogout }) => {
                           <Box sx={{ width: '100%', bgcolor: darkMode ? 'grey.700' : 'grey.200', borderRadius: '9999px', height: 8 }}>
                             <Box
                               sx={{
-                                background: 'linear-gradient(to right, #3b82f6, #ef4444)',
+                                bgcolor: brand.primary,
                                 height: 8,
                                 borderRadius: '9999px',
                                 transition: 'all 0.3s',
@@ -987,7 +980,6 @@ const UploadPage = ({ onLogout }) => {
                     {expectedFiles.map((file, index) => {
                       const status = getFileStatus(file.name);
                       const uploadedFile = pdfFiles[file.name];
-                      const isBlue = file.color.includes('blue');
 
                       return (
                         <Box
@@ -1004,9 +996,7 @@ const UploadPage = ({ onLogout }) => {
                         >
                           <Box
                             sx={{
-                              background: isBlue
-                                ? 'linear-gradient(to right, #60a5fa, #2563eb)'
-                                : 'linear-gradient(to right, #f87171, #dc2626)',
+                              bgcolor: brand.secondary,
                               color: '#fff',
                               p: 1.5,
                               borderRadius: '8px',
@@ -1048,8 +1038,8 @@ const UploadPage = ({ onLogout }) => {
                                     fullWidth
                                     startIcon={<Visibility sx={{ height: 12, width: 12 }} />}
                                     sx={{
-                                      bgcolor: '#3b82f6',
-                                      '&:hover': { bgcolor: '#2563eb' },
+                                      bgcolor: brand.primary,
+                                      '&:hover': { bgcolor: brand.primaryHover },
                                       textTransform: 'none',
                                       fontSize: '0.75rem',
                                       borderRadius: '4px',
@@ -1065,8 +1055,8 @@ const UploadPage = ({ onLogout }) => {
                                     fullWidth
                                     startIcon={<Delete sx={{ height: 12, width: 12 }} />}
                                     sx={{
-                                      bgcolor: '#ef4444',
-                                      '&:hover': { bgcolor: '#dc2626' },
+                                      bgcolor: brand.accent,
+                                      '&:hover': { bgcolor: brand.accentHover },
                                       textTransform: 'none',
                                       fontSize: '0.75rem',
                                       borderRadius: '4px',
@@ -1092,8 +1082,8 @@ const UploadPage = ({ onLogout }) => {
                                   fullWidth
                                   sx={{
                                     mt: 1,
-                                    bgcolor: '#3b82f6',
-                                    '&:hover': { bgcolor: '#2563eb' },
+                                    bgcolor: brand.primary,
+                                    '&:hover': { bgcolor: brand.primaryHover },
                                     textTransform: 'none',
                                     fontSize: '0.75rem',
                                     borderRadius: '4px',
@@ -1196,7 +1186,7 @@ const UploadPage = ({ onLogout }) => {
                     startIcon={<Add sx={{ height: 16, width: 16 }} />}
                     sx={{
                       mt: 2,
-                      background: 'linear-gradient(to right, #3b82f6, #ef4444)',
+                      bgcolor: brand.primary,
                       color: '#fff',
                       px: 3,
                       py: 1.5,
@@ -1204,6 +1194,7 @@ const UploadPage = ({ onLogout }) => {
                       borderRadius: '8px',
                       textTransform: 'none',
                       '&:hover': {
+                        bgcolor: brand.primaryHover,
                         boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
                       },
                     }}
@@ -1355,14 +1346,14 @@ const UploadPage = ({ onLogout }) => {
                                         fontSize: '0.75rem',
                                         fontWeight: 500,
                                         bgcolor:
-                                          event.type === 'event' ? '#dbeafe' :
+                                          event.type === 'event' ? brand.softBlue :
                                           event.type === 'news' ? '#dcfce7' :
-                                          event.type === 'holiday' ? '#fee2e2' :
+                                          event.type === 'holiday' ? brand.softRed :
                                           '#f3e8ff',
                                         color:
-                                          event.type === 'event' ? '#1e40af' :
+                                          event.type === 'event' ? brand.secondary :
                                           event.type === 'news' ? '#166534' :
-                                          event.type === 'holiday' ? '#991b1b' :
+                                          event.type === 'holiday' ? brand.accent :
                                           '#6b21a8',
                                       }}
                                     />
@@ -1371,12 +1362,18 @@ const UploadPage = ({ onLogout }) => {
                                     {event.description}
                                   </Typography>
                                   <Stack direction="row" spacing={2}>
-                                    <Typography variant="caption" color="text.secondary">
-                                      &#128197; {new Date(event.date).toLocaleDateString()}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      &#128338; {new Date(event.createdAt).toLocaleDateString()}
-                                    </Typography>
+                                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                                      <CalendarToday sx={{ fontSize: 14 }} />
+                                      <Typography variant="caption" color="text.secondary">
+                                        {new Date(event.date).toLocaleDateString()}
+                                      </Typography>
+                                    </Stack>
+                                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                                      <AccessTime sx={{ fontSize: 14 }} />
+                                      <Typography variant="caption" color="text.secondary">
+                                        {new Date(event.createdAt).toLocaleDateString()}
+                                      </Typography>
+                                    </Stack>
                                   </Stack>
                                 </Box>
                               </Stack>
@@ -1387,8 +1384,8 @@ const UploadPage = ({ onLogout }) => {
                                   size="small"
                                   startIcon={<Edit sx={{ height: 12, width: 12 }} />}
                                   sx={{
-                                    bgcolor: '#3b82f6',
-                                    '&:hover': { bgcolor: '#2563eb' },
+                                    bgcolor: brand.primary,
+                                    '&:hover': { bgcolor: brand.primaryHover },
                                     textTransform: 'none',
                                     fontSize: '0.875rem',
                                     borderRadius: '4px',
@@ -1402,8 +1399,8 @@ const UploadPage = ({ onLogout }) => {
                                   size="small"
                                   startIcon={<Delete sx={{ height: 12, width: 12 }} />}
                                   sx={{
-                                    bgcolor: '#ef4444',
-                                    '&:hover': { bgcolor: '#dc2626' },
+                                    bgcolor: brand.accent,
+                                    '&:hover': { bgcolor: brand.accentHover },
                                     textTransform: 'none',
                                     fontSize: '0.875rem',
                                     borderRadius: '4px',

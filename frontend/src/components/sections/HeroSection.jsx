@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Container, Typography, Button } from '@mui/material';
 import { Link } from '@inertiajs/react';
+import { usePublicBrand } from '../../hooks/usePublicBrand';
 
 const HeroSection = () => {
+  const brand = usePublicBrand();
   const images = [
     '/static/63.JPG',
     '/static/68.JPG',
@@ -21,7 +23,6 @@ const HeroSection = () => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 4000);
-
     return () => clearInterval(interval);
   }, [images.length]);
 
@@ -55,7 +56,7 @@ const HeroSection = () => {
           left: 0,
           right: 0,
           zIndex: 10,
-          background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+          background: 'rgba(15, 23, 42, 0.45)',
           py: 3
         }}
       >
@@ -77,9 +78,9 @@ const HeroSection = () => {
               href="/admissions"
               variant="contained"
               sx={{
-                bgcolor: '#dc2626',
+                bgcolor: brand.accent,
                 color: 'white',
-                '&:hover': { bgcolor: '#b91c1c', transform: 'scale(1.05)' },
+                '&:hover': { bgcolor: brand.accentHover, transform: 'scale(1.05)' },
                 fontWeight: 600,
                 fontSize: '1rem',
                 px: 4,

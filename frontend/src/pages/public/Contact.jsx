@@ -1,12 +1,15 @@
 import React from 'react';
 import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, TextField, Button, MenuItem, FormControl, InputLabel, Select } from "@mui/material";
-import { LocationOn, Phone, Email, Language, Send } from "@mui/icons-material";
+import { LocationOn, Phone, Email, Language, Send, WhatsApp, Smartphone, Facebook } from "@mui/icons-material";
 import TopNavbar from "../../components/common/TopNavbar";
 import MainNavbar from "../../components/common/MainNavbar";
 import Footer from "../../components/common/AIRADSFooter";
+import { usePublicBrand } from "../../hooks/usePublicBrand";
 
 const Contact = () => {
+  const brand = usePublicBrand();
+
   const campusContacts = [
     { name: "ELDORET Campus", phone: "0715-696-979" },
     { name: "NAKURU Campus", phone: "" },
@@ -18,7 +21,7 @@ const Contact = () => {
   ];
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', backgroundImage: 'linear-gradient(to bottom right, #f8fafc, #ffffff, #eff6ff)' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
       <Head title="Contact - AIRADS College" />
       <TopNavbar />
       <MainNavbar />
@@ -27,18 +30,15 @@ const Contact = () => {
         <Container maxWidth="lg">
           {/* Hero Section */}
           <Box sx={{ textAlign: 'center', mb: { xs: 10, md: 12 } }}>
-            <Box sx={{ position: 'relative', display: 'inline-block' }}>
-              <Typography variant="h2" component="h1" sx={{ fontWeight: 900, mb: 4, background: 'linear-gradient(to right, #1e40af, #2563eb, #dc2626)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: { xs: '3rem', md: '4.5rem' } }}>
-                Contact Us
-              </Typography>
-              <Box sx={{ position: 'absolute', top: -16, left: '50%', transform: 'translateX(-50%)', width: 120, height: 4, borderRadius: 2, background: 'linear-gradient(to right, #2563eb, #dc2626)', opacity: 0.5 }} />
-            </Box>
+            <Typography variant="h2" component="h1" sx={{ fontWeight: 900, mb: 4, color: brand.secondary, fontSize: { xs: '3rem', md: '4.5rem' } }}>
+              Contact Us
+            </Typography>
             <Typography variant="h5" sx={{ color: 'text.secondary', maxWidth: 800, mx: 'auto', fontWeight: 300, lineHeight: 1.6 }}>
               Get in touch with us for admissions, inquiries, or any information about 
-              <Box component="span" sx={{ fontWeight: 600, color: '#1e40af' }}> AIRADS College</Box>.
+              <Box component="span" sx={{ fontWeight: 600, color: brand.primary }}> AIRADS College</Box>.
             </Typography>
             <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-              <Box sx={{ width: 96, height: 4, background: 'linear-gradient(to right, #2563eb, #dc2626)', borderRadius: 2 }} />
+              <Box sx={{ width: 96, height: 4, bgcolor: brand.primary, borderRadius: 2 }} />
             </Box>
           </Box>
 
@@ -46,9 +46,9 @@ const Contact = () => {
             {/* Contact Information */}
             <Grid item xs={12} lg={6}>
               <Box sx={{ mb: 6, textAlign: { xs: 'center', lg: 'left' } }}>
-                <Typography variant="h4" component="h2" sx={{ fontWeight: 900, color: '#1e40af', mb: 2, position: 'relative', display: 'inline-block' }}>
+                <Typography variant="h4" component="h2" sx={{ fontWeight: 900, color: brand.secondary, mb: 2, position: 'relative', display: 'inline-block' }}>
                   Our Contacts
-                  <Box sx={{ position: 'absolute', bottom: -8, left: 0, width: 80, height: 4, background: 'linear-gradient(to right, #2563eb, #dc2626)', borderRadius: 2, margin: { xs: '0 auto', lg: 0 } }} />
+                  <Box sx={{ position: 'absolute', bottom: -8, left: 0, width: 80, height: 4, bgcolor: brand.primary, borderRadius: 2, margin: { xs: '0 auto', lg: 0 } }} />
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', mt: 3, fontSize: '1.125rem' }}>
                   We're here to help you every step of the way
@@ -58,43 +58,43 @@ const Contact = () => {
               {/* Head Office Card */}
               <Paper sx={{ p: { xs: 3, md: 5 }, borderRadius: 6, mb: 6, border: '1px solid #f1f5f9', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s', '&:hover': { transform: 'scale(1.02)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-                  <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(to right, #2563eb, #dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', mr: 2 }}>
+                  <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: brand.secondary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', mr: 2 }}>
                     HQ
                   </Box>
-                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1e40af' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: brand.secondary }}>
                     Head Office
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: '#eff6ff' } }}>
-                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: '#2563eb' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: brand.softBlue } }}>
+                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: brand.borderBlue, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: brand.primary }}>
                       <LocationOn />
                     </Box>
                     <Typography variant="body1" sx={{ fontWeight: 500, color: 'text.primary' }}>
                       Institute Plaza 3rd & 4th Floor
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: '#f0fdf4' } }}>
-                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: '#16a34a' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: brand.softBlue } }}>
+                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: brand.borderBlue, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: brand.primary }}>
                       <Phone />
                     </Box>
-                    <Typography component="a" href="tel:+254723555999" variant="body1" sx={{ fontWeight: 500, color: 'text.primary', textDecoration: 'none', '&:hover': { color: '#16a34a' } }}>
+                    <Typography component="a" href="tel:+254723555999" variant="body1" sx={{ fontWeight: 500, color: 'text.primary', textDecoration: 'none', '&:hover': { color: brand.primary } }}>
                       +254 723 555 999
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: '#faf5ff' } }}>
-                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: '#9333ea' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: brand.softBlue } }}>
+                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: brand.borderBlue, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: brand.primary }}>
                       <Email />
                     </Box>
-                    <Typography component="a" href="mailto:info@airads.ac.ke" variant="body1" sx={{ fontWeight: 500, color: 'text.primary', textDecoration: 'none', '&:hover': { color: '#9333ea' } }}>
+                    <Typography component="a" href="mailto:info@airads.ac.ke" variant="body1" sx={{ fontWeight: 500, color: 'text.primary', textDecoration: 'none', '&:hover': { color: brand.primary } }}>
                       info@airads.ac.ke
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: '#eef2ff' } }}>
-                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: '#4f46e5' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 3, transition: 'background-color 0.3s', '&:hover': { bgcolor: brand.softBlue } }}>
+                    <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: brand.borderBlue, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, color: brand.primary }}>
                       <Language />
                     </Box>
-                    <Typography component="a" href="https://www.airads.ac.ke" target="_blank" rel="noopener noreferrer" variant="body1" sx={{ fontWeight: 500, color: 'text.primary', textDecoration: 'none', '&:hover': { color: '#4f46e5' } }}>
+                    <Typography component="a" href="https://www.airads.ac.ke" target="_blank" rel="noopener noreferrer" variant="body1" sx={{ fontWeight: 500, color: 'text.primary', textDecoration: 'none', '&:hover': { color: brand.primary } }}>
                       www.airads.ac.ke
                     </Typography>
                   </Box>
@@ -104,10 +104,10 @@ const Contact = () => {
               {/* Campus Contacts Card */}
               <Paper sx={{ p: { xs: 3, md: 5 }, borderRadius: 6, border: '1px solid #f1f5f9', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s', '&:hover': { boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-                  <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(to right, #22c55e, #2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.5rem', mr: 2 }}>
-                    📱
+                  <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: brand.secondary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', mr: 2 }}>
+                    <Smartphone />
                   </Box>
-                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1e40af' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: brand.secondary }}>
                     Campus Contact Numbers
                   </Typography>
                 </Box>
@@ -115,11 +115,11 @@ const Contact = () => {
                   {campusContacts.map((campus, index) => (
                     <Box 
                       key={index} 
-                      sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, background: 'linear-gradient(to right, #f8fafc, #eff6ff)', borderRadius: 3, transition: 'all 0.3s', '&:hover': { background: 'linear-gradient(to right, #eff6ff, #dbeafe)', transform: 'scale(1.02)' } }}
+                      sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: brand.softBlue, borderRadius: 3, transition: 'all 0.3s', '&:hover': { bgcolor: brand.borderBlue, transform: 'scale(1.02)' } }}
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: '#bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#1d4ed8' }}>{index + 1}</Typography>
+                        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: brand.borderBlue, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: brand.primary }}>{index + 1}</Typography>
                         </Box>
                         <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary' }}>{campus.name}</Typography>
                       </Box>
@@ -128,7 +128,7 @@ const Contact = () => {
                           component="a" 
                           href={`tel:${campus.phone}`} 
                           variant="body2" 
-                          sx={{ fontWeight: 'bold', color: '#1d4ed8', px: 2, py: 0.5, borderRadius: 4, bgcolor: '#dbeafe', textDecoration: 'none', transition: 'background-color 0.2s', '&:hover': { bgcolor: '#bfdbfe', color: '#1e3a8a' } }}
+                          sx={{ fontWeight: 'bold', color: brand.primary, px: 2, py: 0.5, borderRadius: 4, bgcolor: brand.borderBlue, textDecoration: 'none', transition: 'background-color 0.2s', '&:hover': { bgcolor: brand.softBlue, color: brand.primaryHover } }}
                         >
                           {campus.phone}
                         </Typography>
@@ -144,9 +144,9 @@ const Contact = () => {
             {/* Inquiry Form */}
             <Grid item xs={12} lg={6}>
               <Box sx={{ mb: 6, textAlign: { xs: 'center', lg: 'left' } }}>
-                <Typography variant="h4" component="h2" sx={{ fontWeight: 900, color: '#1e40af', mb: 2, position: 'relative', display: 'inline-block' }}>
+                <Typography variant="h4" component="h2" sx={{ fontWeight: 900, color: brand.secondary, mb: 2, position: 'relative', display: 'inline-block' }}>
                   Send us an Inquiry
-                  <Box sx={{ position: 'absolute', bottom: -8, left: 0, width: 80, height: 4, background: 'linear-gradient(to right, #2563eb, #dc2626)', borderRadius: 2, margin: { xs: '0 auto', lg: 0 } }} />
+                  <Box sx={{ position: 'absolute', bottom: -8, left: 0, width: 80, height: 4, bgcolor: brand.primary, borderRadius: 2, margin: { xs: '0 auto', lg: 0 } }} />
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', mt: 3, fontSize: '1.125rem' }}>
                   We'll get back to you within 24 hours
@@ -217,11 +217,11 @@ const Contact = () => {
                       sx={{ 
                         py: 2, 
                         borderRadius: 3, 
-                        background: 'linear-gradient(to right, #1d4ed8, #1e40af, #dc2626)', 
+                        bgcolor: brand.primary,
                         fontWeight: 'bold', 
                         fontSize: '1.125rem',
                         transition: 'all 0.3s',
-                        '&:hover': { background: 'linear-gradient(to right, #1e40af, #1e3a8a, #b91c1c)', transform: 'scale(1.02)', boxShadow: 6 }
+                        '&:hover': { bgcolor: brand.primaryHover, transform: 'scale(1.02)', boxShadow: 6 }
                       }}
                     >
                       Send Message
@@ -237,21 +237,12 @@ const Contact = () => {
             sx={{ 
               p: { xs: 4, md: 8 }, 
               borderRadius: 6, 
-              background: 'linear-gradient(to right, #1e3a8a, #1e40af, #b91c1c)', 
+              bgcolor: brand.secondary,
               color: 'white', 
               textAlign: 'center', 
-              boxShadow: 24, 
-              position: 'relative', 
-              overflow: 'hidden' 
+              boxShadow: 24
             }}
           >
-            {/* Background Pattern */}
-            <Box sx={{ position: 'absolute', inset: 0, opacity: 0.1 }}>
-              <Box sx={{ position: 'absolute', top: 0, left: 0, width: 160, height: 160, bgcolor: 'white', borderRadius: '50%', transform: 'translate(-80px, -80px)' }} />
-              <Box sx={{ position: 'absolute', top: 0, right: 0, width: 240, height: 240, bgcolor: 'white', borderRadius: '50%', transform: 'translate(120px, -120px)' }} />
-              <Box sx={{ position: 'absolute', bottom: 0, left: '50%', width: 320, height: 320, bgcolor: 'white', borderRadius: '50%', transform: 'translate(-160px, 160px)' }} />
-            </Box>
-            
             <Box sx={{ position: 'relative', zIndex: 10 }}>
               <Typography variant="h3" component="h3" sx={{ fontWeight: 900, mb: 2, fontSize: { xs: '2rem', md: '3rem' } }}>
                 Other Ways to Reach Us
@@ -263,8 +254,8 @@ const Contact = () => {
               <Grid container spacing={4}>
                 <Grid item xs={12} md={4}>
                   <Box sx={{ transition: 'all 0.3s', '&:hover': { transform: 'scale(1.1)' } }}>
-                    <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
-                      💬
+                    <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
+                      <WhatsApp sx={{ color: 'white', fontSize: 40 }} />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>WhatsApp</Typography>
                     <Typography variant="body1" sx={{ opacity: 0.9, lineHeight: 1.6 }}>
@@ -275,8 +266,8 @@ const Contact = () => {
                 
                 <Grid item xs={12} md={4}>
                   <Box sx={{ transition: 'all 0.3s', '&:hover': { transform: 'scale(1.1)' } }}>
-                    <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
-                      📱
+                    <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
+                      <Facebook sx={{ color: 'white', fontSize: 40 }} />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>Facebook Messenger</Typography>
                     <Typography variant="body1" sx={{ opacity: 0.9, lineHeight: 1.6 }}>
@@ -287,8 +278,8 @@ const Contact = () => {
                 
                 <Grid item xs={12} md={4}>
                   <Box sx={{ transition: 'all 0.3s', '&:hover': { transform: 'scale(1.1)' } }}>
-                    <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
-                      📞
+                    <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
+                      <Phone sx={{ color: 'white', fontSize: 40 }} />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>Call/SMS</Typography>
                     <Typography variant="body1" sx={{ opacity: 0.9, lineHeight: 1.6 }}>
@@ -299,11 +290,11 @@ const Contact = () => {
               </Grid>
               
               <Box sx={{ mt: 8, display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap' }}>
-                <Button variant="contained" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: 'white', px: 4, py: 1.5, borderRadius: 8, fontWeight: 600, '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)', transform: 'scale(1.05)' } }}>
-                  📞 Call Now
+                <Button variant="contained" startIcon={<Phone />} sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: 'white', px: 4, py: 1.5, borderRadius: 8, fontWeight: 600, '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)', transform: 'scale(1.05)' } }}>
+                  Call Now
                 </Button>
-                <Button variant="contained" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: 'white', px: 4, py: 1.5, borderRadius: 8, fontWeight: 600, '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)', transform: 'scale(1.05)' } }}>
-                  💬 WhatsApp
+                <Button variant="contained" startIcon={<WhatsApp />} sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: 'white', px: 4, py: 1.5, borderRadius: 8, fontWeight: 600, '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)', transform: 'scale(1.05)' } }}>
+                  WhatsApp
                 </Button>
               </Box>
             </Box>

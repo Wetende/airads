@@ -20,7 +20,7 @@ const features = import.meta.glob([
     "!**/*.spec.jsx",
 ]);
 const publicPages = import.meta.glob([
-    "./pages/public/*.jsx",
+    "./pages/public/**/*.jsx",
     "!**/*.test.jsx",
     "!**/*.spec.jsx"
 ]);

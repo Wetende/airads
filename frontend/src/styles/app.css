@@ -1,4 +1,6 @@
 
+@tailwind components;
+@tailwind utilities;
 
 /* Base styles */
 * {
@@ -284,4 +286,3 @@ a {
     background: #cbd5e1;
     border-radius: 3px;
 }
-

@@ -5,13 +5,15 @@ import {
   CircularProgress, Card, CardContent
 } from "@mui/material";
 import { 
-  Download, Description, OpenInNew, CalendarToday, LocationOn
+  Download, Description, OpenInNew, CalendarToday, LocationOn, Phone
 } from "@mui/icons-material";
+import { usePublicBrand } from "../../hooks/usePublicBrand";
 import TopNavbar from "../../components/common/TopNavbar";
 import MainNavbar from "../../components/common/MainNavbar";
 import Footer from "../../components/common/AIRADSFooter";
 
 const ApplicationForm = () => {
+  const brand = usePublicBrand();
   const [downloadingForm, setDownloadingForm] = useState(null);
 
   const campusForms = [
@@ -21,7 +23,6 @@ const ApplicationForm = () => {
       description: "Application form and brochure for Bungoma Campus",
       location: "College House – 3rd Floor – Opposite Bungoma Main Stage",
       contact: "0715-771-316",
-      color: "linear-gradient(to right, #3b82f6, #1d4ed8)",
       hasForm: true
     },
     {
@@ -30,7 +31,6 @@ const ApplicationForm = () => {
       description: "Application form and brochure for Eldoret Campus",
       location: "Institute Plaza 3rd Floor- Oloo Street, Next to KPLC Commercial Office",
       contact: "0715-696-979",
-      color: "linear-gradient(to right, #ef4444, #b91c1c)",
       hasForm: true
     },
     {
@@ -39,7 +39,6 @@ const ApplicationForm = () => {
       description: "Application form and brochure for Kisumu Campus",
       location: "Oginga Odinga Street, Swan Building, 2nd Floor",
       contact: "0715-505-262",
-      color: "linear-gradient(to right, #3b82f6, #1d4ed8)",
       hasForm: true
     },
     {
@@ -48,7 +47,6 @@ const ApplicationForm = () => {
       description: "Application form and brochure for Lodwar Campus", 
       location: "Equity Bank Building – Opposite Lodwar Town",
       contact: "Coming Soon",
-      color: "linear-gradient(to right, #ef4444, #b91c1c)",
       hasForm: true
     },
     {
@@ -57,7 +55,6 @@ const ApplicationForm = () => {
       description: "Application form and brochure for Nakuru Campus",
       location: "TradeWorld Building 2nd Floor, Opposite Prestige Mall, Kijabe Row",
       contact: "0711488302",
-      color: "linear-gradient(to right, #3b82f6, #1d4ed8)",
       hasForm: true
     },
     {
@@ -66,7 +63,6 @@ const ApplicationForm = () => {
       description: "Application form and brochure for Kericho Campus",
       location: "ACK BUSINESS PARK Building -2ND Floor Along Kericho –Nakuru Highway",
       contact: "0729-976-885",
-      color: "linear-gradient(to right, #ef4444, #b91c1c)",
       hasForm: true
     }
   ];
@@ -95,24 +91,23 @@ const ApplicationForm = () => {
       
       <Box component="main" sx={{ flexGrow: 1 }}>
         {/* Hero Section */}
-        <Box sx={{ pt: { xs: 15, md: 20 }, pb: { xs: 8, md: 10 }, position: 'relative', overflow: 'hidden', bgcolor: '#f8fafc' }}>
-          <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(59,130,246,0.05), rgba(239,68,68,0.05))', animation: 'pulse 3s infinite alternate' }} />
-          <Container maxWidth="lg" sx={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
+        <Box sx={{ pt: { xs: 15, md: 20 }, pb: { xs: 8, md: 10 }, bgcolor: brand.softBlue }}>
+          <Container maxWidth="lg" sx={{ textAlign: 'center' }}>
             <Chip 
               label="Application Forms Available" 
-              sx={{ mb: 4, px: 2, py: 2.5, fontSize: '1.1rem', fontWeight: 'bold', background: 'linear-gradient(to right, #3b82f6, #ef4444)', color: 'white', border: 'none' }} 
+              sx={{ mb: 4, px: 2, py: 2.5, fontSize: '1.1rem', fontWeight: 'bold', bgcolor: brand.accent, color: 'white', border: 'none' }}
             />
-            <Typography variant="h2" component="h1" sx={{ fontWeight: 900, mb: 3, background: 'linear-gradient(to right, #3b82f6, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: { xs: '2.5rem', md: '4rem' } }}>
+            <Typography variant="h2" component="h1" sx={{ fontWeight: 900, mb: 3, color: brand.secondary, fontSize: { xs: '2.5rem', md: '4rem' } }}>
               Download Application Forms
             </Typography>
-            <Typography variant="h5" sx={{ mb: 6, color: 'text.secondary', maxWidth: 800, mx: 'auto', fontWeight: 300 }}>
+            <Typography variant="h5" sx={{ mb: 6, color: brand.mutedText, maxWidth: 800, mx: 'auto', fontWeight: 300 }}>
               Get your application forms and brochures based on your preferred campus
             </Typography>
             
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, color: 'text.secondary', fontSize: '0.9rem' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, color: brand.mutedText, fontSize: '0.9rem' }}>
               <CalendarToday fontSize="small" />
               <Typography variant="body2">Updated: {new Date().toLocaleDateString()}</Typography>
-              <Typography variant="body2" sx={{ mx: 1 }}>•</Typography>
+              <Typography variant="body2" sx={{ mx: 1 }}>&#8226;</Typography>
               <Typography variant="body2">{availableFormsCount} forms available</Typography>
             </Box>
           </Container>
@@ -122,24 +117,24 @@ const ApplicationForm = () => {
         <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: 'white' }}>
           <Container maxWidth="lg">
             <Box sx={{ textAlign: 'center', mb: 8 }}>
-              <Typography variant="h3" component="h2" sx={{ fontWeight: 800, mb: 2, color: 'text.primary' }}>
+              <Typography variant="h3" component="h2" sx={{ fontWeight: 800, mb: 2, color: brand.neutralText }}>
                 Complete Application Package
               </Typography>
-              <Typography variant="h6" sx={{ color: 'text.secondary', mb: 3, fontWeight: 400 }}>
+              <Typography variant="h6" sx={{ color: brand.mutedText, mb: 3, fontWeight: 400 }}>
                 Each campus form includes everything you need for your application
               </Typography>
-              <Box sx={{ width: 80, height: 4, background: 'linear-gradient(to right, #3b82f6, #ef4444)', mx: 'auto', borderRadius: 2 }} />
+              <Box sx={{ width: 80, height: 4, bgcolor: brand.accent, mx: 'auto', borderRadius: 2 }} />
             </Box>
 
             <Grid container spacing={4} sx={{ mb: 8 }}>
               <Grid item xs={12} md={4}>
                 <Card sx={{ height: '100%', textAlign: 'center', p: 3, transition: 'transform 0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 }, borderRadius: 3, border: 'none', boxShadow: 2 }}>
-                  <Box sx={{ width: 64, height: 64, mx: 'auto', mb: 3, borderRadius: '50%', background: 'linear-gradient(to right, #3b82f6, #ef4444)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                  <Box sx={{ width: 64, height: 64, mx: 'auto', mb: 3, borderRadius: '50%', bgcolor: brand.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                     <Description fontSize="large" />
                   </Box>
                   <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>Application Forms</Typography>
-                  <Chip label="All Programs" sx={{ mb: 3, bgcolor: '#dbeafe', color: '#1e40af', fontWeight: 'bold' }} />
-                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                  <Chip label="All Programs" sx={{ mb: 3, bgcolor: brand.softBlue, color: brand.secondary, fontWeight: 'bold' }} />
+                  <Typography variant="body1" sx={{ color: brand.mutedText }}>
                     Complete application forms for Certificate, Diploma, and Short Courses
                   </Typography>
                 </Card>
@@ -147,12 +142,12 @@ const ApplicationForm = () => {
               
               <Grid item xs={12} md={4}>
                 <Card sx={{ height: '100%', textAlign: 'center', p: 3, transition: 'transform 0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 }, borderRadius: 3, border: 'none', boxShadow: 2 }}>
-                  <Box sx={{ width: 64, height: 64, mx: 'auto', mb: 3, borderRadius: '50%', background: 'linear-gradient(to right, #3b82f6, #ef4444)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                  <Box sx={{ width: 64, height: 64, mx: 'auto', mb: 3, borderRadius: '50%', bgcolor: brand.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                     <Description fontSize="large" />
                   </Box>
                   <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>Course Information</Typography>
-                  <Chip label="Detailed Brochures" sx={{ mb: 3, bgcolor: '#fee2e2', color: '#b91c1c', fontWeight: 'bold' }} />
-                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                  <Chip label="Detailed Brochures" sx={{ mb: 3, bgcolor: brand.softRed, color: brand.accent, fontWeight: 'bold' }} />
+                  <Typography variant="body1" sx={{ color: brand.mutedText }}>
                     Comprehensive course details, requirements, and campus information
                   </Typography>
                 </Card>
@@ -160,12 +155,12 @@ const ApplicationForm = () => {
               
               <Grid item xs={12} md={4}>
                 <Card sx={{ height: '100%', textAlign: 'center', p: 3, transition: 'transform 0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 }, borderRadius: 3, border: 'none', boxShadow: 2 }}>
-                  <Box sx={{ width: 64, height: 64, mx: 'auto', mb: 3, borderRadius: '50%', background: 'linear-gradient(to right, #3b82f6, #ef4444)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                  <Box sx={{ width: 64, height: 64, mx: 'auto', mb: 3, borderRadius: '50%', bgcolor: brand.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                     <Description fontSize="large" />
                   </Box>
                   <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>Fee Structure</Typography>
                   <Chip label="Transparent Pricing" sx={{ mb: 3, bgcolor: '#dcfce7', color: '#15803d', fontWeight: 'bold' }} />
-                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                  <Typography variant="body1" sx={{ color: brand.mutedText }}>
                     Complete fee breakdown and payment options for all programs
                   </Typography>
                 </Card>
@@ -175,23 +170,23 @@ const ApplicationForm = () => {
         </Box>
 
         {/* Campus Forms Download Section */}
-        <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: '#f8fafc' }}>
+        <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: brand.softBlue }}>
           <Container maxWidth="lg">
             <Box sx={{ textAlign: 'center', mb: 8 }}>
-              <Typography variant="h3" component="h2" sx={{ fontWeight: 800, mb: 2, color: 'text.primary' }}>
+              <Typography variant="h3" component="h2" sx={{ fontWeight: 800, mb: 2, color: brand.neutralText }}>
                 Download Forms by Campus
               </Typography>
-              <Typography variant="h6" sx={{ color: 'text.secondary', mb: 3, fontWeight: 400 }}>
+              <Typography variant="h6" sx={{ color: brand.mutedText, mb: 3, fontWeight: 400 }}>
                 Select your preferred campus to download the complete application package
               </Typography>
-              <Box sx={{ width: 80, height: 4, background: 'linear-gradient(to right, #3b82f6, #ef4444)', mx: 'auto', borderRadius: 2 }} />
+              <Box sx={{ width: 80, height: 4, bgcolor: brand.accent, mx: 'auto', borderRadius: 2 }} />
             </Box>
 
             <Grid container spacing={4}>
               {campusForms.map((campus, index) => (
                 <Grid item xs={12} lg={6} key={index}>
                   <Card sx={{ height: '100%', borderRadius: 3, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'all 0.3s', '&:hover': { boxShadow: 6, transform: 'translateY(-4px)' } }}>
-                    <Box sx={{ background: campus.color, p: 3, color: 'white' }}>
+                    <Box sx={{ bgcolor: brand.secondary, p: 3, color: 'white' }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <LocationOn sx={{ mr: 1.5 }} />
@@ -209,11 +204,11 @@ const ApplicationForm = () => {
                     <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                       <Box sx={{ mb: 3 }}>
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                          <LocationOn sx={{ color: '#2563eb', mr: 2, mt: 0.2, fontSize: '1.2rem' }} />
-                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>{campus.location}</Typography>
+                          <LocationOn sx={{ color: brand.primary, mr: 2, mt: 0.2, fontSize: '1.2rem' }} />
+                          <Typography variant="body2" sx={{ color: brand.mutedText }}>{campus.location}</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
+                          <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: brand.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
                             <Phone sx={{ color: 'white', fontSize: '0.9rem' }} />
                           </Box>
                           <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{campus.contact}</Typography>
@@ -224,12 +219,12 @@ const ApplicationForm = () => {
                         {campus.hasForm ? (
                           <Box sx={{ bgcolor: '#f0fdfa', border: '1px solid #bbf7d0', borderRadius: 2, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Box sx={{ p: 1, borderRadius: 1, background: 'linear-gradient(to right, #3b82f6, #ef4444)', color: 'white', mr: 2 }}>
+                              <Box sx={{ p: 1, borderRadius: 1, bgcolor: brand.primary, color: 'white', mr: 2 }}>
                                 <Description />
                               </Box>
                               <Box>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Complete Application Package</Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>Universal Brochure • All Programs Included</Typography>
+                                <Typography variant="caption" sx={{ color: brand.mutedText }}>Universal Brochure &#8226; All Programs Included</Typography>
                               </Box>
                             </Box>
                             <Button
@@ -237,7 +232,7 @@ const ApplicationForm = () => {
                               onClick={() => handleDownload(campus.key)}
                               disabled={downloadingForm === campus.key}
                               startIcon={downloadingForm === campus.key ? <CircularProgress size={20} color="inherit" /> : <Download />}
-                              sx={{ background: 'linear-gradient(to right, #3b82f6, #ef4444)', '&:hover': { background: 'linear-gradient(to right, #2563eb, #dc2626)', boxShadow: 4 } }}
+                              sx={{ bgcolor: brand.accent, '&:hover': { bgcolor: brand.accentHover, boxShadow: 4 } }}
                             >
                               Download
                             </Button>
@@ -247,15 +242,15 @@ const ApplicationForm = () => {
                             <Box sx={{ width: 48, height: 48, mx: 'auto', bgcolor: 'grey.300', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
                               <Description sx={{ color: 'grey.500' }} />
                             </Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary', mb: 1 }}>Application Form Coming Soon</Typography>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 2 }}>We're preparing the application materials for this campus</Typography>
-                            <Chip label="Not Available Yet" size="small" sx={{ bgcolor: 'grey.200', color: 'text.secondary' }} />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: brand.mutedText, mb: 1 }}>Application Form Coming Soon</Typography>
+                            <Typography variant="caption" sx={{ color: brand.mutedText, display: 'block', mb: 2 }}>We're preparing the application materials for this campus</Typography>
+                            <Chip label="Not Available Yet" size="small" sx={{ bgcolor: 'grey.200', color: brand.mutedText }} />
                           </Box>
                         )}
                       </Box>
 
-                      <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(59,130,246,0.05)', borderRadius: 2 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', textAlign: 'center' }}>
+                      <Box sx={{ mt: 3, p: 2, bgcolor: brand.softBlue, borderRadius: 2 }}>
+                        <Typography variant="caption" sx={{ color: brand.mutedText, display: 'block', textAlign: 'center' }}>
                           <Box component="span" sx={{ fontWeight: 'bold' }}>Complete Package Includes:</Box> Application forms for all programs, course brochures, fee structure, admission requirements, and campus-specific information.
                         </Typography>
                       </Box>
@@ -270,7 +265,7 @@ const ApplicationForm = () => {
         {/* Quick Actions */}
         <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: 'white' }}>
           <Container maxWidth="lg">
-            <Paper sx={{ maxWidth: 900, mx: 'auto', background: 'linear-gradient(to right, #3b82f6, #ef4444)', color: 'white', borderRadius: 4, p: { xs: 4, md: 6 }, textAlign: 'center', boxShadow: 6 }}>
+            <Paper sx={{ maxWidth: 900, mx: 'auto', bgcolor: brand.accent, color: 'white', borderRadius: 4, p: { xs: 4, md: 6 }, textAlign: 'center', boxShadow: 6 }}>
               <Typography variant="h4" component="h3" sx={{ fontWeight: 'bold', mb: 2 }}>
                 Need Help with Your Application?
               </Typography>
@@ -285,7 +280,7 @@ const ApplicationForm = () => {
                   startIcon={<OpenInNew />}
                   href="https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded" 
                   target="_blank"
-                  sx={{ bgcolor: 'white', color: '#2563eb', fontWeight: 'bold', '&:hover': { bgcolor: '#f1f5f9' }, py: 1.5, px: 3 }}
+                  sx={{ bgcolor: 'white', color: brand.accent, fontWeight: 'bold', '&:hover': { bgcolor: '#f1f5f9' }, py: 1.5, px: 3 }}
                 >
                   Apply Online at admissions.airads.ac.ke
                 </Button>
@@ -305,25 +300,25 @@ const ApplicationForm = () => {
         </Box>
 
         {/* File Statistics Section */}
-        <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: '#f8fafc' }}>
+        <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: brand.softBlue }}>
           <Container maxWidth="md">
             <Paper sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: 3 }}>
               <Box sx={{ textAlign: 'center', mb: 5 }}>
                 <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>Available Downloads</Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Quick overview of all available application forms</Typography>
+                <Typography variant="body2" sx={{ color: brand.mutedText }}>Quick overview of all available application forms</Typography>
               </Box>
               <Grid container spacing={4}>
                 <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
-                  <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#2563eb', mb: 1 }}>{availableFormsCount}</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>Available Forms</Typography>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold', color: brand.primary, mb: 1 }}>{availableFormsCount}</Typography>
+                  <Typography variant="body2" sx={{ color: brand.mutedText }}>Available Forms</Typography>
                 </Grid>
                 <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
-                  <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#ef4444', mb: 1 }}>{availableFormsCount}</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>Active Campuses</Typography>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold', color: brand.accent, mb: 1 }}>{availableFormsCount}</Typography>
+                  <Typography variant="body2" sx={{ color: brand.mutedText }}>Active Campuses</Typography>
                 </Grid>
                 <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
                   <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#16a34a', mb: 1 }}>6</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>Total Campuses</Typography>
+                  <Typography variant="body2" sx={{ color: brand.mutedText }}>Total Campuses</Typography>
              </Grid>
               </Grid>
             </Paper>
@@ -336,7 +331,7 @@ const ApplicationForm = () => {
             <Paper sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: 3 }}>
               <Box sx={{ mb: 4 }}>
                 <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>Leave a Reply</Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Your email address will not be published. Required fields are marked *</Typography>
+                <Typography variant="body2" sx={{ color: brand.mutedText }}>Your email address will not be published. Required fields are marked *</Typography>
               </Box>
               
               <Grid container spacing={3}>
@@ -353,7 +348,7 @@ const ApplicationForm = () => {
                   <TextField fullWidth label="Comment *" multiline rows={6} variant="outlined" />
                 </Grid>
                 <Grid item xs={12}>
-                  <Button variant="contained" size="large" sx={{ background: 'linear-gradient(to right, #3b82f6, #ef4444)', fontWeight: 'bold', py: 1.5, px: 4, '&:hover': { boxShadow: 4 } }}>
+                  <Button variant="contained" size="large" sx={{ bgcolor: brand.primary, fontWeight: 'bold', py: 1.5, px: 4, '&:hover': { bgcolor: brand.primaryHover, boxShadow: 4 } }}>
                     Post Comment
                   </Button>
                 </Grid>

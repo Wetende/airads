@@ -108,8 +108,7 @@ function StatsHighlightCard({ primaryColor }) {
             viewport={{ once: true }}
             sx={{
                 p: { xs: 3, md: 5 },
-                background: `linear-gradient(135deg, ${hexToRgba("#ffffff", 0.98)} 0%, ${hexToRgba("#ffffff", 0.92)} 100%)`,
-                backdropFilter: "blur(20px)",
+                bgcolor: "rgba(255,255,255,0.95)",
                 borderRadius: 4,
                 boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
                 border: "1px solid rgba(255,255,255,0.3)",
@@ -185,7 +184,6 @@ StatsHighlightCard.propTypes = {
 // --- Main HeroSection Component ---
 export default function HeroSection({ platform }) {
     const primaryColor = platform?.primaryColor || "#3B82F6";
-    const secondaryColor = platform?.secondaryColor || "#1E40AF";
     const publicContent =
         platform?.publicContent && typeof platform.publicContent === "object"
             ? platform.publicContent
@@ -223,61 +221,18 @@ export default function HeroSection({ platform }) {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        backgroundImage: `linear-gradient(to right, rgba(0, 0, 0, 0.50) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 0.35) 100%), linear-gradient(135deg, ${hexToRgba(primaryColor, 0.35)} 0%, ${hexToRgba(secondaryColor, 0.5)} 100%), url(${heroImages[currentImageIndex]})`,
+                        backgroundImage: `url(${heroImages[currentImageIndex]})`,
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                         zIndex: 0,
                     }}
                 />
             </AnimatePresence>
-            {/* Background decoration */}
             <Box
                 sx={{
                     position: "absolute",
                     inset: 0,
-                    opacity: 0.05,
-                    backgroundImage: `radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)`,
-                    backgroundSize: "60px 60px",
-                }}
-            />
-            {/* Floating shapes */}
-            <Box
-                component={motion.div}
-                animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
-                transition={{
-                    duration: 6,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                }}
-                sx={{
-                    position: "absolute",
-                    top: "20%",
-                    right: "10%",
-                    width: 80,
-                    height: 80,
-                    borderRadius: "50%",
-                    bgcolor: "rgba(255,255,255,0.1)",
-                    display: { xs: "none", md: "block" },
-                }}
-            />
-            <Box
-                component={motion.div}
-                animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
-                transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 1,
-                }}
-                sx={{
-                    position: "absolute",
-                    bottom: "30%",
-                    left: "5%",
-                    width: 60,
-                    height: 60,
-                    borderRadius: 3,
-                    bgcolor: "rgba(255,255,255,0.08)",
-                    display: { xs: "none", md: "block" },
+                    bgcolor: "rgba(15,23,42,0.55)",
                 }}
             />
 
@@ -317,11 +272,7 @@ export default function HeroSection({ platform }) {
                                         <Box
                                             component="span"
                                             sx={{
-                                                background:
-                                                    "linear-gradient(90deg, #FFD700, #FFA500)",
-                                                WebkitBackgroundClip: "text",
-                                                WebkitTextFillColor:
-                                                    "transparent",
+                                                color: primaryColor,
                                             }}
                                         >
                                             Potential

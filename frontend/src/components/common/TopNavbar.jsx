@@ -1,18 +1,21 @@
 import React from 'react';
 import { Box, Container, Typography, Link as MuiLink } from '@mui/material';
+import { usePublicBrand } from '../../hooks/usePublicBrand';
 
 const TopNavbar = () => {
+  const brand = usePublicBrand();
+
   return (
-    <Box 
-      sx={{ 
-        bgcolor: '#1e3a8a',
-        color: 'white', 
-        py: 0.5, 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        width: '100%', 
-        zIndex: 50 
+    <Box
+      sx={{
+        bgcolor: brand.secondary,
+        color: 'white',
+        py: 0.5,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        zIndex: 50,
       }}
     >
       <Container maxWidth="lg">
