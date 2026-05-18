@@ -1,5 +1,5 @@
 """
-URL configuration for Crossview LMS project.
+URL configuration for LMS project.
 """
 
 from django.contrib import admin

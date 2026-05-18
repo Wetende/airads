@@ -46,7 +46,7 @@ class Command(BaseCommand):
         admin, created = User.objects.get_or_create(
             email='admin@admin.com',
             defaults={
-                'username': 'crossview_admin',
+                'username': 'lms_admin',
                 'first_name': 'Admin', 'last_name': 'User',
                 'is_staff': True, 'is_superuser': False
             }
@@ -247,7 +247,7 @@ class Command(BaseCommand):
         )
         # Note: Assignment object linkage happens via views often, but here we just create it. 
         # In this system, usually the Lesson node links to assignment via ID or just existence.
-        # Based on seed_crossview: assign_lesson.properties['assignment_id'] = assignment.id
+        # Based on seed_lms: assign_lesson.properties['assignment_id'] = assignment.id
         assign = Assignment.objects.get(title='Portfolio Project')
         a1.properties['assignment_id'] = assign.id
         a1.save()

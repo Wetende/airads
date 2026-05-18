@@ -19,7 +19,7 @@ def test_platform_cache_keys_are_invalidated_on_save():
         "heroHeadline": "Build your future with confidence",
         "footerDescription": "Flexible programs for modern learners.",
     }
-    settings.social_links = {"linkedin": "https://linkedin.com/company/crossview"}
+    settings.social_links = {"linkedin": "https://linkedin.com/company/lms"}
     settings.save()
 
     initial_payload = PlatformSettings.get_cached_platform_payload()
@@ -30,7 +30,7 @@ def test_platform_cache_keys_are_invalidated_on_save():
         "Build your future with confidence"
     )
     assert initial_payload["socialLinks"]["linkedin"] == (
-        "https://linkedin.com/company/crossview"
+        "https://linkedin.com/company/lms"
     )
     assert initial_levels == [{"value": "beginner", "label": "Beginner"}]
     assert cache.get(PLATFORM_PAYLOAD_CACHE_KEY) is not None
@@ -42,7 +42,7 @@ def test_platform_cache_keys_are_invalidated_on_save():
         "heroHeadline": "Grow with practical learning",
         "mission": "Support learners with flexible, practical education.",
     }
-    settings.social_links = {"youtube": "https://youtube.com/@crossview"}
+    settings.social_links = {"youtube": "https://youtube.com/@lms"}
     settings.save()
 
     assert cache.get(PLATFORM_PAYLOAD_CACHE_KEY) is None
@@ -56,6 +56,6 @@ def test_platform_cache_keys_are_invalidated_on_save():
         "Support learners with flexible, practical education."
     )
     assert refreshed_payload["socialLinks"]["youtube"] == (
-        "https://youtube.com/@crossview"
+        "https://youtube.com/@lms"
     )
     assert refreshed_levels == [{"value": "advanced", "label": "Advanced"}]

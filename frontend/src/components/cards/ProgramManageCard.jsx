@@ -121,7 +121,7 @@ export default function ProgramManageCard({
                     height="160"
                     image={
                         program.thumbnail ||
-                        "/static/static/images/course-placeholder.svg"
+                        "/static/images/course-placeholder.svg"
                     }
                     alt={program.name}
                     sx={{ objectFit: "cover" }}

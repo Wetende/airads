@@ -52,7 +52,7 @@ export default function EventCard({ event }) {
                 <CardMedia
                     component="img"
                     height="200"
-                    image={event.image || "/static/static/images/course-placeholder.jpg"}
+                    image={event.image || "/static/images/course-placeholder.jpg"}
                     alt={event.title}
                     sx={{
                         objectFit: "cover",

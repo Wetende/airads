@@ -1,5 +1,5 @@
 """
-ASGI config for Crossview LMS project.
+ASGI config for LMS project.
 """
 
 import os
