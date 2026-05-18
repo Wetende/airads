@@ -8,7 +8,7 @@ const CampusesSection = () => {
     {
       name: "KERICHO TOWN CAMPUS",
       phone: "0729976885",
-      image: "/static/static/kericho-campus.jpg",
+      image: "/static/kericho-campus.jpg",
       description: "Located in the heart of Kericho, offering comprehensive technical programs."
     },
     {
