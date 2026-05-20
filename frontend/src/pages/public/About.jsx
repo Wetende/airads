@@ -29,7 +29,7 @@ const About = () => {
           </Box>
 
           <Grid container spacing={6} alignItems="center" sx={{ mb: 8 }}>
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', color: brand.secondary, mb: 3 }}>
                 Our Mission
               </Typography>
@@ -45,7 +45,7 @@ const About = () => {
                 producing competent and innovative graduates for national and regional development.
               </Typography>
             </Grid>
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper 
                 elevation={0}
                 sx={{ 
@@ -75,21 +75,21 @@ const About = () => {
               Why Study at AIRADS?
             </Typography>
             <Grid container spacing={4}>
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <EmojiEvents sx={{ fontSize: 64, color: brand.primary, mb: 2 }} />
                   <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: brand.secondary }}>Excellence</Typography>
                   <Typography variant="body1" sx={{ color: 'text.secondary' }}>90-100% pass rate for 18 years consistently</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <School sx={{ fontSize: 64, color: brand.primary, mb: 2 }} />
                   <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: brand.secondary }}>Expert Faculty</Typography>
                   <Typography variant="body1" sx={{ color: 'text.secondary' }}>Qualified and experienced trainers</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Public sx={{ fontSize: 64, color: brand.primary, mb: 2 }} />
                   <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: brand.secondary }}>Accessibility</Typography>

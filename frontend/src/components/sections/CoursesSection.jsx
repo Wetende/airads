@@ -60,7 +60,7 @@ const CoursesSection = () => {
           </Typography>
           <Grid container spacing={2} justifyContent="center">
             {schools.map((school, index) => (
-              <Grid item xs={6} sm={4} md={3} lg={12 / 7} key={index}>
+              <Grid key={index} size={{ xs: 6, sm: 4, md: 3, lg: 12 / 7 }}>
                 <Paper
                   onClick={() => setActiveFilter(school === "All Courses" ? "All Courses" : school)}
                   sx={{
@@ -116,7 +116,7 @@ const CoursesSection = () => {
 
         <Grid container spacing={4}>
           {filteredCourses.map((course, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
+            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
               <Card
                 sx={{
                   height: '100%',

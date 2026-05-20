@@ -9136,6 +9136,10 @@ def airads_campuses(request):
     return render(request, "Public/Campuses")
 
 
+def airads_courses(request):
+    return render(request, "Public/Courses")
+
+
 def airads_campus_detail(request, slug):
     slug_to_component = {
         "eldoret": "Public/Eldoret",
@@ -9162,7 +9166,12 @@ def airads_school_detail(request, slug):
         "health-social": "Public/SchoolOfHealthSocial",
         "beauty-hairdressing": "Public/SchoolOfBeautyHairdressing",
         "media": "Public/SchoolOfMedia",
+        "tvet-cdacc-courses": "Public/TvetCdaccCourses",
+        "kasneb-courses": "Public/KasnebCourses",
         "nita-courses": "Public/NitaCourses",
+        "professional-short-courses": "Public/ProfessionalShortCourses",
+        "computer-packages": "Public/ComputerPackages",
+        "driving-school": "Public/DrivingSchool",
     }
     component = slug_to_component.get(slug, "Public/NotFound")
     return render(request, component)

@@ -141,7 +141,7 @@ const History = () => {
                 </Typography>
 
                 <Grid container spacing={4}>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 4, bgcolor: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', transition: 'transform 0.5s', '&:hover': { transform: 'translateY(-8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' } }}>
                       <Box sx={{ width: 64, height: 64, bgcolor: brand.primary, borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', mb: 3, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.15)', p: 2 }}>
                         <EventNote fontSize="large" />
@@ -150,7 +150,7 @@ const History = () => {
                       <Typography variant="h6" sx={{ color: brand.mutedText, fontWeight: 500 }}>Opened Our Doors</Typography>
                     </Paper>
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 4, bgcolor: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', transition: 'transform 0.5s', '&:hover': { transform: 'translateY(-8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' } }}>
                       <Box sx={{ width: 64, height: 64, bgcolor: brand.secondary, borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', mb: 3, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.15)', p: 2 }}>
                         <Star fontSize="large" />
@@ -197,14 +197,14 @@ const History = () => {
                     <School fontSize="large" /> GRADUATION ACHIEVEMENTS
                   </Typography>
                   <Grid container spacing={4} sx={{ maxWidth: 900, mx: 'auto', mb: 6 }}>
-                    <Grid item xs={12} md={6}>
+                    <Grid size={{ xs: 12, md: 6 }}>
                       <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 6, p: 4, backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', transition: 'background-color 0.3s', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}>
                         <Typography variant="h2" sx={{ fontWeight: 900, color: 'white', mb: 2 }}>8</Typography>
                         <Typography variant="h6" sx={{ fontWeight: 500 }}>Graduation Ceremonies</Typography>
                         <Typography variant="body2" sx={{ opacity: 0.8, mt: 1 }}>Celebrating Excellence</Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} md={6}>
+                    <Grid size={{ xs: 12, md: 6 }}>
                       <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 6, p: 4, backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', transition: 'background-color 0.3s', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}>
                         <Typography variant="h2" sx={{ fontWeight: 900, color: 'white', mb: 2 }}>25,000+</Typography>
                         <Typography variant="h6" sx={{ fontWeight: 500 }}>Students Released to Job Market</Typography>
@@ -237,7 +237,7 @@ const History = () => {
 
               <Grid container spacing={4}>
                 {registrations.map((reg, index) => (
-                  <Grid item xs={12} md={6} lg={4} key={index}>
+                  <Grid key={index} size={{ xs: 12, md: 6, lg: 4 }}>
                     <Paper
                       elevation={0}
                       sx={{
@@ -295,7 +295,7 @@ const History = () => {
               <Paper elevation={0} sx={{ bgcolor: brand.softBlue, borderRadius: 6, p: { xs: 4, md: 6 }, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
                 <Grid container spacing={4}>
                   {campuses.map((campus, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
                       <Paper
                         elevation={campus.isMain ? 8 : 2}
                         sx={{
@@ -363,7 +363,7 @@ const History = () => {
                   { number: "25K+", label: "Graduates", icon: <School fontSize="large" /> },
                   { number: "5+", label: "Official Registrations", icon: <Verified fontSize="large" /> }
                 ].map((stat, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={index}>
+                  <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>
                     <Paper elevation={0} sx={{ p: 4, textAlign: 'center', borderRadius: 6, transition: 'transform 0.5s', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', '&:hover': { transform: 'translateY(-12px) scale(1.05)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)' } }}>
                       <Box sx={{ width: 80, height: 80, bgcolor: brand.primary, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', mx: 'auto', mb: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.15)' }}>
                         {stat.icon}

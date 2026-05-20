@@ -31,7 +31,7 @@ const Footer = () => {
     >
       <Container maxWidth="lg">
         <Grid container spacing={4}>
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold', color: brand.accent, mb: 2 }}>
               AIRADS College
             </Typography>
@@ -56,7 +56,7 @@ const Footer = () => {
             </Box>
           </Grid>
 
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold', color: brand.accent, mb: 2 }}>
               Follow Our Channels
             </Typography>
@@ -91,7 +91,7 @@ const Footer = () => {
             </Box>
           </Grid>
 
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold', color: brand.accent, mb: 2 }}>
               Location
             </Typography>
@@ -107,7 +107,7 @@ const Footer = () => {
             </Box>
           </Grid>
 
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold', color: brand.accent, mb: 2 }}>
               Newsletter
             </Typography>

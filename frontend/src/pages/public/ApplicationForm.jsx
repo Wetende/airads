@@ -127,7 +127,7 @@ const ApplicationForm = () => {
             </Box>
 
             <Grid container spacing={4} sx={{ mb: 8 }}>
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Card sx={{ height: '100%', textAlign: 'center', p: 3, transition: 'transform 0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 }, borderRadius: 3, border: 'none', boxShadow: 2 }}>
                   <Box sx={{ width: 64, height: 64, mx: 'auto', mb: 3, borderRadius: '50%', bgcolor: brand.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                     <Description fontSize="large" />
@@ -140,7 +140,7 @@ const ApplicationForm = () => {
                 </Card>
               </Grid>
               
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Card sx={{ height: '100%', textAlign: 'center', p: 3, transition: 'transform 0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 }, borderRadius: 3, border: 'none', boxShadow: 2 }}>
                   <Box sx={{ width: 64, height: 64, mx: 'auto', mb: 3, borderRadius: '50%', bgcolor: brand.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                     <Description fontSize="large" />
@@ -153,7 +153,7 @@ const ApplicationForm = () => {
                 </Card>
               </Grid>
               
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Card sx={{ height: '100%', textAlign: 'center', p: 3, transition: 'transform 0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 }, borderRadius: 3, border: 'none', boxShadow: 2 }}>
                   <Box sx={{ width: 64, height: 64, mx: 'auto', mb: 3, borderRadius: '50%', bgcolor: brand.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                     <Description fontSize="large" />
@@ -184,7 +184,7 @@ const ApplicationForm = () => {
 
             <Grid container spacing={4}>
               {campusForms.map((campus, index) => (
-                <Grid item xs={12} lg={6} key={index}>
+                <Grid key={index} size={{ xs: 12, lg: 6 }}>
                   <Card sx={{ height: '100%', borderRadius: 3, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'all 0.3s', '&:hover': { boxShadow: 6, transform: 'translateY(-4px)' } }}>
                     <Box sx={{ bgcolor: brand.secondary, p: 3, color: 'white' }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -308,15 +308,15 @@ const ApplicationForm = () => {
                 <Typography variant="body2" sx={{ color: brand.mutedText }}>Quick overview of all available application forms</Typography>
               </Box>
               <Grid container spacing={4}>
-                <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
+                <Grid sx={{ textAlign: 'center' }} size={{ xs: 12, sm: 4 }}>
                   <Typography variant="h3" sx={{ fontWeight: 'bold', color: brand.primary, mb: 1 }}>{availableFormsCount}</Typography>
                   <Typography variant="body2" sx={{ color: brand.mutedText }}>Available Forms</Typography>
                 </Grid>
-                <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
+                <Grid sx={{ textAlign: 'center' }} size={{ xs: 12, sm: 4 }}>
                   <Typography variant="h3" sx={{ fontWeight: 'bold', color: brand.accent, mb: 1 }}>{availableFormsCount}</Typography>
                   <Typography variant="body2" sx={{ color: brand.mutedText }}>Active Campuses</Typography>
                 </Grid>
-                <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
+                <Grid sx={{ textAlign: 'center' }} size={{ xs: 12, sm: 4 }}>
                   <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#16a34a', mb: 1 }}>6</Typography>
                   <Typography variant="body2" sx={{ color: brand.mutedText }}>Total Campuses</Typography>
              </Grid>
@@ -335,19 +335,19 @@ const ApplicationForm = () => {
               </Box>
               
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField fullWidth label="Name *" variant="outlined" />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField fullWidth label="Email *" type="email" variant="outlined" />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField fullWidth label="Website" type="url" variant="outlined" />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField fullWidth label="Comment *" multiline rows={6} variant="outlined" />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Button variant="contained" size="large" sx={{ bgcolor: brand.primary, fontWeight: 'bold', py: 1.5, px: 4, '&:hover': { bgcolor: brand.primaryHover, boxShadow: 4 } }}>
                     Post Comment
                   </Button>

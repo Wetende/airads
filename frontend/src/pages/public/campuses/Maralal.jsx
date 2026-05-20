@@ -198,7 +198,7 @@ const Maralal = () => {
       <Container maxWidth="lg" sx={{ pb: 10 }}>
         <Head title="Maralal Campus - AIRADS College" />
         <Grid container spacing={6}>
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>About Maralal Campus</Typography>
@@ -223,7 +223,7 @@ const Maralal = () => {
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: 'center', color: brand.secondary }}>Highland Campus Advantages</Typography>
                 <Grid container spacing={3}>
                   {features.map((feature, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
+                    <Grid key={index} size={{ xs: 12, sm: 6 }}>
                       <FeatureCard {...feature} />
                     </Grid>
                   ))}
@@ -234,7 +234,7 @@ const Maralal = () => {
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>Community-Focused Programs</Typography>
                 <Grid container spacing={2}>
                   {programs.map((program, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
+                    <Grid key={index} size={{ xs: 12, sm: 6 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, borderRadius: 2, bgcolor: brand.softBlue, borderLeft: `4px solid ${brand.secondary}` }}>
                         <Star sx={{ color: brand.secondary }} />
                         <Typography variant="body2" sx={{ fontWeight: 600, color: brand.neutralText }}>{program}</Typography>
@@ -247,7 +247,7 @@ const Maralal = () => {
               <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>Cultural Integration & Development</Typography>
                 <Grid container spacing={4}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: brand.secondary }}>Cultural Respect</Typography>
                     <Box component="ul" sx={{ pl: 0, listStyle: 'none', color: 'text.secondary' }}>
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Multi-cultural learning environment</Typography>
@@ -256,7 +256,7 @@ const Maralal = () => {
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Cultural preservation programs</Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: brand.secondary }}>Economic Opportunities</Typography>
                     <Box component="ul" sx={{ pl: 0, listStyle: 'none', color: 'text.secondary' }}>
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Tourism industry skills</Typography>
@@ -269,7 +269,7 @@ const Maralal = () => {
               </Paper>
 
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Card elevation={0} sx={{ bgcolor: brand.secondary, color: 'white', textAlign: 'center', borderRadius: 4 }}>
                     <CardContent sx={{ p: 3 }}>
                       <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>180+</Typography>
@@ -277,7 +277,7 @@ const Maralal = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Card elevation={0} sx={{ bgcolor: brand.accent, color: 'white', textAlign: 'center', borderRadius: 4 }}>
                     <CardContent sx={{ p: 3 }}>
                       <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>88%</Typography>
@@ -285,7 +285,7 @@ const Maralal = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Card elevation={0} sx={{ bgcolor: brand.mutedText, color: 'white', textAlign: 'center', borderRadius: 4 }}>
                     <CardContent sx={{ p: 3 }}>
                       <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>8+</Typography>
@@ -297,7 +297,7 @@ const Maralal = () => {
             </Box>
           </Grid>
 
-          <Grid item xs={12} lg={4}>
+          <Grid size={{ xs: 12, lg: 4 }}>
             <ContactCard
               phone="0723-555-999"
               whatsapp="0723-555-999"

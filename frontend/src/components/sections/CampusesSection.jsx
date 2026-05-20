@@ -31,7 +31,7 @@ const CampusesSection = () => {
 
         <Grid container spacing={4}>
           {campuses.map((campus, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
+            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
               <Card
                 sx={{
                   height: '100%',

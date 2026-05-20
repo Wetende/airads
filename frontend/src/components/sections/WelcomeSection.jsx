@@ -1,53 +1,162 @@
-import React from 'react';
-import { Box, Container, Grid, Typography, Button, Paper, Card, CardContent } from '@mui/material';
-import { WhatsApp, Phone, Language, EmojiEvents, School, MenuBook, Wifi, Public, BusinessCenter, Facebook } from '@mui/icons-material';
+import { Link } from '@inertiajs/react';
+import { Box, Container, Grid, Typography, Button, Paper } from '@mui/material';
+import { WhatsApp, Phone, Language, School, Public, BusinessCenter, Facebook } from '@mui/icons-material';
 import { usePublicBrand } from '../../hooks/usePublicBrand';
+import { FONT_ARCHIVO, FONT_FIGTREE } from '../../config';
+
+const WhyJoinLifeCard = ({ item, brand }) => (
+  <Box
+    sx={{
+      position: 'relative',
+      minHeight: { xs: 320, md: 430 },
+      borderRadius: 1.5,
+      overflow: 'hidden',
+      boxShadow: '0 18px 36px rgba(15, 23, 42, 0.16)',
+      isolation: 'isolated',
+      '&:hover .why-join-image': {
+        transform: 'scale(1.08)',
+      },
+      '&:hover .why-join-overlay': {
+        background:
+          'linear-gradient(180deg, rgba(15,23,42,0.22) 0%, rgba(15,23,42,0.76) 100%)',
+      },
+      '&:hover .why-join-button': {
+        transform: 'translateY(-2px)',
+        boxShadow: '0 14px 26px rgba(220,37,37,0.34)',
+      },
+    }}
+  >
+    <Box
+      component="img"
+      src={item.image}
+      alt={item.title}
+      className="why-join-image"
+      sx={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        transition: 'transform 0.45s ease',
+      }}
+    />
+    <Box
+      className="why-join-overlay"
+      sx={{
+        position: 'absolute',
+        inset: 0,
+        background:
+          'linear-gradient(180deg, rgba(15,23,42,0.28) 0%, rgba(15,23,42,0.7) 100%)',
+        transition: 'background 0.3s ease',
+      }}
+    />
+    <Box
+      sx={{
+        position: 'relative',
+        zIndex: 1,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        px: { xs: 2, md: 3.25 },
+        py: { xs: 3, md: 4 },
+        color: 'white',
+      }}
+    >
+      <Box
+        sx={{
+          width: { xs: 58, md: 62 },
+          height: { xs: 58, md: 62 },
+          borderRadius: '50%',
+          border: '1px solid rgba(255,255,255,0.22)',
+          bgcolor: 'rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: { xs: '1.7rem', md: '1.85rem' },
+          mb: 2,
+        }}
+      >
+        {item.icon}
+      </Box>
+      <Typography
+        variant="h5"
+        sx={{
+          fontFamily: FONT_ARCHIVO,
+          fontWeight: 800,
+          fontSize: { xs: '1.25rem', md: '1.5rem' },
+          lineHeight: 1.2,
+          mb: 1.75,
+          maxWidth: 260,
+        }}
+      >
+        {item.title}
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: FONT_FIGTREE,
+          fontSize: { xs: '0.95rem', md: '1rem' },
+          lineHeight: 1.55,
+          color: 'rgba(255,255,255,0.92)',
+          maxWidth: 280,
+          mb: 3,
+        }}
+      >
+        {item.description}
+      </Typography>
+      <Button
+        component={Link}
+        href={item.href}
+        className="why-join-button"
+        sx={{
+          bgcolor: 'white',
+          color: brand.accent,
+          fontFamily: FONT_ARCHIVO,
+          fontWeight: 800,
+          fontSize: '0.98rem',
+          px: { xs: 2.5, md: 3.5 },
+          py: 1.2,
+          borderRadius: 999,
+          textTransform: 'none',
+          transition: 'transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease',
+          '&:hover': {
+            bgcolor: brand.softRed,
+          },
+        }}
+      >
+        Learn More
+      </Button>
+    </Box>
+  </Box>
+);
 
 const WelcomeSection = () => {
   const brand = usePublicBrand();
 
   const whyJoinReasons = [
     {
-      title: "Excellent KNEC Pass Rate",
-      description: "90-100% pass rate in KNEC, NITA, ICM & KASNEB Exams for 18 years consistently",
-      icon: <EmojiEvents fontSize="inherit" />,
-      bg: brand.primary,
-      shadowColor: "rgba(37, 99, 235, 0.2)",
-    },
-    {
-      title: "Qualified Trainers",
-      description: "Experienced and qualified trainers dedicated to student success",
+      title: "Practical Skills Training",
+      description: "Train in real learning spaces with hands-on delivery built for TVET, business, ICT, hospitality and media excellence.",
       icon: <School fontSize="inherit" />,
-      bg: brand.accent,
-      shadowColor: "rgba(220, 37, 37, 0.2)",
+      image: "/static/31.jpg",
+      href: "/admissions/career-guide/",
     },
     {
-      title: "Learning Resources",
-      description: "Well-furnished lecture halls, computers, internet, books and furniture",
-      icon: <MenuBook fontSize="inherit" />,
-      bg: brand.primary,
-      shadowColor: "rgba(37, 99, 235, 0.2)",
-    },
-    {
-      title: "Free Internet & WiFi",
-      description: "Free internet and WiFi access for research and learning",
-      icon: <Wifi fontSize="inherit" />,
-      bg: brand.accent,
-      shadowColor: "rgba(220, 37, 37, 0.2)",
-    },
-    {
-      title: "Student Diversity",
-      description: "6 National campuses across the country serving diverse students",
+      title: "Student Life & Support",
+      description: "Join a vibrant AIRADS community with mentoring, flexible campuses and learner support that helps you stay focused and confident.",
       icon: <Public fontSize="inherit" />,
-      bg: brand.secondary,
-      shadowColor: "rgba(30, 58, 138, 0.2)",
+      image: "/static/63.JPG",
+      href: "/campuses/",
     },
     {
-      title: "Industrial Attachment",
-      description: "Industrial attachment placements and mentoring programs",
+      title: "Career Pathways & Attachment",
+      description: "Move from classroom to workplace through industry attachment, guided career pathways and job-ready training outcomes.",
       icon: <BusinessCenter fontSize="inherit" />,
-      bg: brand.accentHover,
-      shadowColor: "rgba(185, 28, 28, 0.2)",
+      image: "/static/17.jpg",
+      href: "/admissions/procedure/",
     },
   ];
 
@@ -79,7 +188,7 @@ const WelcomeSection = () => {
       <Container maxWidth="lg">
         <Paper elevation={4} sx={{ borderRadius: 4, mb: 8, overflow: 'hidden' }}>
           <Grid container>
-            <Grid item xs={12} lg={4}>
+            <Grid size={{ xs: 12, lg: 4 }}>
               <Box sx={{ position: 'relative', height: '100%', minHeight: { xs: 400, lg: 500 } }}>
                 <Box
                   component="img"
@@ -97,7 +206,7 @@ const WelcomeSection = () => {
               </Box>
             </Grid>
 
-            <Grid item xs={12} lg={8}>
+            <Grid size={{ xs: 12, lg: 8 }}>
               <Box sx={{ p: { xs: 4, lg: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                   <Box sx={{ width: 4, height: 60, bgcolor: brand.primary, borderRadius: 2, mr: 2 }} />
@@ -132,50 +241,53 @@ const WelcomeSection = () => {
 
         <Box sx={{ mb: 10 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Typography variant="h3" component="h2" sx={{ fontWeight: 'bold', color: brand.neutralText, mb: 2, fontSize: { xs: '2rem', md: '3rem' } }}>
+            <Typography
+              variant="h3"
+              component="h2"
+              sx={{
+                fontFamily: FONT_ARCHIVO,
+                fontWeight: 800,
+                color: brand.neutralText,
+                mb: 1.5,
+                fontSize: { xs: '2rem', md: '3rem' },
+              }}
+            >
               Why Join AIRADS College?
             </Typography>
-            <Box sx={{ width: 120, height: 4, bgcolor: brand.primary, mx: 'auto', borderRadius: 2 }} />
+            <Typography
+              sx={{
+                fontFamily: FONT_FIGTREE,
+                color: brand.primary,
+                fontSize: { xs: '1rem', md: '1.2rem' },
+                mb: 2.5,
+              }}
+            >
+              A practical student experience shaped by skills, support and career momentum
+            </Typography>
+            <Box sx={{ width: 120, height: 4, bgcolor: brand.accent, mx: 'auto', borderRadius: 2 }} />
           </Box>
 
-          <Grid container spacing={4}>
-            {whyJoinReasons.map((reason, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    borderRadius: 4,
-                    transition: 'all 0.3s',
-                    '&:hover': {
-                      transform: 'translateY(-8px) scale(1.02)',
-                      boxShadow: `0 20px 25px -5px ${reason.shadowColor}, 0 10px 10px -5px ${reason.shadowColor}`,
-                    },
-                  }}
-                >
-                  <CardContent sx={{ p: 4, position: 'relative' }}>
-                    <Box sx={{
-                      fontSize: '3rem',
-                      mb: 2,
-                      display: 'inline-flex',
-                      p: 2,
-                      borderRadius: '50%',
-                      bgcolor: reason.bg,
-                      color: 'white',
-                      boxShadow: `0 4px 14px 0 ${reason.shadowColor}`,
-                    }}>
-                      {reason.icon}
-                    </Box>
-                    <Typography variant="h6" component="h3" sx={{ fontWeight: 'bold', color: brand.secondary, mb: 2 }}>
-                      {reason.title}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-                      {reason.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          <Box
+            sx={{
+              width: '100vw',
+              position: 'relative',
+              left: '50%',
+              ml: '-50vw',
+              px: { xs: 2, sm: 3, md: 5 },
+            }}
+          >
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' },
+                gap: { xs: 1.5, md: 3 },
+              }}
+            >
+              {whyJoinReasons.map((reason) => (
+                <WhyJoinLifeCard key={reason.title} item={reason} brand={brand} />
+              ))}
+            </Box>
+          </Box>
         </Box>
 
         <Paper
@@ -192,7 +304,7 @@ const WelcomeSection = () => {
           </Typography>
 
           <Grid container spacing={6}>
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(16px)', p: 3, borderRadius: 3, transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.15)', transform: 'scale(1.02)' } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -203,7 +315,7 @@ const WelcomeSection = () => {
 
                   <Grid container spacing={2}>
                     {campusContacts.map((campus, index) => (
-                      <Grid item xs={12} sm={6} key={index}>
+                      <Grid key={index} size={{ xs: 12, sm: 6 }}>
                         <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)', p: 2, borderRadius: 2, transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' } }}>
                           <Typography variant="subtitle2" sx={{ color: brand.accent, fontWeight: 'bold', mb: 1 }}>{campus.campus}</Typography>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -252,7 +364,7 @@ const WelcomeSection = () => {
               </Box>
             </Grid>
 
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(16px)', p: 3, borderRadius: 3, transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.15)', transform: 'scale(1.02)' } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -307,7 +419,7 @@ const WelcomeSection = () => {
                   <Typography variant="h6" fontWeight="bold" sx={{ color: brand.accent, display: 'flex', alignItems: 'center', mb: 1, '&:hover': { color: 'inherit' } }}>
                     Register Now!
                   </Typography>
-                  <Typography variant="body2" sx={{ color: brand.mutedText }}>Don't miss out on our quality education. Contact us today!</Typography>
+                  <Typography variant="body2" sx={{ color: brand.mutedText }}>Don&apos;t miss out on our quality education. Contact us today!</Typography>
                 </Box>
               </Box>
             </Grid>

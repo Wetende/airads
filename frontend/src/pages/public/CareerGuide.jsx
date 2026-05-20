@@ -291,7 +291,7 @@ const CareerGuide = () => {
             
             <Grid container spacing={4}>
               {stats.map((stat, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
+                <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>
                   <Card sx={{ textAlign: 'center', border: 'none', boxShadow: 3, transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.05)', boxShadow: 6 } }}>
                     <CardContent sx={{ p: 4 }}>
                       <Box sx={{ color: brand.primary, mb: 2, display: 'inline-flex', p: 2, borderRadius: '50%', bgcolor: brand.softBlue }}>
@@ -348,7 +348,7 @@ const CareerGuide = () => {
                     </Box>
                     <Grid container spacing={4}>
                       {path.careers.map((career, idx) => (
-                        <Grid item xs={12} md={4} key={idx}>
+                        <Grid key={idx} size={{ xs: 12, md: 4 }}>
                           <Card sx={{ height: '100%', border: 'none', boxShadow: 2, transition: 'transform 0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 }, bgcolor: 'white' }}>
                             <CardHeader 
                               sx={{ pb: 1 }}
@@ -408,7 +408,7 @@ const CareerGuide = () => {
             </Box>
 
             <Grid container spacing={8} alignItems="center">
-              <Grid item xs={12} lg={6}>
+              <Grid size={{ xs: 12, lg: 6 }}>
                 <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 6 }}>Employment Distribution</Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {employmentOpportunities.map((opportunity, index) => (
@@ -433,7 +433,7 @@ const CareerGuide = () => {
                 </Box>
               </Grid>
 
-              <Grid item xs={12} lg={6}>
+              <Grid size={{ xs: 12, lg: 6 }}>
                 <Card sx={{ border: 'none', bgcolor: 'white', boxShadow: 4, borderRadius: 4 }}>
                   <CardHeader 
                     sx={{ bgcolor: brand.primary, color: 'white', p: 3 }}
@@ -485,7 +485,7 @@ const CareerGuide = () => {
 
             <Grid container spacing={4}>
               {successStories.map((story, index) => (
-                <Grid item xs={12} md={4} key={index}>
+                <Grid key={index} size={{ xs: 12, md: 4 }}>
                   <Card sx={{ height: '100%', border: 'none', boxShadow: 3, transition: 'transform 0.3s', '&:hover': { transform: 'translateY(-10px)', boxShadow: 6 }, display: 'flex', flexDirection: 'column' }}>
                     <CardHeader 
                       sx={{ textAlign: 'center', bgcolor: brand.softBlue, pb: 3 }}

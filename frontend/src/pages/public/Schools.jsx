@@ -1,184 +1,157 @@
-import React from 'react';
-import { Head } from "@inertiajs/react";
-import { Box, Container, Typography, Grid, Card, CardContent, Button, Chip } from "@mui/material";
-import { ArrowForward } from "@mui/icons-material";
-import { usePublicBrand } from "../../hooks/usePublicBrand";
-import TopNavbar from "../../components/common/TopNavbar";
-import MainNavbar from "../../components/common/MainNavbar";
+import { Head, Link } from "@inertiajs/react";
+import { ArrowForward, CheckCircle } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  Card,
+  CardActionArea,
+  CardContent,
+  Chip,
+  Container,
+  Typography,
+} from "@mui/material";
 import Footer from "../../components/common/AIRADSFooter";
+import MainNavbar from "../../components/common/MainNavbar";
+import TopNavbar from "../../components/common/TopNavbar";
+import { FONT_ARCHIVO, FONT_FIGTREE } from "../../config";
+import { usePublicBrand } from "../../hooks/usePublicBrand";
+import { trainingPathways } from "./schools/pathwayData";
 
 const Schools = () => {
   const brand = usePublicBrand();
 
-  const schools = [
-    {
-      name: "School of Engineering & ICT",
-      description: "Offering cutting-edge programs in electrical, electronic, and information technology fields.",
-      programs: ["Electrical Engineering", "Electronic Engineering", "Information Technology", "Computer Science"],
-      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
-    },
-    {
-      name: "School of Hospitality & Tourism Management",
-      description: "Comprehensive training in hospitality, tourism, and customer service excellence.",
-      programs: ["Hotel Management", "Tourism Management", "Catering Services", "Event Management"],
-      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c"
-    },
-    {
-      name: "School of Health & Social Sciences",
-      description: "Preparing healthcare professionals and social workers for community service.",
-      programs: ["Community Health", "Social Work", "Counseling", "Public Health"],
-      image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81"
-    },
-    {
-      name: "School of Beauty & Hair Dressing",
-      description: "Professional training in beauty therapy, cosmetology, and hair styling.",
-      programs: ["Beauty Therapy", "Hair Dressing", "Cosmetology", "Nail Technology"],
-      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c"
-    },
-    {
-      name: "School of Media Studies",
-      description: "Modern media training covering journalism, broadcasting, and digital media.",
-      programs: ["Journalism", "Broadcasting", "Digital Media", "Film Production"],
-      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
-    },
-    {
-      name: "School of Business Management",
-      description: "Comprehensive business training for entrepreneurship and corporate leadership.",
-      programs: ["Business Administration", "Project Management", "Entrepreneurship", "Finance"],
-      image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81"
-    }
-  ];
-
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
-      <Head title="Schools - AIRADS College" />
+    <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc", display: "flex", flexDirection: "column" }}>
+      <Head title="Training Pathways - AIRADS College" />
       <TopNavbar />
       <MainNavbar />
 
-      <Box component="main" sx={{ flexGrow: 1, py: { xs: 8, md: 12 }, mt: { xs: 8, md: 12 } }}>
-        <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 } }}>
-            <Box sx={{ position: 'relative', display: 'inline-block' }}>
-              <Typography variant="h2" component="h1" sx={{ fontWeight: 900, mb: 4, color: brand.secondary, fontSize: { xs: '3rem', md: '4rem' } }}>
-                Our Schools
-              </Typography>
-              <Box sx={{ position: 'absolute', top: -16, left: '50%', transform: 'translateX(-50%)', width: 120, height: 4, borderRadius: 2, bgcolor: brand.primary, opacity: 0.5 }} />
-            </Box>
-            <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 800, mx: 'auto', fontWeight: 300, lineHeight: 1.6 }}>
-              AIRADS College offers diverse academic programs through specialized schools, each designed to provide
-              industry-relevant skills and knowledge.
-            </Typography>
-          </Box>
-
-          <Grid container spacing={5}>
-            {schools.map((school, index) => (
-              <Grid item xs={12} lg={6} key={index}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: 4,
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                    transition: 'all 0.3s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-10px)',
-                      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                    }
-                  }}
-                >
-                  <Box sx={{ position: 'relative', pt: '40%', overflow: 'hidden' }}>
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: 0, left: 0, width: '100%', height: '100%',
-                        backgroundImage: `url(${school.image})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        transition: 'transform 0.5s ease',
-                        '&:hover': { transform: 'scale(1.1)' }
-                      }}
-                    />
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: 0, left: 0, width: '100%', height: '100%',
-                        bgcolor: 'rgba(15, 23, 42, 0.45)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        p: 4
-                      }}
-                    >
-                      <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>
-                        {school.name}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <CardContent sx={{ flexGrow: 1, p: { xs: 3, md: 5 }, display: 'flex', flexDirection: 'column' }}>
-                    <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.8 }}>
-                      {school.description}
-                    </Typography>
-
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: brand.secondary, mb: 2 }}>
-                      Key Programs:
-                    </Typography>
-
-                    <Grid container spacing={1.5} sx={{ mb: 4, flexGrow: 1 }}>
-                      {school.programs.map((program, programIndex) => (
-                        <Grid item xs={12} sm={6} key={programIndex}>
-                          <Box sx={{ bgcolor: brand.softBlue, color: brand.secondary, px: 2, py: 1.5, borderRadius: 2, fontSize: '0.875rem', fontWeight: 500, height: '100%', display: 'flex', alignItems: 'center' }}>
-                            {program}
-                          </Box>
-                        </Grid>
-                      ))}
-                    </Grid>
-
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      endIcon={<ArrowForward />}
-                      sx={{
-                        py: 2,
-                        bgcolor: brand.primary,
-                        fontWeight: 'bold',
-                        fontSize: '1rem',
-                        borderRadius: 2,
-                        '&:hover': { bgcolor: brand.primaryHover }
-                      }}
-                    >
-                      Explore Programs
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-
-          <Box sx={{ mt: 10, p: { xs: 4, md: 8 }, borderRadius: 6, bgcolor: brand.secondary, color: 'white', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-            <Typography variant="h3" sx={{ fontWeight: 900, mb: 2, fontSize: { xs: '2rem', md: '3rem' } }}>
-              Ready to Start Your Journey?
-            </Typography>
-            <Typography variant="h6" sx={{ opacity: 0.9, mb: 5, fontWeight: 300 }}>
-              Choose your path and join thousands of successful graduates
-            </Typography>
-            <Button
-              variant="contained"
-              size="large"
+      <Box component="main" sx={{ flexGrow: 1, mt: { xs: 8, md: 12 } }}>
+        <Box
+          component="section"
+          sx={{
+            py: { xs: 7, md: 10 },
+            color: "white",
+            backgroundImage: "linear-gradient(90deg, rgba(15,23,42,0.92), rgba(30,58,138,0.78)), url(/static/course-12.jpg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <Container maxWidth="lg">
+            <Typography
+              variant="overline"
               sx={{
-                bgcolor: brand.accent,
-                color: 'white',
+                display: "block",
+                color: brand.accent,
+                fontFamily: FONT_FIGTREE,
                 fontWeight: 800,
-                px: 6,
-                py: 2,
-                fontSize: '1.25rem',
-                borderRadius: 2,
-                '&:hover': { bgcolor: brand.accentHover },
-                transition: 'all 0.3s'
+                letterSpacing: 1.8,
+                mb: 1.5,
               }}
             >
-              APPLY TODAY
-            </Button>
+              Programmes and course families
+            </Typography>
+            <Typography
+              variant="h1"
+              sx={{
+                fontFamily: FONT_ARCHIVO,
+                fontWeight: 900,
+                fontSize: { xs: "2.4rem", md: "4rem" },
+                lineHeight: 1.08,
+                letterSpacing: 0,
+                maxWidth: 820,
+                mb: 3,
+              }}
+            >
+              AIRADS Training Pathways
+            </Typography>
+            <Typography variant="h6" sx={{ maxWidth: 760, color: "rgba(255,255,255,0.88)", lineHeight: 1.75, fontWeight: 400 }}>
+              Choose the broader route first, then open the pathway that matches your goal. TVET/CDACC now holds the individual schools, while professional, trade, digital, and driving pathways are easier to find.
+            </Typography>
+          </Container>
+        </Box>
+
+        <Container maxWidth="lg" sx={{ py: { xs: 6, md: 9 } }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", lg: "0.85fr 1.15fr" },
+              gap: { xs: 4, md: 6 },
+              alignItems: "start",
+              mb: { xs: 6, md: 8 },
+            }}
+          >
+            <Box>
+              <Typography variant="h3" sx={{ fontFamily: FONT_ARCHIVO, fontWeight: 900, color: brand.secondary, mb: 2, fontSize: { xs: "1.9rem", md: "2.55rem" } }}>
+                Find the right starting point
+              </Typography>
+              <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.85 }}>
+                The old school grid has been reorganized around how students actually search: technical TVET programmes, professional qualifications, trade skills, short courses, computer packages, and driving school.
+              </Typography>
+            </Box>
+            <Box sx={{ display: "grid", gap: 1.5 }}>
+              {["TVET/CDACC groups the AIRADS schools in one detailed page", "NITA stays as a dedicated practical trade pathway", "Short courses, computer packages, KASNEB, and driving school each get their own page"].map((item) => (
+                <Box key={item} sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+                  <CheckCircle sx={{ color: brand.primary, fontSize: 22, flexShrink: 0 }} />
+                  <Typography sx={{ fontWeight: 700, color: brand.neutralText }}>{item}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(3, minmax(0, 1fr))" },
+              gap: 3,
+            }}
+          >
+            {trainingPathways.map((pathway) => (
+              <Card
+                key={pathway.title}
+                elevation={0}
+                sx={{
+                  height: "100%",
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  border: "1px solid rgba(148, 163, 184, 0.24)",
+                  boxShadow: "0 16px 34px rgba(15, 23, 42, 0.08)",
+                }}
+              >
+                <CardActionArea component={Link} href={pathway.href} sx={{ height: "100%", display: "block" }}>
+                  <Box
+                    sx={{
+                      height: 190,
+                      backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.08), rgba(15,23,42,0.58)), url(${pathway.image})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  />
+                  <CardContent sx={{ p: 3 }}>
+                    <Chip label={pathway.eyebrow} size="small" sx={{ fontWeight: 800, mb: 2 }} />
+                    <Typography variant="h5" sx={{ fontFamily: FONT_ARCHIVO, fontWeight: 900, color: brand.secondary, mb: 1 }}>
+                      {pathway.title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7, mb: 2 }}>
+                      {pathway.description}
+                    </Typography>
+                    <Button
+                      component="span"
+                      endIcon={<ArrowForward />}
+                      sx={{
+                        color: brand.accent,
+                        p: 0,
+                        fontWeight: 900,
+                        textTransform: "none",
+                        "&:hover": { bgcolor: "transparent", color: brand.accentHover },
+                      }}
+                    >
+                      Explore pathway
+                    </Button>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            ))}
           </Box>
         </Container>
       </Box>

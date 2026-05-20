@@ -217,7 +217,7 @@ const Virtual = () => {
       <Container maxWidth="lg" sx={{ pb: 10 }}>
         <Head title="Virtual Campus - AIRADS College" />
         <Grid container spacing={6}>
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>About Virtual Campus</Typography>
@@ -242,7 +242,7 @@ const Virtual = () => {
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: 'center', color: brand.secondary }}>Virtual Learning Advantages</Typography>
                 <Grid container spacing={3}>
                   {features.map((feature, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
+                    <Grid key={index} size={{ xs: 12, sm: 6 }}>
                       <FeatureCard {...feature} />
                     </Grid>
                   ))}
@@ -253,7 +253,7 @@ const Virtual = () => {
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>Online Programs Available</Typography>
                 <Grid container spacing={2}>
                   {programs.map((program, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
+                    <Grid key={index} size={{ xs: 12, sm: 6 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, borderRadius: 2, bgcolor: brand.softBlue }}>
                         <MenuBook sx={{ color: brand.secondary }} />
                         <Typography variant="body2" sx={{ fontWeight: 600, color: brand.secondary }}>{program}</Typography>
@@ -264,7 +264,7 @@ const Virtual = () => {
               </Paper>
 
               <Grid container spacing={4}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', height: '100%' }}>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: brand.secondary }}>Learning Platforms</Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -277,7 +277,7 @@ const Virtual = () => {
                     </Box>
                   </Paper>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', height: '100%' }}>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: brand.secondary }}>Student Support</Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -293,7 +293,7 @@ const Virtual = () => {
               </Grid>
 
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Card elevation={0} sx={{ bgcolor: brand.secondary, color: 'white', textAlign: 'center', borderRadius: 4 }}>
                     <CardContent sx={{ p: 3 }}>
                       <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>1000+</Typography>
@@ -301,7 +301,7 @@ const Virtual = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Card elevation={0} sx={{ bgcolor: brand.accent, color: 'white', textAlign: 'center', borderRadius: 4 }}>
                     <CardContent sx={{ p: 3 }}>
                       <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>94%</Typography>
@@ -309,7 +309,7 @@ const Virtual = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Card elevation={0} sx={{ bgcolor: brand.secondary, color: 'white', textAlign: 'center', borderRadius: 4 }}>
                     <CardContent sx={{ p: 3 }}>
                       <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>15+</Typography>
@@ -321,7 +321,7 @@ const Virtual = () => {
             </Box>
           </Grid>
 
-          <Grid item xs={12} lg={4}>
+          <Grid size={{ xs: 12, lg: 4 }}>
             <ContactCard
               phone="0723-555-999"
               whatsapp="0723-555-999"

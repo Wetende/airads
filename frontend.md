@@ -2,6 +2,8 @@
 
 > **Context File**: This document provides complete context for any AI or developer working on the Crossview LMS frontend. Read `understand` for backend/business context.
 
+> **Implementation Rule**: Follow [frontend-standards-mui7-context7.md](/home/wetende/Projects/airads/frontend-standards-mui7-context7.md) for version-matched MUI 7 usage and Context7-based documentation checks. This applies to the whole frontend, with AIRADS public pages as the first enforcement target.
+
 ---
 
 ## 1. Tech Stack
@@ -512,4 +514,3 @@ const breakpoints = {
 - [ ] Consistent border radius
 - [ ] Hover states with subtle shadow/scale
 - [ ] Loading states (Skeleton or Loader)
-

@@ -28,7 +28,7 @@ const Admissions = () => {
           </Box>
 
           <Grid container spacing={8}>
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Typography variant="h4" component="h2" sx={{ fontWeight: 800, color: brand.secondary, mb: 4 }}>
                 Application Procedure
               </Typography>
@@ -54,7 +54,7 @@ const Admissions = () => {
               </List>
             </Grid>
 
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper elevation={0} sx={{ p: { xs: 4, md: 6 }, borderRadius: 4, bgcolor: brand.softBlue, height: '100%' }}>
                 <Typography variant="h4" component="h2" sx={{ fontWeight: 800, color: brand.secondary, mb: 4 }}>
                   Contact Information

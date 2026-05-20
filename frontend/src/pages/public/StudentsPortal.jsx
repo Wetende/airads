@@ -67,7 +67,7 @@ const Students = () => {
           {/* Student Services */}
           <Grid container spacing={4} sx={{ mb: { xs: 10, md: 14 } }}>
             {studentServices.map((service, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
+              <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
                 <Card 
                   sx={{ 
                     height: '100%', 
@@ -142,7 +142,7 @@ const Students = () => {
                 { title: 'Lecture Halls', desc: 'Modern lecture halls with AV equipment', icon: <AccountBalance fontSize="large" sx={{ color: brand.primary }} /> },
                 { title: 'Cafeteria', desc: 'Affordable meals and refreshments', icon: <Restaurant fontSize="large" sx={{ color: brand.primary }} /> }
               ].map((resource, index) => (
-                <Grid item xs={12} sm={6} lg={3} key={index}>
+                <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
                   <Paper 
                     elevation={0}
                     sx={{ 

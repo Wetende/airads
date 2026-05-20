@@ -2,164 +2,10 @@ import MainNavbar from '../../../components/common/MainNavbar';
 import TopNavbar from '../../../components/common/TopNavbar';
 import Footer from '../../../components/common/AIRADSFooter';
 import { Head } from "@inertiajs/react";
-import { Box, Container, Typography, Grid, Paper, Card, CardContent, Button } from '@mui/material';
-import { School, Business, MenuBook, Wifi, BusinessCenter, EmojiEvents, Phone, WhatsApp, LocationOn, Email, Star, Lightbulb, People, Settings as Cog, Computer, Groups as Users, EmojiEvents as Trophy } from '@mui/icons-material';
+import { Typography, Card, CardContent, Button } from '@mui/material';
+import { MenuBook, Phone, Star, Groups as Users } from '@mui/icons-material';
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
 import { Award, Badge, CardDescription, CardHeader, CardTitle, CheckCircleIcon as CheckCircle, Clock, Mail, Target, Zap } from "./schoolUi";
-
-// PageLayout Component
-const PageLayout = ({ children, title, subtitle, backgroundImage }) => {
-  const brand = usePublicBrand();
-
-  return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
-      <TopNavbar />
-      <MainNavbar />
-      
-      {/* Hero Section */}
-      <Box 
-        sx={{ 
-          position: 'relative', 
-          py: { xs: 12, md: 16 }, 
-          px: 2, 
-          overflow: 'hidden',
-          bgcolor: brand.secondary,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
-          mt: { xs: 8, md: 12 }
-        }}
-      >
-        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10, textAlign: 'center' }}>
-          <Typography variant="h2" component="h1" sx={{ fontWeight: 800, color: 'white', mb: 3, letterSpacing: '-0.02em', fontSize: { xs: '2.5rem', md: '3.5rem' } }}>
-            {title}
-          </Typography>
-          {subtitle && (
-            <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)', maxWidth: 800, mx: 'auto', lineHeight: 1.8, fontWeight: 400 }}>
-              {subtitle}
-            </Typography>
-          )}
-        </Container>
-        
-        {/* Decorative Elements */}
-        <Box sx={{ position: 'absolute', top: 80, left: 40, width: 128, height: 128, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(40px)' }} />
-        <Box sx={{ position: 'absolute', bottom: 80, right: 40, width: 96, height: 96, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(40px)' }} />
-      </Box>
-
-      {/* Content */}
-      <Box component="main" sx={{ position: 'relative', zIndex: 10, flexGrow: 1, mt: -6 }}>
-        {children}
-      </Box>
-      
-      <Footer />
-    </Box>
-  );
-};
-
-// FeatureCard Component
-const FeatureCard = ({ icon: Icon, title, description, className }) => {
-  const brand = usePublicBrand();
-
-  return (
-    <Card elevation={0} sx={{ height: '100%', borderRadius: 4, transition: 'transform 0.3s, box-shadow 0.3s', '&:hover': { transform: 'translateY(-8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' } }}>
-      <CardContent sx={{ p: 4, textAlign: 'center' }}>
-        <Box sx={{ 
-          width: 64, height: 64, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3,
-          bgcolor: brand.secondary, color: 'white',
-          transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.1)' }
-        }}>
-          <Icon fontSize="large" />
-        </Box>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: brand.secondary }}>{title}</Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>{description}</Typography>
-      </CardContent>
-    </Card>
-  );
-};
-
-// ContactCard Component
-const ContactCard = ({ phone, whatsapp, email, address, className }) => {
-  const brand = usePublicBrand();
-
-  return (
-    <Card elevation={0} sx={{ borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-      <CardContent sx={{ p: 4 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 4, color: brand.secondary }}>Contact Information</Typography>
-        
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: brand.secondary, color: 'white', flexShrink: 0 }}>
-              <Phone />
-            </Box>
-            <Box>
-              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Phone</Typography>
-              <Typography component="a" href={`tel:${phone}`} variant="body1" sx={{ fontWeight: 500, color: brand.secondary, textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
-                {phone}
-              </Typography>
-            </Box>
-          </Box>
-
-          {whatsapp && (
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#22c55e', color: 'white', flexShrink: 0 }}>
-                <WhatsApp />
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>WhatsApp</Typography>
-                <Typography component="a" href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" variant="body1" sx={{ fontWeight: 500, color: '#22c55e', textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
-                  {whatsapp}
-                </Typography>
-              </Box>
-            </Box>
-          )}
-
-          {email && (
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: brand.secondary, color: 'white', flexShrink: 0 }}>
-                <Email />
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Email</Typography>
-                <Typography component="a" href={`mailto:${email}`} variant="body1" sx={{ fontWeight: 500, color: brand.secondary, textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
-                  {email}
-                </Typography>
-              </Box>
-            </Box>
-          )}
-
-          {address && (
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Box sx={{ width: 48, height: 48, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#64748b', color: 'white', flexShrink: 0 }}>
-                <LocationOn />
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Address</Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, color: brand.secondary }}>{address}</Typography>
-              </Box>
-            </Box>
-          )}
-        </Box>
-
-        <Box sx={{ mt: 5, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Button 
-            variant="contained"
-            fullWidth
-            sx={{ py: 1.5, bgcolor: brand.secondary, borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
-          >
-            Apply Now
-          </Button>
-          <Button 
-            variant="outlined"
-            fullWidth
-            sx={{ py: 1.5, borderColor: brand.secondary, color: brand.secondary, borderRadius: 2, fontWeight: 600, textTransform: 'none', '&:hover': { bgcolor: brand.secondary, color: 'white' } }}
-          >
-            Learn More
-          </Button>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
 
 const NitaCourses = () => {
   const brand = usePublicBrand();
@@ -209,39 +55,6 @@ const NitaCourses = () => {
     }
   ];
 
-  const shortCourses = [
-    {
-      title: "Computer Packages Training",
-      duration: "1-3 Months",
-      description: "Microsoft Office Suite, Internet skills, and basic computer literacy"
-    },
-    {
-      title: "Digital Marketing",
-      duration: "2 Months",
-      description: "Social media marketing, SEO, and online business strategies"
-    },
-    {
-      title: "First Aid Training",
-      duration: "1 Week",
-      description: "Basic first aid, CPR, and emergency response techniques"
-    },
-    {
-      title: "Entrepreneurship Skills",
-      duration: "1 Month",
-      description: "Business planning, financial management, and startup strategies"
-    },
-    {
-      title: "Customer Service Excellence",
-      duration: "2 Weeks",
-      description: "Professional customer service skills and communication techniques"
-    },
-    {
-      title: "Basic Accounting",
-      duration: "1 Month",
-      description: "Bookkeeping, financial records, and basic accounting principles"
-    }
-  ];
-
   const facilities = [
     {
       icon: <Target className="h-8 w-8 text-primary" />,
@@ -285,7 +98,7 @@ const NitaCourses = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              NITA Courses & Short Courses
+              NITA Courses
             </h1>
             <Typography variant="body1" sx={{ color: "text.secondary", mb: 2, lineHeight: 1.8 }}>
               Skills Development for Employment - Practical Training That Opens Doors to Success
@@ -308,10 +121,10 @@ const NitaCourses = () => {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">About NITA & Short Courses</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">About NITA Courses</h2>
             <Typography variant="body1" sx={{ color: "text.secondary", mb: 2, lineHeight: 1.8 }}>
-              AIRADS College is an accredited NITA training provider offering nationally recognized trade courses 
-              and practical short courses. Our programs are designed to equip students with employable skills 
+              AIRADS College is an accredited NITA training provider offering nationally recognized trade courses
+              and practical skills training. Our programs are designed to equip students with employable skills
               and industry certifications that are valued by employers across Kenya.
             </Typography>
           </div>
@@ -403,46 +216,11 @@ const NitaCourses = () => {
         </div>
       </section>
 
-      {/* Short Courses Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Short Courses</h2>
-            <Typography variant="body1" sx={{ color: "text.secondary", mb: 2, lineHeight: 1.8 }}>
-              Quick skill development programs for immediate employment and career enhancement
-            </Typography>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {shortCourses.map((course, index) => (
-              <Card key={index} className="h-full">
-                <CardHeader>
-                  <div className="flex justify-between items-start mb-2">
-                    <Badge variant="secondary">Short Course</Badge>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4 mr-1" />
-                      {course.duration}
-                    </div>
-                  </div>
-                  <CardTitle className="text-lg">{course.title}</CardTitle>
-                  <CardDescription>{course.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full" variant="outline">
-                    Enroll Now
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Benefits Section */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Why Choose Our NITA & Short Courses?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">Why Choose Our NITA Courses?</h2>
           </div>
 
           <div className="max-w-4xl mx-auto">
@@ -486,14 +264,11 @@ const NitaCourses = () => {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Develop Skills for Success</h2>
           <Typography variant="body1" sx={{ color: "text.secondary", mb: 2, lineHeight: 1.8 }}>
-            Join our NITA courses and short programs to gain practical skills and certifications that employers value
+            Join our NITA courses to gain practical skills and certifications that employers value
           </Typography>
           <div className="flex flex-wrap justify-center gap-4">
             <Button size="lg" variant="secondary">
               Apply for NITA Course
-            </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-orange-600">
-              Register Short Course
             </Button>
           </div>
           <div className="mt-8 text-white/80">

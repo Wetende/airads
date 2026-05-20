@@ -94,7 +94,7 @@ const Mission = () => {
           <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
             <Grid container spacing={6}>
               {/* Vision Card */}
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Paper
                   elevation={0}
                   sx={{
@@ -134,7 +134,7 @@ const Mission = () => {
               </Grid>
 
               {/* Mission Card */}
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Paper
                   elevation={0}
                   sx={{
@@ -199,7 +199,7 @@ const Mission = () => {
 
             <Grid container spacing={4}>
               {coreValues.map((value, index) => (
-                <Grid item xs={12} md={6} lg={4} key={index}>
+                <Grid key={index} size={{ xs: 12, md: 6, lg: 4 }}>
                   <Paper
                     elevation={0}
                     sx={{

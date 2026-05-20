@@ -166,7 +166,7 @@ const Events = () => {
                 { type: 'holiday', label: 'Holidays', color: brand.secondary },
                 { type: 'announcement', label: 'Announcements', color: brand.primary }
               ].map((stat, index) => (
-                <Grid item xs={6} md={3} key={index}>
+                <Grid key={index} size={{ xs: 6, md: 3 }}>
                   <Card sx={{ textAlign: 'center', p: 3, bgcolor: stat.color, color: 'white', border: 'none', transition: 'all 0.3s', '&:hover': { transform: 'scale(1.05)', boxShadow: 6 } }}>
                     <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
                       {events.filter(e => e.type === stat.type).length}
@@ -190,7 +190,7 @@ const Events = () => {
 
               <Grid container spacing={4}>
                 {upcomingEvents.slice(0, 6).map((event, index) => (
-                  <Grid item xs={12} md={6} lg={4} key={event.id || index}>
+                  <Grid key={event.id || index} size={{ xs: 12, md: 6, lg: 4 }}>
                     <Card
                       onClick={() => setSelectedEvent(event)}
                       sx={{
@@ -304,7 +304,7 @@ const Events = () => {
                   >
                     <Grid container>
                       {event.image && (
-                        <Grid item xs={12} md={4} sx={{ position: 'relative', minHeight: { xs: 200, md: 'auto' } }}>
+                        <Grid sx={{ position: 'relative', minHeight: { xs: 200, md: 'auto' } }} size={{ xs: 12, md: 4 }}>
                           <CardMedia
                             component="img"
                             image={event.image}
@@ -313,7 +313,7 @@ const Events = () => {
                           />
                         </Grid>
                       )}
-                      <Grid item xs={12} md={event.image ? 8 : 12}>
+                      <Grid size={{ xs: 12, md: event.image ? 8 : 12 }}>
                         <CardContent sx={{ p: { xs: 3, sm: 4 }, display: 'flex', flexDirection: 'column', height: '100%', bgcolor: brand.softBlue }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                             <Chip

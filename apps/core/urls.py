@@ -15,6 +15,7 @@ urlpatterns = [
     path("contact/", views.contact_page, name="contact"),
 
     # AIRADS Public Pages
+    path("courses/", views.airads_courses, name="airads.courses"),
     path("campuses/", views.airads_campuses, name="airads.campuses"),
     path("campuses/<slug:slug>/", views.airads_campus_detail, name="airads.campus_detail"),
     path("schools/", views.airads_schools, name="airads.schools"),

@@ -1,14 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from '@mui/icons-material';
-import { Box, Container, Typography, Grid, IconButton, Paper, Avatar } from '@mui/material';
-import { School, EmojiEvents, Public } from '@mui/icons-material';
+import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, EmojiEvents, Public, School } from '@mui/icons-material';
+import { Avatar, Box, Container, Grid, IconButton, Typography } from '@mui/material';
 import { usePublicBrand } from '../../hooks/usePublicBrand';
+import { FONT_ARCHIVO, FONT_FIGTREE } from '../../config';
 
 const testimonials = [
-  { id: 1, quote: "I studied in AIRADS Kericho Campus in 2016. Indeed it is where my dreams were hatched and ultimately I am who I am today because of this institution.", author: "Janeth Chepkorir", details: "Class of 2016, Kericho Campus", course: "Business Administration", initials: "JC" },
-  { id: 2, quote: "AIRADS College provided me with the practical skills and knowledge I needed to excel in my career. The lecturers were supportive and the learning environment was exceptional.", author: "David Kimani", details: "Class of 2018, Nairobi Campus", course: "Information Technology", initials: "DK" },
-  { id: 3, quote: "The hands-on approach to learning at AIRADS prepared me for the real world. I'm now running my own successful business thanks to the entrepreneurship skills I gained here.", author: "Mary Wanjiku", details: "Class of 2019, Eldoret Campus", course: "Entrepreneurship", initials: "MW" },
-  { id: 4, quote: "AIRADS College changed my life completely. The quality education and mentorship I received here opened doors to opportunities I never imagined possible.", author: "James Mwangi", details: "Class of 2020, Mombasa Campus", course: "Hospitality Management", initials: "JM" },
+  {
+    id: 1,
+    quote: "I studied in AIRADS Kericho Campus in 2016. Indeed it is where my dreams were hatched and ultimately I am who I am today because of this institution.",
+    author: "Janeth Chepkorir",
+    details: "Class of 2016, Kericho Campus",
+    course: "Business Administration",
+    initials: "JC",
+  },
+  {
+    id: 2,
+    quote: "AIRADS College provided me with the practical skills and knowledge I needed to excel in my career. The lecturers were supportive and the learning environment was exceptional.",
+    author: "David Kimani",
+    details: "Class of 2018, Nairobi Campus",
+    course: "Information Technology",
+    initials: "DK",
+  },
+  {
+    id: 3,
+    quote: "The hands-on approach to learning at AIRADS prepared me for the real world. I am now running my own successful business thanks to the entrepreneurship skills I gained here.",
+    author: "Mary Wanjiku",
+    details: "Class of 2019, Eldoret Campus",
+    course: "Entrepreneurship",
+    initials: "MW",
+  },
+  {
+    id: 4,
+    quote: "AIRADS College changed my life completely. The quality education and mentorship I received here opened doors to opportunities I never imagined possible.",
+    author: "James Mwangi",
+    details: "Class of 2020, Mombasa Campus",
+    course: "Hospitality Management",
+    initials: "JM",
+  },
 ];
 
 const partners = [
@@ -20,8 +48,14 @@ const partners = [
   { id: 6, name: "TVETA", logo: "/static/TVETA-web-Logo.png" },
 ];
 
+const stats = [
+  { label: "Graduates", value: "5000+", icon: School },
+  { label: "Pass Rate", value: "90-100%", icon: EmojiEvents },
+  { label: "Campuses", value: "7", icon: Public },
+];
+
 const scrollKeyframes = `
-  @keyframes scroll {
+  @keyframes partner-scroll {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
@@ -33,16 +67,23 @@ const TestimonialSection = () => {
   const [isPlaying, setIsPlaying] = useState(true);
 
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying) return undefined;
+
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => prevIndex === testimonials.length - 1 ? 0 : prevIndex + 1);
-    }, 4000);
+      setCurrentIndex((previousIndex) => (
+        previousIndex === testimonials.length - 1 ? 0 : previousIndex + 1
+      ));
+    }, 5000);
+
     return () => clearInterval(interval);
   }, [isPlaying]);
 
-  const goToPrevious = () => setCurrentIndex(currentIndex === 0 ? testimonials.length - 1 : currentIndex - 1);
-  const goToNext = () => setCurrentIndex(currentIndex === testimonials.length - 1 ? 0 : currentIndex + 1);
-  const goToSlide = (index) => setCurrentIndex(index);
+  const goToPrevious = () => {
+    setCurrentIndex(currentIndex === 0 ? testimonials.length - 1 : currentIndex - 1);
+  };
+  const goToNext = () => {
+    setCurrentIndex(currentIndex === testimonials.length - 1 ? 0 : currentIndex + 1);
+  };
 
   return (
     <>
@@ -50,192 +91,285 @@ const TestimonialSection = () => {
       <Box
         component="section"
         sx={{
-          py: 10,
-          bgcolor: brand.secondary,
+          py: { xs: 7, md: 10 },
+          bgcolor: '#111827',
           color: 'white',
-          position: 'relative',
           overflow: 'hidden',
+          borderTop: `6px solid ${brand.accent}`,
         }}
       >
-        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
-          <Box sx={{ textAlign: 'center', mb: 8 }}>
-            <Typography variant="h3" component="h2" sx={{ fontWeight: 'bold', mb: 2, color: 'white', fontSize: { xs: '2rem', md: '3rem' } }}>
-              Student Success Stories
-            </Typography>
-            <Box sx={{ height: 4, width: 80, bgcolor: brand.accent, borderRadius: 2, mx: 'auto' }} />
-          </Box>
+        <Container maxWidth="lg">
+          <Grid container spacing={{ xs: 4, md: 6 }} alignItems="stretch">
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography
+                    variant="overline"
+                    sx={{
+                      color: brand.accent,
+                      fontFamily: FONT_ARCHIVO,
+                      fontWeight: 800,
+                      letterSpacing: 1.2,
+                    }}
+                  >
+                    Student Outcomes
+                  </Typography>
+                  <Typography
+                    variant="h3"
+                    component="h2"
+                    sx={{
+                      fontFamily: FONT_ARCHIVO,
+                      fontWeight: 800,
+                      fontSize: { xs: '2rem', md: '2.65rem' },
+                      lineHeight: 1.05,
+                      mt: 1.5,
+                      mb: 2.5,
+                    }}
+                  >
+                    Student Success Stories
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: '#cbd5e1',
+                      fontFamily: FONT_FIGTREE,
+                      fontSize: '1rem',
+                      lineHeight: 1.7,
+                      maxWidth: 360,
+                    }}
+                  >
+                    Real student progress from practical training, campus support and career-focused learning.
+                  </Typography>
+                </Box>
 
-          <Box
-            sx={{ maxWidth: 900, mx: 'auto', position: 'relative' }}
-            onMouseEnter={() => setIsPlaying(false)}
-            onMouseLeave={() => setIsPlaying(true)}
-          >
-            <Paper
-              sx={{
-                position: 'relative',
-                overflow: 'hidden',
-                borderRadius: 4,
-                bgcolor: 'rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                boxShadow: 24,
-                color: 'white',
-              }}
-            >
+                <Grid container spacing={1.5} sx={{ mt: { xs: 4, md: 6 } }}>
+                  {stats.map((item) => {
+                    const Icon = item.icon;
+
+                    return (
+                      <Grid key={item.label} size={{ xs: 4 }}>
+                        <Box
+                          sx={{
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            bgcolor: 'rgba(255,255,255,0.05)',
+                            p: { xs: 1.5, md: 2 },
+                            minHeight: 132,
+                          }}
+                        >
+                          <Icon sx={{ color: brand.accent, fontSize: '1.6rem', mb: 1.5 }} />
+                          <Typography sx={{ fontFamily: FONT_ARCHIVO, fontWeight: 800, fontSize: { xs: '1.25rem', md: '1.55rem' } }}>
+                            {item.value}
+                          </Typography>
+                          <Typography sx={{ color: '#94a3b8', fontFamily: FONT_FIGTREE, fontSize: '0.82rem' }}>
+                            {item.label}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 8 }}>
               <Box
+                onMouseEnter={() => setIsPlaying(false)}
+                onMouseLeave={() => setIsPlaying(true)}
                 sx={{
-                  display: 'flex',
-                  transition: 'transform 0.7s ease-in-out',
-                  transform: `translateX(-${currentIndex * 100}%)`,
+                  position: 'relative',
+                  height: '100%',
+                  minHeight: { xs: 430, md: 500 },
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  bgcolor: '#0b1220',
+                  overflow: 'hidden',
                 }}
               >
-                {testimonials.map((testimonial) => (
-                  <Box key={testimonial.id} sx={{ width: '100%', flexShrink: 0, p: { xs: 4, md: 6 } }}>
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', gap: 4 }}>
-                      <Box sx={{ flexShrink: 0 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    height: '100%',
+                    transition: 'transform 0.7s ease',
+                    transform: `translateX(-${currentIndex * 100}%)`,
+                  }}
+                >
+                  {testimonials.map((testimonial) => (
+                    <Box
+                      key={testimonial.id}
+                      sx={{
+                        width: '100%',
+                        flexShrink: 0,
+                        p: { xs: 3, sm: 4, md: 6 },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Box>
+                        <Typography
+                          sx={{
+                            color: brand.accent,
+                            fontFamily: FONT_ARCHIVO,
+                            fontWeight: 800,
+                            fontSize: { xs: '3.5rem', md: '5rem' },
+                            lineHeight: 0.75,
+                            mb: 2,
+                          }}
+                        >
+                          &ldquo;
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            color: '#f8fafc',
+                            fontFamily: FONT_FIGTREE,
+                            fontWeight: 500,
+                            fontSize: { xs: '1.25rem', md: '1.55rem' },
+                            lineHeight: 1.55,
+                            maxWidth: 760,
+                          }}
+                        >
+                          {testimonial.quote}
+                        </Typography>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: { xs: 'flex-start', sm: 'center' },
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          gap: 2,
+                          pt: 4,
+                          mt: 5,
+                          borderTop: '1px solid rgba(255,255,255,0.12)',
+                        }}
+                      >
                         <Avatar
                           sx={{
-                            width: { xs: 80, md: 100 },
-                            height: { xs: 80, md: 100 },
+                            width: 68,
+                            height: 68,
                             bgcolor: brand.accent,
-                            fontSize: { xs: '2rem', md: '2.5rem' },
-                            boxShadow: 4,
+                            color: 'white',
+                            fontFamily: FONT_ARCHIVO,
+                            fontWeight: 800,
                           }}
                         >
                           {testimonial.initials}
                         </Avatar>
-                      </Box>
-                      <Box sx={{ flex: 1, textAlign: { xs: 'center', md: 'left' } }}>
-                        <Typography variant="h6" sx={{ mb: 3, lineHeight: 1.6, fontStyle: 'italic', color: 'grey.100', fontWeight: 'normal' }}>
-                          "{testimonial.quote}"
-                        </Typography>
-                        <Box sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.2)', pt: 3 }}>
-                          <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'white', mb: 1 }}>
+                        <Box>
+                          <Typography sx={{ fontFamily: FONT_ARCHIVO, fontWeight: 800, fontSize: '1.15rem' }}>
                             {testimonial.author}
                           </Typography>
-                          <Typography variant="body2" sx={{ color: brand.borderBlue, fontWeight: 500, mb: 1 }}>
+                          <Typography sx={{ color: '#cbd5e1', fontFamily: FONT_FIGTREE, fontSize: '0.95rem', mt: 0.4 }}>
                             {testimonial.details}
                           </Typography>
-                          <Box sx={{ display: 'inline-block', px: 2, py: 0.5, bgcolor: 'rgba(255, 255, 255, 0.1)', borderRadius: 4, border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-                            <Typography variant="caption" sx={{ color: brand.borderBlue, fontWeight: 600 }}>
-                              Course: {testimonial.course}
-                            </Typography>
-                          </Box>
+                          <Typography sx={{ color: brand.accent, fontFamily: FONT_FIGTREE, fontWeight: 700, fontSize: '0.88rem', mt: 0.8 }}>
+                            {testimonial.course}
+                          </Typography>
                         </Box>
                       </Box>
                     </Box>
-                  </Box>
-                ))}
+                  ))}
+                </Box>
+
+                <Box sx={{ position: 'absolute', right: { xs: 18, md: 28 }, bottom: { xs: 18, md: 28 }, display: 'flex', gap: 1 }}>
+                  <IconButton
+                    onClick={goToPrevious}
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      bgcolor: 'rgba(255,255,255,0.06)',
+                      color: 'white',
+                      '&:hover': { bgcolor: brand.accent },
+                    }}
+                    aria-label="Previous testimonial"
+                  >
+                    <ChevronLeft />
+                  </IconButton>
+                  <IconButton
+                    onClick={goToNext}
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      bgcolor: 'rgba(255,255,255,0.06)',
+                      color: 'white',
+                      '&:hover': { bgcolor: brand.accent },
+                    }}
+                    aria-label="Next testimonial"
+                  >
+                    <ChevronRight />
+                  </IconButton>
+                </Box>
+
+                <Box sx={{ position: 'absolute', left: { xs: 24, md: 48 }, bottom: { xs: 28, md: 40 }, display: 'flex', gap: 1 }}>
+                  {testimonials.map((testimonial, index) => (
+                    <Box
+                      key={testimonial.id}
+                      onClick={() => setCurrentIndex(index)}
+                      sx={{
+                        width: index === currentIndex ? 26 : 8,
+                        height: 8,
+                        borderRadius: 999,
+                        bgcolor: index === currentIndex ? brand.accent : 'rgba(255,255,255,0.32)',
+                        cursor: 'pointer',
+                        transition: 'width 0.2s ease, background-color 0.2s ease',
+                      }}
+                      aria-label={`Go to testimonial ${index + 1}`}
+                    />
+                  ))}
+                </Box>
               </Box>
-            </Paper>
-
-            <IconButton
-              onClick={goToPrevious}
-              sx={{
-                position: 'absolute',
-                left: -20,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                bgcolor: brand.accent,
-                color: 'white',
-                p: 1.5,
-                boxShadow: 4,
-                '&:hover': { bgcolor: brand.accentHover, transform: 'translateY(-50%) scale(1.1)' },
-              }}
-              aria-label="Previous testimonial"
-            >
-              <ChevronLeft />
-            </IconButton>
-
-            <IconButton
-              onClick={goToNext}
-              sx={{
-                position: 'absolute',
-                right: -20,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                bgcolor: brand.accent,
-                color: 'white',
-                p: 1.5,
-                boxShadow: 4,
-                '&:hover': { bgcolor: brand.accentHover, transform: 'translateY(-50%) scale(1.1)' },
-              }}
-              aria-label="Next testimonial"
-            >
-              <ChevronRight />
-            </IconButton>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, gap: 1.5 }}>
-            {testimonials.map((_, index) => (
-              <Box
-                key={index}
-                onClick={() => goToSlide(index)}
-                sx={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  bgcolor: index === currentIndex ? brand.accent : 'rgba(255, 255, 255, 0.4)',
-                  transform: index === currentIndex ? 'scale(1.25)' : 'scale(1)',
-                  '&:hover': { bgcolor: index === currentIndex ? brand.accent : 'rgba(255, 255, 255, 0.6)' },
-                }}
-                aria-label={`Go to testimonial ${index + 1}`}
-              />
-            ))}
-          </Box>
-
-          <Grid container spacing={3} sx={{ mt: 8, textAlign: 'center' }}>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ bgcolor: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(16px)', borderRadius: 3, p: 4, border: '1px solid rgba(255, 255, 255, 0.1)', transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.05)' }, color: 'white' }}>
-                <School sx={{ fontSize: '3rem', mb: 2, color: brand.accent }} />
-                <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1, color: 'white' }}>5000+</Typography>
-                <Typography variant="body2" sx={{ color: brand.borderBlue }}>Graduates</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ bgcolor: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(16px)', borderRadius: 3, p: 4, border: '1px solid rgba(255, 255, 255, 0.1)', transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.05)' }, color: 'white' }}>
-                <EmojiEvents sx={{ fontSize: '3rem', mb: 2, color: brand.accent }} />
-                <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1, color: 'white' }}>90-100%</Typography>
-                <Typography variant="body2" sx={{ color: brand.borderBlue }}>Pass Rate</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ bgcolor: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(16px)', borderRadius: 3, p: 4, border: '1px solid rgba(255, 255, 255, 0.1)', transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.05)' }, color: 'white' }}>
-                <Public sx={{ fontSize: '3rem', mb: 2, color: brand.accent }} />
-                <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1, color: 'white' }}>7</Typography>
-                <Typography variant="body2" sx={{ color: brand.borderBlue }}>Campuses</Typography>
-              </Paper>
             </Grid>
           </Grid>
         </Container>
       </Box>
 
-      <Box component="section" sx={{ py: 10, bgcolor: 'white' }}>
+      <Box component="section" sx={{ py: { xs: 7, md: 9 }, bgcolor: 'white' }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: 8 }}>
-            <Typography variant="h3" component="h2" sx={{ fontWeight: 'bold', mb: 2, color: brand.primary, fontSize: { xs: '2rem', md: '3rem' } }}>
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
+            <Typography
+              variant="h3"
+              component="h2"
+              sx={{
+                fontFamily: FONT_ARCHIVO,
+                fontWeight: 800,
+                mb: 1.5,
+                color: brand.primary,
+                fontSize: { xs: '2rem', md: '2.65rem' },
+              }}
+            >
               Our Partners
             </Typography>
-            <Box sx={{ height: 4, width: 80, bgcolor: brand.primary, borderRadius: 2, mx: 'auto' }} />
+            <Box sx={{ height: 4, width: 80, bgcolor: brand.accent, borderRadius: 2, mx: 'auto' }} />
           </Box>
+
           <Box sx={{ position: 'relative', overflow: 'hidden' }}>
             <Box
               sx={{
                 display: 'flex',
-                animation: 'scroll 30s linear infinite',
+                animation: 'partner-scroll 30s linear infinite',
                 '&:hover': { animationPlayState: 'paused' },
               }}
             >
-              {partners.map((partner) => (
-                <Box key={`first-${partner.id}`} sx={{ flexShrink: 0, width: 200, height: 120, mx: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Box component="img" src={partner.logo} alt={partner.name} sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', transition: 'all 0.3s' }} />
-                </Box>
-              ))}
-              {partners.map((partner) => (
-                <Box key={`second-${partner.id}`} sx={{ flexShrink: 0, width: 200, height: 120, mx: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Box component="img" src={partner.logo} alt={partner.name} sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', transition: 'all 0.3s' }} />
+              {[...partners, ...partners].map((partner, index) => (
+                <Box
+                  key={`${partner.id}-${index}`}
+                  sx={{
+                    flexShrink: 0,
+                    width: 200,
+                    height: 120,
+                    mx: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={partner.logo}
+                    alt={partner.name}
+                    sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                  />
                 </Box>
               ))}
             </Box>

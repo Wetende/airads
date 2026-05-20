@@ -191,7 +191,7 @@ const ApplicationProcedure = () => {
             
             <Grid container spacing={4}>
               {whyChooseUs.map((reason, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
+                <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>
                   <Card sx={{ height: '100%', borderLeft: `4px solid ${brand.secondary}`, transition: 'transform 0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 } }}>
                     <CardContent sx={{ display: 'flex', alignItems: 'flex-start', p: 3 }}>
                       <CheckCircle sx={{ color: brand.secondary, mr: 2, mt: 0.5 }} />
@@ -221,7 +221,7 @@ const ApplicationProcedure = () => {
             
             <Grid container spacing={4}>
               {schools.map((school, index) => (
-                <Grid item xs={12} md={6} key={index}>
+                <Grid key={index} size={{ xs: 12, md: 6 }}>
                   <Card sx={{ height: '100%', transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.02)', boxShadow: 6 } }}>
                     <CardHeader 
                       sx={{ bgcolor: brand.secondary, color: 'white', py: 2 }}
@@ -267,7 +267,7 @@ const ApplicationProcedure = () => {
             <Paper sx={{ p: { xs: 3, md: 6 }, borderRadius: 4, maxWidth: 900, mx: 'auto', boxShadow: 3 }}>
               <Grid container spacing={2}>
                 {computerPackages.map((pkg, index) => (
-                  <Grid item xs={12} sm={6} key={index}>
+                  <Grid key={index} size={{ xs: 12, sm: 6 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', p: 1.5, borderRadius: 2, '&:hover': { bgcolor: brand.softBlue }, transition: 'background-color 0.2s' }}>
                       <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: brand.secondary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.8rem', fontWeight: 'bold', mr: 2, flexShrink: 0 }}>
                         {index + 1}
@@ -301,7 +301,7 @@ const ApplicationProcedure = () => {
             
             <Grid container spacing={6}>
               {/* Contact Methods */}
-              <Grid item xs={12} lg={6}>
+              <Grid size={{ xs: 12, lg: 6 }}>
                 <Card sx={{ height: '100%', boxShadow: 4, borderRadius: 3 }}>
                   <CardHeader 
                     sx={{ bgcolor: brand.secondary, color: 'white', py: 2 }}
@@ -326,7 +326,7 @@ const ApplicationProcedure = () => {
               </Grid>
 
               {/* Application Methods */}
-              <Grid item xs={12} lg={6}>
+              <Grid size={{ xs: 12, lg: 6 }}>
                 <Card sx={{ height: '100%', boxShadow: 4, borderRadius: 3 }}>
                   <CardHeader 
                     sx={{ bgcolor: brand.accent, color: 'white', py: 2 }}

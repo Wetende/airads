@@ -44,7 +44,7 @@ const Contact = () => {
 
           <Grid container spacing={8} sx={{ mb: 12 }}>
             {/* Contact Information */}
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Box sx={{ mb: 6, textAlign: { xs: 'center', lg: 'left' } }}>
                 <Typography variant="h4" component="h2" sx={{ fontWeight: 900, color: brand.secondary, mb: 2, position: 'relative', display: 'inline-block' }}>
                   Our Contacts
@@ -142,7 +142,7 @@ const Contact = () => {
             </Grid>
 
             {/* Inquiry Form */}
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Box sx={{ mb: 6, textAlign: { xs: 'center', lg: 'left' } }}>
                 <Typography variant="h4" component="h2" sx={{ fontWeight: 900, color: brand.secondary, mb: 2, position: 'relative', display: 'inline-block' }}>
                   Send us an Inquiry
@@ -155,7 +155,7 @@ const Contact = () => {
               
               <Paper component="form" sx={{ p: { xs: 3, md: 5 }, borderRadius: 6, border: '1px solid #f1f5f9', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s', '&:hover': { boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' } }}>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField 
                       fullWidth 
                       label="Full Name" 
@@ -164,7 +164,7 @@ const Contact = () => {
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField 
                       fullWidth 
                       label="Email Address" 
@@ -174,7 +174,7 @@ const Contact = () => {
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField 
                       fullWidth 
                       label="Phone Number" 
@@ -184,7 +184,7 @@ const Contact = () => {
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <FormControl fullWidth sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}>
                       <InputLabel>Subject</InputLabel>
                       <Select label="Subject" defaultValue="General Inquiry">
@@ -197,7 +197,7 @@ const Contact = () => {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField 
                       fullWidth 
                       label="Message" 
@@ -208,7 +208,7 @@ const Contact = () => {
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <Button 
                       type="submit"
                       variant="contained"
@@ -252,7 +252,7 @@ const Contact = () => {
               </Typography>
               
               <Grid container spacing={4}>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Box sx={{ transition: 'all 0.3s', '&:hover': { transform: 'scale(1.1)' } }}>
                     <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
                       <WhatsApp sx={{ color: 'white', fontSize: 40 }} />
@@ -264,7 +264,7 @@ const Contact = () => {
                   </Box>
                 </Grid>
                 
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Box sx={{ transition: 'all 0.3s', '&:hover': { transform: 'scale(1.1)' } }}>
                     <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
                       <Facebook sx={{ color: 'white', fontSize: 40 }} />
@@ -276,7 +276,7 @@ const Contact = () => {
                   </Box>
                 </Grid>
                 
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Box sx={{ transition: 'all 0.3s', '&:hover': { transform: 'scale(1.1)' } }}>
                     <Box sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' } }}>
                       <Phone sx={{ color: 'white', fontSize: 40 }} />

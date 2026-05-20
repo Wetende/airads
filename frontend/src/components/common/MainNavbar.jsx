@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "@inertiajs/react";
 import {
   AppBar,
@@ -11,214 +11,588 @@ import {
   ListItemButton,
   ListItemText,
   Collapse,
-  Menu,
-  MenuItem,
   Typography,
   Button,
+  Paper,
+  Popper,
+  Grow,
+  ClickAwayListener,
+  Divider,
+  Container,
 } from "@mui/material";
-import { Menu as MenuIcon, Close as CloseIcon, ExpandMore, ExpandLess } from "@mui/icons-material";
+import {
+  Menu as MenuIcon,
+  Close as CloseIcon,
+  ExpandMore,
+  ExpandLess,
+  Search as SearchIcon,
+} from "@mui/icons-material";
 import { usePublicBrand } from "../../hooks/usePublicBrand";
 import { FONT_ARCHIVO, FONT_FIGTREE } from "../../config";
 
+const NAV_RADIUS = 1;
+
+/**
+ * MUT-style Mega-Menu navigation data.
+ * Each top-level item can have `groups` (multi-column mega-menu)
+ * or `items` (simple dropdown).
+ */
+const getMenuData = () => ({
+  home: { label: "Home", href: "/" },
+  about: {
+    label: "About Us",
+    groups: [
+      {
+        title: "Profile",
+        items: [
+          { text: "About AIRADS", href: "/about/" },
+          { text: "Mission and Vision", href: "/about/mission/" },
+          { text: "Our History", href: "/about/history/" },
+          { text: "Contact Us", href: "/contact/" },
+        ],
+      },
+      {
+        title: "Leadership",
+        items: [
+          { text: "CEO Message", href: "/about/" },
+          { text: "Board of Directors", href: "/about/" },
+        ],
+      },
+    ],
+  },
+  academics: {
+    label: "Academics",
+    groups: [
+      {
+        title: "Training Pathways",
+        items: [
+          { text: "All Training Pathways", href: "/schools/" },
+          { text: "Courses We Offer", href: "/courses/" },
+          { text: "TVET/CDACC Courses", href: "/schools/tvet-cdacc-courses/" },
+          { text: "KASNEB Courses", href: "/schools/kasneb-courses/" },
+          { text: "NITA Courses", href: "/schools/nita-courses/" },
+          { text: "Professional Short Courses", href: "/schools/professional-short-courses/" },
+          { text: "Computer Packages", href: "/schools/computer-packages/" },
+          { text: "Driving School", href: "/schools/driving-school/" },
+        ],
+      },
+      {
+        title: "Schools Under TVET/CDACC",
+        items: [
+          { text: "TVET/CDACC Overview", href: "/schools/tvet-cdacc-courses/" },
+          { text: "School of Engineering & ICT", href: "/schools/engineering-ict/" },
+          { text: "School of Hospitality & Tourism MGT", href: "/schools/hospitality-tourism/" },
+          { text: "School of Health & Social Sciences", href: "/schools/health-social/" },
+          { text: "School of Beauty & Hair Dressing", href: "/schools/beauty-hairdressing/" },
+          { text: "School of Media", href: "/schools/media/" },
+          { text: "School of Business MGT", href: "/schools/tvet-cdacc-courses/#business-management" },
+        ],
+      },
+    ],
+  },
+  admissions: {
+    label: "Admissions",
+    groups: [
+      {
+        title: "Apply",
+        items: [
+          { text: "How to Apply", href: "/admissions/procedure/" },
+          { text: "Application Forms", href: "/admissions/forms/" },
+          {
+            text: "Apply Online",
+            href: "https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded",
+            external: true,
+          },
+          { text: "Career Guide & Prospectus", href: "/admissions/career-guide/" },
+        ],
+      },
+      {
+        title: "Information",
+        items: [
+          { text: "Fees Structure", href: "/admissions/procedure/" },
+          { text: "Reporting Dates", href: "/admissions/procedure/" },
+          { text: "Accommodation", href: "/admissions/procedure/" },
+        ],
+      },
+    ],
+  },
+  campuses: {
+    label: "Campuses",
+    groups: [
+      {
+        title: "Our Campuses",
+        items: [
+          { text: "Bungoma Campus", href: "/campuses/bungoma/" },
+          { text: "Kericho Campus", href: "/campuses/kericho/" },
+          { text: "Eldoret Campus", href: "/campuses/eldoret/" },
+          { text: "Kisumu Campus", href: "/campuses/kisumu/" },
+          { text: "Nakuru Campus", href: "/campuses/nakuru/" },
+          { text: "Lodwar Campus", href: "/campuses/lodwar/" },
+          { text: "Maralal Campus", href: "/campuses/maralal/" },
+          { text: "Virtual Campus", href: "/campuses/virtual/" },
+        ],
+      },
+    ],
+  },
+  students: {
+    label: "Students Life",
+    groups: [
+      {
+        title: "Student Affairs",
+        items: [
+          { text: "Student Portal", href: "/students/" },
+          { text: "Industrial Attachment", href: "/students/" },
+          { text: "Events & News", href: "/news/latest/" },
+        ],
+      },
+      {
+        title: "Downloads",
+        items: [
+          { text: "Student Forms", href: "/students/" },
+          { text: "Timetables", href: "/students/" },
+        ],
+      },
+    ],
+  },
+  contact: {
+    label: "Contact",
+    href: "/contact/",
+  },
+});
+
+/* ───────────────────── Desktop Mega-Menu Dropdown ───────────────────── */
+const MegaMenuDropdown = ({ groups, anchorEl, open, onClose, brand }) => (
+  <Popper
+    open={open}
+    anchorEl={anchorEl}
+    placement="bottom-start"
+    transition
+    disablePortal
+    sx={{ zIndex: 1300 }}
+  >
+    {({ TransitionProps }) => (
+      <Grow {...TransitionProps} style={{ transformOrigin: "top left" }}>
+        <Paper
+          elevation={8}
+          onMouseLeave={onClose}
+          sx={{
+            mt: 0.5,
+            borderRadius: NAV_RADIUS,
+            overflow: "hidden",
+            borderTop: `3px solid ${brand.primary}`,
+            minWidth: groups.length > 1 ? 480 : 240,
+          }}
+        >
+          <Box sx={{ display: "flex", p: 2, gap: 3 }}>
+            {groups.map((group, gi) => (
+              <Box key={gi} sx={{ flex: 1, minWidth: 180 }}>
+                <Typography
+                  variant="overline"
+                  sx={{
+                    color: brand.primary,
+                    fontWeight: 700,
+                    letterSpacing: 1.2,
+                    mb: 1,
+                    display: "block",
+                    fontSize: "0.7rem",
+                  }}
+                >
+                  {group.title}
+                </Typography>
+                <Divider sx={{ mb: 1 }} />
+                {group.items.map((item, ii) =>
+                  item.external ? (
+                    <Typography
+                      key={ii}
+                      component="a"
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={onClose}
+                      sx={{
+                        display: "block",
+                        py: 0.75,
+                        px: 1,
+                        fontSize: "0.85rem",
+                        color: "text.secondary",
+                        textDecoration: "none",
+                        borderRadius: 1,
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                        "&:hover": {
+                          bgcolor: brand.softBlue,
+                          color: brand.primary,
+                          pl: 2,
+                        },
+                      }}
+                    >
+                      {item.text}
+                    </Typography>
+                  ) : (
+                    <Typography
+                      key={ii}
+                      component={Link}
+                      href={item.href}
+                      onClick={onClose}
+                      sx={{
+                        display: "block",
+                        py: 0.75,
+                        px: 1,
+                        fontSize: "0.85rem",
+                        color: "text.secondary",
+                        textDecoration: "none",
+                        borderRadius: 1,
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                        "&:hover": {
+                          bgcolor: brand.softBlue,
+                          color: brand.primary,
+                          pl: 2,
+                        },
+                      }}
+                    >
+                      {item.text}
+                    </Typography>
+                  )
+                )}
+              </Box>
+            ))}
+          </Box>
+        </Paper>
+      </Grow>
+    )}
+  </Popper>
+);
+
+/* ───────────────────── Main Component ───────────────────── */
 const MainNavbar = () => {
   const brand = usePublicBrand();
+  const menuData = getMenuData();
+
+  // Desktop mega-menu state
+  const [openMenu, setOpenMenu] = useState(null);
+  const anchorRefs = useRef({});
+
+  // Mobile drawer state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileDropdownOpen, setMobileDropdownOpen] = useState(null);
 
-  const [anchorEl, setAnchorEl] = useState({
-    about: null,
-    admissions: null,
-    campuses: null,
-    schools: null,
-    news: null,
-    contact: null,
-  });
-
-  const handleMenuOpen = (event, menu) => {
-    setAnchorEl({ ...anchorEl, [menu]: event.currentTarget });
+  const handleDesktopOpen = (key, event) => {
+    anchorRefs.current[key] = event.currentTarget;
+    setOpenMenu(key);
   };
-
-  const handleMenuClose = (menu) => {
-    setAnchorEl({ ...anchorEl, [menu]: null });
-  };
+  const handleDesktopClose = () => setOpenMenu(null);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
     setMobileDropdownOpen(null);
   };
-
-  const toggleMobileDropdown = (dropdown) => {
-    setMobileDropdownOpen(mobileDropdownOpen === dropdown ? null : dropdown);
-  };
-
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
     setMobileDropdownOpen(null);
   };
-
-  const menuItems = {
-    about: [
-      { text: "Mission and Vision", href: "/about/mission/" },
-      { text: "Our History", href: "/about/history/" },
-    ],
-    admissions: [
-      { text: "Application Procedure", href: "/admissions/procedure/" },
-      { text: "Application Forms", href: "/admissions/forms/" },
-      { text: "Apply Online", href: "https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded", external: true },
-      { text: "Career Guide & Prospectus", href: "/admissions/career-guide/" },
-    ],
-    campuses: [
-      { text: "Bungoma", href: "/campuses/bungoma/" },
-      { text: "Kericho", href: "/campuses/kericho/" },
-      { text: "Eldoret", href: "/campuses/eldoret/" },
-      { text: "Kisumu", href: "/campuses/kisumu/" },
-      { text: "Nakuru", href: "/campuses/nakuru/" },
-      { text: "Lodwar", href: "/campuses/lodwar/" },
-      { text: "Maralal", href: "/campuses/maralal/" },
-      { text: "Virtual Campus", href: "/campuses/virtual/" },
-    ],
-    schools: [
-      { text: "School of Engineering and ICT", href: "/schools/engineering-ict/" },
-      { text: "School of Hospitality and Tourism MGT", href: "/schools/hospitality-tourism/" },
-      { text: "School of Health and Social Sciences", href: "/schools/health-social/" },
-      { text: "School of Beauty and Hair dressing", href: "/schools/beauty-hairdressing/" },
-      { text: "School of Media", href: "/schools/media/" },
-      { text: "NITA courses & Short Courses", href: "/schools/nita-courses/" },
-    ],
-    news: [{ text: "Events & News", href: "/news/latest/" }],
-    contact: [{ text: "Our Contacts", href: "/contact/" }],
+  const toggleMobileDropdown = (key) => {
+    setMobileDropdownOpen(mobileDropdownOpen === key ? null : key);
   };
 
   return (
     <>
+      {/* ─── Sticky Desktop AppBar ─── */}
       <AppBar
         position="sticky"
         sx={{
-          bgcolor: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(4px)",
+          bgcolor: "rgba(255, 255, 255, 0.97)",
+          backdropFilter: "blur(8px)",
           color: "text.primary",
           top: { xs: 24, sm: 28 },
-          boxShadow: 1,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+          borderBottom: "1px solid",
+          borderColor: "divider",
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between", py: 1 }}>
-          <Box sx={{ display: { xs: "flex", lg: "none" } }}>
-            <IconButton onClick={toggleMobileMenu} sx={{ bgcolor: "primary.main", color: "white", "&:hover": { bgcolor: "primary.dark" }, borderRadius: 2 }}>
-              <MenuIcon />
-            </IconButton>
-          </Box>
-
-          <Box component={Link} href="/" onClick={closeMobileMenu} sx={{ display: "flex", alignItems: "center", textDecoration: "none", gap: 2 }}>
-            <Box component="img" src="/static/airads-logo.png" alt="AIRADS College Logo" sx={{ height: { xs: 60, md: 80 }, width: "auto" }} />
-            <Box>
-              <Typography
-                variant="h5"
-                component="h1"
+        <Container maxWidth={false} sx={{ px: { xs: 2, lg: 4 } }}>
+          <Toolbar sx={{ justifyContent: "space-between", py: 0, px: { xs: 0 } }}>
+            {/* Hamburger — mobile only */}
+            <Box sx={{ display: { xs: "flex", lg: "none" }, py: 2 }}>
+              <IconButton
+                onClick={toggleMobileMenu}
                 sx={{
-                  color: brand.accent,
-                  lineHeight: 1.1,
-                  fontSize: { xs: "1.25rem", md: "1.5rem", lg: "1.8rem" },
-                  fontFamily: FONT_ARCHIVO,
-                  letterSpacing: "0.5px",
-                  fontWeight: 400,
+                  bgcolor: "primary.main",
+                  color: "white",
+                  "&:hover": { bgcolor: "primary.dark" },
+                  borderRadius: NAV_RADIUS,
                 }}
               >
-                AFRICAN INSTITUTE <br />
+                <MenuIcon />
+              </IconButton>
+            </Box>
+
+            {/* Logo + Institution Name */}
+            <Box
+              component={Link}
+              href="/"
+              onClick={closeMobileMenu}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+                gap: 1.5,
+              }}
+            >
+              <Box
+                component="img"
+                src="/static/airads-logo.png"
+                alt="AIRADS College Logo"
+                sx={{ height: { xs: 50, md: 64 }, width: "auto" }}
+              />
+              <Box sx={{ display: { xs: "none", sm: "block" } }}>
+                <Typography
+                  variant="h6"
+                  component="h1"
+                  sx={{
+                    color: brand.accent,
+                    lineHeight: 1.1,
+                    fontSize: { sm: "1rem", md: "1.25rem", lg: "1.4rem" },
+                    fontFamily: FONT_ARCHIVO,
+                    letterSpacing: "0.5px",
+                    fontWeight: 600,
+                  }}
+                >
+                  AFRICAN INSTITUTE
+                </Typography>
                 <Typography
                   component="span"
                   sx={{
                     color: brand.primary,
-                    fontSize: { xs: "1rem", md: "1.25rem", lg: "1.5rem" },
+                    fontSize: { sm: "0.75rem", md: "0.85rem", lg: "0.95rem" },
                     fontFamily: FONT_FIGTREE,
                     fontWeight: 400,
+                    display: "block",
                   }}
                 >
                   Of Research and Development Studies
                 </Typography>
-              </Typography>
+              </Box>
             </Box>
-          </Box>
 
-          <Box sx={{ display: { xs: "none", lg: "flex" }, alignItems: "center", gap: 0.5 }}>
-            <Button component={Link} href="/" sx={{ color: "text.primary", textTransform: "none", fontWeight: 400 }}>
-              Home
-            </Button>
+            {/* Desktop Navigation Links */}
+            <Box sx={{ display: { xs: "none", lg: "flex" }, alignItems: "center", gap: 0 }}>
+              {Object.entries(menuData).map(([key, data]) => {
+                // Simple link (no dropdown)
+                if (data.href) {
+                  return (
+                    <Button
+                      key={key}
+                      component={Link}
+                      href={data.href}
+                      sx={{
+                        color: "text.primary",
+                        textTransform: "capitalize",
+                        fontWeight: 700,
+                        fontSize: "15px",
+                        px: "10px",
+                        py: "37px",
+                        borderRadius: 0,
+                        position: "relative",
+                        "&:hover": {
+                          bgcolor: "transparent",
+                          color: brand.accent,
+                        },
+                        "&::after": {
+                          content: '""',
+                          position: "absolute",
+                          bottom: 0,
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          width: 0,
+                          height: "4px",
+                          bgcolor: "#70993B", // MUT Green
+                          borderRadius: "3px 3px 0 0",
+                          transition: "width 0.2s",
+                        },
+                        "&:hover::after": { width: "100%" },
+                      }}
+                    >
+                      {data.label}
+                    </Button>
+                  );
+                }
 
-            {Object.keys(menuItems).map((menu) => (
-              <React.Fragment key={menu}>
-                <Button onClick={(e) => handleMenuOpen(e, menu)} endIcon={<ExpandMore />} sx={{ color: "text.primary", textTransform: "none", fontWeight: 400 }}>
-                  {menu === "news" ? "Events" : menu === "about" ? "About Us" : menu.charAt(0).toUpperCase() + menu.slice(1).replace("-", " ")}
-                </Button>
-                <Menu
-                  anchorEl={anchorEl[menu]}
-                  open={Boolean(anchorEl[menu])}
-                  onClose={() => handleMenuClose(menu)}
-                  MenuListProps={{ onMouseLeave: () => handleMenuClose(menu) }}
-                  elevation={2}
-                >
-                  {menuItems[menu].map((item, idx) =>
-                    item.external ? (
-                      <MenuItem key={idx} component="a" href={item.href} target="_blank" onClick={() => handleMenuClose(menu)}>
-                        {item.text}
-                      </MenuItem>
-                    ) : (
-                      <MenuItem key={idx} component={Link} href={item.href} onClick={() => handleMenuClose(menu)}>
-                        {item.text}
-                      </MenuItem>
-                    )
-                  )}
-                </Menu>
-              </React.Fragment>
-            ))}
+                // Mega-menu dropdown
+                return (
+                  <React.Fragment key={key}>
+                    <Button
+                      onMouseEnter={(e) => handleDesktopOpen(key, e)}
+                      onClick={(e) => handleDesktopOpen(key, e)}
+                      endIcon={
+                        <ExpandMore
+                          sx={{
+                            fontSize: "1.1rem !important",
+                            transition: "transform 0.2s",
+                            transform: openMenu === key ? "rotate(180deg)" : "rotate(0)",
+                          }}
+                        />
+                      }
+                      sx={{
+                        color: openMenu === key ? brand.accent : "text.primary",
+                        textTransform: "capitalize",
+                        fontWeight: 700,
+                        fontSize: "15px",
+                        px: "10px",
+                        py: "37px",
+                        borderRadius: 0,
+                        position: "relative",
+                        "&:hover": { bgcolor: "transparent", color: brand.accent },
+                        "&::after": {
+                          content: '""',
+                          position: "absolute",
+                          bottom: 0,
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          width: openMenu === key ? "100%" : 0,
+                          height: "4px",
+                          bgcolor: "#70993B", // MUT Green
+                          borderRadius: "3px 3px 0 0",
+                          transition: "width 0.2s",
+                        },
+                        "&:hover::after": { width: "100%" },
+                      }}
+                    >
+                      {data.label}
+                    </Button>
+                    {data.groups && (
+                      <ClickAwayListener onClickAway={handleDesktopClose}>
+                        <Box>
+                          <MegaMenuDropdown
+                            groups={data.groups}
+                            anchorEl={anchorRefs.current[key]}
+                            open={openMenu === key}
+                            onClose={handleDesktopClose}
+                            brand={brand}
+                          />
+                        </Box>
+                      </ClickAwayListener>
+                    )}
+                  </React.Fragment>
+                );
+              })}
 
-            <Button component={Link} href="/students/" sx={{ color: "text.primary", textTransform: "none", fontWeight: 400 }}>
-              Students
-            </Button>
-          </Box>
-          <Box sx={{ display: { xs: "flex", lg: "none" }, width: 44 }} />
-        </Toolbar>
+              {/* Search icon */}
+              <IconButton sx={{ ml: 1, color: "text.secondary" }}>
+                <SearchIcon />
+              </IconButton>
+            </Box>
+
+            {/* Spacer for mobile */}
+            <Box sx={{ display: { xs: "flex", lg: "none" }, width: 44 }} />
+          </Toolbar>
+        </Container>
       </AppBar>
 
+      {/* ─── Mobile Drawer ─── */}
       <Drawer anchor="left" open={mobileMenuOpen} onClose={closeMobileMenu}>
-        <Box sx={{ width: 280, bgcolor: "background.paper", height: "100%" }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2, bgcolor: brand.secondary, color: "white" }}>
-            <Typography variant="h6">Menu</Typography>
+        <Box sx={{ width: 300, bgcolor: "background.paper", height: "100%" }}>
+          {/* Drawer Header */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              p: 2,
+              bgcolor: brand.primary,
+              color: "white",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box
+                component="img"
+                src="/static/airads-logo.png"
+                alt="AIRADS"
+                sx={{ height: 36, filter: "brightness(0) invert(1)" }}
+              />
+              <Typography variant="subtitle1" fontWeight={600}>
+                AIRADS
+              </Typography>
+            </Box>
             <IconButton onClick={closeMobileMenu} sx={{ color: "white" }}>
               <CloseIcon />
             </IconButton>
           </Box>
-          <List>
-            <ListItem disablePadding>
-              <ListItemButton component={Link} href="/" onClick={closeMobileMenu}>
-                <ListItemText primary="Home" />
-              </ListItemButton>
-            </ListItem>
 
-            {Object.keys(menuItems).map((menu) => (
-              <React.Fragment key={menu}>
-                <ListItem disablePadding>
-                  <ListItemButton onClick={() => toggleMobileDropdown(menu)}>
-                    <ListItemText primary={menu === "news" ? "Events" : menu === "about" ? "About Us" : menu.charAt(0).toUpperCase() + menu.slice(1).replace("-", " ")} />
-                    {mobileDropdownOpen === menu ? <ExpandLess /> : <ExpandMore />}
-                  </ListItemButton>
-                </ListItem>
-                <Collapse in={mobileDropdownOpen === menu} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    {menuItems[menu].map((item, idx) => (
-                      <ListItemButton key={idx} sx={{ pl: 4 }} component={item.external ? "a" : Link} href={item.href} target={item.external ? "_blank" : undefined} onClick={closeMobileMenu}>
-                        <ListItemText primary={item.text} primaryTypographyProps={{ variant: "body2", color: "text.secondary" }} />
-                      </ListItemButton>
-                    ))}
-                  </List>
-                </Collapse>
-              </React.Fragment>
-            ))}
+          {/* Drawer Links */}
+          <List sx={{ pt: 0 }}>
+            {Object.entries(menuData).map(([key, data]) => {
+              // Simple link
+              if (data.href) {
+                return (
+                  <ListItem key={key} disablePadding>
+                    <ListItemButton component={Link} href={data.href} onClick={closeMobileMenu}>
+                      <ListItemText
+                        primary={data.label}
+                        primaryTypographyProps={{ fontWeight: 500 }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                );
+              }
 
-            <ListItem disablePadding>
-              <ListItemButton component={Link} href="/students/" onClick={closeMobileMenu}>
-                <ListItemText primary="Students" />
-              </ListItemButton>
-            </ListItem>
+              // Collapsible dropdown
+              return (
+                <React.Fragment key={key}>
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={() => toggleMobileDropdown(key)}>
+                      <ListItemText
+                        primary={data.label}
+                        primaryTypographyProps={{ fontWeight: 500 }}
+                      />
+                      {mobileDropdownOpen === key ? <ExpandLess /> : <ExpandMore />}
+                    </ListItemButton>
+                  </ListItem>
+                  <Collapse in={mobileDropdownOpen === key} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                      {data.groups &&
+                        data.groups.map((group, gi) => (
+                          <React.Fragment key={gi}>
+                            <Typography
+                              variant="overline"
+                              sx={{
+                                display: "block",
+                                pl: 4,
+                                pt: 1.5,
+                                pb: 0.5,
+                                color: brand.primary,
+                                fontWeight: 700,
+                                fontSize: "0.65rem",
+                                letterSpacing: 1,
+                              }}
+                            >
+                              {group.title}
+                            </Typography>
+                            {group.items.map((item, ii) => (
+                              <ListItemButton
+                                key={ii}
+                                sx={{ pl: 5 }}
+                                component={item.external ? "a" : Link}
+                                href={item.href}
+                                target={item.external ? "_blank" : undefined}
+                                onClick={closeMobileMenu}
+                              >
+                                <ListItemText
+                                  primary={item.text}
+                                  primaryTypographyProps={{
+                                    variant: "body2",
+                                    color: "text.secondary",
+                                  }}
+                                />
+                              </ListItemButton>
+                            ))}
+                          </React.Fragment>
+                        ))}
+                    </List>
+                  </Collapse>
+                </React.Fragment>
+              );
+            })}
           </List>
         </Box>
       </Drawer>

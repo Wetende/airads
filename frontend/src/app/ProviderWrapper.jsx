@@ -14,7 +14,7 @@ import ThemeProvider from "@/theme";
 export default function ProviderWrapper({ children, initialUser = null, platform = null }) {
     return (
         <ConfigProvider>
-            <ThemeProvider platform={platform}>
+            <ThemeProvider platform={platform} forcedMode="light">
                 <AuthProvider initialUser={initialUser}>
                     <WishlistProvider>
                         <CartProvider>

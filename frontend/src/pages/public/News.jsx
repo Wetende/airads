@@ -87,7 +87,7 @@ const News = () => {
 
             <Grid container spacing={4}>
               {newsItems.map((item, index) => (
-                <Grid item xs={12} md={6} lg={4} key={index}>
+                <Grid key={index} size={{ xs: 12, md: 6, lg: 4 }}>
                   <Card
                     sx={{
                       height: '100%',
@@ -181,7 +181,7 @@ const News = () => {
                   }}
                 >
                   <Grid container spacing={3} alignItems="center">
-                    <Grid item xs={12} md={8} lg={9}>
+                    <Grid size={{ xs: 12, md: 8, lg: 9 }}>
                       <Typography variant="h5" sx={{ fontWeight: 'bold', color: brand.secondary, mb: 1 }}>
                         {event.title}
                       </Typography>
@@ -205,7 +205,7 @@ const News = () => {
                       </Box>
                     </Grid>
 
-                    <Grid item xs={12} md={4} lg={3} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+                    <Grid sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }} size={{ xs: 12, md: 4, lg: 3 }}>
                       <Button
                         variant="contained"
                         sx={{

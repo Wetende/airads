@@ -37,7 +37,7 @@ const StudyAirads = () => {
           </Box>
 
           <Grid container spacing={4} sx={{ mb: { xs: 10, md: 14 } }}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Paper elevation={0} sx={{ p: 4, borderRadius: 4, height: '100%', borderLeft: 4, borderColor: brand.primary, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', transition: 'box-shadow 0.3s', '&:hover': { boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                   <Build sx={{ fontSize: 48, color: brand.primary, mr: 2 }} />
@@ -49,7 +49,7 @@ const StudyAirads = () => {
               </Paper>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Paper elevation={0} sx={{ p: 4, borderRadius: 4, height: '100%', borderLeft: 4, borderColor: brand.secondary, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', transition: 'box-shadow 0.3s', '&:hover': { boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                   <Map sx={{ fontSize: 48, color: brand.secondary, mr: 2 }} />
@@ -61,7 +61,7 @@ const StudyAirads = () => {
               </Paper>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Paper elevation={0} sx={{ p: 4, borderRadius: 4, height: '100%', borderLeft: 4, borderColor: brand.primary, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', transition: 'box-shadow 0.3s', '&:hover': { boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                   <Lightbulb sx={{ fontSize: 48, color: brand.primary, mr: 2 }} />
@@ -83,7 +83,7 @@ const StudyAirads = () => {
             </Typography>
             
             <Grid container spacing={6}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                   <CheckCircle sx={{ fontSize: 32, color: '#22c55e', mr: 2, flexShrink: 0, mt: 0.5 }} />
                   <Box>
@@ -92,7 +92,7 @@ const StudyAirads = () => {
                   </Box>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                   <CheckCircle sx={{ fontSize: 32, color: '#22c55e', mr: 2, flexShrink: 0, mt: 0.5 }} />
                   <Box>
@@ -101,7 +101,7 @@ const StudyAirads = () => {
                   </Box>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                   <CheckCircle sx={{ fontSize: 32, color: '#22c55e', mr: 2, flexShrink: 0, mt: 0.5 }} />
                   <Box>
@@ -110,7 +110,7 @@ const StudyAirads = () => {
                   </Box>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                   <CheckCircle sx={{ fontSize: 32, color: '#22c55e', mr: 2, flexShrink: 0, mt: 0.5 }} />
                   <Box>

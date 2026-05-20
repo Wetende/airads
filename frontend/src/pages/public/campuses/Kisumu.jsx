@@ -196,7 +196,7 @@ const Kisumu = () => {
       <Container maxWidth="lg" sx={{ pb: 10 }}>
         <Head title="Kisumu Campus - AIRADS College" />
         <Grid container spacing={6}>
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>About Kisumu Campus</Typography>
@@ -220,7 +220,7 @@ const Kisumu = () => {
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: 'center', color: brand.secondary }}>Campus Advantages</Typography>
                 <Grid container spacing={3}>
                   {features.map((feature, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
+                    <Grid key={index} size={{ xs: 12, sm: 6 }}>
                       <FeatureCard {...feature} />
                     </Grid>
                   ))}
@@ -231,7 +231,7 @@ const Kisumu = () => {
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>Popular Programs</Typography>
                 <Grid container spacing={2}>
                   {programs.map((program, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
+                    <Grid key={index} size={{ xs: 12, sm: 6 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, borderRadius: 2, bgcolor: brand.softBlue, borderLeft: `4px solid ${brand.secondary}` }}>
                         <Trophy sx={{ color: brand.secondary }} />
                         <Typography variant="body2" sx={{ fontWeight: 600, color: brand.neutralText }}>{program}</Typography>
@@ -244,7 +244,7 @@ const Kisumu = () => {
               <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>Regional Impact</Typography>
                 <Grid container spacing={4}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: brand.secondary }}>Economic Integration</Typography>
                     <Box component="ul" sx={{ pl: 0, listStyle: 'none', color: 'text.secondary' }}>
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Tourism & hospitality sector</Typography>
@@ -253,7 +253,7 @@ const Kisumu = () => {
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Cross-border trade opportunities</Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: brand.secondary }}>Student Benefits</Typography>
                     <Box component="ul" sx={{ pl: 0, listStyle: 'none', color: 'text.secondary' }}>
                       <Typography component="li" sx={{ mb: 1, lineHeight: 1.6 }}>• Diverse career opportunities</Typography>
@@ -266,7 +266,7 @@ const Kisumu = () => {
               </Paper>
 
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Card elevation={0} sx={{ bgcolor: brand.secondary, color: 'white', textAlign: 'center', borderRadius: 4 }}>
                     <CardContent sx={{ p: 3 }}>
                       <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>450+</Typography>
@@ -274,7 +274,7 @@ const Kisumu = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Card elevation={0} sx={{ bgcolor: brand.accent, color: 'white', textAlign: 'center', borderRadius: 4 }}>
                     <CardContent sx={{ p: 3 }}>
                       <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>92%</Typography>
@@ -282,7 +282,7 @@ const Kisumu = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Card elevation={0} sx={{ bgcolor: brand.mutedText, color: 'white', textAlign: 'center', borderRadius: 4 }}>
                     <CardContent sx={{ p: 3 }}>
                       <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>12+</Typography>
@@ -294,7 +294,7 @@ const Kisumu = () => {
             </Box>
           </Grid>
 
-          <Grid item xs={12} lg={4}>
+          <Grid size={{ xs: 12, lg: 4 }}>
             <ContactCard
               phone="0715-505-262"
               whatsapp="0715-505-262"
