@@ -1,101 +1,79 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 
-import Landing from "./Landing";
-
-const { mockUsePage, mockUseLogoutCalls, mockSharedLogoutAction } = vi.hoisted(
-    () => ({
-        mockUsePage: vi.fn(),
-        mockUseLogoutCalls: vi.fn(),
-        mockSharedLogoutAction: vi.fn(),
-    })
-);
+import Home from "./Home";
 
 vi.mock("@inertiajs/react", () => ({
     Head: () => null,
-    Link: ({ children, href, ...props }) => (
-        <a href={href} {...props}>
-            {children}
-        </a>
-    ),
-    usePage: () => mockUsePage(),
 }));
 
-vi.mock("@/hooks/useLogout", () => ({
-    default: () => {
-        mockUseLogoutCalls();
-        return (options = {}) => {
-            options.onBefore?.();
-            mockSharedLogoutAction();
-        };
-    },
+vi.mock("../../components/common/TopNavbar", () => ({
+    default: () => <div data-testid="top-navbar" />,
 }));
 
-vi.mock("@/components/common/VisuallyHidden", () => ({
-    default: ({ children }) => <div>{children}</div>,
+vi.mock("../../components/common/MainNavbar", () => ({
+    default: () => <div data-testid="main-navbar" />,
 }));
 
-vi.mock("@/components/LazySection", () => ({
-    default: () => <div data-testid="lazy-section" />,
+vi.mock("../../components/common/NewsTicker", () => ({
+    default: () => <div data-testid="news-ticker" />,
 }));
 
-vi.mock("@/components/common/PlatformLogo", () => ({
-    default: () => <div data-testid="platform-logo" />,
-}));
-
-vi.mock("@/features/components/common/ButtonAnimationWrapper", () => ({
-    default: ({ children }) => <>{children}</>,
-}));
-
-vi.mock("@/components/sections/landing/HeroSection", () => ({
+vi.mock("../../components/sections/HeroSection", () => ({
     default: () => <div data-testid="hero-section" />,
 }));
 
-vi.mock("@/components/common/Footer", () => ({
-    default: () => <div data-testid="footer" />,
+vi.mock("../../components/sections/ProgrammesCatalogueSection", () => ({
+    default: () => <div data-testid="programmes-catalogue-section" />,
 }));
 
-describe("Landing logout controls", () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockUsePage.mockReturnValue({
-            props: {
-                platform: {
-                    institutionName: "DigikaTech Africa",
-                    primaryColor: "#3B82F6",
-                    secondaryColor: "#1E40AF",
-                },
-                programs: [],
-                stats: {},
-                auth: {
-                    user: {
-                        email: "ada@example.com",
-                        role: "student",
-                        first_name: "Ada",
-                        last_name: "Lovelace",
-                    },
-                },
-            },
-        });
+vi.mock("../../components/sections/AtAGlanceSection", () => ({
+    default: () => <div data-testid="at-a-glance-section" />,
+}));
+
+vi.mock("../../components/sections/SchoolsGridSection", () => ({
+    default: () => <div data-testid="schools-grid-section" />,
+}));
+
+vi.mock("../../components/sections/NoticesNewsSection", () => ({
+    default: () => <div data-testid="notices-news-section" />,
+}));
+
+vi.mock("../../components/sections/QuickLinksAdmissionSection", () => ({
+    default: () => <div data-testid="quick-links-admission-section" />,
+}));
+
+vi.mock("../../components/sections/WelcomeSection", () => ({
+    default: () => <div data-testid="welcome-section" />,
+}));
+
+vi.mock("../../components/common/AIRADSFooter", () => ({
+    default: () => <div data-testid="airads-footer" />,
+}));
+
+describe("Airads public home page", () => {
+    test("renders the public page shell", () => {
+        render(<Home />);
+
+        expect(screen.getByTestId("top-navbar")).toBeInTheDocument();
+        expect(screen.getByTestId("main-navbar")).toBeInTheDocument();
+        expect(screen.getByTestId("hero-section")).toBeInTheDocument();
+        expect(screen.getByTestId("airads-footer")).toBeInTheDocument();
     });
 
-    test("public desktop logout control triggers shared logout action", () => {
-        render(<Landing />);
+    test("renders the main public sections", () => {
+        render(<Home />);
 
-        fireEvent.click(screen.getByLabelText("open user menu"));
-        fireEvent.click(screen.getByText("Logout"));
-
-        expect(mockUseLogoutCalls).toHaveBeenCalled();
-        expect(mockSharedLogoutAction).toHaveBeenCalledTimes(1);
-    });
-
-    test("public mobile logout control triggers shared logout action", () => {
-        render(<Landing />);
-
-        fireEvent.click(screen.getByLabelText("open mobile menu"));
-        fireEvent.click(screen.getByRole("button", { name: "Logout" }));
-
-        expect(mockUseLogoutCalls).toHaveBeenCalled();
-        expect(mockSharedLogoutAction).toHaveBeenCalledTimes(1);
+        expect(screen.getByTestId("news-ticker")).toBeInTheDocument();
+        expect(
+            screen.getByTestId("programmes-catalogue-section"),
+        ).toBeInTheDocument();
+        expect(screen.getByTestId("at-a-glance-section")).toBeInTheDocument();
+        expect(screen.getByTestId("schools-grid-section")).toBeInTheDocument();
+        expect(
+            screen.getByTestId("quick-links-admission-section"),
+        ).toBeInTheDocument();
+        expect(screen.getByTestId("notices-news-section")).toBeInTheDocument();
+        expect(screen.getByTestId("welcome-section")).toBeInTheDocument();
     });
 });
