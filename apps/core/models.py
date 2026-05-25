@@ -103,6 +103,48 @@ class InstructorCertification(models.Model):
         return f"{self.file_name} for {self.profile.user.email}"
 
 
+class AdmissionApplication(TimeStampedModel):
+    """Public student admissions application submitted from the AIRADS site."""
+
+    STATUS_NEW = "new"
+    STATUS_CONTACTED = "contacted"
+    STATUS_ACCEPTED = "accepted"
+    STATUS_DECLINED = "declined"
+
+    STATUS_CHOICES = [
+        (STATUS_NEW, "New"),
+        (STATUS_CONTACTED, "Contacted"),
+        (STATUS_ACCEPTED, "Accepted"),
+        (STATUS_DECLINED, "Declined"),
+    ]
+
+    full_name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=32)
+    whatsapp = models.CharField(max_length=32, blank=True, default="")
+    email = models.EmailField(blank=True, default="")
+    preferred_campus = models.CharField(max_length=120)
+    preferred_programme = models.CharField(max_length=255)
+    intake = models.CharField(max_length=120, blank=True, default="")
+    education_level = models.CharField(max_length=120, blank=True, default="")
+    message = models.TextField(blank=True, default="")
+    source = models.CharField(max_length=80, blank=True, default="website")
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default=STATUS_NEW
+    )
+    internal_notes = models.TextField(blank=True, default="")
+
+    class Meta:
+        db_table = "admission_applications"
+        indexes = [
+            models.Index(fields=["status", "-created_at"]),
+            models.Index(fields=["preferred_campus"]),
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.full_name} - {self.preferred_programme}"
+
+
 class Program(TimeStampedModel):
     """
     Program model - represents an academic program/course.

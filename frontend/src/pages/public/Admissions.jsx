@@ -101,7 +101,7 @@ const Admissions = () => {
           <Box sx={{ mt: 10 }}>
             <Paper sx={{ p: { xs: 4, md: 8 }, borderRadius: 4, bgcolor: brand.accent, color: 'white', textAlign: 'center' }}>
               <Typography variant="h3" component="h3" sx={{ fontWeight: 900, mb: 3, fontSize: { xs: '2rem', md: '3rem' } }}>
-                January 2026 INTAKE ONGOING
+                MAY/JUNE INTAKE ONGOING
               </Typography>
               <Typography variant="h6" sx={{ mb: 5, fontWeight: 400, opacity: 0.9 }}>
                 Don't miss this opportunity to join Kenya's premier technical college

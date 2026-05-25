@@ -133,7 +133,7 @@ const ApplicationProcedure = () => {
         <Box sx={{ pt: { xs: 15, md: 20 }, pb: { xs: 8, md: 12 }, bgcolor: brand.softBlue }}>
           <Container maxWidth="lg" sx={{ textAlign: 'center' }}>
             <Chip 
-              label="January 2026 INTAKE NOW OPEN" 
+              label="MAY/JUNE INTAKE NOW OPEN" 
               sx={{ mb: 4, px: 2, py: 3, fontSize: '1.1rem', fontWeight: 'bold', bgcolor: brand.accent, color: 'white', border: 'none' }}
             />
             <Typography variant="h2" component="h1" sx={{ fontWeight: 900, mb: 3, color: brand.secondary, fontSize: { xs: '2.5rem', md: '4rem' } }}>
@@ -159,8 +159,7 @@ const ApplicationProcedure = () => {
                 variant="contained" 
                 size="large" 
                 startIcon={<Language />}
-                href="https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded" 
-                target="_blank"
+                href="/admissions/apply/" 
                 sx={{ py: 2, px: 4, borderRadius: 2, bgcolor: brand.accent, fontWeight: 'bold', fontSize: '1.1rem', '&:hover': { bgcolor: brand.accentHover } }}
               >
                 Apply Online Now
@@ -376,11 +375,10 @@ const ApplicationProcedure = () => {
                     variant="contained" 
                     size="large" 
                     startIcon={<Event />}
-                    href="https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded" 
-                    target="_blank"
+                    href="/admissions/apply/" 
                     sx={{ bgcolor: 'white', color: brand.accent, fontWeight: 'bold', '&:hover': { bgcolor: '#f1f5f9' }, py: 1.5, px: 3 }}
                   >
-                    Apply for January 2026 Intake
+                    Apply for May/June Intake
                   </Button>
                   <Button 
                     variant="outlined" 

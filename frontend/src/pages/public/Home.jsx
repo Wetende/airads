@@ -11,7 +11,6 @@ import SchoolsGridSection from "../../components/sections/SchoolsGridSection";
 import NoticesNewsSection from "../../components/sections/NoticesNewsSection";
 import QuickLinksAdmissionSection from "../../components/sections/QuickLinksAdmissionSection";
 import WelcomeSection from "../../components/sections/WelcomeSection";
-import TestimonialSection from "../../components/sections/TestimonialSection";
 import Footer from "../../components/common/AIRADSFooter";
 
 /**
@@ -27,8 +26,7 @@ import Footer from "../../components/common/AIRADSFooter";
  * 8. QuickLinksAdmissionSection (study links + apply banner)
  * 9. NoticesNewsSection (notices board + news feed)
  * 10. WelcomeSection (CEO message + Why Join)
- * 11. TestimonialSection
- * 12. Footer
+ * 11. Footer
  */
 const Home = () => {
   return (
@@ -45,7 +43,6 @@ const Home = () => {
         <QuickLinksAdmissionSection />
         <NoticesNewsSection />
         <WelcomeSection />
-        <TestimonialSection />
       </Box>
       <Footer />
     </Box>

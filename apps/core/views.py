@@ -43,7 +43,7 @@ from apps.assessments.official_results import (
 )
 from apps.certifications.models import Certificate, VerificationLog
 from apps.core.learning_outcomes import extract_learning_outcome_items_from_html
-from apps.core.models import Program, User
+from apps.core.models import AdmissionApplication, Program, User
 from apps.core.taxonomy import (
     MAX_BUILDER_DEPTH,
     get_builder_hierarchy_or_default,
@@ -9202,6 +9202,79 @@ def airads_application_procedure(request):
 
 def airads_application_form(request):
     return render(request, "Public/ApplicationForm")
+
+
+def airads_application_apply(request):
+    return render(
+        request,
+        "Public/ApplicationApply",
+        {
+            "campuses": [
+                "Eldoret Campus",
+                "Nakuru Campus",
+                "Kericho Campus",
+                "Kisumu City Campus",
+                "Bungoma Campus",
+                "Maralal Campus",
+                "Lodwar Campus",
+                "Virtual Campus",
+            ],
+            "intakes": [
+                "January 2026",
+                "May 2026",
+                "September 2026",
+                "Next Available Intake",
+            ],
+        },
+    )
+
+
+def _clean_admission_value(data: dict, key: str) -> str:
+    value = data.get(key, "")
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def airads_application_submit(request):
+    if request.method != "POST":
+        return redirect("core:airads.application_apply")
+
+    data = get_post_data(request)
+    required_fields = {
+        "fullName": "Full name",
+        "phone": "Phone number",
+        "preferredCampus": "Preferred campus",
+        "preferredProgramme": "Preferred programme",
+    }
+    missing_fields = [
+        label for key, label in required_fields.items() if not _clean_admission_value(data, key)
+    ]
+
+    if missing_fields:
+        messages.error(
+            request,
+            f"Please complete: {', '.join(missing_fields)}.",
+        )
+        return redirect("core:airads.application_apply")
+
+    AdmissionApplication.objects.create(
+        full_name=_clean_admission_value(data, "fullName"),
+        phone=_clean_admission_value(data, "phone"),
+        whatsapp=_clean_admission_value(data, "whatsapp"),
+        email=_clean_admission_value(data, "email").lower(),
+        preferred_campus=_clean_admission_value(data, "preferredCampus"),
+        preferred_programme=_clean_admission_value(data, "preferredProgramme"),
+        intake=_clean_admission_value(data, "intake"),
+        education_level=_clean_admission_value(data, "educationLevel"),
+        message=_clean_admission_value(data, "message"),
+        source=_clean_admission_value(data, "source") or "website",
+    )
+    messages.success(
+        request,
+        "Your application has been received. Our admissions team will contact you soon.",
+    )
+    return redirect("core:airads.application_apply")
 
 
 def airads_career_guide(request):

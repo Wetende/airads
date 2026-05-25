@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Program
+from .models import AdmissionApplication, Program, User
 
 
 @admin.register(User)
@@ -28,5 +28,21 @@ class ProgramAdmin(admin.ModelAdmin):
     list_display = ["name", "code", "blueprint", "is_published", "created_at"]
     list_filter = ["is_published", "blueprint"]
     search_fields = ["name", "code", "description"]
+    ordering = ["-created_at"]
+    date_hierarchy = "created_at"
+
+
+@admin.register(AdmissionApplication)
+class AdmissionApplicationAdmin(admin.ModelAdmin):
+    list_display = [
+        "full_name",
+        "phone",
+        "preferred_campus",
+        "preferred_programme",
+        "status",
+        "created_at",
+    ]
+    list_filter = ["status", "preferred_campus", "intake"]
+    search_fields = ["full_name", "phone", "email", "preferred_programme"]
     ordering = ["-created_at"]
     date_hierarchy = "created_at"

@@ -208,8 +208,11 @@ const SchoolsGridSection = () => {
         <Box
           sx={{
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            gap: { xs: 1.5, md: 2.5 },
+            justifyContent: 'center',
+            textAlign: 'center',
+            gap: 1.25,
             mb: { xs: 4, md: 5 },
           }}
         >
@@ -224,20 +227,10 @@ const SchoolsGridSection = () => {
               color: 'text.primary',
               textTransform: 'uppercase',
               letterSpacing: 0.8,
-              whiteSpace: { md: 'nowrap' },
             }}
           >
             AIRADS TRAINING PATHWAYS
           </Typography>
-          <Box
-            sx={{
-              flex: 1,
-              height: 2,
-              minWidth: 48,
-              bgcolor: brand.accent,
-              opacity: 0.9,
-            }}
-          />
         </Box>
 
         <Box

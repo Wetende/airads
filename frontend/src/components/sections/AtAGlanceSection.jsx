@@ -168,8 +168,7 @@ function HowToApplyPanel({ brand }) {
           </Button>
           <Button
             component="a"
-            href="https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded"
-            target="_blank"
+            href="/admissions/apply/"
             variant="contained"
             sx={{
               bgcolor: brand.accent,

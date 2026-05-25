@@ -17,7 +17,7 @@ const TopNavbar = () => {
   const brand = usePublicBrand();
 
   const quickLinks = [
-    { text: "Online Admissions", href: "https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded", external: true },
+    { text: "Online Admissions", href: "/admissions/apply/" },
     { text: "TVETA", href: "https://tveta.go.ke", external: true },
     { text: "CDACC", href: "https://tvetcdacc.go.ke/", external: true },
     { text: "Staff Mail", href: "mailto:staff@airads.ac.ke" },
@@ -125,8 +125,7 @@ const TopNavbar = () => {
 
             {/* CTA Button */}
             <MuiLink
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded"
-              target="_blank"
+              href="/admissions/apply/"
               underline="none"
               sx={{
                 bgcolor: brand.accent,

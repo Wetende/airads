@@ -265,9 +265,7 @@ const Mission = () => {
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 3, justifyContent: 'center', alignItems: 'center' }}>
               <Button
                 component="a"
-                href="https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/admissions/apply/"
                 variant="contained"
                 size="large"
                 endIcon={<ArrowForward />}

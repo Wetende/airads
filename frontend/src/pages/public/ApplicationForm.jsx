@@ -278,8 +278,7 @@ const ApplicationForm = () => {
                   variant="contained" 
                   size="large" 
                   startIcon={<OpenInNew />}
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded" 
-                  target="_blank"
+                  href="/admissions/apply/" 
                   sx={{ bgcolor: 'white', color: brand.accent, fontWeight: 'bold', '&:hover': { bgcolor: '#f1f5f9' }, py: 1.5, px: 3 }}
                 >
                   Apply Online at admissions.airads.ac.ke

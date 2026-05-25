@@ -116,6 +116,7 @@ const publicMap = {
     "Public/Contact": "./pages/public/Contact.jsx",
     "Public/Admissions": "./pages/public/Admissions.jsx",
     "Public/ApplicationProcedure": "./pages/public/ApplicationProcedure.jsx",
+    "Public/ApplicationApply": "./pages/public/ApplicationApply.jsx",
     "Public/ApplicationForm": "./pages/public/ApplicationForm.jsx",
     "Public/CareerGuide": "./pages/public/CareerGuide.jsx",
     "Public/Courses": "./pages/public/Courses.jsx",

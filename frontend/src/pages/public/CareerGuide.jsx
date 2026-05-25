@@ -269,8 +269,7 @@ const CareerGuide = () => {
                 variant="outlined" 
                 size="large" 
                 startIcon={<OpenInNew />}
-                href="https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded"
-                target="_blank"
+                href="/admissions/apply/"
                 sx={{ py: 2, px: 4, borderRadius: 2, borderColor: brand.accent, color: brand.accent, fontWeight: 'bold', fontSize: '1.1rem', '&:hover': { bgcolor: brand.accent, color: 'white' } }}
               >
                 Apply Online Now

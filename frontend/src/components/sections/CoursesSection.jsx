@@ -172,9 +172,7 @@ const CoursesSection = () => {
               Intake in Progress in all our Campuses
             </Typography>
             <Button
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/admissions/apply/"
               variant="contained"
               size="large"
               sx={{

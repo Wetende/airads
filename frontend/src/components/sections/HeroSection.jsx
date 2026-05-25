@@ -18,7 +18,7 @@ const slides = [
   },
   {
     image: '/static/68.JPG',
-    title: 'January 2026 Intake',
+    title: 'May/June Intake',
     subtitle: 'Enrollment in Progress',
     description: 'Register now for Diploma, Certificate, Artisan and Short Courses across all our campuses.',
     cta: { text: 'Apply Now', href: '/admissions/procedure/' },

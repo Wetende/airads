@@ -100,8 +100,7 @@ const getMenuData = () => ({
           { text: "Application Forms", href: "/admissions/forms/" },
           {
             text: "Apply Online",
-            href: "https://docs.google.com/forms/d/e/1FAIpQLSdl9v2WYIAbX41Wo2LyrUjhSZucHuvytgoYxd9Elq1yFSV0ig/alreadyresponded",
-            external: true,
+            href: "/admissions/apply/",
           },
           { text: "Career Guide & Prospectus", href: "/admissions/career-guide/" },
         ],
@@ -505,11 +504,25 @@ const MainNavbar = () => {
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Box
-                component="img"
-                src="/static/airads-logo.png"
-                alt="AIRADS"
-                sx={{ height: 36, filter: "brightness(0) invert(1)" }}
-              />
+                sx={{
+                  width: 44,
+                  height: 44,
+                  bgcolor: "white",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  boxShadow: "0 8px 18px rgba(15,23,42,0.16)",
+                }}
+              >
+                <Box
+                  component="img"
+                  src="/static/airads-logo.png"
+                  alt="AIRADS"
+                  sx={{ width: 34, height: 34, objectFit: "contain" }}
+                />
+              </Box>
               <Typography variant="subtitle1" fontWeight={600}>
                 AIRADS
               </Typography>
