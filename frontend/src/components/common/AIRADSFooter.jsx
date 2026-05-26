@@ -27,6 +27,8 @@ const footerColumns = [
       { label: 'Admissions', href: '/admissions/' },
       { label: 'How to Apply', href: '/admissions/procedure/' },
       { label: 'Contact Us', href: '/contact/' },
+      { label: 'TVETA', href: 'https://tveta.go.ke', external: true },
+      { label: 'CDACC', href: 'https://tvetcdacc.go.ke/', external: true },
     ],
   },
   {
@@ -60,11 +62,6 @@ const socialLinks = [
   { label: 'TikTok', href: 'https://www.tiktok.com/@airads.college', Icon: FaTiktok },
   { label: 'Facebook', href: 'https://www.facebook.com/airads.college', Icon: FaFacebook },
   { label: 'WhatsApp', href: 'https://wa.me/254723555999', Icon: FaWhatsapp },
-];
-
-const regulatoryLinks = [
-  { label: 'TVETA', href: 'https://tveta.go.ke' },
-  { label: 'CDACC', href: 'https://tvetcdacc.go.ke/' },
 ];
 
 const FooterHeading = ({ children }) => (
@@ -224,43 +221,6 @@ const Footer = () => {
                 </Box>
               </Box>
 
-              <Box sx={{ mt: 2.4 }}>
-                <Typography
-                  sx={{
-                    fontFamily: FONT_HEADING,
-                    fontWeight: 800,
-                    fontSize: '0.82rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.8,
-                    mb: 1.1,
-                  }}
-                >
-                  Regulatory Links
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.35 }}>
-                  {regulatoryLinks.map((item) => (
-                    <MuiLink
-                      key={item.label}
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{
-                        color: 'rgba(255,255,255,0.86)',
-                        fontFamily: FONT_BODY,
-                        fontSize: '0.92rem',
-                        lineHeight: 1.45,
-                        textDecoration: 'none',
-                        '&:hover': {
-                          color: 'white',
-                          textDecoration: 'underline',
-                        },
-                      }}
-                    >
-                      {item.label}
-                    </MuiLink>
-                  ))}
-                </Box>
-              </Box>
             </Grid>
 
             {footerColumns.map((column) => (

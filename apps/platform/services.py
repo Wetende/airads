@@ -366,8 +366,8 @@ class PlatformSettingsService:
             "deploymentMode": settings.deployment_mode,
             "courseLevels": settings.get_course_levels(),
             "activeBlueprintId": settings.active_blueprint_id,
-            "logo": settings.logo.url if settings.logo else None,
-            "favicon": settings.favicon.url if settings.favicon else None,
+            "logo": settings.get_logo_url(),
+            "favicon": settings.get_favicon_url(),
             "primaryColor": settings.primary_color,
             "secondaryColor": settings.secondary_color,
             "customCss": settings.custom_css,
@@ -615,8 +615,8 @@ class PlatformSettingsService:
         return {
             "institutionName": settings.institution_name,
             "tagline": settings.tagline,
-            "logo": settings.logo.url if settings.logo else None,
-            "favicon": settings.favicon.url if settings.favicon else None,
+            "logo": settings.get_logo_url(),
+            "favicon": settings.get_favicon_url(),
             "primaryColor": settings.primary_color,
             "secondaryColor": settings.secondary_color,
         }

@@ -28,7 +28,7 @@ import {
   Search as SearchIcon,
 } from "@mui/icons-material";
 import { usePublicBrand } from "../../hooks/usePublicBrand";
-import { FONT_HEADING, FONT_BODY } from "../../config";
+import AiradsLogoLockup from "./AiradsLogoLockup";
 
 const NAV_RADIUS = 1;
 
@@ -310,9 +310,16 @@ const MainNavbar = () => {
         }}
       >
         <Container maxWidth={false} sx={{ px: { xs: 2, lg: 4 } }}>
-          <Toolbar sx={{ justifyContent: "space-between", py: 0, px: { xs: 0 } }}>
+          <Toolbar
+            sx={{
+              justifyContent: "space-between",
+              py: { xs: 0.5, lg: 0 },
+              minHeight: { xs: 72, sm: 80, lg: 86 },
+              px: { xs: 0 },
+            }}
+          >
             {/* Hamburger — mobile only */}
-            <Box sx={{ display: { xs: "flex", lg: "none" }, py: 2 }}>
+            <Box sx={{ display: { xs: "flex", lg: "none" }, py: 1 }}>
               <IconButton
                 onClick={toggleMobileMenu}
                 sx={{
@@ -327,52 +334,21 @@ const MainNavbar = () => {
             </Box>
 
             {/* Logo + Institution Name */}
-            <Box
-              component={Link}
+            <AiradsLogoLockup
               href="/"
               onClick={closeMobileMenu}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                textDecoration: "none",
-                gap: 1.5,
-              }}
-            >
-              <Box
-                component="img"
-                src="/static/airads-logo.png"
-                alt="AIRADS College Logo"
-                sx={{ height: { xs: 50, md: 64 }, width: "auto" }}
-              />
-              <Box sx={{ display: { xs: "none", sm: "block" } }}>
-                <Typography
-                  variant="h6"
-                  component="h1"
-                  sx={{
-                    color: brand.accent,
-                    lineHeight: 1.1,
-                    fontSize: { sm: "1rem", md: "1.25rem", lg: "1.4rem" },
-                    fontFamily: FONT_HEADING,
-                    letterSpacing: "0.5px",
-                    fontWeight: 600,
-                  }}
-                >
-                  AFRICAN INSTITUTE
-                </Typography>
-                <Typography
-                  component="span"
-                  sx={{
-                    color: brand.primary,
-                    fontSize: { sm: "0.75rem", md: "0.85rem", lg: "0.95rem" },
-                    fontFamily: FONT_BODY,
-                    fontWeight: 400,
-                    display: "block",
-                  }}
-                >
-                  Of Research and Development Studies
-                </Typography>
-              </Box>
-            </Box>
+              gap={{ xs: 1, sm: 1.25 }}
+              crestHeight={{ xs: 46, sm: 54, md: 62, lg: 72 }}
+              headlineColor={brand.accent}
+              subheadColor={brand.primary}
+              taglineColor={brand.accent}
+              headlineFontSize={{ xs: "0.9rem", sm: "1.25rem", md: "1.6rem", lg: "1.9rem" }}
+              subheadFontSize={{ xs: "0.5rem", sm: "0.72rem", md: "0.92rem", lg: "1.05rem" }}
+              taglineFontSize={{ xs: "0.36rem", sm: "0.5rem", md: "0.62rem", lg: "0.72rem" }}
+              taglineMt={{ xs: 0.2, sm: 0.25, md: 0.35 }}
+              alignItemsXs="flex-start"
+              alignItemsSm="center"
+            />
 
             {/* Desktop Navigation Links */}
             <Box sx={{ display: { xs: "none", lg: "flex" }, alignItems: "center", gap: 0 }}>
@@ -390,7 +366,7 @@ const MainNavbar = () => {
                         fontWeight: 700,
                         fontSize: "15px",
                         px: "10px",
-                        py: "37px",
+                        py: "28px",
                         borderRadius: 0,
                         position: "relative",
                         "&:hover": {
@@ -438,7 +414,7 @@ const MainNavbar = () => {
                         fontWeight: 700,
                         fontSize: "15px",
                         px: "10px",
-                        py: "37px",
+                        py: "28px",
                         borderRadius: 0,
                         position: "relative",
                         "&:hover": { bgcolor: "transparent", color: brand.accent },
@@ -502,31 +478,18 @@ const MainNavbar = () => {
               color: "white",
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  bgcolor: "white",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  boxShadow: "0 8px 18px rgba(15,23,42,0.16)",
-                }}
-              >
-                <Box
-                  component="img"
-                  src="/static/airads-logo.png"
-                  alt="AIRADS"
-                  sx={{ width: 34, height: 34, objectFit: "contain" }}
-                />
-              </Box>
-              <Typography variant="subtitle1" fontWeight={600}>
-                AIRADS
-              </Typography>
-            </Box>
+            <AiradsLogoLockup
+              gap={1}
+              crestHeight={42}
+              headlineColor="white"
+              subheadColor="rgba(255,255,255,0.92)"
+              taglineColor="white"
+              headlineFontSize="0.92rem"
+              subheadFontSize="0.58rem"
+              taglineFontSize="0.48rem"
+              taglineMt={0.2}
+              alignItems="center"
+            />
             <IconButton onClick={closeMobileMenu} sx={{ color: "white" }}>
               <CloseIcon />
             </IconButton>

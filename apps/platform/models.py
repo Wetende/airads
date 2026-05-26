@@ -4,6 +4,7 @@ Platform settings models - Single-tenant configuration.
 
 from django.db import models
 from django.core.cache import cache
+from django.templatetags.static import static
 from apps.core.models import TimeStampedModel
 
 
@@ -159,6 +160,23 @@ class PlatformSettings(TimeStampedModel):
         """Prevent deletion of platform settings."""
         pass  # Do nothing - settings cannot be deleted
 
+    def get_logo_url(self) -> str:
+        """Return the preferred logo URL for public surfaces."""
+        if self.logo:
+            return self.logo.url
+        return static("airads-logo.png")
+
+    def get_favicon_url(self) -> str:
+        """
+        Return the preferred favicon URL.
+
+        We intentionally prefer the platform logo so the browser tab stays aligned
+        with the visible AIRADS branding rather than an older standalone favicon.
+        """
+        if self.logo:
+            return self.logo.url
+        return static("airads-logo.png")
+
     @classmethod
     def get_settings(cls):
         """Get or create the platform settings instance."""
@@ -194,8 +212,8 @@ class PlatformSettings(TimeStampedModel):
             "email": settings.contact_email,
             "phone": settings.contact_phone,
             "address": settings.address,
-            "logoUrl": settings.logo.url if settings.logo else None,
-            "faviconUrl": settings.favicon.url if settings.favicon else None,
+            "logoUrl": settings.get_logo_url(),
+            "faviconUrl": settings.get_favicon_url(),
             "primaryColor": settings.primary_color,
             "secondaryColor": settings.secondary_color,
             "deploymentMode": settings.deployment_mode,

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 280" role="img" aria-labelledby="title desc">
+  <title id="title">African Institute of Research and Development Studies (AIRADS College)</title>
+  <desc id="desc">AIRADS crest with institute wordmark in red and blue.</desc>
+  <style>
+    .headline {
+      fill: #ef2026;
+      font-family: "Bookman Old Style", Bookman, Georgia, "Times New Roman", serif;
+      font-size: 71.1px;
+      font-weight: 700;
+    }
+    .subhead {
+      fill: #0c5aa6;
+      font-family: "Bookman Old Style", Bookman, Georgia, "Times New Roman", serif;
+      font-size: 40.8px;
+      font-weight: 700;
+    }
+    .tagline {
+      fill: #ff0000;
+      font-family: "Bookman Old Style", Bookman, Georgia, "Times New Roman", serif;
+      font-size: 27px;
+      font-weight: 700;
+    }
+  </style>
+
+  <image
+    href="airads-logo.png"
+    x="18"
+    y="28"
+    width="232"
+    height="224"
+    preserveAspectRatio="xMidYMid meet"
+  />
+
+  <text class="headline" x="282" y="120">AFRICAN INSTITUTE</text>
+  <text class="subhead" x="286" y="178">Of Research and Development Studies</text>
+  <text class="tagline" x="720" y="226">(AIRADS COLLEGE)</text>
+</svg>

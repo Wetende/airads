@@ -1,7 +1,6 @@
 import PropTypes from "prop-types";
 import { Link } from "@inertiajs/react";
 import { Box, Stack, Typography } from "@mui/material";
-import { IconSchool } from "@tabler/icons-react";
 
 /**
  * Shared platform logo component used across public/auth/dashboard surfaces.
@@ -16,10 +15,6 @@ export default function PlatformLogo({
     fallbackName = "LMS",
     logoHeight = 40,
     logoMaxWidth = 160,
-    iconContainerSize = 40,
-    iconSize = 24,
-    iconBgColor = "primary.main",
-    iconColor = "white",
     nameVariant = "h6",
     nameColor = "text.primary",
     nameFontWeight = 700,
@@ -30,7 +25,7 @@ export default function PlatformLogo({
     nameSx,
 }) {
     const institutionName = platform?.institutionName || fallbackName;
-    const logoUrl = platform?.logoUrl || "";
+    const logoUrl = platform?.logoUrl || "/static/airads-logo.png";
     const hasLogo = Boolean(logoUrl);
     const shouldShowName =
         showName &&
@@ -51,23 +46,7 @@ export default function PlatformLogo({
                 ...imageSx,
             }}
         />
-    ) : (
-        <Box
-            sx={{
-                width: iconContainerSize,
-                height: iconContainerSize,
-                bgcolor: iconBgColor,
-                borderRadius: 2,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: iconColor,
-                flexShrink: 0,
-            }}
-        >
-            <IconSchool size={iconSize} />
-        </Box>
-    );
+    ) : null;
 
     const content = shouldShowName ? (
         <Stack direction="row" spacing={gap} alignItems="center">
@@ -113,10 +92,6 @@ PlatformLogo.propTypes = {
     fallbackName: PropTypes.string,
     logoHeight: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     logoMaxWidth: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-    iconContainerSize: PropTypes.number,
-    iconSize: PropTypes.number,
-    iconBgColor: PropTypes.string,
-    iconColor: PropTypes.string,
     nameVariant: PropTypes.string,
     nameColor: PropTypes.string,
     nameFontWeight: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
