@@ -42,7 +42,6 @@ static/*
 !static/dist/
 !static/dist/**
 .cache/
-frontend/photos/
 
 # Environment
 .env

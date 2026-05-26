@@ -5,6 +5,8 @@ import { resolve } from "path";
 export default defineConfig(({ command }) => ({
     plugins: [react()],
     root: resolve("./frontend"),
+    // Django static files are the source of truth for site images/logos in production.
+    publicDir: false,
     // Use '/' for dev, '/static/dist/' for production build
     base: command === "serve" ? "/" : "/static/dist/",
     server: {
