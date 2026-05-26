@@ -13,7 +13,7 @@ import {
 import Footer from "../../components/common/AIRADSFooter";
 import MainNavbar from "../../components/common/MainNavbar";
 import TopNavbar from "../../components/common/TopNavbar";
-import { FONT_ARCHIVO, FONT_FIGTREE } from "../../config";
+import { FONT_HEADING, FONT_BODY } from "../../config";
 import { usePublicBrand } from "../../hooks/usePublicBrand";
 import { trainingPathways } from "./schools/pathwayData";
 
@@ -22,7 +22,7 @@ const Schools = () => {
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc", display: "flex", flexDirection: "column" }}>
-      <Head title="Training Pathways - AIRADS College" />
+      <Head title="AIRADS Schools & Courses - AIRADS College" />
       <TopNavbar />
       <MainNavbar />
 
@@ -43,7 +43,7 @@ const Schools = () => {
               sx={{
                 display: "block",
                 color: brand.accent,
-                fontFamily: FONT_FIGTREE,
+                fontFamily: FONT_BODY,
                 fontWeight: 800,
                 letterSpacing: 1.8,
                 mb: 1.5,
@@ -54,7 +54,7 @@ const Schools = () => {
             <Typography
               variant="h1"
               sx={{
-                fontFamily: FONT_ARCHIVO,
+                fontFamily: FONT_HEADING,
                 fontWeight: 900,
                 fontSize: { xs: "2.4rem", md: "4rem" },
                 lineHeight: 1.08,
@@ -63,10 +63,10 @@ const Schools = () => {
                 mb: 3,
               }}
             >
-              AIRADS Training Pathways
+              AIRADS Schools & Courses
             </Typography>
             <Typography variant="h6" sx={{ maxWidth: 760, color: "rgba(255,255,255,0.88)", lineHeight: 1.75, fontWeight: 400 }}>
-              Choose the broader route first, then open the pathway that matches your goal. TVET/CDACC now holds the individual schools, while professional, trade, digital, and driving pathways are easier to find.
+              Choose the AIRADS school or course area that matches your goal. TVET/CDACC now brings the individual schools together, while professional, trade, digital, and driving options remain easy to find.
             </Typography>
           </Container>
         </Box>
@@ -82,11 +82,11 @@ const Schools = () => {
             }}
           >
             <Box>
-              <Typography variant="h3" sx={{ fontFamily: FONT_ARCHIVO, fontWeight: 900, color: brand.secondary, mb: 2, fontSize: { xs: "1.9rem", md: "2.55rem" } }}>
+              <Typography variant="h3" sx={{ fontFamily: FONT_HEADING, fontWeight: 900, color: brand.secondary, mb: 2, fontSize: { xs: "1.9rem", md: "2.55rem" } }}>
                 Find the right starting point
               </Typography>
               <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.85 }}>
-                The old school grid has been reorganized around how students actually search: technical TVET programmes, professional qualifications, trade skills, short courses, computer packages, and driving school.
+                Explore AIRADS schools and course areas the way students actually search: technical TVET programmes, professional qualifications, trade skills, short courses, computer packages, and driving school.
               </Typography>
             </Box>
             <Box sx={{ display: "grid", gap: 1.5 }}>
@@ -129,7 +129,7 @@ const Schools = () => {
                   />
                   <CardContent sx={{ p: 3 }}>
                     <Chip label={pathway.eyebrow} size="small" sx={{ fontWeight: 800, mb: 2 }} />
-                    <Typography variant="h5" sx={{ fontFamily: FONT_ARCHIVO, fontWeight: 900, color: brand.secondary, mb: 1 }}>
+                    <Typography variant="h5" sx={{ fontFamily: FONT_HEADING, fontWeight: 900, color: brand.secondary, mb: 1 }}>
                       {pathway.title}
                     </Typography>
                     <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7, mb: 2 }}>

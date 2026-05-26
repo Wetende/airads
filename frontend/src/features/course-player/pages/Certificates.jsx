@@ -11,7 +11,6 @@ import {
     Stack,
     Typography,
     Alert,
-    Button,
     Chip,
     IconButton,
     Tooltip,
@@ -25,6 +24,7 @@ import {
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/layouts/DashboardLayout";
+import { FONT_BODY } from "@/config";
 
 const fadeIn = {
     initial: { opacity: 0, y: 20 },
@@ -141,7 +141,7 @@ function CertificateCard({ certificate }) {
                                     </Typography>
                                     <Typography
                                         variant="body2"
-                                        fontFamily="monospace"
+                                        fontFamily={FONT_BODY}
                                     >
                                         {certificate.serialNumber || "Pending release"}
                                     </Typography>
@@ -247,7 +247,7 @@ export default function Certificates({ certificates }) {
                     {certificates.length === 0 ? (
                         <motion.div {...fadeIn}>
                             <Alert severity="info" icon={<VerifiedIcon />}>
-                                You haven't earned any certificates yet. Complete a
+                                You haven&apos;t earned any certificates yet. Complete a
                                 program to receive your certificate!
                             </Alert>
                         </motion.div>

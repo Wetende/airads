@@ -28,7 +28,7 @@ import {
   Search as SearchIcon,
 } from "@mui/icons-material";
 import { usePublicBrand } from "../../hooks/usePublicBrand";
-import { FONT_ARCHIVO, FONT_FIGTREE } from "../../config";
+import { FONT_HEADING, FONT_BODY } from "../../config";
 
 const NAV_RADIUS = 1;
 
@@ -64,9 +64,9 @@ const getMenuData = () => ({
     label: "Academics",
     groups: [
       {
-        title: "Training Pathways",
+        title: "AIRADS Schools & Courses",
         items: [
-          { text: "All Training Pathways", href: "/schools/" },
+          { text: "All Schools & Courses", href: "/schools/" },
           { text: "Courses We Offer", href: "/courses/" },
           { text: "TVET/CDACC Courses", href: "/schools/tvet-cdacc-courses/" },
           { text: "KASNEB Courses", href: "/schools/kasneb-courses/" },
@@ -352,7 +352,7 @@ const MainNavbar = () => {
                     color: brand.accent,
                     lineHeight: 1.1,
                     fontSize: { sm: "1rem", md: "1.25rem", lg: "1.4rem" },
-                    fontFamily: FONT_ARCHIVO,
+                    fontFamily: FONT_HEADING,
                     letterSpacing: "0.5px",
                     fontWeight: 600,
                   }}
@@ -364,7 +364,7 @@ const MainNavbar = () => {
                   sx={{
                     color: brand.primary,
                     fontSize: { sm: "0.75rem", md: "0.85rem", lg: "0.95rem" },
-                    fontFamily: FONT_FIGTREE,
+                    fontFamily: FONT_BODY,
                     fontWeight: 400,
                     display: "block",
                   }}

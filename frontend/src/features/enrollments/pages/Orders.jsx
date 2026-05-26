@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import { IconReceipt, IconRefresh } from "@tabler/icons-react";
 import DashboardLayout from "@/layouts/DashboardLayout";
+import { FONT_BODY } from "@/config";
 import {
     getOrders,
     formatAmount,
@@ -136,7 +137,7 @@ export default function Orders() {
                                             onClick={() => router.visit(`/commerce/orders/${order.id}/page/`)}
                                         >
                                             <TableCell>
-                                                <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
+                                                <Typography variant="body2" sx={{ fontFamily: FONT_BODY, fontSize: "0.75rem" }}>
                                                     {order.reference}
                                                 </Typography>
                                             </TableCell>

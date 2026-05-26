@@ -9,7 +9,7 @@ import {
   IconFileInvoice,
 } from '@tabler/icons-react';
 import { usePublicBrand } from '../../hooks/usePublicBrand';
-import { FONT_ARCHIVO, FONT_FIGTREE } from '../../config';
+import { FONT_HEADING, FONT_BODY } from '../../config';
 
 const quickLinks = [
   { icon: IconSchool, label: 'Programmes', href: '/admissions/career-guide/' },
@@ -66,7 +66,7 @@ const QuickLinksAdmissionSection = () => {
                 variant="h4"
                 component="h2"
                 sx={{
-                  fontFamily: FONT_ARCHIVO,
+                  fontFamily: FONT_HEADING,
                   fontWeight: 800,
                   color: brand.accent,
                   fontSize: { xs: '2rem', md: '2.65rem' },
@@ -84,7 +84,7 @@ const QuickLinksAdmissionSection = () => {
                   mb: 5,
                   maxWidth: 620,
                   lineHeight: 1.7,
-                  fontFamily: FONT_FIGTREE,
+                  fontFamily: FONT_BODY,
                   fontSize: { xs: '1rem', md: '1.05rem' },
                 }}
               >
@@ -140,7 +140,7 @@ const QuickLinksAdmissionSection = () => {
                       <Typography
                         sx={{
                           color: brand.accent,
-                          fontFamily: FONT_FIGTREE,
+                          fontFamily: FONT_BODY,
                           fontWeight: 500,
                           fontSize: { xs: '1rem', md: '1.06rem' },
                           letterSpacing: 0.1,
@@ -217,7 +217,7 @@ const QuickLinksAdmissionSection = () => {
                 variant="h3"
                 component="h2"
                 sx={{
-                  fontFamily: FONT_ARCHIVO,
+                  fontFamily: FONT_HEADING,
                   fontWeight: 800,
                   fontSize: { xs: '1.95rem', sm: '2.45rem', md: '3rem' },
                   lineHeight: 1.05,

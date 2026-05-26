@@ -1,4 +1,3 @@
-import React from 'react';
 import { FaWhatsapp, FaFacebook, FaTiktok } from 'react-icons/fa';
 import {
   AccessTime,
@@ -16,7 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { usePublicBrand } from '../../hooks/usePublicBrand';
-import { FONT_ARCHIVO, FONT_FIGTREE } from '../../config';
+import { FONT_HEADING, FONT_BODY } from '../../config';
 
 const footerColumns = [
   {
@@ -24,7 +23,7 @@ const footerColumns = [
     links: [
       { label: 'About AIRADS', href: '/about/' },
       { label: 'Courses We Offer', href: '/courses/' },
-      { label: 'Training Pathways', href: '/schools/' },
+      { label: 'AIRADS Schools & Courses', href: '/schools/' },
       { label: 'Admissions', href: '/admissions/' },
       { label: 'How to Apply', href: '/admissions/procedure/' },
       { label: 'Contact Us', href: '/contact/' },
@@ -63,13 +62,18 @@ const socialLinks = [
   { label: 'WhatsApp', href: 'https://wa.me/254723555999', Icon: FaWhatsapp },
 ];
 
-const FooterHeading = ({ children, brand }) => (
+const regulatoryLinks = [
+  { label: 'TVETA', href: 'https://tveta.go.ke' },
+  { label: 'CDACC', href: 'https://tvetcdacc.go.ke/' },
+];
+
+const FooterHeading = ({ children }) => (
   <Box sx={{ mb: 2.1 }}>
     <Typography
       component="h3"
       sx={{
         color: 'white',
-        fontFamily: FONT_ARCHIVO,
+        fontFamily: FONT_HEADING,
         fontWeight: 800,
         fontSize: '1rem',
         textTransform: 'uppercase',
@@ -86,7 +90,7 @@ const FooterLink = ({ item }) => {
   const commonSx = {
     display: 'block',
     color: 'rgba(255,255,255,0.86)',
-    fontFamily: FONT_FIGTREE,
+    fontFamily: FONT_BODY,
     fontSize: '0.95rem',
     lineHeight: 1.45,
     textDecoration: 'none',
@@ -136,11 +140,11 @@ const Footer = () => {
                 borderRight: { lg: `1px solid ${brand.secondary}` },
               }}
             >
-              <FooterHeading brand={brand}>AIRADS College</FooterHeading>
+              <FooterHeading>AIRADS College</FooterHeading>
               <Typography
                 sx={{
                   color: 'rgba(255,255,255,0.88)',
-                  fontFamily: FONT_FIGTREE,
+                  fontFamily: FONT_BODY,
                   fontSize: '0.95rem',
                   lineHeight: 1.65,
                   mb: 2,
@@ -184,7 +188,7 @@ const Footer = () => {
               <Box sx={{ mt: 2.4 }}>
                 <Typography
                   sx={{
-                    fontFamily: FONT_ARCHIVO,
+                    fontFamily: FONT_HEADING,
                     fontWeight: 800,
                     fontSize: '0.82rem',
                     textTransform: 'uppercase',
@@ -219,6 +223,44 @@ const Footer = () => {
                   ))}
                 </Box>
               </Box>
+
+              <Box sx={{ mt: 2.4 }}>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_HEADING,
+                    fontWeight: 800,
+                    fontSize: '0.82rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.8,
+                    mb: 1.1,
+                  }}
+                >
+                  Regulatory Links
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.35 }}>
+                  {regulatoryLinks.map((item) => (
+                    <MuiLink
+                      key={item.label}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{
+                        color: 'rgba(255,255,255,0.86)',
+                        fontFamily: FONT_BODY,
+                        fontSize: '0.92rem',
+                        lineHeight: 1.45,
+                        textDecoration: 'none',
+                        '&:hover': {
+                          color: 'white',
+                          textDecoration: 'underline',
+                        },
+                      }}
+                    >
+                      {item.label}
+                    </MuiLink>
+                  ))}
+                </Box>
+              </Box>
             </Grid>
 
             {footerColumns.map((column) => (
@@ -235,7 +277,7 @@ const Footer = () => {
                   },
                 }}
               >
-                <FooterHeading brand={brand}>{column.title}</FooterHeading>
+                <FooterHeading>{column.title}</FooterHeading>
                 <Box component="nav" aria-label={column.title}>
                   {column.links.map((item) => (
                     <FooterLink key={item.label} item={item} />

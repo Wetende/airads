@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { router } from "@inertiajs/react";
+import { useState } from "react";
 import {
     Box,
     Typography,
@@ -19,7 +18,6 @@ import {
     Snackbar,
     Alert,
     FormHelperText,
-    Chip,
     Divider,
     IconButton,
     Collapse,
@@ -37,11 +35,11 @@ import GamificationSettings from "../components/GamificationSettings";
 import CodeMirror from "@uiw/react-codemirror";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
 import { html } from "@codemirror/lang-html";
-import { css } from "@codemirror/lang-css";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { java } from "@codemirror/lang-java";
 import { cpp } from "@codemirror/lang-cpp";
+import { FONT_BODY } from "@/config";
 
 /**
  * Language configuration map — defines display name, CodeMirror extension,
@@ -55,7 +53,7 @@ const LANGUAGE_CONFIG = {
 <html>
 <head>
     <style>
-        body { font-family: sans-serif; padding: 2rem; }
+        body { font-family: ${FONT_BODY}; padding: 2rem; }
         h1 { color: #1976d2; }
     </style>
 </head>
@@ -126,9 +124,7 @@ export default function CodeLabEditor({ node, onSave, blueprint }) {
     const [solutionCode, setSolutionCode] = useState(
         node.properties?.solution_code || "",
     );
-    const [instructions, setInstructions] = useState(
-        node.properties?.instructions || "",
-    );
+    const instructions = node.properties?.instructions || "";
     const [allowReset, setAllowReset] = useState(
         node.properties?.allow_reset !== false,
     );

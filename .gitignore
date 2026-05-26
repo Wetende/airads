@@ -37,8 +37,12 @@ htmlcov/
 # Node
 node_modules/
 dist/
-static/
+static/*
+!static/.gitkeep
+!static/dist/
+!static/dist/**
 .cache/
+frontend/photos/
 
 # Environment
 .env

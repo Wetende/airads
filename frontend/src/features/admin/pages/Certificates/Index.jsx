@@ -37,6 +37,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
+import { FONT_BODY } from '@/config';
 
 function StatCard({ title, value, icon: Icon, color = 'primary' }) {
   return (
@@ -254,7 +255,7 @@ export default function CertificatesIndex({ certificates = [], stats = {} }) {
                   filteredCertificates.map((cert) => (
                     <TableRow key={cert.id} hover>
                       <TableCell>
-                        <Typography variant="body2" fontFamily="monospace">
+                        <Typography variant="body2" fontFamily={FONT_BODY}>
                           {cert.serialNumber}
                         </Typography>
                       </TableCell>

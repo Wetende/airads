@@ -27,11 +27,11 @@ import DOMPurify from "dompurify";
 import CodeMirror from "@uiw/react-codemirror";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
 import { html } from "@codemirror/lang-html";
-import { css } from "@codemirror/lang-css";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { java } from "@codemirror/lang-java";
 import { cpp } from "@codemirror/lang-cpp";
+import { FONT_BODY } from "@/config";
 
 /**
  * Language → CodeMirror extension mapping.
@@ -100,7 +100,7 @@ const buildIframeSrcdoc = (code, language) => {
 <html>
 <head>
 <style>
-    body { font-family: monospace; padding: 1rem; background: #1e1e1e; color: #d4d4d4; white-space: pre-wrap; }
+    body { font-family: ${FONT_BODY}; padding: 1rem; background: #1e1e1e; color: #d4d4d4; white-space: pre-wrap; }
 </style>
 <script>
 (function() {
@@ -139,7 +139,7 @@ ${code}
     return `<!DOCTYPE html>
 <html>
 <head><style>
-body { font-family: sans-serif; padding: 2rem; text-align: center; color: #888; background: #1e1e1e; }
+body { font-family: ${FONT_BODY}; padding: 2rem; text-align: center; color: #888; background: #1e1e1e; }
 h2 { color: #ccc; }
 </style></head>
 <body>
@@ -266,7 +266,7 @@ const CodeLabRenderer = ({ node, enrollmentId, onComplete }) => {
     // Build srcdoc
     const srcdoc = useMemo(
         () => buildIframeSrcdoc(code, language),
-        [code, language, iframeKey],
+        [code, language],
     );
 
     // Decide if preview is browser-runnable
@@ -385,7 +385,7 @@ const CodeLabRenderer = ({ node, enrollmentId, onComplete }) => {
                 </Stack>
                 {!hasRun && (
                     <Typography variant="caption" color="text.disabled">
-                        Click "Run" to see output
+                        Click &quot;Run&quot; to see output
                     </Typography>
                 )}
             </Stack>
@@ -500,7 +500,7 @@ const CodeLabRenderer = ({ node, enrollmentId, onComplete }) => {
                                 sx={{
                                     px: 1.5,
                                     py: 0.25,
-                                    fontFamily: "monospace",
+                                    fontFamily: FONT_BODY,
                                     fontSize: "0.75rem",
                                     color:
                                         entry.level === "error"
@@ -555,7 +555,7 @@ const CodeLabRenderer = ({ node, enrollmentId, onComplete }) => {
                             bgcolor: "action.hover",
                             px: 0.5,
                             borderRadius: 0.5,
-                            fontFamily: "monospace",
+                            fontFamily: FONT_BODY,
                             fontSize: "0.9em",
                         },
                     }}

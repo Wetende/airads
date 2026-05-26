@@ -1,4 +1,3 @@
-import React from 'react';
 import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper } from "@mui/material";
 import { EmojiEvents, School, Public } from "@mui/icons-material";
@@ -79,7 +78,7 @@ const About = () => {
                 <Box sx={{ textAlign: 'center' }}>
                   <EmojiEvents sx={{ fontSize: 64, color: brand.primary, mb: 2 }} />
                   <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: brand.secondary }}>Excellence</Typography>
-                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>90-100% pass rate for 18 years consistently</Typography>
+                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>90-100% pass rate for 20 years consistently</Typography>
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
@@ -93,7 +92,7 @@ const About = () => {
                 <Box sx={{ textAlign: 'center' }}>
                   <Public sx={{ fontSize: 64, color: brand.primary, mb: 2 }} />
                   <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: brand.secondary }}>Accessibility</Typography>
-                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>7 campuses across Kenya</Typography>
+                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>7 campuses across Kenya plus a virtual campus</Typography>
                 </Box>
               </Grid>
             </Grid>

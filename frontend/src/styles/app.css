@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --font-heading: "Bookman Old Style", BookmanOldStyle, Bookman, Georgia, serif;
+    --font-body: "Figtree", sans-serif;
+}
+
 /* Base styles */
 * {
     box-sizing: border-box;
@@ -12,9 +17,18 @@
 html,
 body {
     height: 100%;
-    font-family: "Figtree", sans-serif;
+    font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-heading);
 }
 
 #app {

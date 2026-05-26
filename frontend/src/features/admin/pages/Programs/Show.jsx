@@ -40,6 +40,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
 import DashboardLayout from '@/layouts/DashboardLayout';
+import { FONT_BODY } from '@/config';
 import { useState } from 'react';
 
 export default function ProgramShow({ program, stats, instructors = [], readiness = {} }) {
@@ -262,7 +263,7 @@ export default function ProgramShow({ program, stats, instructors = [], readines
                                   <Typography variant="caption" color="text.secondary" display="block">
                                     Program Code
                                   </Typography>
-                                  <Typography variant="body1" fontFamily="monospace">
+                                  <Typography variant="body1" fontFamily={FONT_BODY}>
                                     {program.code || '-'}
                                   </Typography>
                                 </Box>

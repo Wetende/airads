@@ -1,6 +1,5 @@
-import React from 'react';
 import { Head } from "@inertiajs/react";
-import { Box, Container, Typography, Grid, Paper, Card, CardContent } from "@mui/material";
+import { Box, Container, Typography, Grid, Paper } from "@mui/material";
 import {
   School, Verified, LocalHospital, Assignment, Assessment,
   EventNote, Star, EmojiEvents, Public, Computer, Museum, LocationCity, AccountBalance, RocketLaunch
@@ -9,6 +8,7 @@ import TopNavbar from "../../components/common/TopNavbar";
 import MainNavbar from "../../components/common/MainNavbar";
 import Footer from "../../components/common/AIRADSFooter";
 import { usePublicBrand } from "../../hooks/usePublicBrand";
+import { FONT_BODY } from "../../config";
 
 const History = () => {
   const brand = usePublicBrand();
@@ -104,7 +104,7 @@ const History = () => {
               Our History
             </Typography>
             <Typography variant="h5" sx={{ color: brand.softBlue, maxWidth: 800, mx: 'auto', fontWeight: 300, lineHeight: 1.8 }}>
-              <Box component="span" sx={{ fontWeight: 600, color: 'white' }}>18 Years</Box> of Excellence in Technical Education and
+              <Box component="span" sx={{ fontWeight: 600, color: 'white' }}>20 Years</Box> of Excellence in Technical Education and
               <Box component="span" sx={{ fontWeight: 600, color: 'white' }}> Innovation</Box>
             </Typography>
             <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center', gap: 2 }}>
@@ -155,7 +155,7 @@ const History = () => {
                       <Box sx={{ width: 64, height: 64, bgcolor: brand.secondary, borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', mb: 3, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.15)', p: 2 }}>
                         <Star fontSize="large" />
                       </Box>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: brand.secondary, mb: 1 }}>18 Years</Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700, color: brand.secondary, mb: 1 }}>20 Years</Typography>
                       <Typography variant="h6" sx={{ color: brand.mutedText, fontWeight: 500 }}>Of Excellence</Typography>
                     </Paper>
                   </Grid>
@@ -214,7 +214,7 @@ const History = () => {
                   </Grid>
                   <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 4, p: 4, maxWidth: 900, mx: 'auto', backdropFilter: 'blur(8px)' }}>
                     <Typography variant="h6" sx={{ color: brand.softBlue, fontStyle: 'italic', lineHeight: 1.8, fontWeight: 400 }}>
-                      "AIRADS College is proud of you graduands. The real ambassadors of African Institute of Research and Development Studies."
+                      AIRADS College is proud of you graduands. The real ambassadors of African Institute of Research and Development Studies.
                     </Typography>
                   </Box>
                 </Box>
@@ -268,7 +268,7 @@ const History = () => {
                         {reg.title}
                       </Typography>
                       <Box sx={{ bgcolor: 'rgba(255,255,255,0.5)', borderRadius: 3, p: 2 }}>
-                        <Typography variant="body2" sx={{ color: brand.mutedText, fontFamily: 'monospace', fontWeight: 600 }}>
+                        <Typography variant="body2" sx={{ color: brand.mutedText, fontFamily: FONT_BODY, fontWeight: 600 }}>
                           {reg.registration}
                         </Typography>
                       </Box>

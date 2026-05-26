@@ -18,8 +18,6 @@ const TopNavbar = () => {
 
   const quickLinks = [
     { text: "Online Admissions", href: "/admissions/apply/" },
-    { text: "TVETA", href: "https://tveta.go.ke", external: true },
-    { text: "CDACC", href: "https://tvetcdacc.go.ke/", external: true },
     { text: "Staff Mail", href: "mailto:staff@airads.ac.ke" },
     { text: "Student Portal", href: "/students/" },
     { text: "Career", href: "/admissions/career-guide/" },

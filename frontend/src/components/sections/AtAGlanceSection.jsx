@@ -40,7 +40,7 @@ function AboutPanel({ brand }) {
           variant="h5"
           sx={{ color: brand.primary, fontWeight: 700, mb: 3 }}
         >
-          AIRADS at a Glance
+          Fundamental Statements
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
@@ -114,7 +114,7 @@ function AboutPanel({ brand }) {
 
 function HowToApplyPanel({ brand }) {
   const steps = [
-    'Visit any of our 8 campuses or apply online',
+    'Visit any of our 7 campuses or apply online',
     'Fill in the application form',
     'Submit your documents (ID, KCSE Certificate)',
     'Pay the required fees',

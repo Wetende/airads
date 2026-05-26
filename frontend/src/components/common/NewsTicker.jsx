@@ -10,7 +10,7 @@ import { usePublicBrand } from '../../hooks/usePublicBrand';
 
 const updates = [
   "JANUARY 2026 INTAKE ONGOING — Apply Now!",
-  "KNEC Exams Results: 90-100% Pass Rate — 18 Years Consistent Excellence",
+  "KNEC Exams Results: 90-100% Pass Rate — 20 Years Consistent Excellence",
   "NITA Short Courses Available — Enroll Today",
   "Industrial Attachment Placements Open for All Students",
   "Virtual Campus Now Open — Study from Anywhere",

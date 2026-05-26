@@ -2,7 +2,7 @@
 import { Box, Container, Typography, Card, CardActionArea, CardMedia } from '@mui/material';
 import { Link } from '@inertiajs/react';
 import { IconBuildingBank } from '@tabler/icons-react';
-import { FONT_ARCHIVO, FONT_FIGTREE } from '../../config';
+import { FONT_HEADING, FONT_BODY } from '../../config';
 import { usePublicBrand } from '../../hooks/usePublicBrand';
 import { trainingPathways } from '../../pages/public/schools/pathwayData';
 
@@ -80,7 +80,7 @@ const TrainingPathwayCard = ({ pathway, brand }) => (
             variant="subtitle1"
             sx={{
               color: 'white',
-              fontFamily: FONT_ARCHIVO,
+              fontFamily: FONT_HEADING,
               fontWeight: 700,
               textAlign: 'center',
               fontSize: { xs: '0.98rem', sm: '1.08rem' },
@@ -104,7 +104,7 @@ const TrainingPathwayCard = ({ pathway, brand }) => (
             variant="body2"
             sx={{
               color: 'rgba(255,255,255,0.88)',
-              fontFamily: FONT_FIGTREE,
+              fontFamily: FONT_BODY,
               textAlign: 'center',
               fontSize: '0.76rem',
               lineHeight: 1.45,
@@ -127,7 +127,7 @@ const TrainingPathwayCard = ({ pathway, brand }) => (
             borderRadius: 999,
             bgcolor: brand.primary,
             color: 'white',
-            fontFamily: FONT_ARCHIVO,
+            fontFamily: FONT_HEADING,
             fontWeight: 800,
             fontSize: '0.88rem',
             lineHeight: 1,
@@ -221,7 +221,7 @@ const SchoolsGridSection = () => {
             variant="h4"
             component="h2"
             sx={{
-              fontFamily: FONT_ARCHIVO,
+              fontFamily: FONT_HEADING,
               fontWeight: 800,
               fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.95rem' },
               color: 'text.primary',
@@ -229,7 +229,7 @@ const SchoolsGridSection = () => {
               letterSpacing: 0.8,
             }}
           >
-            AIRADS TRAINING PATHWAYS
+            AIRADS SCHOOLS & COURSES
           </Typography>
         </Box>
 

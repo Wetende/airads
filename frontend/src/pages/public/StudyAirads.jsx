@@ -1,4 +1,3 @@
-import React from 'react';
 import { Head } from '@inertiajs/react';
 import { Box, Container, Typography, Grid, Paper } from '@mui/material';
 import { Build, Map, Lightbulb, CheckCircle } from '@mui/icons-material';
@@ -32,7 +31,7 @@ const StudyAirads = () => {
               The Leading TVET Institution in Kenya
             </Typography>
             <Typography variant="h6" sx={{ color: brand.mutedText, lineHeight: 1.8, maxWidth: 1000, mx: 'auto', fontWeight: 400 }}>
-              AIRADS College is proud to be one of Kenya's top TVET-accredited institutions, with six campuses strategically located across the country. We are dedicated to delivering Competency-Based Education and Training (CBET) in alignment with Kenya Vision 2030, equipping learners with practical skills for the modern workforce.
+              AIRADS College is proud to be one of Kenya&apos;s top TVET-accredited institutions, with 7 physical campuses strategically located across the country and a virtual campus for flexible learning. We are dedicated to delivering Competency-Based Education and Training (CBET) in alignment with Kenya Vision 2030, equipping learners with practical skills for the modern workforce.
             </Typography>
           </Box>
 
@@ -56,7 +55,7 @@ const StudyAirads = () => {
                   <Typography variant="h5" sx={{ fontWeight: 700, color: brand.secondary }}>National Presence</Typography>
                 </Box>
                 <Typography variant="body1" sx={{ color: brand.mutedText, lineHeight: 1.7 }}>
-                  With campuses in major towns, AIRADS offers access to quality education wherever you are.
+                  With 7 campuses in major towns and a virtual campus, AIRADS offers access to quality education wherever you are.
                 </Typography>
               </Paper>
             </Grid>
@@ -79,7 +78,7 @@ const StudyAirads = () => {
               Why Choose AIRADS College?
             </Typography>
             <Typography variant="h6" sx={{ color: brand.mutedText, mb: 6, fontWeight: 400 }}>
-              At African Institute of Research and Development Studies (AIRADS), we are committed to delivering world-class technical and professional education. Here's why thousands of students choose us:
+              At African Institute of Research and Development Studies (AIRADS), we are committed to delivering world-class technical and professional education. Here&apos;s why thousands of students choose us:
             </Typography>
             
             <Grid container spacing={6}>
@@ -88,7 +87,7 @@ const StudyAirads = () => {
                   <CheckCircle sx={{ fontSize: 32, color: '#22c55e', mr: 2, flexShrink: 0, mt: 0.5 }} />
                   <Box>
                     <Typography variant="h5" sx={{ fontWeight: 600, color: brand.neutralText, mb: 1 }}>Outstanding Exam Success</Typography>
-                    <Typography variant="body1" sx={{ color: brand.mutedText, lineHeight: 1.7 }}>We consistently achieve excellent pass rates (90-100%) in KNEC, NITA, ICM, and KASNEB examinations — a track record we've maintained for over 18 years.</Typography>
+                    <Typography variant="body1" sx={{ color: brand.mutedText, lineHeight: 1.7 }}>We consistently achieve excellent pass rates (90-100%) in KNEC, NITA, ICM, and KASNEB examinations — a track record we&apos;ve maintained for over 20 years.</Typography>
                   </Box>
                 </Box>
               </Grid>

@@ -2,7 +2,7 @@ import { Box, Typography, Stack } from '@mui/material';
 import { Link } from '@inertiajs/react';
 import { IconNotebook, IconNews, IconCalendarEvent } from '@tabler/icons-react';
 import { usePublicBrand } from '../../hooks/usePublicBrand';
-import { FONT_ARCHIVO, FONT_FIGTREE } from '../../config';
+import { FONT_HEADING, FONT_BODY } from '../../config';
 
 const notices = [
   {
@@ -143,7 +143,7 @@ const NoticesNewsSection = () => {
                 <Typography
                   variant="h5"
                   sx={{
-                    fontFamily: FONT_ARCHIVO,
+                    fontFamily: FONT_HEADING,
                     fontWeight: 800,
                     fontSize: { xs: '1.35rem', md: '1.8rem' },
                   }}
@@ -183,7 +183,7 @@ const NoticesNewsSection = () => {
                     <Typography
                       sx={{
                         color: '#404040',
-                        fontFamily: FONT_FIGTREE,
+                        fontFamily: FONT_BODY,
                         fontSize: { xs: '1.02rem', md: '1.08rem' },
                         fontWeight: 700,
                         lineHeight: 1.35,
@@ -196,7 +196,7 @@ const NoticesNewsSection = () => {
                       <IconCalendarEvent size={16} stroke={1.7} />
                       <Typography
                         sx={{
-                          fontFamily: FONT_ARCHIVO,
+                          fontFamily: FONT_HEADING,
                           fontSize: '0.92rem',
                           fontWeight: 700,
                           letterSpacing: 0.8,
@@ -235,7 +235,7 @@ const NoticesNewsSection = () => {
                 <Typography
                   variant="h5"
                   sx={{
-                    fontFamily: FONT_ARCHIVO,
+                    fontFamily: FONT_HEADING,
                     fontWeight: 800,
                     fontSize: { xs: '1.3rem', md: '1.75rem' },
                     color: brand.primary,
@@ -286,7 +286,7 @@ const NoticesNewsSection = () => {
                       <Typography
                         sx={{
                           color: '#9ca3af',
-                          fontFamily: FONT_ARCHIVO,
+                          fontFamily: FONT_HEADING,
                           fontSize: '0.98rem',
                           fontWeight: 700,
                           letterSpacing: 0.6,
@@ -298,7 +298,7 @@ const NoticesNewsSection = () => {
                       <Typography
                         sx={{
                           color: '#3f3f46',
-                          fontFamily: FONT_FIGTREE,
+                          fontFamily: FONT_BODY,
                           fontSize: { xs: '1rem', md: '1.06rem' },
                           fontWeight: 700,
                           lineHeight: 1.35,

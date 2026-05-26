@@ -19,6 +19,7 @@ import {
     Undo,
     Redo,
 } from "@mui/icons-material";
+import { FONT_BODY } from "@/config";
 
 const MenuButton = ({ onClick, active, disabled, icon, title }) => (
     <Tooltip title={title} arrow>
@@ -271,7 +272,7 @@ export default function RichTextEditorImpl({
                                     : "grey.100",
                             padding: "0.1em 0.3em",
                             borderRadius: "3px",
-                            fontFamily: "monospace",
+                            fontFamily: FONT_BODY,
                             color:
                                 theme.palette.mode === "dark"
                                     ? "secondary.main"

@@ -6,13 +6,13 @@ import {
   ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import { usePublicBrand } from '../../hooks/usePublicBrand';
-import { FONT_ARCHIVO } from '../../config';
+import { FONT_HEADING } from '../../config';
 
 const slides = [
   {
     image: '/static/63.JPG',
     title: 'Centre of Excellence',
-    subtitle: '18 Years of Consistent KNEC Excellence',
+    subtitle: '20 Years of Consistent KNEC Excellence',
     description: 'AIRADS College — A Centre of Excellence with 90-100% pass rate in KNEC, NITA, ICM & KASNEB Exams.',
     cta: { text: 'Read More', href: '/about/' },
   },
@@ -32,9 +32,9 @@ const slides = [
   },
   {
     image: '/static/7.1.JPG',
-    title: '8 Campuses Nationwide',
+    title: '7 Campuses Nationwide',
     subtitle: 'Bringing Education Closer to You',
-    description: 'Study at Bungoma, Kericho, Eldoret, Kisumu, Nakuru, Lodwar, Maralal or our Virtual Campus.',
+    description: 'Study at our 7 campuses in Bungoma, Kericho, Eldoret, Kisumu, Nakuru, Lodwar, and Maralal, or learn through our Virtual Campus.',
     cta: { text: 'Our Campuses', href: '/campuses/bungoma/' },
   },
 ];
@@ -114,7 +114,7 @@ const HeroSection = () => {
             variant="h2"
             component="h2"
             sx={{
-              fontFamily: FONT_ARCHIVO,
+              fontFamily: FONT_HEADING,
               fontWeight: 700,
               fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem', lg: '3.5rem' },
               lineHeight: 1.15,

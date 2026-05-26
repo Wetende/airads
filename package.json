@@ -28,7 +28,6 @@
     "@emotion/cache": "11.14.0",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
-    "@fontsource/archivo": "^5.2.8",
     "@fontsource/figtree": "^5.2.10",
     "@fontsource/roboto": "^5.2.8",
     "@inertiajs/react": "^2.3.10",

@@ -21,7 +21,7 @@ import {
 import Footer from "../../../components/common/AIRADSFooter";
 import MainNavbar from "../../../components/common/MainNavbar";
 import TopNavbar from "../../../components/common/TopNavbar";
-import { FONT_ARCHIVO, FONT_FIGTREE } from "../../../config";
+import { FONT_HEADING, FONT_BODY } from "../../../config";
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
 
 const applyHref = "/admissions/procedure/";
@@ -32,7 +32,7 @@ const DetailCard = ({ item }) => {
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2, flexWrap: "wrap", rowGap: 1 }}>
         <Chip label={item.meta} size="small" sx={{ fontWeight: 700 }} />
       </Stack>
-      <Typography variant="h6" sx={{ fontFamily: FONT_ARCHIVO, fontWeight: 800, mb: 1 }}>
+      <Typography variant="h6" sx={{ fontFamily: FONT_HEADING, fontWeight: 800, mb: 1 }}>
         {item.title}
       </Typography>
       <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7, flexGrow: 1 }}>
@@ -89,7 +89,7 @@ const SchoolCard = ({ school }) => (
         />
       </Box>
       <CardContent sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ fontFamily: FONT_ARCHIVO, fontWeight: 800, mb: 1 }}>
+        <Typography variant="h6" sx={{ fontFamily: FONT_HEADING, fontWeight: 800, mb: 1 }}>
           {school.title}
         </Typography>
         <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7, mb: 2 }}>
@@ -136,7 +136,7 @@ const PathwayPageLayout = ({ page }) => {
               sx={{
                 display: "block",
                 mb: 1.5,
-                fontFamily: FONT_FIGTREE,
+                fontFamily: FONT_BODY,
                 fontWeight: 800,
                 letterSpacing: 1.8,
                 color: brand.accent,
@@ -147,7 +147,7 @@ const PathwayPageLayout = ({ page }) => {
             <Typography
               variant="h1"
               sx={{
-                fontFamily: FONT_ARCHIVO,
+                fontFamily: FONT_HEADING,
                 fontSize: { xs: "2.45rem", md: "4rem" },
                 fontWeight: 900,
                 lineHeight: 1.05,
@@ -179,7 +179,7 @@ const PathwayPageLayout = ({ page }) => {
               <Typography
                 variant="h3"
                 sx={{
-                  fontFamily: FONT_ARCHIVO,
+                  fontFamily: FONT_HEADING,
                   fontWeight: 900,
                   fontSize: { xs: "1.8rem", md: "2.5rem" },
                   color: brand.secondary,
@@ -213,7 +213,7 @@ const PathwayPageLayout = ({ page }) => {
             <Typography
               variant="h4"
               sx={{
-                fontFamily: FONT_ARCHIVO,
+                fontFamily: FONT_HEADING,
                 fontWeight: 900,
                 color: brand.secondary,
                 mb: 1,
@@ -245,7 +245,7 @@ const PathwayPageLayout = ({ page }) => {
                 <Typography
                   variant="h4"
                   sx={{
-                    fontFamily: FONT_ARCHIVO,
+                    fontFamily: FONT_HEADING,
                     fontWeight: 900,
                     color: brand.secondary,
                     mb: 1,
@@ -280,7 +280,7 @@ const PathwayPageLayout = ({ page }) => {
               mb: { xs: 6, md: 8 },
             }}
           >
-            <Typography variant="h5" sx={{ fontFamily: FONT_ARCHIVO, fontWeight: 900, color: brand.secondary, mb: 3 }}>
+            <Typography variant="h5" sx={{ fontFamily: FONT_HEADING, fontWeight: 900, color: brand.secondary, mb: 3 }}>
               {page.outcomesTitle}
             </Typography>
             <Box
@@ -312,7 +312,7 @@ const PathwayPageLayout = ({ page }) => {
             }}
           >
             <Box>
-              <Typography variant="h4" sx={{ fontFamily: FONT_ARCHIVO, fontWeight: 900, mb: 1.5 }}>
+              <Typography variant="h4" sx={{ fontFamily: FONT_HEADING, fontWeight: 900, mb: 1.5 }}>
                 {page.ctaTitle}
               </Typography>
               <Typography sx={{ color: "rgba(255,255,255,0.86)", lineHeight: 1.7, maxWidth: 760 }}>

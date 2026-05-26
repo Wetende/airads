@@ -1,14 +1,14 @@
 // Font imports
-import "@fontsource/archivo/600.css";
-import "@fontsource/archivo/700.css";
 import "@fontsource/figtree/400.css";
 import "@fontsource/figtree/500.css";
 import "@fontsource/figtree/600.css";
 import "@fontsource/figtree/700.css";
 
 // Font family constants
-export const FONT_ARCHIVO = "Archivo, sans-serif";
-export const FONT_FIGTREE = "Figtree, sans-serif";
+export const FONT_BOOKMAN_OLD_STYLE =
+    '"Bookman Old Style", BookmanOldStyle, Bookman, Georgia, serif';
+export const FONT_HEADING = FONT_BOOKMAN_OLD_STYLE;
+export const FONT_BODY = "Figtree, sans-serif";
 
 // Default configuration
 export const defaultConfig = {

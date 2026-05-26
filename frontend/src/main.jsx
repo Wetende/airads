@@ -5,7 +5,7 @@ import NProgress from "nprogress";
 import { router } from "@inertiajs/react";
 import ProviderWrapper from "@/app/ProviderWrapper";
 import PlatformBranding from "@/components/PlatformBranding";
-import "@/config"; // Load fonts
+import { FONT_BODY, FONT_HEADING } from "@/config";
 import "./styles/app.css";
 import "nprogress/nprogress.css";
 
@@ -187,8 +187,8 @@ const appElement = document.getElementById("app");
 if (appElement && !appElement.dataset.page) {
     // If the element exists but has no data-page, we are likely hitting the Vite dev server directly.
     appElement.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:system-ui,sans-serif;background-color:#f9fafb;color:#111827;text-align:center;padding:2rem;">
-            <h1 style="font-size:1.5rem;font-weight:bold;margin-bottom:1rem;color:#ef4444;">Vite Dev Server Running</h1>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:${FONT_BODY};background-color:#f9fafb;color:#111827;text-align:center;padding:2rem;">
+            <h1 style="font-family:${FONT_HEADING};font-size:1.5rem;font-weight:bold;margin-bottom:1rem;color:#ef4444;">Vite Dev Server Running</h1>
             <p style="margin-bottom:1.5rem;max-width:28rem;">You are viewing the Vite development server directly. Inertia.js requires the application to be served through the Django backend to provide initial page data.</p>
             <a href="http://127.0.0.1:8000" style="background-color:#10b981;color:white;padding:0.5rem 1rem;border-radius:0.375rem;text-decoration:none;font-weight:500;">Go to Django Application (Port 8000)</a>
         </div>

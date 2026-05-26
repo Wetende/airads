@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { Box, Container, Grid, Typography, Button, Paper } from '@mui/material';
-import { WhatsApp, Phone, Language, School, Public, BusinessCenter, Place } from '@mui/icons-material';
+import { Phone, Language, School, Public, BusinessCenter, Place } from '@mui/icons-material';
 import { usePublicBrand } from '../../hooks/usePublicBrand';
-import { FONT_ARCHIVO, FONT_FIGTREE } from '../../config';
+import { FONT_HEADING, FONT_BODY } from '../../config';
 
 const WhyJoinLifeCard = ({ item, brand }) => (
   <Box
@@ -85,7 +85,7 @@ const WhyJoinLifeCard = ({ item, brand }) => (
       <Typography
         variant="h5"
         sx={{
-          fontFamily: FONT_ARCHIVO,
+          fontFamily: FONT_HEADING,
           fontWeight: 800,
           fontSize: { xs: '1.25rem', md: '1.5rem' },
           lineHeight: 1.2,
@@ -97,7 +97,7 @@ const WhyJoinLifeCard = ({ item, brand }) => (
       </Typography>
       <Typography
         sx={{
-          fontFamily: FONT_FIGTREE,
+          fontFamily: FONT_BODY,
           fontSize: { xs: '0.95rem', md: '1rem' },
           lineHeight: 1.55,
           color: 'rgba(255,255,255,0.92)',
@@ -114,7 +114,7 @@ const WhyJoinLifeCard = ({ item, brand }) => (
         sx={{
           bgcolor: 'white',
           color: brand.accent,
-          fontFamily: FONT_ARCHIVO,
+          fontFamily: FONT_HEADING,
           fontWeight: 800,
           fontSize: '0.98rem',
           px: { xs: 2.5, md: 3.5 },
@@ -216,7 +216,7 @@ const WelcomeSection = () => {
                 <Box sx={{ maxWidth: 820 }}>
                   <Typography
                     sx={{
-                      fontFamily: FONT_ARCHIVO,
+                      fontFamily: FONT_HEADING,
                       fontSize: '0.9rem',
                       fontWeight: 800,
                       letterSpacing: 1.6,
@@ -235,7 +235,7 @@ const WelcomeSection = () => {
                         variant="h3"
                         component="h2"
                         sx={{
-                          fontFamily: FONT_ARCHIVO,
+                          fontFamily: FONT_HEADING,
                           fontWeight: 800,
                           color: brand.neutralText,
                           fontSize: { xs: '2rem', lg: '2.9rem' },
@@ -247,7 +247,7 @@ const WelcomeSection = () => {
                       </Typography>
                       <Typography
                         sx={{
-                          fontFamily: FONT_FIGTREE,
+                          fontFamily: FONT_BODY,
                           color: brand.primary,
                           fontSize: { xs: '1rem', md: '1.08rem' },
                           lineHeight: 1.7,
@@ -271,7 +271,7 @@ const WelcomeSection = () => {
                     <Typography
                       variant="body1"
                       sx={{
-                        fontFamily: FONT_FIGTREE,
+                        fontFamily: FONT_BODY,
                         fontSize: { xs: '1rem', md: '1.08rem' },
                         lineHeight: 1.85,
                         mb: 2.2,
@@ -285,7 +285,7 @@ const WelcomeSection = () => {
                     <Typography
                       variant="body1"
                       sx={{
-                        fontFamily: FONT_FIGTREE,
+                        fontFamily: FONT_BODY,
                         fontSize: { xs: '1rem', md: '1.08rem' },
                         lineHeight: 1.85,
                       }}
@@ -308,7 +308,7 @@ const WelcomeSection = () => {
                   >
                     <Typography
                       sx={{
-                        fontFamily: FONT_ARCHIVO,
+                        fontFamily: FONT_HEADING,
                         fontSize: { xs: '1.05rem', md: '1.2rem' },
                         color: brand.secondary,
                         fontWeight: 800,
@@ -336,7 +336,7 @@ const WelcomeSection = () => {
                   <Box>
                     <Typography
                       sx={{
-                        fontFamily: FONT_ARCHIVO,
+                        fontFamily: FONT_HEADING,
                         fontWeight: 800,
                         color: brand.neutralText,
                         fontSize: '1rem',
@@ -346,7 +346,7 @@ const WelcomeSection = () => {
                     </Typography>
                     <Typography
                       sx={{
-                        fontFamily: FONT_FIGTREE,
+                        fontFamily: FONT_BODY,
                         color: 'text.secondary',
                         fontSize: '0.98rem',
                         mt: 0.4,
@@ -358,7 +358,7 @@ const WelcomeSection = () => {
 
                   <Typography
                     sx={{
-                      fontFamily: FONT_ARCHIVO,
+                      fontFamily: FONT_HEADING,
                       color: brand.accent,
                       fontWeight: 800,
                       letterSpacing: 0.6,
@@ -378,7 +378,7 @@ const WelcomeSection = () => {
               variant="h3"
               component="h2"
               sx={{
-                fontFamily: FONT_ARCHIVO,
+                fontFamily: FONT_HEADING,
                 fontWeight: 800,
                 color: brand.neutralText,
                 mb: 1.5,
@@ -389,7 +389,7 @@ const WelcomeSection = () => {
             </Typography>
             <Typography
               sx={{
-                fontFamily: FONT_FIGTREE,
+                fontFamily: FONT_BODY,
                 color: brand.primary,
                 fontSize: { xs: '1rem', md: '1.2rem' },
                 mb: 2.5,
@@ -451,7 +451,7 @@ const WelcomeSection = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2.25 }}>
                   <Typography
                     sx={{
-                      fontFamily: FONT_ARCHIVO,
+                      fontFamily: FONT_HEADING,
                       fontWeight: 800,
                       fontSize: { xs: '1.55rem', md: '2rem' },
                       lineHeight: 1.1,
@@ -464,7 +464,7 @@ const WelcomeSection = () => {
 
                 <Typography
                   sx={{
-                    fontFamily: FONT_FIGTREE,
+                    fontFamily: FONT_BODY,
                     fontSize: { xs: '1rem', md: '1.02rem' },
                     lineHeight: 1.75,
                     color: brand.neutralText,
@@ -486,7 +486,7 @@ const WelcomeSection = () => {
                     <Typography
                       key={item}
                       sx={{
-                        fontFamily: FONT_FIGTREE,
+                        fontFamily: FONT_BODY,
                         fontSize: { xs: '0.98rem', md: '1rem' },
                         lineHeight: 1.6,
                         color: brand.neutralText,
@@ -505,7 +505,7 @@ const WelcomeSection = () => {
                     sx={{
                       bgcolor: '#b80f0f',
                       color: 'white',
-                      fontFamily: FONT_ARCHIVO,
+                      fontFamily: FONT_HEADING,
                       fontWeight: 800,
                       px: 3,
                       py: 1.45,
@@ -523,7 +523,7 @@ const WelcomeSection = () => {
                     sx={{
                       borderColor: 'rgba(30, 41, 59, 0.22)',
                       color: brand.neutralText,
-                      fontFamily: FONT_ARCHIVO,
+                      fontFamily: FONT_HEADING,
                       fontWeight: 800,
                       px: 3,
                       py: 1.45,
@@ -541,7 +541,7 @@ const WelcomeSection = () => {
 
                 <Typography
                   sx={{
-                    fontFamily: FONT_FIGTREE,
+                    fontFamily: FONT_BODY,
                     color: brand.mutedText,
                     fontSize: '0.96rem',
                     mb: 2.5,
@@ -570,7 +570,7 @@ const WelcomeSection = () => {
                     <Place sx={{ color: brand.accent, fontSize: '1.2rem' }} />
                     <Typography
                       sx={{
-                        fontFamily: FONT_ARCHIVO,
+                        fontFamily: FONT_HEADING,
                         fontWeight: 800,
                         fontSize: '1rem',
                         color: brand.neutralText,
@@ -607,7 +607,7 @@ const WelcomeSection = () => {
                   >
                     <Typography
                       sx={{
-                        fontFamily: FONT_FIGTREE,
+                        fontFamily: FONT_BODY,
                         color: brand.mutedText,
                         fontSize: '0.93rem',
                         lineHeight: 1.6,
@@ -620,7 +620,7 @@ const WelcomeSection = () => {
                       href="/campuses/"
                       sx={{
                         color: brand.primary,
-                        fontFamily: FONT_ARCHIVO,
+                        fontFamily: FONT_HEADING,
                         fontWeight: 800,
                         textTransform: 'none',
                         minWidth: 'auto',
@@ -647,7 +647,7 @@ const WelcomeSection = () => {
                   <Phone sx={{ fontSize: '2rem', color: brand.accent }} />
                   <Typography
                     sx={{
-                      fontFamily: FONT_ARCHIVO,
+                      fontFamily: FONT_HEADING,
                       fontWeight: 800,
                       fontSize: { xs: '1.5rem', md: '1.9rem' },
                       letterSpacing: 0.4,
@@ -686,10 +686,10 @@ const WelcomeSection = () => {
                         <Language sx={{ fontSize: '1rem' }} />
                       </Box>
                       <Box>
-                        <Typography sx={{ fontFamily: FONT_FIGTREE, fontWeight: 600, color: 'white' }}>
+                        <Typography sx={{ fontFamily: FONT_BODY, fontWeight: 600, color: 'white' }}>
                           Online Admission Form
                         </Typography>
-                        <Typography sx={{ fontFamily: FONT_FIGTREE, fontSize: '0.9rem', color: 'rgba(255,255,255,0.72)' }}>
+                        <Typography sx={{ fontFamily: FONT_BODY, fontSize: '0.9rem', color: 'rgba(255,255,255,0.72)' }}>
                           Start your application online
                         </Typography>
                       </Box>
@@ -701,7 +701,7 @@ const WelcomeSection = () => {
                       sx={{
                         color: 'white',
                         textTransform: 'none',
-                        fontFamily: FONT_FIGTREE,
+                        fontFamily: FONT_BODY,
                         fontWeight: 600,
                         justifySelf: { md: 'end' },
                       }}
@@ -737,10 +737,10 @@ const WelcomeSection = () => {
                         <School sx={{ fontSize: '1rem' }} />
                       </Box>
                       <Box>
-                        <Typography sx={{ fontFamily: FONT_FIGTREE, fontWeight: 600, color: 'white' }}>
+                        <Typography sx={{ fontFamily: FONT_BODY, fontWeight: 600, color: 'white' }}>
                           Admission Guide
                         </Typography>
-                        <Typography sx={{ fontFamily: FONT_FIGTREE, fontSize: '0.9rem', color: 'rgba(255,255,255,0.72)' }}>
+                        <Typography sx={{ fontFamily: FONT_BODY, fontSize: '0.9rem', color: 'rgba(255,255,255,0.72)' }}>
                           Review requirements and application steps
                         </Typography>
                       </Box>
@@ -752,7 +752,7 @@ const WelcomeSection = () => {
                       sx={{
                         color: 'white',
                         textTransform: 'none',
-                        fontFamily: FONT_FIGTREE,
+                        fontFamily: FONT_BODY,
                         fontWeight: 600,
                         justifySelf: { md: 'end' },
                       }}
@@ -793,10 +793,10 @@ const WelcomeSection = () => {
                           <Phone sx={{ fontSize: '1rem' }} />
                         </Box>
                         <Box>
-                          <Typography sx={{ fontFamily: FONT_FIGTREE, fontWeight: 600, color: 'white' }}>
+                          <Typography sx={{ fontFamily: FONT_BODY, fontWeight: 600, color: 'white' }}>
                             {campus.campus}
                           </Typography>
-                          <Typography sx={{ fontFamily: FONT_FIGTREE, fontSize: '0.9rem', color: 'rgba(255,255,255,0.72)' }}>
+                          <Typography sx={{ fontFamily: FONT_BODY, fontSize: '0.9rem', color: 'rgba(255,255,255,0.72)' }}>
                             {campus.contact}
                           </Typography>
                         </Box>
@@ -818,7 +818,7 @@ const WelcomeSection = () => {
                           sx={{
                             color: 'white',
                             textTransform: 'none',
-                            fontFamily: FONT_FIGTREE,
+                            fontFamily: FONT_BODY,
                             fontWeight: 600,
                             minWidth: 'auto',
                             whiteSpace: 'nowrap',
@@ -834,7 +834,7 @@ const WelcomeSection = () => {
                           sx={{
                             color: '#bfdbfe',
                             textTransform: 'none',
-                            fontFamily: FONT_FIGTREE,
+                            fontFamily: FONT_BODY,
                             fontWeight: 600,
                             minWidth: 'auto',
                             whiteSpace: 'nowrap',

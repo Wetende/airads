@@ -19,6 +19,7 @@ import { motion } from 'framer-motion';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
+import { FONT_BODY } from '@/config';
 
 export default function BrandingSettings({ branding = {}, errors = {} }) {
   const { data, setData, post, processing } = useForm({
@@ -58,7 +59,7 @@ export default function BrandingSettings({ branding = {}, errors = {} }) {
               Branding & Appearance
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Customize your institution's look and feel
+              Customize your institution&apos;s look and feel
             </Typography>
           </Box>
 
@@ -216,7 +217,7 @@ export default function BrandingSettings({ branding = {}, errors = {} }) {
 }`}
                       sx={{
                         '& .MuiInputBase-input': {
-                          fontFamily: 'monospace',
+                          fontFamily: FONT_BODY,
                           fontSize: '0.875rem',
                         },
                       }}

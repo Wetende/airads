@@ -3,7 +3,7 @@ import TopNavbar from '../../../components/common/TopNavbar';
 import Footer from '../../../components/common/AIRADSFooter';
 import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, Card, CardContent, Button } from '@mui/material';
-import { School, Business, MenuBook, Wifi, BusinessCenter, EmojiEvents, Phone, WhatsApp, LocationOn, Email } from '@mui/icons-material';
+import { School, Business, MenuBook, Wifi, EmojiEvents, Phone, WhatsApp, LocationOn, Email } from '@mui/icons-material';
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
 
 const PageLayout = ({ children, title, subtitle }) => {
@@ -203,8 +203,8 @@ const Bungoma = () => {
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: brand.secondary }}>About Bungoma Campus</Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2, lineHeight: 1.8 }}>
                   Located in the vibrant town of Bungoma, our campus serves as a beacon of technical education
-                  in Western Kenya. With over 18 years of consistent KNEC excellence, we continue to produce
-                  skilled graduates who contribute meaningfully to Kenya's workforce.
+                  in Western Kenya. With over 20 years of consistent KNEC excellence, we continue to produce
+                  skilled graduates who contribute meaningfully to Kenya&apos;s workforce.
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2, lineHeight: 1.8 }}>
                   Our Bungoma campus is equipped with modern workshops, computer laboratories, and practical

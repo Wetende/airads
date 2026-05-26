@@ -39,6 +39,7 @@ import {
     IconReceipt,
 } from "@tabler/icons-react";
 import DashboardLayout from "@/layouts/DashboardLayout";
+import { FONT_BODY } from "@/config";
 import * as commerceApi from "@/services/commerceApi";
 import {
     formatAmount,
@@ -395,7 +396,7 @@ export default function AdminOrders() {
                                     return (
                                     <TableRow key={order.id} hover>
                                         <TableCell>
-                                            <Typography variant="body2" fontWeight={600} sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
+                                            <Typography variant="body2" fontWeight={600} sx={{ fontFamily: FONT_BODY, fontSize: "0.75rem" }}>
                                                 {order.reference}
                                             </Typography>
                                         </TableCell>
@@ -588,7 +589,7 @@ export default function AdminOrders() {
                                                     }
                                                 />
                                             </TableCell>
-                                            <TableCell sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
+                                            <TableCell sx={{ fontFamily: FONT_BODY, fontSize: "0.75rem" }}>
                                                 {payout.reference || payout.providerReference || "—"}
                                             </TableCell>
                                             <TableCell>
