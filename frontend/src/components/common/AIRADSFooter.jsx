@@ -278,7 +278,7 @@ const Footer = () => {
         </Container>
       </Box>
 
-      <Box sx={{ position: 'fixed', bottom: 24, right: 24, display: 'flex', flexDirection: 'column', gap: 2, zIndex: 50 }}>
+      <Box sx={{ position: 'fixed', bottom: 100, right: 24, display: 'flex', flexDirection: 'column', gap: 2, zIndex: 50 }}>
         <Fab
           variant="extended"
           color="success"
@@ -288,15 +288,6 @@ const Footer = () => {
         >
           <WhatsAppIcon sx={{ mr: 1 }} />
           Chat with us
-        </Fab>
-
-        <Fab
-          variant="extended"
-          color="primary"
-          href="/admissions/apply/"
-          sx={{ bgcolor: brand.accent, color: 'white', '&:hover': { bgcolor: brand.accentHover }, textTransform: 'none', px: 3, fontWeight: 'bold' }}
-        >
-          Apply Now
         </Fab>
       </Box>
     </Box>

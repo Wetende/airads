@@ -157,6 +157,11 @@ const getMenuData = () => ({
     label: "Contact",
     href: "/contact/",
   },
+  virtual: {
+    label: "Virtual Campus",
+    href: "/campuses/virtual/",
+    highlight: true,
+  },
 });
 
 /* ───────────────────── Desktop Mega-Menu Dropdown ───────────────────── */
@@ -360,7 +365,22 @@ const MainNavbar = () => {
                       key={key}
                       component={Link}
                       href={data.href}
-                      sx={{
+                      sx={data.highlight ? {
+                        color: "white",
+                        bgcolor: "#d32f2f", // Red button
+                        textTransform: "capitalize",
+                        fontWeight: 700,
+                        fontSize: "13px",
+                        px: "12px",
+                        py: "5px",
+                        ml: 1,
+                        borderRadius: "6px",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                        "&:hover": {
+                          bgcolor: "#b71c1c",
+                          opacity: 0.9,
+                        },
+                      } : {
                         color: "text.primary",
                         textTransform: "capitalize",
                         fontWeight: 700,
@@ -505,7 +525,10 @@ const MainNavbar = () => {
                     <ListItemButton component={Link} href={data.href} onClick={closeMobileMenu}>
                       <ListItemText
                         primary={data.label}
-                        primaryTypographyProps={{ fontWeight: 500 }}
+                        primaryTypographyProps={{ 
+                          fontWeight: data.highlight ? 700 : 500,
+                          color: data.highlight ? brand.primary : "inherit",
+                        }}
                       />
                     </ListItemButton>
                   </ListItem>

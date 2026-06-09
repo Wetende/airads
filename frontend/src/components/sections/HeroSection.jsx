@@ -22,6 +22,7 @@ const slides = [
     subtitle: 'Enrollment in Progress',
     description: 'Register now for Diploma, Certificate, Artisan and Short Courses across all our campuses.',
     cta: { text: 'Apply Now', href: '/admissions/procedure/' },
+    isLive: true,
   },
   {
     image: '/static/6.7.JPG',
@@ -52,9 +53,10 @@ const HeroSection = () => {
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(goNext, 6000);
-    return () => clearInterval(timer);
-  }, [goNext]);
+    const duration = currentIndex === 1 ? 10000 : 3000;
+    const timer = setTimeout(goNext, duration);
+    return () => clearTimeout(timer);
+  }, [currentIndex, goNext]);
 
   const slide = slides[currentIndex];
 
@@ -110,20 +112,47 @@ const HeroSection = () => {
         }}
       >
         <Box sx={{ maxWidth: { xs: '100%', md: '55%' }, color: 'white' }}>
-          <Typography
-            variant="h2"
-            component="h2"
-            sx={{
-              fontFamily: FONT_HEADING,
-              fontWeight: 700,
-              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem', lg: '3.5rem' },
-              lineHeight: 1.15,
-              mb: 2,
-              textShadow: '0 2px 12px rgba(0,0,0,0.3)',
-            }}
-          >
-            {slide.title}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+            <Typography
+              variant="h2"
+              component="h2"
+              sx={{
+                fontFamily: FONT_HEADING,
+                fontWeight: 700,
+                fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem', lg: '3.5rem' },
+                lineHeight: 1.15,
+                textShadow: '0 2px 12px rgba(0,0,0,0.3)',
+              }}
+            >
+              {slide.title}
+            </Typography>
+            {slide.isLive && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  bgcolor: '#dc2626',
+                  color: 'white',
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: 1,
+                  boxShadow: '0 0 10px rgba(220, 38, 38, 0.5)',
+                  '@keyframes pulse': {
+                    '0%': { opacity: 1 },
+                    '50%': { opacity: 0.5 },
+                    '100%': { opacity: 1 },
+                  },
+                  animation: 'pulse 1.5s infinite ease-in-out',
+                }}
+              >
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'white' }} />
+                <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: 1, textTransform: 'uppercase' }}>
+                  Ongoing
+                </Typography>
+              </Box>
+            )}
+          </Box>
           <Typography
             variant="h5"
             sx={{

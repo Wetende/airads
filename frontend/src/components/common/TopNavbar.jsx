@@ -17,8 +17,6 @@ const TopNavbar = () => {
   const brand = usePublicBrand();
 
   const quickLinks = [
-    { text: "Online Admissions", href: "/admissions/apply/" },
-    { text: "Staff Mail", href: "mailto:staff@airads.ac.ke" },
     { text: "Student Portal", href: "/students/" },
     { text: "Career", href: "/admissions/career-guide/" },
   ];
@@ -53,34 +51,8 @@ const TopNavbar = () => {
     >
       <Container maxWidth={false} sx={{ px: { xs: 2, lg: 4 } }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {/* Left — Contact info */}
+          {/* Left — Quick links */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
-              <EmailIcon sx={{ fontSize: 14 }} />
-              <MuiLink
-                href="mailto:info@airads.ac.ke"
-                color="inherit"
-                underline="none"
-                sx={linkSx}
-              >
-                info@airads.ac.ke
-              </MuiLink>
-            </Box>
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
-              <PhoneIcon sx={{ fontSize: 14 }} />
-              <MuiLink
-                href="tel:+254723555999"
-                color="inherit"
-                underline="none"
-                sx={linkSx}
-              >
-                +254 723 555 999
-              </MuiLink>
-            </Box>
-          </Box>
-
-          {/* Center — Quick links (hidden on xs) */}
-          <Box sx={{ display: { xs: 'none', lg: 'flex' }, gap: 1.5, alignItems: 'center' }}>
             {quickLinks.map((link, i) => (
               <MuiLink
                 key={i}
@@ -128,11 +100,11 @@ const TopNavbar = () => {
               sx={{
                 bgcolor: brand.accent,
                 color: 'white',
-                fontSize: '0.7rem',
+                fontSize: '0.62rem',
                 fontWeight: 700,
                 letterSpacing: 0.5,
-                px: 1.5,
-                py: 0.5,
+                px: 1,
+                py: 0.3,
                 borderRadius: 1,
                 textTransform: 'uppercase',
                 transition: 'background-color 0.2s',
