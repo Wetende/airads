@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "inertia",
+    "anymail",
     # Local apps
     "apps.core",
     "apps.platform",
@@ -341,3 +342,30 @@ LOGGING = {
         },
     },
 }
+
+# =============================================================================
+# Email Configuration (Brevo)
+# =============================================================================
+
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+
+if BREVO_API_KEY:
+    EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
+    ANYMAIL = {
+        "BREVO_API_KEY": BREVO_API_KEY,
+    }
+else:
+    # Fallback for local testing if API key is not set
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "info@airads.ac.ke")
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# Department Emails
+CAREERS_EMAIL = os.getenv("CAREERS_EMAIL", "careers@airads.ac.ke")
+VIRTUAL_CAMPUS_EMAIL = os.getenv("VIRTUAL_CAMPUS_EMAIL", "virtualcampus@airads.ac.ke")
+NOREPLY_EMAIL = os.getenv("NOREPLY_EMAIL", "noreply@airads.ac.ke")
+ADMISSIONS_EMAIL = os.getenv("ADMISSIONS_EMAIL", "admissions@airads.ac.ke")
+SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "support@airads.ac.ke")
+ACADEMICS_EMAIL = os.getenv("ACADEMICS_EMAIL", "academics@airads.ac.ke")
+FINANCE_EMAIL = os.getenv("FINANCE_EMAIL", "finance@airads.ac.ke")

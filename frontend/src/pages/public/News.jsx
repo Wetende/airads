@@ -16,21 +16,21 @@ const News = () => {
       date: "May 5th, 2026",
       category: "Admissions",
       excerpt: "Applications are now open for the July 2026 intake across all our campuses. Join us for quality technical education.",
-      image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81"
+      image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&w=600&q=80"
     },
     {
       title: "Special Computer Packages Offer",
       date: "June 10, 2026",
       category: "Programs",
       excerpt: "Take advantage of our special offer on 14 computer packages with partial sponsorship opportunities.",
-      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
+      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=600&q=80"
     },
     {
       title: "New Campus Opening in Maralal",
       date: "May 20, 2026",
       category: "Campus News",
       excerpt: "We are excited to announce the opening of our newest campus in Maralal, bringing quality education to Northern Kenya.",
-      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c"
+      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80"
     }
   ];
 

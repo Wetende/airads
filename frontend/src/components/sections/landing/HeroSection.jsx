@@ -20,9 +20,9 @@ import {
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ButtonAnimationWrapper from "../../common/ButtonAnimationWrapper";
-import heroBgImage1 from "../../../assets/images/graduationgroup.png";
-import heroBgImage2 from "../../../assets/images/graduation1.png";
-import heroBgImage3 from "../../../assets/images/graduation.png";
+import heroBgImage1 from "../../../assets/images/graduationgroup.webp";
+import heroBgImage2 from "../../../assets/images/graduation1.webp";
+import heroBgImage3 from "../../../assets/images/graduation.webp";
 
 const heroImages = [heroBgImage1, heroBgImage2, heroBgImage3];
 
@@ -221,12 +221,21 @@ export default function HeroSection({ platform }) {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        backgroundImage: `url(${heroImages[currentImageIndex]})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
                         zIndex: 0,
                     }}
-                />
+                >
+                    <img
+                        src={heroImages[currentImageIndex]}
+                        alt=""
+                        fetchPriority={currentImageIndex === 0 ? "high" : "low"}
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            objectPosition: "center",
+                        }}
+                    />
+                </motion.div>
             </AnimatePresence>
             <Box
                 sx={{
