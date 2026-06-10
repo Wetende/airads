@@ -9158,6 +9158,38 @@ def airads_campus_detail(request, slug):
     return render(request, component)
 
 
+def airads_virtual_courses(request):
+    """
+    Virtual Campus Courses Catalog.
+    Fetches all published programs and passes them to the VirtualCourses React component.
+    """
+    
+    programs_query = Program.objects.filter(is_published=True).order_by("-created_at")
+    
+    programs_data = []
+    for program in programs_query:
+        programs_data.append({
+            "id": program.id,
+            "title": program.name,
+            "description": program.description or "",
+            "category": program.category or "",
+            "level": program.level or "beginner",
+            "thumbnail": program.thumbnail.url if program.thumbnail else None,
+            "rating": float(program.rating_average or 0),
+            "review_count": program.rating_count,
+            "price": program.custom_pricing.get("price", 0) if program.custom_pricing else 0,
+            "school": {"name": program.category} # Mock school based on category for filtering
+        })
+        
+    props = {
+        "programs": programs_data,
+        "filters": {}
+    }
+    
+    return render(request, "Public/VirtualCourses", props)
+
+
+
 def airads_schools(request):
     return render(request, "Public/Schools")
 

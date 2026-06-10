@@ -150,6 +150,9 @@ const publicMap = {
     "Public/StudyAirads": "./pages/public/StudyAirads.jsx",
     "Public/Upload": "./pages/public/Upload.jsx",
     "Public/NotFound": "./pages/public/NotFound.jsx",
+    "Public/Programs": "./pages/public/Programs.jsx",
+    "Public/ProgramDetail": "./pages/public/ProgramDetail.jsx",
+    "Public/VirtualCourses": "./pages/public/campuses/VirtualCourses.jsx",
 };
 
 function resolvePageLoader(name) {

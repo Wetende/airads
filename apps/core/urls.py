@@ -16,7 +16,11 @@ urlpatterns = [
 
     # AIRADS Public Pages
     path("courses/", views.airads_courses, name="airads.courses"),
+    path("programs/", views.public_programs_list, name="programs"),
+    path("programs/<int:pk>/", views.public_program_detail, name="program_detail"),
+    path("programs/<int:pk>/review/", views.program_review_submit, name="program_review_submit"),
     path("campuses/", views.airads_campuses, name="airads.campuses"),
+    path("campuses/virtual/courses/", views.airads_virtual_courses, name="airads.virtual_courses"),
     path("campuses/<slug:slug>/", views.airads_campus_detail, name="airads.campus_detail"),
     path("schools/", views.airads_schools, name="airads.schools"),
     path("schools/<slug:slug>/", views.airads_school_detail, name="airads.school_detail"),
