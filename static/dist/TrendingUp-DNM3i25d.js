@@ -1,1 +1,0 @@
-import{j as t}from"./vendor-motion-CatjDy_D.js";import{t as o}from"./vendor-mui-CSqQkTs7.js";const m=o(t.jsx("path",{d:"m16 6 2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"}));export{m as T};
