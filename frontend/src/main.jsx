@@ -139,6 +139,7 @@ const publicMap = {
     "Public/TvetCdaccCourses": "./pages/public/schools/TvetCdaccCourses.jsx",
     "Public/KasnebCourses": "./pages/public/schools/KasnebCourses.jsx",
     "Public/NitaCourses": "./pages/public/schools/NitaCourses.jsx",
+    "Public/IcmCourses": "./pages/public/schools/IcmCourses.jsx",
     "Public/ProfessionalShortCourses": "./pages/public/schools/ProfessionalShortCourses.jsx",
     "Public/ComputerPackages": "./pages/public/schools/ComputerPackages.jsx",
     "Public/DrivingSchool": "./pages/public/schools/DrivingSchool.jsx",

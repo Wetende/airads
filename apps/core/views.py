@@ -9207,6 +9207,7 @@ def airads_school_detail(request, slug):
         "tvet-cdacc-courses": "Public/TvetCdaccCourses",
         "kasneb-courses": "Public/KasnebCourses",
         "nita-courses": "Public/NitaCourses",
+        "icm-courses": "Public/IcmCourses",
         "professional-short-courses": "Public/ProfessionalShortCourses",
         "computer-packages": "Public/ComputerPackages",
         "driving-school": "Public/DrivingSchool",

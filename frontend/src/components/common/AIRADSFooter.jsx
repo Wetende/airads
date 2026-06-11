@@ -54,6 +54,7 @@ const footerColumns = [
       { label: 'TVET/CDACC Courses', href: '/schools/tvet-cdacc-courses/' },
       { label: 'KASNEB Courses', href: '/schools/kasneb-courses/' },
       { label: 'NITA Courses', href: '/schools/nita-courses/' },
+      { label: 'ICM Courses', href: '/schools/icm-courses/' },
     ],
   },
 ];

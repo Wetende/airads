@@ -291,4 +291,35 @@ export const pathwayPages = {
     ctaText: "Contact admissions for current driving school classes, schedules, and campus availability.",
     ctaLabel: "Ask About Driving School",
   },
+  icm: {
+    headTitle: "ICM Courses - AIRADS College",
+    title: "ICM Courses",
+    kicker: "Institute of Commercial Management",
+    image: "/static/course-4.jpg",
+    summary:
+      "AIRADS College is an officially recognized examining centre for the Institute of Commercial Management (ICM).",
+    introTitle: "Internationally Recognized Qualifications",
+    intro:
+      "The Institute of Commercial Management (ICM) is a leading professional body for commercial and business development staff. AIRADS College proudly serves as an officially recognized examining centre, providing students with globally accredited qualifications.",
+    highlights: ["Official Examining Centre", "Global Recognition", "Professional Development", "Career-focused Training"],
+    cardsTitle: "Our ICM Accredited Courses",
+    cardsIntro: "We currently offer the following specific programmes with ICM as the examining body:",
+    cards: [
+      {
+        title: "Cert/Dip in Civil Engineering",
+        meta: "School of Engineering & IT",
+        description: "Comprehensive training in civil engineering principles, project management, and construction technologies under ICM standards.",
+      },
+      {
+        title: "Dip in Mass Communication",
+        meta: "School of Journalism",
+        description: "Radio and Video Production specialization focusing on modern broadcasting, media production, and journalism skills.",
+      },
+    ],
+    outcomesTitle: "Why Choose ICM at AIRADS",
+    outcomes: ["Globally recognized certificates", "Take exams right here at our official centre", "Industry-relevant curriculum", "Progression to higher diplomas"],
+    ctaTitle: "Advance your career with ICM",
+    ctaText: "Enroll in our ICM accredited courses today and gain a competitive edge in the global job market.",
+    ctaLabel: "Apply for ICM Courses",
+  },
 };
