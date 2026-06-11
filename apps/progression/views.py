@@ -4525,6 +4525,10 @@ def student_enroll_request(request, pk: int):
                     reviewers,
                     action_url=review_action_url,
                 )
+            
+            # Notify the student that their application was received
+            NotificationService.notify_student_application_received(enrollment_request)
+            
             messages.success(
                 request,
                 f"Your enrollment request for {program.name} has been submitted for approval.",

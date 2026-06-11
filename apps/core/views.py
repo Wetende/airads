@@ -1170,6 +1170,9 @@ def register_page(request):
             first_name=first_name,
             last_name=last_name,
         )
+        
+        from apps.notifications.services import NotificationService
+        NotificationService.notify_user_registered(user)
 
         if role == "instructor":
             # Add to Instructors group but mark as inactive (pending approval)

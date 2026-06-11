@@ -194,7 +194,7 @@ class NotificationService:
         return True
 
     @staticmethod
-    def send_email_notification(recipient, notification_type, subject, message):
+    def send_email_notification(recipient, notification_type, subject, message, html_message=None, from_email=None):
         """
         Send an email notification when recipient preferences allow it.
         Returns True if email was sent, False otherwise.
@@ -205,12 +205,15 @@ class NotificationService:
         if not NotificationService._should_send_email(recipient, notification_type):
             return False
 
+        sender = from_email or getattr(settings, "DEFAULT_FROM_EMAIL", None)
+
         sent = send_mail(
             subject=subject,
             message=message,
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            from_email=sender,
             recipient_list=[recipient.email],
             fail_silently=True,
+            html_message=html_message,
         )
         return sent > 0
 
@@ -406,6 +409,51 @@ class NotificationService:
         return notification
 
     @staticmethod
+    def notify_user_registered(user):
+        """Send notification to user upon successful registration."""
+        from django.template.loader import render_to_string
+        from django.utils.html import strip_tags
+        
+        context = {
+            'first_name': user.first_name or user.email.split('@')[0],
+            'login_url': 'https://airads.ac.ke/login/'
+        }
+        html_message = render_to_string('emails/registration_successful.html', context)
+        text_message = strip_tags(html_message)
+        
+        NotificationService.send_email_notification(
+            recipient=user,
+            notification_type="system",
+            subject="Welcome to AIRADS College!",
+            message=text_message,
+            html_message=html_message,
+            from_email="info@airads.ac.ke",
+        )
+
+    @staticmethod
+    def notify_student_application_received(enrollment_request):
+        """Send application received notification to the student."""
+        from django.template.loader import render_to_string
+        from django.utils.html import strip_tags
+        
+        context = {
+            'student_first_name': enrollment_request.user.first_name or enrollment_request.user.email.split('@')[0],
+            'course_name': enrollment_request.program.name,
+            'campus_name': 'Eldoret', # Ideally fetched from program/enrollment if dynamic
+        }
+        html_message = render_to_string('emails/application_received.html', context)
+        text_message = strip_tags(html_message)
+        
+        NotificationService.send_email_notification(
+            recipient=enrollment_request.user,
+            notification_type="system",
+            subject="Application Received - AIRADS College",
+            message=text_message,
+            html_message=html_message,
+            from_email="admissions@airads.ac.ke",
+        )
+
+    @staticmethod
     def notify_enrollment_approved(enrollment):
         """Send notification when enrollment is approved."""
         notification = NotificationService.create(
@@ -418,16 +466,24 @@ class NotificationService:
             related_enrollment_id=enrollment.id,
         )
 
+        from django.template.loader import render_to_string
+        from django.utils.html import strip_tags
+        
+        context = {
+            'first_name': enrollment.user.first_name or enrollment.user.email.split('@')[0],
+            'course_name': enrollment.program.name,
+            'login_url': 'https://airads.ac.ke/login/'
+        }
+        html_message = render_to_string('emails/application_approved.html', context)
+        text_message = strip_tags(html_message)
+
         NotificationService.send_email_notification(
             recipient=enrollment.user,
             notification_type="enrollment_approved",
-            subject=f"Enrollment Approved: {enrollment.program.name}",
-            message=(
-                f"Hello {enrollment.user.get_full_name() or enrollment.user.email},\n\n"
-                f'Your enrollment request for "{enrollment.program.name}" has been approved.\n'
-                "You can now access the program from your student dashboard.\n\n"
-                "If you did not request this enrollment, please contact support."
-            ),
+            subject=f"Application Approved: {enrollment.program.name}",
+            message=text_message,
+            html_message=html_message,
+            from_email="admissions@airads.ac.ke",
         )
 
         return notification
