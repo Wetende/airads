@@ -1,10 +1,15 @@
 import React from "react";
+import { usePage } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Button, Chip, Card, CardContent } from "@mui/material";
 import { ArrowForward, CheckCircle, WorkOutline } from "@mui/icons-material";
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
 
 export default function VirtualHeroSection() {
   const brand = usePublicBrand();
+  const { siteContext = {} } = usePage().props;
+  const routes = siteContext.routes || {};
+  const coursesHref = routes.virtualCourses || "/courses/";
+  const applyHref = routes.virtualApply || "/apply/";
 
   return (
     <Box
@@ -87,7 +92,7 @@ export default function VirtualHeroSection() {
               <Button
                 variant="contained"
                 size="large"
-                href="/campuses/virtual/courses/"
+                href={coursesHref}
                 sx={{
                   bgcolor: brand.primary,
                   color: 'white',
@@ -107,7 +112,7 @@ export default function VirtualHeroSection() {
                 variant="outlined"
                 size="large"
                 endIcon={<ArrowForward />}
-                href="/admissions/apply/"
+                href={applyHref}
                 sx={{
                   color: brand.secondary,
                   borderColor: brand.secondary,

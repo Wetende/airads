@@ -7,6 +7,7 @@ from datetime import datetime
 import re
 from typing import Optional
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -15,7 +16,7 @@ from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db.models import Count, Q
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect
 from django.utils.dateparse import parse_date, parse_datetime
 from django.utils import timezone
@@ -43,7 +44,7 @@ from apps.assessments.official_results import (
 )
 from apps.certifications.models import Certificate, VerificationLog
 from apps.core.learning_outcomes import extract_learning_outcome_items_from_html
-from apps.core.models import AdmissionApplication, Program, User
+from apps.core.models import AdmissionApplication, Campus, Program, User
 from apps.core.taxonomy import (
     MAX_BUILDER_DEPTH,
     get_builder_hierarchy_or_default,
@@ -128,6 +129,31 @@ def _build_pagination(page: int, per_page: int, total: int) -> dict:
     }
 
 
+def _is_virtual_request(request) -> bool:
+    return bool(getattr(request, "is_virtual_campus", False))
+
+
+def _virtual_base_url() -> str:
+    hosts = getattr(settings, "VIRTUAL_CAMPUS_HOSTS", ["virtual.airads.ac.ke"])
+    host = hosts[0] if hosts else "virtual.airads.ac.ke"
+    return f"https://{host}"
+
+
+def _build_site_context(request) -> dict:
+    is_virtual = _is_virtual_request(request)
+    virtual_base = _virtual_base_url()
+    return {
+        "entry": "virtual" if is_virtual else "main",
+        "isVirtualCampus": is_virtual,
+        "routes": {
+            "mainHome": "https://airads.ac.ke/" if is_virtual else "/",
+            "virtualHome": "/" if is_virtual else f"{virtual_base}/",
+            "virtualCourses": "/courses/" if is_virtual else f"{virtual_base}/courses/",
+            "virtualApply": "/apply/" if is_virtual else f"{virtual_base}/apply/",
+        },
+    }
+
+
 # =============================================================================
 # Public Pages
 # =============================================================================
@@ -138,6 +164,9 @@ def landing_page(request):
     Platform landing page with programs showcase.
     Requirements: 1.1, 1.2, 1.3
     """
+    if _is_virtual_request(request):
+        return airads_virtual_landing(request)
+
     from django.db.models import Count
 
     from apps.progression.models import Enrollment
@@ -9143,6 +9172,8 @@ def airads_campuses(request):
 
 
 def airads_courses(request):
+    if _is_virtual_request(request):
+        return airads_virtual_courses(request)
     return render(request, "Public/Courses")
 
 
@@ -9155,20 +9186,16 @@ def airads_campus_detail(request, slug):
         "lodwar": "Public/Lodwar",
         "maralal": "Public/Maralal",
         "nakuru": "Public/Nakuru",
-        "virtual": "Public/Virtual",
     }
-    component = slug_to_component.get(slug, "Public/NotFound")
+    component = slug_to_component.get(slug)
+    if component is None:
+        raise Http404("Campus not found")
     return render(request, component)
 
 
-def airads_virtual_courses(request):
-    """
-    Virtual Campus Courses Catalog.
-    Fetches all published programs and passes them to the VirtualCourses React component.
-    """
-    
+def _get_virtual_programs_payload() -> list[dict]:
     programs_query = Program.objects.filter(is_published=True).order_by("-created_at")
-    
+
     programs_data = []
     for program in programs_query:
         programs_data.append({
@@ -9181,16 +9208,34 @@ def airads_virtual_courses(request):
             "rating": float(program.rating_average or 0),
             "review_count": program.rating_count,
             "price": program.custom_pricing.get("price", 0) if program.custom_pricing else 0,
-            "school": {"name": program.category} # Mock school based on category for filtering
+            "school": {"name": program.category},
         })
-        
-    props = {
-        "programs": programs_data,
-        "filters": {}
-    }
-    
-    return render(request, "Public/VirtualCourses", props)
+    return programs_data
 
+
+def airads_virtual_landing(request):
+    return render(
+        request,
+        "Public/Virtual",
+        {
+            "programs": _get_virtual_programs_payload(),
+            "siteContext": _build_site_context(request),
+        },
+    )
+
+
+def airads_virtual_courses(request):
+    """
+    Virtual Campus Courses Catalog.
+    Fetches all published programs and passes them to the VirtualCourses React component.
+    """
+    props = {
+        "programs": _get_virtual_programs_payload(),
+        "filters": {},
+        "siteContext": _build_site_context(request),
+    }
+
+    return render(request, "Public/VirtualCourses", props)
 
 
 def airads_schools(request):
@@ -9240,28 +9285,93 @@ def airads_application_form(request):
     return render(request, "Public/ApplicationForm")
 
 
-def airads_application_apply(request):
+def _get_application_form_options(study_mode: str) -> dict:
+    campuses = Campus.objects.filter(is_active=True)
+    if study_mode == AdmissionApplication.STUDY_MODE_VIRTUAL:
+        campuses = campuses.filter(campus_type=Campus.CAMPUS_TYPE_VIRTUAL)
+    else:
+        campuses = campuses.filter(campus_type=Campus.CAMPUS_TYPE_PHYSICAL)
+
+    programs = Program.objects.filter(is_published=True).order_by("name")
+
+    return {
+        "campuses": [
+            {
+                "id": campus.id,
+                "name": campus.name,
+                "slug": campus.slug,
+                "type": campus.campus_type,
+            }
+            for campus in campuses.order_by("name")
+        ],
+        "programmes": [
+            {
+                "id": program.id,
+                "name": program.name,
+                "level": program.level,
+                "category": program.category or "",
+            }
+            for program in programs
+        ],
+        "educationLevels": [
+            "KCPE",
+            "KCSE",
+            "Artisan Certificate",
+            "Certificate",
+            "Diploma",
+            "Other",
+        ],
+        "intakes": [
+            "January 2026",
+            "May 2026",
+            "September 2026",
+            "Next Available Intake",
+        ],
+    }
+
+
+def _render_application_apply(request, forced_study_mode: str | None = None):
+    study_mode = forced_study_mode or getattr(
+        request,
+        "default_study_mode",
+        AdmissionApplication.STUDY_MODE_ON_CAMPUS,
+    )
+    if study_mode not in {
+        AdmissionApplication.STUDY_MODE_ON_CAMPUS,
+        AdmissionApplication.STUDY_MODE_VIRTUAL,
+    }:
+        study_mode = AdmissionApplication.STUDY_MODE_ON_CAMPUS
+
+    is_virtual = study_mode == AdmissionApplication.STUDY_MODE_VIRTUAL
+    options = _get_application_form_options(study_mode)
+    application_context = {
+        "studyMode": study_mode,
+        "isVirtual": is_virtual,
+        "lockedCampus": "Virtual Campus" if is_virtual else None,
+        "source": "virtual_subdomain" if is_virtual else "main_website",
+        "submitUrl": "/apply/submit/" if is_virtual else "/admissions/apply/submit/",
+    }
     return render(
         request,
         "Public/ApplicationApply",
         {
-            "campuses": [
-                "Eldoret Campus",
-                "Nakuru Campus",
-                "Kericho Campus",
-                "Kisumu City Campus",
-                "Bungoma Campus",
-                "Maralal Campus",
-                "Lodwar Campus",
-                "Virtual Campus",
-            ],
-            "intakes": [
-                "January 2026",
-                "May 2026",
-                "September 2026",
-                "Next Available Intake",
-            ],
+            **options,
+            "applicationContext": application_context,
+            "siteContext": _build_site_context(request),
         },
+    )
+
+
+def airads_application_apply(request):
+    return _render_application_apply(request)
+
+
+def airads_virtual_application_apply(request):
+    if not _is_virtual_request(request):
+        return redirect(f"{_virtual_base_url()}/apply/")
+    return _render_application_apply(
+        request,
+        forced_study_mode=AdmissionApplication.STUDY_MODE_VIRTUAL,
     )
 
 
@@ -9272,45 +9382,105 @@ def _clean_admission_value(data: dict, key: str) -> str:
     return str(value).strip()
 
 
+def _redirect_after_application(request, study_mode: str):
+    if study_mode == AdmissionApplication.STUDY_MODE_VIRTUAL:
+        return redirect("/apply/")
+    return redirect("core:airads.application_apply")
+
+
 def airads_application_submit(request):
     if request.method != "POST":
         return redirect("core:airads.application_apply")
 
+    if request.path.startswith("/apply/") and not _is_virtual_request(request):
+        return redirect(f"{_virtual_base_url()}/apply/")
+
     data = get_post_data(request)
+    is_virtual = _is_virtual_request(request)
+    study_mode = (
+        AdmissionApplication.STUDY_MODE_VIRTUAL
+        if is_virtual
+        else AdmissionApplication.STUDY_MODE_ON_CAMPUS
+    )
     required_fields = {
         "fullName": "Full name",
         "phone": "Phone number",
-        "preferredCampus": "Preferred campus",
-        "preferredProgramme": "Preferred programme",
     }
+    if not is_virtual:
+        required_fields["preferredCampus"] = "Preferred campus"
+    if not (
+        _clean_admission_value(data, "programId")
+        or _clean_admission_value(data, "preferredProgramme")
+    ):
+        required_fields["preferredProgramme"] = "Preferred programme"
+
     missing_fields = [
         label for key, label in required_fields.items() if not _clean_admission_value(data, key)
     ]
+
+    campus = None
+    if is_virtual:
+        campus = Campus.objects.filter(
+            slug="virtual",
+            campus_type=Campus.CAMPUS_TYPE_VIRTUAL,
+            is_active=True,
+        ).first()
+        if campus is None:
+            messages.error(request, "Virtual Campus is not configured yet.")
+            return _redirect_after_application(request, study_mode)
+    else:
+        campus_id = _clean_admission_value(data, "campusId")
+        preferred_campus_name = _clean_admission_value(data, "preferredCampus")
+        campus_query = Campus.objects.filter(
+            campus_type=Campus.CAMPUS_TYPE_PHYSICAL,
+            is_active=True,
+        )
+        if campus_id:
+            campus = campus_query.filter(id=campus_id).first()
+        if campus is None and preferred_campus_name:
+            campus = campus_query.filter(name=preferred_campus_name).first()
+        if campus is None and "Preferred campus" not in missing_fields:
+            missing_fields.append("Preferred campus")
+
+    program = None
+    program_id = _clean_admission_value(data, "programId")
+    if program_id and program_id.isdigit():
+        program = Program.objects.filter(id=program_id, is_published=True).first()
+        if program is None and "Preferred programme" not in missing_fields:
+            missing_fields.append("Preferred programme")
 
     if missing_fields:
         messages.error(
             request,
             f"Please complete: {', '.join(missing_fields)}.",
         )
-        return redirect("core:airads.application_apply")
+        return _redirect_after_application(request, study_mode)
+
+    preferred_programme = (
+        program.name if program else _clean_admission_value(data, "preferredProgramme")
+    )
+    preferred_campus = campus.name if campus else _clean_admission_value(data, "preferredCampus")
 
     AdmissionApplication.objects.create(
         full_name=_clean_admission_value(data, "fullName"),
         phone=_clean_admission_value(data, "phone"),
         whatsapp=_clean_admission_value(data, "whatsapp"),
         email=_clean_admission_value(data, "email").lower(),
-        preferred_campus=_clean_admission_value(data, "preferredCampus"),
-        preferred_programme=_clean_admission_value(data, "preferredProgramme"),
+        study_mode=study_mode,
+        campus=campus,
+        program=program,
+        preferred_campus=preferred_campus,
+        preferred_programme=preferred_programme,
         intake=_clean_admission_value(data, "intake"),
         education_level=_clean_admission_value(data, "educationLevel"),
         message=_clean_admission_value(data, "message"),
-        source=_clean_admission_value(data, "source") or "website",
+        source="virtual_subdomain" if is_virtual else "main_website",
     )
     messages.success(
         request,
         "Your application has been received. Our admissions team will contact you soon.",
     )
-    return redirect("core:airads.application_apply")
+    return _redirect_after_application(request, study_mode)
 
 
 def airads_career_guide(request):

@@ -24,54 +24,40 @@ import MainNavbar from "../../components/common/MainNavbar";
 import Footer from "../../components/common/AIRADSFooter";
 import { getFlashMessages } from "../../utils/userMessages";
 
-const programmeOptions = [
-  "Electrical and Electronics Engineering",
-  "Information Communication Technology",
-  "Food and Beverage Production",
-  "Hotel and Catering Accommodation",
-  "Nutrition and Dietetics Management",
-  "Social Work and Community Development",
-  "Beauty Therapy",
-  "Hairdressing and Cosmetology",
-  "Journalism and Media Studies",
-  "Business Management",
-  "Computer Applications",
-  "Driving School",
-  "Not Sure Yet",
-];
-
-const educationLevels = [
-  "KCPE",
-  "KCSE",
-  "Artisan Certificate",
-  "Certificate",
-  "Diploma",
-  "Other",
-];
-
-export default function ApplicationApply({ campuses = [], intakes = [] }) {
+export default function ApplicationApply({
+  campuses = [],
+  programmes = [],
+  educationLevels = [],
+  intakes = [],
+  applicationContext = {},
+}) {
   const brand = usePublicBrand();
   const { props } = usePage();
   const flashMessages = getFlashMessages(props.flash);
   const successMessage = flashMessages.find((message) => message.type === "success")?.message;
   const errorMessage = flashMessages.find((message) => message.type === "error")?.message;
+  const isVirtual = applicationContext?.isVirtual;
+  const defaultCampus = isVirtual ? campuses[0] : null;
 
   const { data, setData, post, processing, reset, wasSuccessful } = useForm({
     fullName: "",
     phone: "",
     whatsapp: "",
     email: "",
-    preferredCampus: "",
+    campusId: defaultCampus?.id || "",
+    programId: "",
+    preferredCampus: defaultCampus?.name || "",
     preferredProgramme: "",
     intake: intakes[0] || "",
     educationLevel: "",
+    studyMode: applicationContext?.studyMode || "on_campus",
     message: "",
-    source: "website",
+    source: applicationContext?.source || "main_website",
   });
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    post("/admissions/apply/submit/", {
+    post(applicationContext?.submitUrl || "/admissions/apply/submit/", {
       preserveScroll: true,
       onSuccess: () => reset(),
     });
@@ -124,7 +110,9 @@ export default function ApplicationApply({ campuses = [], intakes = [] }) {
                       May/June intake is open
                     </Typography>
                     <Typography variant="body1" sx={{ color: brand.mutedText }}>
-                      Choose your preferred campus and programme. The team will contact you using the phone number provided.
+                      {isVirtual
+                        ? "Apply to study through AIRADS Virtual Campus. The team will contact you using the phone number provided."
+                        : "Choose your preferred campus and programme. The team will contact you using the phone number provided."}
                     </Typography>
                   </Stack>
                 </Paper>
@@ -191,20 +179,36 @@ export default function ApplicationApply({ campuses = [], intakes = [] }) {
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      select
-                      label="Preferred campus *"
-                      value={data.preferredCampus}
-                      onChange={(event) => setData("preferredCampus", event.target.value)}
-                      required
-                      fullWidth
-                    >
-                      {campuses.map((campus) => (
-                        <MenuItem key={campus} value={campus}>
-                          {campus}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                    {isVirtual ? (
+                      <TextField
+                        label="Campus"
+                        value={applicationContext?.lockedCampus || "Virtual Campus"}
+                        fullWidth
+                        disabled
+                      />
+                    ) : (
+                      <TextField
+                        select
+                        label="Preferred campus *"
+                        value={data.campusId}
+                        onChange={(event) => {
+                          const selectedCampus = campuses.find((campus) => String(campus.id) === String(event.target.value));
+                          setData({
+                            ...data,
+                            campusId: event.target.value,
+                            preferredCampus: selectedCampus?.name || "",
+                          });
+                        }}
+                        required
+                        fullWidth
+                      >
+                        {campuses.map((campus) => (
+                          <MenuItem key={campus.id} value={campus.id}>
+                            {campus.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
@@ -225,16 +229,34 @@ export default function ApplicationApply({ campuses = [], intakes = [] }) {
                     <TextField
                       select
                       label="Preferred programme *"
-                      value={data.preferredProgramme}
-                      onChange={(event) => setData("preferredProgramme", event.target.value)}
+                      value={data.programId}
+                      onChange={(event) => {
+                        if (event.target.value === "__not_sure__") {
+                          setData({
+                            ...data,
+                            programId: "__not_sure__",
+                            preferredProgramme: "Not Sure Yet",
+                          });
+                          return;
+                        }
+                        const selectedProgramme = programmes.find((programme) => String(programme.id) === String(event.target.value));
+                        setData({
+                          ...data,
+                          programId: event.target.value,
+                          preferredProgramme: selectedProgramme?.name || "",
+                        });
+                      }}
                       required
                       fullWidth
                     >
-                      {programmeOptions.map((programme) => (
-                        <MenuItem key={programme} value={programme}>
-                          {programme}
+                      {programmes.map((programme) => (
+                        <MenuItem key={programme.id} value={programme.id}>
+                          {programme.name}
                         </MenuItem>
                       ))}
+                      <MenuItem value="__not_sure__">
+                        Not Sure Yet
+                      </MenuItem>
                     </TextField>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>

@@ -49,7 +49,7 @@ const footerColumns = [
         label: 'Apply Online',
         href: '/admissions/apply/',
       },
-      { label: 'Virtual Campus', href: '/campuses/virtual/' },
+      { label: 'Virtual Campus', href: 'https://virtual.airads.ac.ke/', external: true },
       { label: 'Campuses', href: '/campuses/' },
       { label: 'TVET/CDACC Courses', href: '/schools/tvet-cdacc-courses/' },
       { label: 'KASNEB Courses', href: '/schools/kasneb-courses/' },

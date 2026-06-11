@@ -103,8 +103,48 @@ class InstructorCertification(models.Model):
         return f"{self.file_name} for {self.profile.user.email}"
 
 
+class Campus(TimeStampedModel):
+    """AIRADS physical or virtual campus used for admissions routing."""
+
+    CAMPUS_TYPE_PHYSICAL = "physical"
+    CAMPUS_TYPE_VIRTUAL = "virtual"
+
+    CAMPUS_TYPE_CHOICES = [
+        (CAMPUS_TYPE_PHYSICAL, "Physical"),
+        (CAMPUS_TYPE_VIRTUAL, "Virtual"),
+    ]
+
+    name = models.CharField(max_length=120, unique=True)
+    slug = models.SlugField(max_length=80, unique=True)
+    campus_type = models.CharField(
+        max_length=20,
+        choices=CAMPUS_TYPE_CHOICES,
+        default=CAMPUS_TYPE_PHYSICAL,
+    )
+    contact_email = models.EmailField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "campuses"
+        ordering = ["campus_type", "name"]
+        indexes = [
+            models.Index(fields=["campus_type", "is_active"]),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
 class AdmissionApplication(TimeStampedModel):
     """Public student admissions application submitted from the AIRADS site."""
+
+    STUDY_MODE_ON_CAMPUS = "on_campus"
+    STUDY_MODE_VIRTUAL = "virtual"
+
+    STUDY_MODE_CHOICES = [
+        (STUDY_MODE_ON_CAMPUS, "On Campus"),
+        (STUDY_MODE_VIRTUAL, "Virtual"),
+    ]
 
     STATUS_NEW = "new"
     STATUS_CONTACTED = "contacted"
@@ -122,6 +162,25 @@ class AdmissionApplication(TimeStampedModel):
     phone = models.CharField(max_length=32)
     whatsapp = models.CharField(max_length=32, blank=True, default="")
     email = models.EmailField(blank=True, default="")
+    study_mode = models.CharField(
+        max_length=20,
+        choices=STUDY_MODE_CHOICES,
+        default=STUDY_MODE_ON_CAMPUS,
+    )
+    campus = models.ForeignKey(
+        "Campus",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admission_applications",
+    )
+    program = models.ForeignKey(
+        "Program",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admission_applications",
+    )
     preferred_campus = models.CharField(max_length=120)
     preferred_programme = models.CharField(max_length=255)
     intake = models.CharField(max_length=120, blank=True, default="")
@@ -137,6 +196,8 @@ class AdmissionApplication(TimeStampedModel):
         db_table = "admission_applications"
         indexes = [
             models.Index(fields=["status", "-created_at"]),
+            models.Index(fields=["study_mode", "-created_at"]),
+            models.Index(fields=["campus", "-created_at"]),
             models.Index(fields=["preferred_campus"]),
         ]
         ordering = ["-created_at"]

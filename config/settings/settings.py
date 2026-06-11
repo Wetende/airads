@@ -33,7 +33,17 @@ if not SECRET_KEY:
         raise RuntimeError(
             "DJANGO_SECRET_KEY environment variable is required when DEBUG=False."
         )
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+def _split_env_list(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+VIRTUAL_CAMPUS_HOSTS = _split_env_list(
+    os.getenv("VIRTUAL_CAMPUS_HOSTS", "virtual.airads.ac.ke")
+)
+ALLOWED_HOSTS = _split_env_list(os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1"))
+for host in VIRTUAL_CAMPUS_HOSTS:
+    if host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host)
 
 # =============================================================================
 # Application Definition
@@ -79,6 +89,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "apps.core.middleware_virtual.VirtualCampusHostMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",

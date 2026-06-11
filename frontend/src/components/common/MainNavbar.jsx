@@ -128,7 +128,7 @@ const getMenuData = () => ({
           { text: "Nakuru Campus", href: "/campuses/nakuru/" },
           { text: "Lodwar Campus", href: "/campuses/lodwar/" },
           { text: "Maralal Campus", href: "/campuses/maralal/" },
-          { text: "Virtual Campus", href: "/campuses/virtual/" },
+          { text: "Virtual Campus", href: "https://virtual.airads.ac.ke/", external: true },
         ],
       },
     ],
@@ -159,8 +159,9 @@ const getMenuData = () => ({
   },
   virtual: {
     label: "Virtual Campus",
-    href: "/campuses/virtual/",
+    href: "https://virtual.airads.ac.ke/",
     highlight: true,
+    external: true,
   },
 });
 
@@ -363,8 +364,10 @@ const MainNavbar = () => {
                   return (
                     <Button
                       key={key}
-                      component={Link}
+                      component={data.external ? "a" : Link}
                       href={data.href}
+                      target={data.external ? "_blank" : undefined}
+                      rel={data.external ? "noopener noreferrer" : undefined}
                       sx={data.highlight ? {
                         color: "white",
                         bgcolor: "#d32f2f", // Red button
@@ -522,7 +525,13 @@ const MainNavbar = () => {
               if (data.href) {
                 return (
                   <ListItem key={key} disablePadding>
-                    <ListItemButton component={Link} href={data.href} onClick={closeMobileMenu}>
+                    <ListItemButton
+                      component={data.external ? "a" : Link}
+                      href={data.href}
+                      target={data.external ? "_blank" : undefined}
+                      rel={data.external ? "noopener noreferrer" : undefined}
+                      onClick={closeMobileMenu}
+                    >
                       <ListItemText
                         primary={data.label}
                         primaryTypographyProps={{ 

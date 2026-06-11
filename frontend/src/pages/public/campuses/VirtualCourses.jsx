@@ -10,7 +10,9 @@ import EmptyState from "../../../components/EmptyState";
 
 export default function VirtualCourses({ programs = [], filters = {} }) {
   const brand = usePublicBrand();
-  const { auth } = usePage().props;
+  const { auth, siteContext = {} } = usePage().props;
+  const routes = siteContext.routes || {};
+  const coursesHref = routes.virtualCourses || "/courses/";
   const isAuthenticated = !!auth?.user;
 
   const [search, setSearch] = useState(filters.search || "");
@@ -21,14 +23,14 @@ export default function VirtualCourses({ programs = [], filters = {} }) {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    router.get("/campuses/virtual/courses/", { search, category, level }, { preserveState: true, replace: true });
+    router.get(coursesHref, { search, category, level }, { preserveState: true, replace: true });
   };
 
   const handleClearFilters = () => {
     setSearch("");
     setCategory("all");
     setLevel("all");
-    router.get("/campuses/virtual/courses/");
+    router.get(coursesHref);
   };
 
   const filteredPrograms = useMemo(() => {

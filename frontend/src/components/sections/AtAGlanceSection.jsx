@@ -410,8 +410,10 @@ const AtAGlanceSection = () => {
                   Intake Open for 2026
                 </Button>
                 <Button
-                  component={Link}
-                  href="/campuses/virtual/"
+                  component="a"
+                  href="https://virtual.airads.ac.ke/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   variant="contained"
                   fullWidth
                   sx={{

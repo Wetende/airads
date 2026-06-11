@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, router } from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
 import {
   AppBar,
   Toolbar,
@@ -23,6 +23,12 @@ import { usePublicBrand } from "../../hooks/usePublicBrand";
 
 export default function VirtualNavbar() {
   const brand = usePublicBrand();
+  const { siteContext = {} } = usePage().props;
+  const routes = siteContext.routes || {};
+  const mainHomeHref = routes.mainHome || "/";
+  const homeHref = routes.virtualHome || "/";
+  const coursesHref = routes.virtualCourses || "/courses/";
+  const applyHref = routes.virtualApply || "/apply/";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -32,7 +38,7 @@ export default function VirtualNavbar() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    router.get("/campuses/virtual/courses/", { search, category: category !== "all" ? category : "" }, { preserveState: true });
+    router.get(coursesHref, { search, category: category !== "all" ? category : "" }, { preserveState: true });
   };
 
   return (
@@ -53,7 +59,7 @@ export default function VirtualNavbar() {
             {/* Left: Logo */}
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <AiradsLogoLockup
-                href="/campuses/virtual/"
+                href={homeHref}
                 gap={{ xs: 1, sm: 1.25 }}
                 crestHeight={{ xs: 46, sm: 54 }}
                 headlineColor={brand.accent}
@@ -123,16 +129,16 @@ export default function VirtualNavbar() {
 
             {/* Right: Links & CTA */}
             <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 2 }}>
-              <Button component={Link} href="/" sx={{ color: "text.primary", fontWeight: 600, "&:hover": { color: brand.primary } }}>
+              <Button component="a" href={mainHomeHref} sx={{ color: "text.primary", fontWeight: 600, "&:hover": { color: brand.primary } }}>
                 Main Site
               </Button>
-              <Button component={Link} href="/campuses/virtual/courses/" sx={{ color: "text.primary", fontWeight: 600, "&:hover": { color: brand.primary } }}>
+              <Button component={Link} href={coursesHref} sx={{ color: "text.primary", fontWeight: 600, "&:hover": { color: brand.primary } }}>
                 Catalog
               </Button>
               <Button component={Link} href="/login/" variant="outlined" sx={{ borderRadius: 8, px: 3, borderColor: brand.primary, color: brand.primary, fontWeight: 600 }}>
                 Login
               </Button>
-              <Button component={Link} href="/admissions/apply/" variant="contained" sx={{ borderRadius: 8, px: 3, bgcolor: brand.accent, "&:hover": { bgcolor: "#9a1818" }, fontWeight: 600, boxShadow: "none" }}>
+              <Button component={Link} href={applyHref} variant="contained" sx={{ borderRadius: 8, px: 3, bgcolor: brand.accent, "&:hover": { bgcolor: "#9a1818" }, fontWeight: 600, boxShadow: "none" }}>
                 Get Started
               </Button>
             </Box>
@@ -158,12 +164,12 @@ export default function VirtualNavbar() {
           </Box>
           <List sx={{ p: 2 }}>
             <ListItem disablePadding>
-              <ListItemButton component={Link} href="/" onClick={closeMobileMenu}>
+              <ListItemButton component="a" href={mainHomeHref} onClick={closeMobileMenu}>
                 <ListItemText primary="Main Site" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton component={Link} href="/campuses/virtual/courses/" onClick={closeMobileMenu}>
+              <ListItemButton component={Link} href={coursesHref} onClick={closeMobileMenu}>
                 <ListItemText primary="Virtual Catalog" />
               </ListItemButton>
             </ListItem>
@@ -171,7 +177,7 @@ export default function VirtualNavbar() {
               <Button component={Link} href="/login/" variant="outlined" fullWidth sx={{ borderRadius: 8 }}>
                 Login
               </Button>
-              <Button component={Link} href="/admissions/apply/" variant="contained" fullWidth sx={{ borderRadius: 8, bgcolor: brand.accent }}>
+              <Button component={Link} href={applyHref} variant="contained" fullWidth sx={{ borderRadius: 8, bgcolor: brand.accent }}>
                 Get Started
               </Button>
             </Box>

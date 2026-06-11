@@ -7,7 +7,7 @@ Uses Hypothesis for property-based testing with minimum 100 iterations.
 
 import pytest
 from hypothesis import given, strategies as st, settings, assume, HealthCheck
-from django.test import Client
+from django.test import Client, override_settings
 from django.utils import timezone
 from datetime import date
 
@@ -19,6 +19,74 @@ HYPOTHESIS_SETTINGS = settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture, HealthCheck.too_slow],
     deadline=None
 )
+
+
+@override_settings(
+    ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
+    VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
+)
+@pytest.mark.django_db
+def test_virtual_host_root_renders_virtual_campus(client):
+    response = client.get("/", HTTP_HOST="virtual.airads.ac.ke")
+
+    assert response.status_code == 200
+    assert b"Public/Virtual" in response.content
+
+
+@override_settings(
+    ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
+    VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
+)
+@pytest.mark.django_db
+def test_main_host_root_keeps_normal_home(client):
+    response = client.get("/", HTTP_HOST="testserver")
+
+    assert response.status_code == 200
+    assert b"Public/Home" in response.content
+
+
+@override_settings(
+    ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
+    VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
+)
+@pytest.mark.django_db
+def test_virtual_host_courses_route_uses_virtual_catalog(client):
+    response = client.get("/courses/", HTTP_HOST="virtual.airads.ac.ke")
+
+    assert response.status_code == 200
+    assert b"Public/VirtualCourses" in response.content
+
+
+@override_settings(
+    ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
+    VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
+)
+@pytest.mark.django_db
+def test_virtual_host_apply_route_uses_virtual_application_context(client):
+    response = client.get("/apply/", HTTP_HOST="virtual.airads.ac.ke")
+
+    assert response.status_code == 200
+    assert b"Public/ApplicationApply" in response.content
+    assert b"&quot;mainHome&quot;: &quot;https://airads.ac.ke/&quot;" in response.content
+    assert b"&quot;studyMode&quot;: &quot;virtual&quot;" in response.content
+    assert b"&quot;lockedCampus&quot;: &quot;Virtual Campus&quot;" in response.content
+
+
+@override_settings(
+    ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
+    VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
+)
+def test_main_host_apply_route_redirects_to_virtual_subdomain(client):
+    response = client.get("/apply/", HTTP_HOST="testserver")
+
+    assert response.status_code == 302
+    assert response.url == "https://virtual.airads.ac.ke/apply/"
+
+
+def test_old_main_domain_virtual_route_removed(client):
+    response = client.get("/campuses/virtual/")
+
+    assert response.status_code == 404
 
 
 # =============================================================================

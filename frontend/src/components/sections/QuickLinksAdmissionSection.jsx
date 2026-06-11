@@ -15,7 +15,7 @@ const quickLinks = [
   { icon: IconSchool, label: 'Programmes', href: '/admissions/career-guide/' },
   { icon: IconClipboardText, label: 'Admissions', href: '/admissions/procedure/' },
   { icon: IconBuildingBank, label: 'Campuses', href: '/campuses/' },
-  { icon: IconWorld, label: 'Virtual Campus', href: '/campuses/virtual/' },
+  { icon: IconWorld, label: 'Virtual Campus', href: 'https://virtual.airads.ac.ke/', external: true },
   { icon: IconUsers, label: 'Student Portal', href: '/students/' },
   { icon: IconFileInvoice, label: 'Downloads', href: '/admissions/forms/' },
 ];
@@ -100,8 +100,10 @@ const QuickLinksAdmissionSection = () => {
                   return (
                     <Box
                       key={item.label}
-                      component={Link}
+                      component={item.external ? 'a' : Link}
                       href={item.href}
+                      target={item.external ? '_blank' : undefined}
+                      rel={item.external ? 'noopener noreferrer' : undefined}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
