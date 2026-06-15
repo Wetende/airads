@@ -221,6 +221,7 @@ const Kisumu = () => {
                 <PrincipalMessage 
                   principalName="Kisumu Campus Principal"
                   campusName="Kisumu Campus"
+                  imageUrl="/static/kisumu-principal.webp"
                   message="Welcome to AIRADS Kisumu Campus. Strategically located by the lake, we offer world-class hospitality, ICT, and technical programs. Our vibrant campus life and dedicated faculty ensure a holistic approach to your professional development."
                 />
               </Box>
