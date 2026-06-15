@@ -5,6 +5,7 @@ import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, Card, CardContent, Button } from '@mui/material';
 import { School, Business, MenuBook, Wifi, BusinessCenter, EmojiEvents, Phone, WhatsApp, LocationOn, Email, Star, Lightbulb, People, Settings as Cog, Computer, Groups as Users, EmojiEvents as Trophy, Place as MapPin } from '@mui/icons-material';
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
+import PrincipalMessage from '../../../components/sections/PrincipalMessage';
 
 const PageLayout = ({ children, title, subtitle }) => {
   const brand = usePublicBrand();
@@ -217,6 +218,14 @@ const Nakuru = () => {
                   reputation for quality education while serving the unique needs of the central Kenya region.
                 </Typography>
               </Paper>
+
+              <Box sx={{ mt: 2, mb: 4 }}>
+                <PrincipalMessage 
+                  principalName="Nakuru Campus Principal"
+                  campusName="Nakuru Campus"
+                  message="Welcome to AIRADS Nakuru Campus. We are dedicated to providing an enriching educational experience in the heart of Nakuru City. Our modern facilities and industry-aligned programs are designed to inspire innovation and prepare you for a successful career."
+                />
+              </Box>
 
               <Box>
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: 'center', color: brand.secondary }}>Campus Features</Typography>

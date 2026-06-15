@@ -134,7 +134,7 @@ export default function AiradsLogoLockup({
                         ...taglineSx,
                     }}
                 >
-                    (AIRADS COLLEGE)
+                    AIRADS COLLEGE
                 </Typography>
             </Box>
         </Box>

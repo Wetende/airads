@@ -11,7 +11,7 @@ import {
     Stack,
     Typography,
 } from "@mui/material";
-import MailOutlineIcon from "@mui/icons-material/MailOutline";
+import MailOutlinedIcon from "@mui/icons-material/MailOutlined";
 
 import DashboardLayout from "@/layouts/DashboardLayout";
 
@@ -48,7 +48,7 @@ export default function Inbox({ conversations = [], unreadCount = 0 }) {
                             component={Link}
                             href="/messages/new/"
                             variant="contained"
-                            startIcon={<MailOutlineIcon />}
+                            startIcon={<MailOutlinedIcon />}
                         >
                             New Message
                         </Button>

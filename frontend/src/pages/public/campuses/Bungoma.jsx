@@ -5,6 +5,7 @@ import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, Card, CardContent, Button } from '@mui/material';
 import { School, Business, MenuBook, Wifi, EmojiEvents, Phone, WhatsApp, LocationOn, Email } from '@mui/icons-material';
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
+import PrincipalMessage from '../../../components/sections/PrincipalMessage';
 
 const PageLayout = ({ children, title, subtitle }) => {
   const brand = usePublicBrand();
@@ -217,6 +218,14 @@ const Bungoma = () => {
                   employment or entrepreneurship opportunities.
                 </Typography>
               </Paper>
+
+              <Box sx={{ mt: 2, mb: 4 }}>
+                <PrincipalMessage 
+                  principalName="Bungoma Campus Principal"
+                  campusName="Bungoma Campus"
+                  message="Welcome to AIRADS Bungoma Campus. We are dedicated to providing top-tier technical and vocational training, equipping our students with the hands-on skills necessary to thrive in today's dynamic job market and become leaders in their communities."
+                />
+              </Box>
 
               <Box>
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: 'center', color: brand.secondary }}>Why Choose Bungoma Campus?</Typography>

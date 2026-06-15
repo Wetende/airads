@@ -5,6 +5,7 @@ import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, Card, CardContent, Button } from '@mui/material';
 import { School, Business, MenuBook, Wifi, BusinessCenter, EmojiEvents, Phone, WhatsApp, LocationOn, Email, Star, Lightbulb, People, Settings as Cog, Computer, Groups as Users, EmojiEvents as Trophy } from '@mui/icons-material';
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
+import PrincipalMessage from '../../../components/sections/PrincipalMessage';
 
 const PageLayout = ({ children, title, subtitle }) => {
   const brand = usePublicBrand();
@@ -215,6 +216,14 @@ const Kisumu = () => {
                   AIRADS College's tradition of excellence while serving the unique needs of the lakeside region.
                 </Typography>
               </Paper>
+
+              <Box sx={{ mt: 2, mb: 4 }}>
+                <PrincipalMessage 
+                  principalName="Kisumu Campus Principal"
+                  campusName="Kisumu Campus"
+                  message="Welcome to AIRADS Kisumu Campus. Strategically located by the lake, we offer world-class hospitality, ICT, and technical programs. Our vibrant campus life and dedicated faculty ensure a holistic approach to your professional development."
+                />
+              </Box>
 
               <Box>
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: 'center', color: brand.secondary }}>Campus Advantages</Typography>

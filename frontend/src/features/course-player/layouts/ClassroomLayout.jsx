@@ -17,7 +17,7 @@ import {
     Close as CloseIcon,
     DarkMode,
     LightMode,
-    ChatBubbleOutline,
+    ChatBubbleOutlined,
 } from "@mui/icons-material";
 import ThemeProvider, { useThemeMode } from "@/theme";
 
@@ -149,7 +149,7 @@ const ClassroomLayoutInner = ({
 
                         <Button
                             size="small"
-                            startIcon={!isMobile && <ChatBubbleOutline fontSize="small" />}
+                            startIcon={!isMobile && <ChatBubbleOutlined fontSize="small" />}
                             onClick={onToggleDiscussions}
                             sx={{
                                 textTransform: "none",
@@ -160,7 +160,7 @@ const ClassroomLayoutInner = ({
                                 px: isMobile ? 1 : 2,
                             }}
                         >
-                            {isMobile ? <ChatBubbleOutline fontSize="small" /> : 'Discussions'}
+                            {isMobile ? <ChatBubbleOutlined fontSize="small" /> : 'Discussions'}
                         </Button>
                     </Box>
                 </Toolbar>

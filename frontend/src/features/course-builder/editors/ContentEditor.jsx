@@ -46,7 +46,7 @@ import {
     PushPin as PinIcon,
     Lock as LockIcon,
     LockOpen as LockOpenIcon,
-    ChatBubbleOutline as ChatIcon,
+    ChatBubbleOutlined as ChatIcon,
 } from "@mui/icons-material";
 
 export default function ContentEditor({ node, onSave, blueprint }) {

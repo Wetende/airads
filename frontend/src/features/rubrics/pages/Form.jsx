@@ -28,7 +28,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SaveIcon from '@mui/icons-material/Save';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
@@ -358,7 +358,7 @@ export default function RubricForm({
                           disabled={dimensions.length <= 1}
                           sx={{ mt: { xs: 0, md: 0.5 } }}
                         >
-                          <DeleteOutlineIcon />
+                          <DeleteOutlinedIcon />
                         </IconButton>
                       </Stack>
                     </Paper>

@@ -5,6 +5,7 @@ import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, Card, CardContent, Button } from '@mui/material';
 import { School, Business, MenuBook, Wifi, BusinessCenter, EmojiEvents, Phone, WhatsApp, LocationOn, Email, Star, Lightbulb, People, Settings as Cog, Computer, Groups as Users, EmojiEvents as Trophy } from '@mui/icons-material';
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
+import PrincipalMessage from '../../../components/sections/PrincipalMessage';
 
 const PageLayout = ({ children, title, subtitle }) => {
   const brand = usePublicBrand();
@@ -206,6 +207,14 @@ const Kericho = () => {
                   consistently achieving high pass rates and producing graduates who excel in their careers.
                 </Typography>
               </Paper>
+
+              <Box sx={{ mt: 2, mb: 4 }}>
+                <PrincipalMessage 
+                  principalName="Kericho Campus Principal"
+                  campusName="Kericho Campus"
+                  message="Welcome to AIRADS Kericho Campus. Located in the heart of the tea county, we bring technical excellence to the South Rift region. Our mission is to produce highly skilled professionals ready to innovate and lead."
+                />
+              </Box>
 
               <Box>
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: 'center', color: brand.secondary }}>Campus Highlights</Typography>

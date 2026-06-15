@@ -51,7 +51,7 @@ import ApprovalIcon from "@mui/icons-material/Approval";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import CampaignIcon from "@mui/icons-material/Campaign";
-import MailOutlineIcon from "@mui/icons-material/MailOutline";
+import MailOutlinedIcon from "@mui/icons-material/MailOutlined";
 import QuizIcon from "@mui/icons-material/Quiz";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 
@@ -100,7 +100,7 @@ const roleNavigation = {
                 {
                     label: "Messages",
                     href: "/messages/",
-                    icon: MailOutlineIcon,
+                    icon: MailOutlinedIcon,
                 },
             ],
         },
@@ -196,7 +196,7 @@ const roleNavigation = {
                 {
                     label: "Messages",
                     href: "/messages/",
-                    icon: MailOutlineIcon,
+                    icon: MailOutlinedIcon,
                 },
             ],
         },
@@ -311,7 +311,7 @@ const roleNavigation = {
                 {
                     label: "Messages",
                     href: "/messages/",
-                    icon: MailOutlineIcon,
+                    icon: MailOutlinedIcon,
                 },
             ],
         },

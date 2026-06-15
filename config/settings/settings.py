@@ -50,7 +50,6 @@ for host in VIRTUAL_CAMPUS_HOSTS:
 # =============================================================================
 
 INSTALLED_APPS = [
-    "unfold",  # Modern admin theme - must be before django.contrib.admin
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

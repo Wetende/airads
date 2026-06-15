@@ -5,6 +5,7 @@ import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, Card, CardContent, Button } from '@mui/material';
 import { School, Business, MenuBook, Wifi, BusinessCenter, EmojiEvents, Phone, WhatsApp, LocationOn, Email, Star, Lightbulb, People, Settings as Cog, Computer, Groups as Users, EmojiEvents as Trophy } from '@mui/icons-material';
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
+import PrincipalMessage from '../../../components/sections/PrincipalMessage';
 
 const PageLayout = ({ children, title, subtitle }) => {
   const brand = usePublicBrand();
@@ -215,6 +216,14 @@ const Eldoret = () => {
                   commitment to excellence with consistent high pass rates and graduate employment success.
                 </Typography>
               </Paper>
+
+              <Box sx={{ mt: 2, mb: 4 }}>
+                <PrincipalMessage 
+                  principalName="Eldoret Campus Principal"
+                  campusName="Eldoret Campus"
+                  message="Welcome to AIRADS Eldoret Campus, where we nurture technical excellence and equip our students with practical skills that meet global industry standards. Our commitment is to ensure every student achieves their fullest potential in a supportive and innovative environment."
+                />
+              </Box>
 
               <Box>
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 4, textAlign: 'center', color: brand.secondary }}>Why Choose Eldoret Campus?</Typography>

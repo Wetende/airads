@@ -1,7 +1,7 @@
 import React from 'react';
 import { Head } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, List, ListItem, ListItemAvatar, Avatar, ListItemText, Button } from "@mui/material";
-import { Phone, CheckCircleOutline } from "@mui/icons-material";
+import { Phone, CheckCircleOutlined } from "@mui/icons-material";
 import TopNavbar from "../../components/common/TopNavbar";
 import MainNavbar from "../../components/common/MainNavbar";
 import Footer from "../../components/common/AIRADSFooter";
@@ -88,7 +88,7 @@ const Admissions = () => {
                       'Website: www.airads.ac.ke'
                     ].map((method, idx) => (
                       <ListItem key={idx} disableGutters sx={{ py: 0.5 }}>
-                        <CheckCircleOutline sx={{ color: brand.primary, fontSize: '1.2rem', mr: 2 }} />
+                        <CheckCircleOutlined sx={{ color: brand.primary, fontSize: '1.2rem', mr: 2 }} />
                         <ListItemText primary={method} sx={{ '& .MuiListItemText-primary': { color: 'text.secondary', fontSize: '1.05rem' } }} />
                       </ListItem>
                     ))}

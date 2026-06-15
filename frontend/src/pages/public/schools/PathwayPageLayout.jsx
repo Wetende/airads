@@ -2,7 +2,7 @@ import { Head, Link } from "@inertiajs/react";
 import {
   ArrowForward,
   CheckCircle,
-  MailOutline,
+  MailOutlined,
   Phone,
   WhatsApp,
 } from "@mui/icons-material";
@@ -329,7 +329,7 @@ const PathwayPageLayout = ({ page }) => {
                   <Typography variant="body2">WhatsApp admissions</Typography>
                 </Stack>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <MailOutline fontSize="small" />
+                  <MailOutlined fontSize="small" />
                   <Typography variant="body2">info@airads.ac.ke</Typography>
                 </Stack>
               </Stack>

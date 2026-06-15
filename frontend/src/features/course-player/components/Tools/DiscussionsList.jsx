@@ -10,7 +10,7 @@ import {
     Button,
     TextField,
 } from "@mui/material";
-import { ChatBubbleOutline, PushPin } from "@mui/icons-material";
+import { ChatBubbleOutlined, PushPin } from "@mui/icons-material";
 
 const DiscussionsList = ({ discussions = [], onReply, disabled = false }) => {
     const [replyOpenByThread, setReplyOpenByThread] = useState({});
@@ -54,7 +54,7 @@ const DiscussionsList = ({ discussions = [], onReply, disabled = false }) => {
                         mb: 2,
                     }}
                 >
-                    <ChatBubbleOutline
+                    <ChatBubbleOutlined
                         sx={{ fontSize: 32, color: "primary.main" }}
                     />
                 </Box>

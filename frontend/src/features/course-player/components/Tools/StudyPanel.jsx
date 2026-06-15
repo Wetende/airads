@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import {
     Close as CloseIcon,
-    AddCircleOutline,
+    AddCircleOutlined,
     Send as SendIcon,
     Delete as DeleteIcon,
     NoteAlt as NoteIcon,
@@ -337,7 +337,7 @@ const StudyPanel = ({
                                 variant="outlined"
                                 size="small"
                                 startIcon={
-                                    <AddCircleOutline sx={{ fontSize: 16 }} />
+                                    <AddCircleOutlined sx={{ fontSize: 16 }} />
                                 }
                                 onClick={() => setIsComposing(true)}
                                 sx={{

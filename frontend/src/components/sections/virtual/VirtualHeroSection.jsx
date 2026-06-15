@@ -1,7 +1,7 @@
 import React from "react";
 import { usePage } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Button, Chip, Card, CardContent } from "@mui/material";
-import { ArrowForward, CheckCircle, WorkOutline } from "@mui/icons-material";
+import { ArrowForward, CheckCircle, WorkOutlined } from "@mui/icons-material";
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
 
 export default function VirtualHeroSection() {
@@ -177,7 +177,7 @@ export default function VirtualHeroSection() {
                 <CardContent sx={{ p: 3 }}>
                   <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                     <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: brand.softBlue, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <WorkOutline sx={{ color: brand.primary }} />
+                      <WorkOutlined sx={{ color: brand.primary }} />
                     </Box>
                     <Box>
                       <Typography variant="subtitle1" sx={{ fontWeight: 800, color: brand.secondary, lineHeight: 1.2 }}>

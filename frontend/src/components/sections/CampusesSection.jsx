@@ -8,13 +8,13 @@ const CampusesSection = () => {
   const brand = usePublicBrand();
 
   const campuses = [
-    { name: "KERICHO TOWN CAMPUS", phone: "0729976885", image: "/static/kericho-campus.jpg", description: "Located in the heart of Kericho, offering comprehensive technical programs." },
-    { name: "ELDORET TOWN CAMPUS", phone: "0715696979", image: "/static/eldoret.jpg", description: "Modern facilities in Eldoret serving the Rift Valley region." },
-    { name: "BUNGOMA TOWN CAMPUS", phone: "0715771316", image: "/static/eldoret.jpg", description: "Strategic location in Bungoma with state-of-the-art equipment." },
-    { name: "LODWAR TOWN CAMPUS", phone: "0723555999", image: "/static/lodwar-campus.jpg", description: "Serving the Turkana region with quality technical education." },
-    { name: "KISUMU CITY CAMPUS", phone: "0715505262", image: "/static/kisumu-campus.jpg", description: "Located in the lakeside city, offering diverse programs." },
-    { name: "NAKURU CAMPUS", phone: "0711488302", image: "/static/nakuru-campus.jpg", description: "Central location serving students across Kenya." },
-    { name: "MARALAL CAMPUS", phone: "0723555999", image: "/static/nakuru.jpg", description: "Bringing quality education to Northern Kenya." },
+    { name: "KERICHO TOWN CAMPUS", slug: "kericho", phone: "0729976885", image: "/static/kericho-campus.jpg", description: "Located in the heart of Kericho, offering comprehensive technical programs." },
+    { name: "ELDORET TOWN CAMPUS", slug: "eldoret", phone: "0715696979", image: "/static/eldoret.jpg", description: "Modern facilities in Eldoret serving the Rift Valley region." },
+    { name: "BUNGOMA TOWN CAMPUS", slug: "bungoma", phone: "0715771316", image: "/static/eldoret.jpg", description: "Strategic location in Bungoma with state-of-the-art equipment." },
+    { name: "LODWAR TOWN CAMPUS", slug: "lodwar", phone: "0723555999", image: "/static/lodwar-campus.jpg", description: "Serving the Turkana region with quality technical education." },
+    { name: "KISUMU CITY CAMPUS", slug: "kisumu", phone: "0715505262", image: "/static/kisumu-campus.jpg", description: "Located in the lakeside city, offering diverse programs." },
+    { name: "NAKURU CAMPUS", slug: "nakuru", phone: "0711488302", image: "/static/nakuru-campus.jpg", description: "Central location serving students across Kenya." },
+    { name: "MARALAL CAMPUS", slug: "maralal", phone: "0723555999", image: "/static/nakuru.jpg", description: "Bringing quality education to Northern Kenya." },
   ];
 
   return (
@@ -76,6 +76,8 @@ const CampusesSection = () => {
                       </Typography>
                     </Box>
                     <Button
+                      component={Link}
+                      href={`/campuses/${campus.slug}`}
                       size="small"
                       endIcon={<ArrowForwardIcon fontSize="small" />}
                       sx={{ color: brand.accent, fontWeight: 'bold', textTransform: 'none', '&:hover': { bgcolor: 'transparent', color: brand.accentHover } }}
