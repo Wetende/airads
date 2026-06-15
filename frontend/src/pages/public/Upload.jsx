@@ -1323,7 +1323,7 @@ const UploadPage = ({ onLogout }) => {
                               <Stack direction="row" spacing={2} sx={{ flex: 1 }}>
                                 {event.image && (
                                   <Box
-                                    component="img"
+                                    component="img" loading="lazy"
                                     src={event.image}
                                     alt={event.title}
                                     sx={{

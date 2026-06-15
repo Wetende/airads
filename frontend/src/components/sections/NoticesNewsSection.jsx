@@ -31,19 +31,19 @@ const news = [
   {
     title: 'AIRADS College Achieves 100% Pass Rate in KNEC Examinations',
     date: '05/15/2026',
-    image: '/static/63.JPG',
+    image: '/static/63.webp',
     href: '/news/latest/',
   },
   {
     title: 'New Maralal Campus Opens Doors to Students in Samburu County',
     date: '05/08/2026',
-    image: '/static/7.1.JPG',
+    image: '/static/7.1.webp',
     href: '/news/latest/',
   },
   {
     title: 'AIRADS Partners with Industry Leaders for Student Attachment Programs',
     date: '04/22/2026',
-    image: '/static/17.jpg',
+    image: '/static/17.webp',
     href: '/news/latest/',
   },
 ];
@@ -272,7 +272,7 @@ const NoticesNewsSection = () => {
                     }}
                   >
                     <Box
-                      component="img"
+                      component="img" loading="lazy"
                       src={item.image}
                       alt={item.title}
                       sx={{

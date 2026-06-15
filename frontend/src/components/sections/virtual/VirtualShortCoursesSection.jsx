@@ -4,11 +4,11 @@ import { ArrowForward as ArrowForwardIcon, Search as SearchIcon, PlayArrow } fro
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
 
 const MOCK_COURSES = [
-  { title: "Packages (Computer Packages)", duration: "4 Weeks", category: "Computer", level: "Short Courses", image: "/static/ict.jpeg" },
-  { title: "Digital Marketing Fundamentals", duration: "6 Weeks", category: "Business Management", level: "Short Courses", image: "/static/course-12.jpg" },
-  { title: "Graphic Design Masterclass", duration: "8 Weeks", category: "Design", level: "Short Courses", image: "/static/18.jpg" },
-  { title: "Data Analysis using Python", duration: "10 Weeks", category: "Computer", level: "Short Courses", image: "/static/course-4.jpg" },
-  { title: "Beauty Therapy Essentials", duration: "4 Weeks", category: "Beauty and Cosmetology", level: "Short Courses", image: "/static/beauty-1.JPG" },
+  { title: "Packages (Computer Packages)", duration: "4 Weeks", category: "Computer", level: "Short Courses", image: "/static/ict.webp" },
+  { title: "Digital Marketing Fundamentals", duration: "6 Weeks", category: "Business Management", level: "Short Courses", image: "/static/course-12.webp" },
+  { title: "Graphic Design Masterclass", duration: "8 Weeks", category: "Design", level: "Short Courses", image: "/static/18.webp" },
+  { title: "Data Analysis using Python", duration: "10 Weeks", category: "Computer", level: "Short Courses", image: "/static/course-4.webp" },
+  { title: "Beauty Therapy Essentials", duration: "4 Weeks", category: "Beauty and Cosmetology", level: "Short Courses", image: "/static/beauty-1.webp" },
   { title: "Cybersecurity Awareness", duration: "2 Weeks", category: "Safety & Security", level: "Short Courses", image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" }
 ];
 
@@ -131,7 +131,7 @@ export default function VirtualShortCoursesSection() {
                     }}
                   >
                     <Box sx={{ position: 'relative' }}>
-                      <CardMedia component="img" height="180" image={course.image} alt={course.title} />
+                      <CardMedia component="img" loading="lazy" height="180" image={course.image} alt={course.title} />
                       <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(0,0,0,0.2)', opacity: 0, transition: 'opacity 0.3s', '&:hover': { opacity: 1 } }}>
                         <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <PlayArrow sx={{ color: brand.primary }} />

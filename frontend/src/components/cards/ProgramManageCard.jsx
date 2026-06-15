@@ -117,7 +117,7 @@ export default function ProgramManageCard({
         >
             <Box sx={{ position: "relative" }}>
                 <CardMedia
-                    component="img"
+                    component="img" loading="lazy"
                     height="160"
                     image={
                         program.thumbnail ||

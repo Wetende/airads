@@ -247,6 +247,9 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+# Cache static files for 1 year in production
+WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
+
 STATICFILES_STORAGE_BACKEND = (
     "django.contrib.staticfiles.storage.StaticFilesStorage"
     if DEBUG

@@ -44,7 +44,7 @@ const TrainingPathwayCard = ({ pathway, brand }) => (
       }}
     >
       <CardMedia
-        component="img"
+        component="img" loading="lazy"
         image={pathway.image}
         alt={pathway.title}
         className="school-image"

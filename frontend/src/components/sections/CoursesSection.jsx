@@ -8,11 +8,11 @@ const CoursesSection = () => {
   const [activeFilter, setActiveFilter] = useState("All Courses");
 
   const courses = [
-    { title: "Certificate in Project Management", description: "AIRADS College is the best technical college offering this comprehensive project management program.", category: "Business Management", level: "Certificate Courses", image: "/static/17.jpg" },
-    { title: "Diploma in Planning and Project Management", description: "Course Overview: This two year diploma course offered at AIRADS focuses on strategic planning and project execution.", category: "Business Management", level: "Diploma Course", image: "/static/course-2.jpg" },
+    { title: "Certificate in Project Management", description: "AIRADS College is the best technical college offering this comprehensive project management program.", category: "Business Management", level: "Certificate Courses", image: "/static/17.webp" },
+    { title: "Diploma in Planning and Project Management", description: "Course Overview: This two year diploma course offered at AIRADS focuses on strategic planning and project execution.", category: "Business Management", level: "Diploma Course", image: "/static/course-2.webp" },
     { title: "Diploma in Electrical/Electronic Engineering (KNEC)", description: "This is a two years course which aims at equipping learners with comprehensive knowledge in electrical and electronic systems.", category: "Engineering", level: "Diploma Course", image: "/static/course-3.webp" },
-    { title: "Diploma in Information Communication Technology", description: "This course offered at African Institute of Research and Development Studies focuses on modern ICT skills and applications.", category: "Computer", level: "Diploma Course", image: "/static/course-4.jpg" },
-    { title: "Certificate in Information Communication Technology", description: "Certificate in Information Communication Technology course is intended to provide foundational ICT skills.", category: "Computer", level: "Certificate Courses", image: "/static/18.jpg" },
+    { title: "Diploma in Information Communication Technology", description: "This course offered at African Institute of Research and Development Studies focuses on modern ICT skills and applications.", category: "Computer", level: "Diploma Course", image: "/static/course-4.webp" },
+    { title: "Certificate in Information Communication Technology", description: "Certificate in Information Communication Technology course is intended to provide foundational ICT skills.", category: "Computer", level: "Certificate Courses", image: "/static/18.webp" },
     { title: "Diploma in Land Mapping and Survey", description: "Course Overview: This two year diploma course offered at AIRADS covers comprehensive surveying techniques.", category: "Engineering", level: "Diploma Course", image: "/static/course-6.webp" },
     { title: "Certificate in Land Mapping and Survey", description: "Certificate in Land Mapping and Survey course provides foundational skills in surveying and mapping techniques.", category: "Engineering", level: "Certificate Courses", image: "/static/course-6.webp" },
     { title: "Certificate in Electrical Installation", description: "This Certificate course in Electrical Installation is designed to equip learners with necessary skills in electrical systems.", category: "Engineering", level: "Certificate Courses", image: "/static/course-8.webp" },
@@ -20,12 +20,12 @@ const CoursesSection = () => {
     { title: "Artisan in Electrical and Electronic Technology (KNEC)", description: "This electrical and electronics technology program is designed for hands-on technical skills development.", category: "Engineering", level: "Artisan Courses", image: "/static/course-9.webp" },
     { title: "Artisan in Plumbing (KNEC)", description: "Artisan course in plumbing focusing on practical skills in water supply and sanitation systems.", category: "Engineering", level: "Artisan Courses", image: "/static/course-1.webp" },
     { title: "Artisan in Electrical Installation (KNEC)", description: "Hands-on artisan course in electrical installation covering practical electrical systems.", category: "Engineering", level: "Artisan Courses", image: "/static/course-8.webp" },
-    { title: "Disaster Management", description: "Comprehensive course in disaster management and emergency response planning.", category: "Safety & Security", level: "Certificate Courses", image: "/static/36.jpg" },
-    { title: "Short Courses", description: "Various short duration courses designed for quick skill acquisition and professional development.", category: "General", level: "Short Courses", image: "/static/course-12.jpg" },
-    { title: "NITA Courses", description: "National Industrial Training Authority approved courses for professional certification.", category: "Professional", level: "Certificate Courses", image: "/static/course-13.jpg" },
-    { title: "Packages (Computer Packages)", description: "Introduction to computers and various software applications for modern workplace skills.", category: "Computer", level: "Short Courses", image: "/static/ict.jpeg" },
-    { title: "Engineering", description: "Comprehensive engineering programs covering various technical disciplines and practical applications.", category: "Engineering", level: "Diploma Course", image: "/static/electrical-1.jpg" },
-    { title: "Beauty", description: "Beauty therapy and cosmetology courses focusing on professional beauty skills and techniques.", category: "Beauty and Cosmetology", level: "Short Courses", image: "/static/beauty-1.JPG" },
+    { title: "Disaster Management", description: "Comprehensive course in disaster management and emergency response planning.", category: "Safety & Security", level: "Certificate Courses", image: "/static/36.webp" },
+    { title: "Short Courses", description: "Various short duration courses designed for quick skill acquisition and professional development.", category: "General", level: "Short Courses", image: "/static/course-12.webp" },
+    { title: "NITA Courses", description: "National Industrial Training Authority approved courses for professional certification.", category: "Professional", level: "Certificate Courses", image: "/static/course-13.webp" },
+    { title: "Packages (Computer Packages)", description: "Introduction to computers and various software applications for modern workplace skills.", category: "Computer", level: "Short Courses", image: "/static/ict.webp" },
+    { title: "Engineering", description: "Comprehensive engineering programs covering various technical disciplines and practical applications.", category: "Engineering", level: "Diploma Course", image: "/static/electrical-1.webp" },
+    { title: "Beauty", description: "Beauty therapy and cosmetology courses focusing on professional beauty skills and techniques.", category: "Beauty and Cosmetology", level: "Short Courses", image: "/static/beauty-1.webp" },
   ];
 
   const schools = [
@@ -128,7 +128,7 @@ const CoursesSection = () => {
                 }}
               >
                 <Box sx={{ position: 'relative' }}>
-                  <CardMedia component="img" height="200" image={course.image} alt={course.title} />
+                  <CardMedia component="img" loading="lazy" height="200" image={course.image} alt={course.title} />
                   <Box sx={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-end', p: 2 }}>
                     <Chip size="small" label={course.level} sx={{ bgcolor: brand.accent, color: 'white', fontWeight: 'bold', fontSize: '0.7rem' }} />
                   </Box>

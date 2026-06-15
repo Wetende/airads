@@ -95,8 +95,8 @@ function AboutPanel({ brand }) {
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
         <Box
-          component="img"
-          src="/static/31.jpg"
+          component="img" loading="lazy"
+          src="/static/31.webp"
           alt="AIRADS Campus"
           sx={{
             width: '100%',
@@ -183,8 +183,8 @@ function HowToApplyPanel({ brand }) {
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
         <Box
-          component="img"
-          src="/static/image33.jpg"
+          component="img" loading="lazy"
+          src="/static/image33.webp"
           alt="Students applying"
           sx={{ width: '100%', height: '100%', minHeight: 320, objectFit: 'cover', borderRadius: 3, boxShadow: 3 }}
         />
@@ -354,7 +354,7 @@ const AtAGlanceSection = () => {
                     content: '""',
                     position: 'absolute',
                     top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundImage: 'url(/static/image33.jpg)',
+                    backgroundImage: 'url(/static/image33.webp)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     zIndex: 0,

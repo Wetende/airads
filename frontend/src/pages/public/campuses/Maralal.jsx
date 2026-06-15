@@ -222,8 +222,9 @@ const Maralal = () => {
 
               <Box sx={{ mt: 2, mb: 4 }}>
                 <PrincipalMessage 
-                  principalName="Maralal Campus Principal"
+                  principalName="Mr. Rotich"
                   campusName="Maralal Campus"
+                  imageUrl="/static/rotich-maralal.webp"
                   message="Welcome to AIRADS Maralal Campus. We are honored to serve Samburu County and its environs, providing accessible, high-quality technical education that transforms lives and drives regional development."
                 />
               </Box>

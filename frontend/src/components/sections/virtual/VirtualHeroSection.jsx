@@ -144,8 +144,8 @@ export default function VirtualHeroSection() {
           <Grid size={{ xs: 12, md: 5 }}>
             <Box sx={{ position: 'relative' }}>
               <Box
-                component="img"
-                src="/static/course-12.jpg"
+                component="img" loading="lazy"
+                src="/static/course-12.webp"
                 alt="Student learning online"
                 sx={{
                   width: '100%',

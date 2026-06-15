@@ -32,7 +32,7 @@ const Schools = () => {
           sx={{
             py: { xs: 7, md: 10 },
             color: "white",
-            backgroundImage: "linear-gradient(90deg, rgba(15,23,42,0.92), rgba(30,58,138,0.78)), url(/static/course-12.jpg)",
+            backgroundImage: "linear-gradient(90deg, rgba(15,23,42,0.92), rgba(30,58,138,0.78)), url(/static/course-12.webp)",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}

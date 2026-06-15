@@ -171,8 +171,8 @@ const QuickLinksAdmissionSection = () => {
             }}
           >
             <Box
-              component="img"
-              src="/static/68.JPG"
+              component="img" loading="lazy"
+              src="/static/68.webp"
               alt="AIRADS Campus"
               sx={{
                 position: 'absolute',

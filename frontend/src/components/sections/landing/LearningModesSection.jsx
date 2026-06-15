@@ -95,7 +95,7 @@ export default function LearningModesSection({ platform }) {
                                 }}
                             >
                                 <Box
-                                    component="img"
+                                    component="img" loading="lazy"
                                     src={learningImage}
                                     alt="Choose Your Learning Path"
                                     sx={{

@@ -264,7 +264,7 @@ export default function ImageMatchingEditor({ nodeId, pairs = [], onChange }) {
                 {preview ? (
                     <Box sx={{ position: "relative", width: "100%" }}>
                         <img
-                            src={preview}
+                            loading="lazy" src={preview}
                             alt="Uploaded"
                             style={{
                                 maxWidth: "100%",

@@ -69,7 +69,7 @@ export default function ImageMatchingQuestion({
                                 {l.image && (
                                     <Box sx={{ mb: 1 }}>
                                         <img
-                                            src={l.image}
+                                            loading="lazy" src={l.image}
                                             alt="Question"
                                             style={{
                                                 maxWidth: "100%",
@@ -108,7 +108,7 @@ export default function ImageMatchingQuestion({
                                 {selected?.image && (
                                     <Box sx={{ mt: 1 }}>
                                         <img
-                                            src={selected.image}
+                                            loading="lazy" src={selected.image}
                                             alt="Selected answer"
                                             style={{
                                                 maxWidth: "100%",

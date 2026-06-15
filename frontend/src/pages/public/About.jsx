@@ -54,7 +54,7 @@ const About = () => {
                 }}
               >
                 <Box 
-                  component="img"
+                  component="img" loading="lazy"
                   src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80" 
                   alt="Students learning"
                   sx={{ 

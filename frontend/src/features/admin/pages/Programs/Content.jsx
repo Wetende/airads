@@ -219,7 +219,7 @@ export default function ProgramContent({
                       >
                         {thumbnailPreview ? (
                           <Box
-                            component="img"
+                            component="img" loading="lazy"
                             src={thumbnailPreview}
                             sx={{
                               width: 120,

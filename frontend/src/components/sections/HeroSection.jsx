@@ -10,14 +10,14 @@ import { FONT_HEADING } from '../../config';
 
 const slides = [
   {
-    image: '/static/63.JPG',
+    image: '/static/63.webp',
     title: 'Centre of Excellence',
     subtitle: '20 Years of Consistent KNEC Excellence',
     description: 'AIRADS College — A Centre of Excellence with 90-100% pass rate in KNEC, NITA, ICM & KASNEB Exams.',
     cta: { text: 'Read More', href: '/about/' },
   },
   {
-    image: '/static/68.JPG',
+    image: '/static/68.webp',
     title: 'May/June Intake',
     subtitle: 'Enrollment in Progress',
     description: 'Register now for Diploma, Certificate, Artisan and Short Courses across all our campuses.',
@@ -25,14 +25,14 @@ const slides = [
     isLive: true,
   },
   {
-    image: '/static/6.7.JPG',
+    image: '/static/6.7.webp',
     title: 'Practical Skills Training',
     subtitle: 'TVET Education for Real-World Impact',
     description: 'Empowering trainees with practical skills for a competitive job market through hands-on training.',
     cta: { text: 'View Courses', href: '/admissions/career-guide/' },
   },
   {
-    image: '/static/7.1.JPG',
+    image: '/static/7.1.webp',
     title: '7 Campuses Nationwide',
     subtitle: 'Bringing Education Closer to You',
     description: 'Study at our 7 campuses in Bungoma, Kericho, Eldoret, Kisumu, Nakuru, Lodwar, and Maralal, or learn through our Virtual Campus.',

@@ -500,7 +500,7 @@ function PopularCourses({ courses }) {
                         }}
                     >
                         <CardMedia
-                            component="img"
+                            component="img" loading="lazy"
                             sx={{ width: 80, height: 60, objectFit: "cover" }}
                             image={
                                 course.thumbnail ||
@@ -791,7 +791,7 @@ export default function ProgramDetail({
                                 {/* Featured Image */}
                                 {program.thumbnail && (
                                     <Box
-                                        component="img"
+                                        component="img" loading="lazy"
                                         src={program.thumbnail}
                                         alt={program.name}
                                         sx={{

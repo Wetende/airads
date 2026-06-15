@@ -27,7 +27,7 @@ const WhyJoinLifeCard = ({ item, brand }) => (
     }}
   >
     <Box
-      component="img"
+      component="img" loading="lazy"
       src={item.image}
       alt={item.title}
       className="why-join-image"
@@ -141,21 +141,21 @@ const WelcomeSection = () => {
       title: "Practical Skills Training",
       description: "Train in real learning spaces with hands-on delivery built for TVET, business, ICT, hospitality and media excellence.",
       icon: <School fontSize="inherit" />,
-      image: "/static/31.jpg",
+      image: "/static/31.webp",
       href: "/admissions/career-guide/",
     },
     {
       title: "Student Life & Support",
       description: "Join a vibrant AIRADS community with mentoring, flexible campuses and learner support that helps you stay focused and confident.",
       icon: <Public fontSize="inherit" />,
-      image: "/static/63.JPG",
+      image: "/static/63.webp",
       href: "/campuses/",
     },
     {
       title: "Career Pathways & Attachment",
       description: "Move from classroom to workplace through industry attachment, guided career pathways and job-ready training outcomes.",
       icon: <BusinessCenter fontSize="inherit" />,
-      image: "/static/17.jpg",
+      image: "/static/17.webp",
       href: "/admissions/procedure/",
     },
   ];
@@ -187,8 +187,8 @@ const WelcomeSection = () => {
             <Grid size={{ xs: 12, lg: 4 }}>
               <Box sx={{ position: 'relative', height: '100%', minHeight: { xs: 380, lg: '100%' } }}>
                 <Box
-                  component="img"
-                  src="/static/ceo-min.png"
+                  component="img" loading="lazy"
+                  src="/static/ceo-min.webp"
                   alt="AIRADS College CEO"
                   sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.7s', '&:hover': { transform: 'scale(1.05)' } }}
                 />
@@ -431,7 +431,7 @@ const WelcomeSection = () => {
             overflow: 'hidden',
             position: 'relative',
             backgroundImage:
-              `linear-gradient(90deg, rgba(104, 22, 31, 0.42) 0%, rgba(104, 22, 31, 0.18) 48%, rgba(37, 99, 235, 0.22) 100%), url('/static/68.JPG')`,
+              `linear-gradient(90deg, rgba(104, 22, 31, 0.42) 0%, rgba(104, 22, 31, 0.18) 48%, rgba(37, 99, 235, 0.22) 100%), url('/static/68.webp')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}

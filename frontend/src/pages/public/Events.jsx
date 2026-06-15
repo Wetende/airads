@@ -208,7 +208,7 @@ const Events = () => {
                       {event.image && (
                         <Box sx={{ position: 'relative', height: 200, overflow: 'hidden' }}>
                           <CardMedia
-                            component="img"
+                            component="img" loading="lazy"
                             image={event.image}
                             alt={event.title}
                             sx={{ height: '100%', transition: 'transform 0.5s', '&:hover': { transform: 'scale(1.1)' } }}
@@ -306,7 +306,7 @@ const Events = () => {
                       {event.image && (
                         <Grid sx={{ position: 'relative', minHeight: { xs: 200, md: 'auto' } }} size={{ xs: 12, md: 4 }}>
                           <CardMedia
-                            component="img"
+                            component="img" loading="lazy"
                             image={event.image}
                             alt={event.title}
                             sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
@@ -371,7 +371,7 @@ const Events = () => {
           <>
             {selectedEvent.image && (
               <Box sx={{ position: 'relative', height: { xs: 200, sm: 300 } }}>
-                <CardMedia component="img" image={selectedEvent.image} alt={selectedEvent.title} sx={{ height: '100%' }} />
+                <CardMedia component="img" loading="lazy" image={selectedEvent.image} alt={selectedEvent.title} sx={{ height: '100%' }} />
                 <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(15, 23, 42, 0.45)' }} />
                 <Chip
                   icon={getEventTypeIcon(selectedEvent.type)}

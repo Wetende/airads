@@ -25,7 +25,7 @@ export default function PlatformLogo({
     nameSx,
 }) {
     const institutionName = platform?.institutionName || fallbackName;
-    const logoUrl = platform?.logoUrl || "/static/airads-logo.png";
+    const logoUrl = platform?.logoUrl || "/static/airads-logo.webp";
     const hasLogo = Boolean(logoUrl);
     const shouldShowName =
         showName &&
@@ -33,7 +33,7 @@ export default function PlatformLogo({
 
     const mark = hasLogo ? (
         <Box
-            component="img"
+            component="img" loading="lazy"
             src={logoUrl}
             alt={institutionName}
             sx={{

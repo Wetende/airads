@@ -35,7 +35,7 @@ export default function PrincipalMessage({
         >
           {imageUrl ? (
             <Box
-              component="img"
+              component="img" loading="lazy"
               src={imageUrl}
               alt={`Principal of ${campusName}`}
               sx={{

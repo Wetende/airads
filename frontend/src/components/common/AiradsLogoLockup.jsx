@@ -6,7 +6,7 @@ export default function AiradsLogoLockup({
     href,
     onClick,
     sx,
-    crestSrc = "/static/airads-logo.png",
+    crestSrc = "/static/airads-logo.webp",
     crestAlt = "AIRADS College crest",
     gap = 1,
     crestHeight = 46,
@@ -64,7 +64,7 @@ export default function AiradsLogoLockup({
             }}
         >
             <Box
-                component="img"
+                component="img" loading="lazy"
                 src={crestSrc}
                 alt={crestAlt}
                 sx={{

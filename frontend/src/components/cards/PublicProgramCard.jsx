@@ -95,7 +95,7 @@ export default function PublicProgramCard({
             {/* Thumbnail with badge + wishlist heart */}
             <Box sx={{ position: "relative" }}>
                 <CardMedia
-                    component="img"
+                    component="img" loading="lazy"
                     image={
                         program.thumbnail ||
                         "/static/images/course-placeholder.svg"

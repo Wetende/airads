@@ -225,7 +225,7 @@ export default function HeroSection({ platform }) {
                     }}
                 >
                     <img
-                        src={heroImages[currentImageIndex]}
+                        loading="lazy" src={heroImages[currentImageIndex]}
                         alt=""
                         fetchPriority={currentImageIndex === 0 ? "high" : "low"}
                         style={{
