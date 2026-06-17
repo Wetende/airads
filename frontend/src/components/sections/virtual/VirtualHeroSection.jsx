@@ -64,15 +64,18 @@ export default function VirtualHeroSection() {
               variant="h1"
               sx={{
                 fontWeight: 900,
-                color: brand.secondary,
                 fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
                 lineHeight: 1.1,
                 mb: 3,
                 letterSpacing: '-0.02em',
               }}
             >
-              Flexible Learning &<br />
-              Upskilling
+              <Box component="span" sx={{ color: brand.secondary }}>
+                Flexible Learning &<br />
+              </Box>
+              <Box component="span" sx={{ color: brand.accent }}>
+                Upskilling
+              </Box>
             </Typography>
 
             <Typography
@@ -91,18 +94,17 @@ export default function VirtualHeroSection() {
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <Button
                 variant="contained"
-                size="large"
                 href={coursesHref}
                 sx={{
                   bgcolor: brand.primary,
                   color: 'white',
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: 8,
-                  fontWeight: 700,
-                  fontSize: '1.1rem',
-                  boxShadow: '0 8px 16px rgba(30, 58, 138, 0.2)',
-                  '&:hover': { bgcolor: brand.secondary, transform: 'translateY(-2px)' },
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  boxShadow: '0 4px 6px rgba(30, 58, 138, 0.1)',
+                  '&:hover': { bgcolor: brand.secondary, transform: 'translateY(-1px)' },
                   transition: 'all 0.2s',
                 }}
               >
@@ -110,17 +112,16 @@ export default function VirtualHeroSection() {
               </Button>
               <Button
                 variant="outlined"
-                size="large"
                 endIcon={<ArrowForward />}
                 href={applyHref}
                 sx={{
                   color: brand.secondary,
                   borderColor: brand.secondary,
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: 8,
-                  fontWeight: 700,
-                  fontSize: '1.1rem',
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  fontSize: '1rem',
                   '&:hover': { bgcolor: brand.softBlue, borderColor: brand.primary },
                 }}
               >
@@ -145,8 +146,8 @@ export default function VirtualHeroSection() {
             <Box sx={{ position: 'relative' }}>
               <Box
                 component="img" loading="lazy"
-                src="/static/course-12.webp"
-                alt="Student learning online"
+                src="https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80"
+                alt="Virtual class student studying"
                 sx={{
                   width: '100%',
                   height: 480,

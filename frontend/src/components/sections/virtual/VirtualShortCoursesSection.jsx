@@ -32,7 +32,7 @@ export default function VirtualShortCoursesSection() {
     <Box component="section" sx={{ py: 10, bgcolor: 'background.paper' }}>
       <Container maxWidth="lg">
         <Typography variant="h3" component="h2" sx={{ fontWeight: 'bold', color: brand.neutralText, mb: 1, fontSize: { xs: '2rem', md: '2.5rem' } }}>
-          Explore Our <Box component="span" sx={{ bgcolor: brand.accent, color: 'white', px: 2, py: 0.5, borderRadius: 2 }}>Courses</Box>
+          Explore Our <Box component="span" sx={{ bgcolor: brand.accent, color: 'white', px: 1.5, py: 0, borderRadius: 1.5, display: 'inline-block', lineHeight: 1.2 }}>Courses</Box>
         </Typography>
         <Typography variant="subtitle1" sx={{ color: 'text.secondary', mb: 6, maxWidth: 800 }}>
           Suite of online, self-paced and flexible programs, featuring Diploma, certificates and Short Courses designed for the dynamic lifestyles of working professionals.
