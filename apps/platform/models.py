@@ -2,6 +2,7 @@
 Platform settings models - Single-tenant configuration.
 """
 
+from django.conf import settings as django_settings
 from django.db import models
 from django.core.cache import cache
 from django.templatetags.static import static
@@ -49,9 +50,8 @@ class PlatformSettings(TimeStampedModel):
     """
 
     class DeploymentMode(models.TextChoices):
-        TVET = 'tvet', 'TVET Institution (CDACC/KNEC)'
+        TVET = 'tvet', 'TVET Institution (KASNEB/CDACC/KNEC/NITA/ICM)'
         THEOLOGY = 'theology', 'Theology/Bible School'
-        NITA = 'nita', 'NITA Trade Test'
         DRIVING = 'driving', 'Driving School (NTSA)'
         CBC = 'cbc', 'CBC K-12 School'
         ONLINE = 'online', 'Online Courses (Self-Paced)'
@@ -223,6 +223,7 @@ class PlatformSettings(TimeStampedModel):
             "features": features,
             "publicContent": public_content,
             "socialLinks": social_links,
+            "virtualCampusUrl": getattr(django_settings, "VIRTUAL_CAMPUS_BASE_URL", "https://virtual.airads.ac.ke"),
         }
         cache.set(PLATFORM_PAYLOAD_CACHE_KEY, payload, timeout=900)
         return payload
@@ -291,16 +292,7 @@ class PlatformSettings(TimeStampedModel):
                 'drip_v2': True,
                 'enrollment_mode': 'admin_approval',
             },
-            'nita': {
-                'certificates': True,
-                'practicum': True,
-                'gamification': False,
-                'self_registration': False,
-                'payments': True,
-                'course_reviews': True,
-                'drip_v2': True,
-                'enrollment_mode': 'admin_approval',
-            },
+
             'cbc': {
                 'certificates': True,
                 'practicum': False,
@@ -332,12 +324,18 @@ class PlatformSettings(TimeStampedModel):
         # Default levels based on deployment mode (Kenya KNQF)
         MODE_LEVEL_DEFAULTS = {
             'tvet': [
-                # Kenya CDACC/KNQF Levels 2-6
-                {"value": "level_2", "label": "Level 2 - Basic Certificate"},
-                {"value": "level_3", "label": "Level 3 - Artisan Certificate"},
-                {"value": "level_4", "label": "Level 4 - Craft Certificate"},
-                {"value": "level_5", "label": "Level 5 - Technician Certificate"},
-                {"value": "level_6", "label": "Level 6 - Diploma"},
+                # Broad categories covering all 5 exam bodies
+                # (KASNEB, CDACC, KNEC, NITA, ICM)
+                {"value": "entry", "label": "Entry"},
+                {"value": "foundation", "label": "Foundation"},
+                {"value": "artisan", "label": "Artisan"},
+                {"value": "certificate", "label": "Certificate"},
+                {"value": "diploma", "label": "Diploma"},
+                {"value": "advanced", "label": "Advanced"},
+                {"value": "professional", "label": "Professional"},
+                {"value": "post_professional", "label": "Post-Professional"},
+                {"value": "skill_upgrade", "label": "Skill Upgrade"},
+                {"value": "trade_test", "label": "Trade Test"},
             ],
             'theology': [
                 {"value": "certificate", "label": "Certificate"},

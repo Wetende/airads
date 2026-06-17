@@ -134,9 +134,7 @@ def _is_virtual_request(request) -> bool:
 
 
 def _virtual_base_url() -> str:
-    hosts = getattr(settings, "VIRTUAL_CAMPUS_HOSTS", ["virtual.airads.ac.ke"])
-    host = hosts[0] if hosts else "virtual.airads.ac.ke"
-    return f"https://{host}"
+    return getattr(settings, "VIRTUAL_CAMPUS_BASE_URL", "https://virtual.airads.ac.ke")
 
 
 def _build_site_context(request) -> dict:
@@ -2090,6 +2088,9 @@ def admin_program_create(request):
     from apps.blueprints.models import AcademicBlueprint
     from apps.progression.models import InstructorAssignment
     from apps.platform.models import PlatformSettings
+    from apps.platform.exam_body_registry import get_registry_for_frontend
+
+    platform_settings = PlatformSettings.get_settings()
 
     if request.method == "POST":
         data = get_post_data(request)
@@ -2113,13 +2114,15 @@ def admin_program_create(request):
                     "mode": "create",
                     "blueprints": _get_blueprints_for_form(),
                     "instructors": _get_instructors_for_form(),
-                    "courseLevels": PlatformSettings.get_settings().get_course_levels(),
+                    "courseLevels": platform_settings.get_course_levels(),
+                    "examBodyRegistry": get_registry_for_frontend(),
+                    "deploymentMode": platform_settings.deployment_mode,
                     "errors": errors,
                     "formData": data,
                 },
             )
 
-        # Create program
+        # Create program with exam body metadata
         program = Program.objects.create(
             blueprint_id=blueprint_id,
             name=name,
@@ -2127,6 +2130,16 @@ def admin_program_create(request):
             description=data.get("description", ""),
             is_published=data.get("isPublished", False),
             level=data.get("level", ""),
+            # Exam body metadata (TVET mode)
+            exam_body=data.get("examBody") or None,
+            qualification_family=data.get("qualificationFamily") or None,
+            official_level=data.get("officialLevel") or None,
+            award_type=data.get("awardType") or None,
+            approval_status=data.get("approvalStatus") or None,
+            assessment_mode=data.get("assessmentMode") or None,
+            centre_status=data.get("centreStatus") or None,
+            kenya_recognition_status=data.get("kenyaRecognitionStatus") or None,
+            source_document=data.get("sourceDocument") or None,
         )
 
         # Assign instructors
@@ -2148,7 +2161,9 @@ def admin_program_create(request):
             "mode": "create",
             "blueprints": _get_blueprints_for_form(),
             "instructors": _get_instructors_for_form(),
-            "courseLevels": PlatformSettings.get_settings().get_course_levels(),
+            "courseLevels": platform_settings.get_course_levels(),
+            "examBodyRegistry": get_registry_for_frontend(),
+            "deploymentMode": platform_settings.deployment_mode,
         },
     )
 
@@ -2165,9 +2180,11 @@ def admin_program_edit(request, pk: int):
     from django.shortcuts import get_object_or_404
 
     from apps.platform.models import PlatformSettings
+    from apps.platform.exam_body_registry import get_registry_for_frontend
     from apps.progression.models import Enrollment, InstructorAssignment
 
     program = get_object_or_404(Program, pk=pk)
+    platform_settings = PlatformSettings.get_settings()
 
     if request.method == "POST":
         data = get_post_data(request)
@@ -2186,7 +2203,9 @@ def admin_program_edit(request, pk: int):
                     "program": _serialize_program(program),
                     "blueprints": _get_blueprints_for_form(),
                     "instructors": _get_instructors_for_form(),
-                    "courseLevels": PlatformSettings.get_settings().get_course_levels(),
+                    "courseLevels": platform_settings.get_course_levels(),
+                    "examBodyRegistry": get_registry_for_frontend(),
+                    "deploymentMode": platform_settings.deployment_mode,
                     "errors": errors,
                 },
             )
@@ -2197,6 +2216,17 @@ def admin_program_edit(request, pk: int):
         program.description = data.get("description", "")
         program.is_published = data.get("isPublished", False)
         program.level = data.get("level", "")
+
+        # Exam body metadata
+        program.exam_body = data.get("examBody") or None
+        program.qualification_family = data.get("qualificationFamily") or None
+        program.official_level = data.get("officialLevel") or None
+        program.award_type = data.get("awardType") or None
+        program.approval_status = data.get("approvalStatus") or None
+        program.assessment_mode = data.get("assessmentMode") or None
+        program.centre_status = data.get("centreStatus") or None
+        program.kenya_recognition_status = data.get("kenyaRecognitionStatus") or None
+        program.source_document = data.get("sourceDocument") or None
 
         # Only update blueprint if no enrollments
         from apps.progression.models import Enrollment
@@ -2234,7 +2264,9 @@ def admin_program_edit(request, pk: int):
             "currentInstructorIds": current_instructors,
             "blueprints": _get_blueprints_for_form(),
             "instructors": _get_instructors_for_form(),
-            "courseLevels": PlatformSettings.get_settings().get_course_levels(),
+            "courseLevels": platform_settings.get_course_levels(),
+            "examBodyRegistry": get_registry_for_frontend(),
+            "deploymentMode": platform_settings.deployment_mode,
             "canChangeBlueprint": not Enrollment.objects.filter(
                 program=program
             ).exists(),
@@ -2473,6 +2505,16 @@ def _serialize_program(program: Program) -> dict:
         "blueprintId": program.blueprint_id,
         "blueprintName": program.blueprint.name if program.blueprint else None,
         "isPublished": program.is_published,
+        # Exam body metadata
+        "examBody": program.exam_body or "",
+        "qualificationFamily": program.qualification_family or "",
+        "officialLevel": program.official_level or "",
+        "awardType": program.award_type or "",
+        "approvalStatus": program.approval_status or "",
+        "assessmentMode": program.assessment_mode or "",
+        "centreStatus": program.centre_status or "",
+        "kenyaRecognitionStatus": program.kenya_recognition_status or "",
+        "sourceDocument": program.source_document or "",
     }
 
 

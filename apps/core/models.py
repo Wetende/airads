@@ -286,7 +286,50 @@ class Program(TimeStampedModel):
     )
     category = models.CharField(max_length=100, blank=True, null=True)
     # Level is now admin-configurable via PlatformSettings.course_levels
+    # For TVET mode, this serves as the broad category (Tier 1):
+    # Entry, Foundation, Certificate, Diploma, Advanced, Professional, etc.
     level = models.CharField(max_length=50)
+
+    # Examining Body Metadata (TVET mode)
+    # These fields enable accurate course classification per official
+    # examining/awarding body requirements (KASNEB, CDACC, KNEC, NITA, ICM).
+    exam_body = models.CharField(
+        max_length=50, blank=True, null=True,
+        help_text="Examining/awarding body: KASNEB, CDACC, KNEC, NITA, ICM, Internal"
+    )
+    qualification_family = models.CharField(
+        max_length=100, blank=True, null=True,
+        help_text="Official category: Certificate, Diploma, Professional, Trade Test, etc."
+    )
+    official_level = models.CharField(
+        max_length=100, blank=True, null=True,
+        help_text="Specific level/stage: Foundation, Level I, Grade III, Level 5, etc."
+    )
+    award_type = models.CharField(
+        max_length=100, blank=True, null=True,
+        help_text="Award issued: Craft Certificate, Diploma, Government Trade Test Certificate"
+    )
+    approval_status = models.CharField(
+        max_length=30, blank=True, null=True,
+        help_text="Regulatory approval: Approved, Pending, Internal Preparation"
+    )
+    assessment_mode = models.CharField(
+        max_length=50, blank=True, null=True,
+        help_text="Assessment method: Exam, CBET, Trade Test, Assignment, Project"
+    )
+    centre_status = models.CharField(
+        max_length=50, blank=True, null=True,
+        help_text="Centre approval status (ICM only): ICM Approved Centre, Pending, N/A"
+    )
+    kenya_recognition_status = models.CharField(
+        max_length=50, blank=True, null=True,
+        help_text="TVETA recognition: TVETA-listed, Pending, Not Confirmed"
+    )
+    source_document = models.TextField(
+        blank=True, null=True,
+        help_text="Reference: Syllabus, TVETA record, approval letter"
+    )
+
     duration_hours = models.PositiveIntegerField(
         default=0, help_text="Total duration in hours"
     )

@@ -37,16 +37,7 @@ MODE_BLUEPRINTS = {
             'pass_mark': 50
         },
     },
-    'nita': {
-        'name': 'NITA Trade Test',
-        'description': 'Trade test blueprint following NITA guidelines',
-        'hierarchy_structure': get_mode_builder_hierarchy('nita'),
-        'grading_logic': {
-            'type': 'competency',
-            'levels': ['Fail', 'Pass', 'Credit', 'Distinction'],
-            'pass_threshold': 'Pass'
-        },
-    },
+
     'driving': {
         'name': 'Driving School (NTSA)',
         'description': 'Checklist-based blueprint for driving schools following NTSA guidelines',
