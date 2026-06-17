@@ -37,7 +37,7 @@ const NAV_RADIUS = 1;
  * Each top-level item can have `groups` (multi-column mega-menu)
  * or `items` (simple dropdown).
  */
-const getMenuData = () => ({
+const getMenuData = (virtualCampusUrl = "https://virtual.airads.ac.ke/") => ({
   home: { label: "Home", href: "/" },
   about: {
     label: "About Us",
@@ -128,7 +128,7 @@ const getMenuData = () => ({
           { text: "Nakuru Campus", href: "/campuses/nakuru/" },
           { text: "Lodwar Campus", href: "/campuses/lodwar/" },
           { text: "Maralal Campus", href: "/campuses/maralal/" },
-          { text: "Virtual Campus", href: "https://virtual.airads.ac.ke/", external: true },
+          { text: "Virtual Campus", href: virtualCampusUrl, external: true },
         ],
       },
     ],
@@ -159,7 +159,7 @@ const getMenuData = () => ({
   },
   virtual: {
     label: "Virtual Campus",
-    href: "https://virtual.airads.ac.ke/",
+    href: virtualCampusUrl,
     highlight: true,
     external: true,
   },
@@ -272,7 +272,7 @@ const MegaMenuDropdown = ({ groups, anchorEl, open, onClose, brand }) => (
 /* ───────────────────── Main Component ───────────────────── */
 const MainNavbar = () => {
   const brand = usePublicBrand();
-  const menuData = getMenuData();
+  const menuData = getMenuData(brand.virtualCampusUrl);
 
   // Desktop mega-menu state
   const [openMenu, setOpenMenu] = useState(null);

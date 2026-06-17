@@ -17,7 +17,7 @@ import {
 import { usePublicBrand } from '../../hooks/usePublicBrand';
 import { FONT_HEADING, FONT_BODY } from '../../config';
 
-const footerColumns = [
+const getFooterColumns = (virtualCampusUrl = "https://virtual.airads.ac.ke/") => [
   {
     title: 'Quick Links',
     links: [
@@ -49,7 +49,7 @@ const footerColumns = [
         label: 'Apply Online',
         href: '/admissions/apply/',
       },
-      { label: 'Virtual Campus', href: 'https://virtual.airads.ac.ke/', external: true },
+      { label: 'Virtual Campus', href: virtualCampusUrl, external: true },
       { label: 'Campuses', href: '/campuses/' },
       { label: 'TVET/CDACC Courses', href: '/schools/tvet-cdacc-courses/' },
       { label: 'KASNEB Courses', href: '/schools/kasneb-courses/' },
@@ -224,7 +224,7 @@ const Footer = () => {
 
             </Grid>
 
-            {footerColumns.map((column) => (
+            {getFooterColumns(brand.virtualCampusUrl).map((column) => (
               <Grid
                 key={column.title}
                 size={{ xs: 12, md: 4, lg: 3 }}

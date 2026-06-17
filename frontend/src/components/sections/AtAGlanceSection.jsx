@@ -411,7 +411,7 @@ const AtAGlanceSection = () => {
                 </Button>
                 <Button
                   component="a"
-                  href="https://virtual.airads.ac.ke/"
+                  href={brand.virtualCampusUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   variant="contained"

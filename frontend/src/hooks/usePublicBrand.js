@@ -29,7 +29,8 @@ export function usePublicBrand() {
     borderBlue: AIRADS_FALLBACKS.borderBlue,
     neutralText: AIRADS_FALLBACKS.neutralText,
     mutedText: AIRADS_FALLBACKS.mutedText,
-  }), [platform.primaryColor, platform.secondaryColor, platform.accentColor]);
+    virtualCampusUrl: platform.virtualCampusUrl || "https://virtual.airads.ac.ke",
+  }), [platform.primaryColor, platform.secondaryColor, platform.accentColor, platform.virtualCampusUrl]);
 }
 
 export { AIRADS_FALLBACKS };

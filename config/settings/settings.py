@@ -40,6 +40,10 @@ def _split_env_list(value: str) -> list[str]:
 VIRTUAL_CAMPUS_HOSTS = _split_env_list(
     os.getenv("VIRTUAL_CAMPUS_HOSTS", "virtual.airads.ac.ke")
 )
+VIRTUAL_CAMPUS_BASE_URL = os.getenv(
+    "VIRTUAL_CAMPUS_BASE_URL",
+    f"https://{VIRTUAL_CAMPUS_HOSTS[0]}" if VIRTUAL_CAMPUS_HOSTS else "https://virtual.airads.ac.ke",
+)
 ALLOWED_HOSTS = _split_env_list(os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1"))
 for host in VIRTUAL_CAMPUS_HOSTS:
     if host not in ALLOWED_HOSTS:

@@ -11,11 +11,11 @@ import {
 import { usePublicBrand } from '../../hooks/usePublicBrand';
 import { FONT_HEADING, FONT_BODY } from '../../config';
 
-const quickLinks = [
+const getQuickLinks = (virtualCampusUrl = "https://virtual.airads.ac.ke/") => [
   { icon: IconSchool, label: 'Programmes', href: '/admissions/career-guide/' },
   { icon: IconClipboardText, label: 'Admissions', href: '/admissions/procedure/' },
   { icon: IconBuildingBank, label: 'Campuses', href: '/campuses/' },
-  { icon: IconWorld, label: 'Virtual Campus', href: 'https://virtual.airads.ac.ke/', external: true },
+  { icon: IconWorld, label: 'Virtual Campus', href: virtualCampusUrl, external: true },
   { icon: IconUsers, label: 'Student Portal', href: '/students/' },
   { icon: IconFileInvoice, label: 'Downloads', href: '/admissions/forms/' },
 ];
@@ -94,7 +94,7 @@ const QuickLinksAdmissionSection = () => {
               </Typography>
 
               <Stack spacing={0}>
-                {quickLinks.map((item, index) => {
+                {getQuickLinks(brand.virtualCampusUrl).map((item, index) => {
                   const Icon = item.icon;
 
                   return (
