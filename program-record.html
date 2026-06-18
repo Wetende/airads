@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Introduction to AI · Programme record</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14213D;
+    --ink-soft:#3A4564;
+    --paper:#F3F5FA;
+    --card:#FFFFFF;
+    --blue:#1D4ED8;
+    --blue-deep:#12318C;
+    --red:#B91C1C;
+    --red-deep:#7F1313;
+    --hairline:#DADFE8;
+    --muted:#6B7280;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  body::before{
+    content:"";
+    position:fixed;
+    left:0;top:0;bottom:0;
+    width:5px;
+    background:var(--red);
+    z-index:5;
+  }
+
+  .page{
+    max-width:1080px;
+    margin:0 auto;
+    padding:44px 36px 88px;
+  }
+
+  /* toolbar */
+  .toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:26px;
+    flex-wrap:wrap;
+  }
+
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    text-decoration:none;
+  }
+  .back-link:hover{color:var(--ink);}
+
+  .actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .btn{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:13.5px;
+    font-weight:500;
+    padding:9px 16px;
+    border-radius:3px;
+    border:1px solid var(--ink);
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .btn:hover{background:var(--ink);color:#fff;}
+  .btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+
+  .btn--primary{
+    background:var(--blue);
+    border-color:var(--blue);
+    color:#fff;
+  }
+  .btn--primary:hover{background:var(--blue-deep);border-color:var(--blue-deep);}
+
+  .btn--quiet{
+    border-color:var(--hairline);
+    color:var(--ink-soft);
+  }
+  .btn--quiet:hover{background:var(--ink-soft);border-color:var(--ink-soft);color:#fff;}
+
+  /* header / registry card */
+  .registry{
+    position:relative;
+    background:var(--card);
+    border:1px solid var(--hairline);
+    border-radius:4px;
+    padding:40px 44px 32px;
+    overflow:hidden;
+    animation:fadeUp .5s ease both;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 12px;
+  }
+
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:clamp(28px,4vw,40px);
+    letter-spacing:-0.01em;
+    margin:0 0 8px;
+    color:var(--ink);
+    max-width:80%;
+  }
+
+  .subtitle{
+    font-size:15px;
+    color:var(--muted);
+    margin:0;
+  }
+
+  .stamp{
+    position:absolute;
+    top:32px;
+    right:40px;
+    width:92px;
+    height:92px;
+    border-radius:50%;
+    border:2px dashed var(--red);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    color:var(--red);
+    transform:rotate(-8deg);
+    animation:stampIn .6s cubic-bezier(.2,.8,.3,1.2) .25s both;
+  }
+  .stamp::after{
+    content:"";
+    position:absolute;
+    inset:7px;
+    border:1px solid var(--red);
+    border-radius:50%;
+  }
+  .stamp-word{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:.08em;
+  }
+  .stamp-ref{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:8px;
+    letter-spacing:.05em;
+    opacity:.85;
+    margin-top:3px;
+  }
+
+  .ledger{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    margin-top:28px;
+    padding-top:22px;
+    border-top:1px solid var(--hairline);
+  }
+  .ledger-item{padding:0 18px;}
+  .ledger-item:first-child{padding-left:0;}
+  .ledger-item:not(:first-child){border-left:1px solid var(--hairline);}
+  .ledger-label{
+    display:block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:7px;
+  }
+  .ledger-value{
+    font-size:14.5px;
+    font-weight:500;
+    color:var(--ink);
+  }
+
+  /* tally strip */
+  .tally{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    margin-top:24px;
+    background:var(--card);
+    border:1px solid var(--hairline);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .tally-item{
+    padding:26px 28px;
+  }
+  .tally-item:not(:first-child){border-left:1px solid var(--hairline);}
+  .tally-number{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:38px;
+    line-height:1;
+    letter-spacing:-0.02em;
+    color:var(--ink);
+  }
+  .tally-label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:10px;
+    font-size:12px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .tick{width:10px;height:3px;display:inline-block;border-radius:1px;}
+
+  /* content cards */
+  .card{
+    margin-top:24px;
+    background:var(--card);
+    border:1px solid var(--hairline);
+    border-radius:4px;
+    padding:34px 40px;
+  }
+
+  .card-eyebrow{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--red-deep);
+    margin:0 0 8px;
+  }
+  .card-rule{
+    width:26px;
+    height:2px;
+    background:var(--red);
+    margin-bottom:18px;
+  }
+
+  .card p.body-text{
+    max-width:640px;
+    font-size:15.5px;
+    line-height:1.75;
+    color:var(--ink-soft);
+    margin:0;
+  }
+
+  .vacant-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    padding:16px 0 4px;
+    border-top:1px dashed var(--hairline);
+    margin-top:4px;
+  }
+  .vacant-text{
+    font-family:'IBM Plex Mono',monospace;
+    font-style:italic;
+    font-size:13.5px;
+    color:var(--muted);
+  }
+
+  .colophon{
+    margin-top:48px;
+    text-align:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  @keyframes fadeUp{
+    from{opacity:0; transform:translateY(8px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes stampIn{
+    from{opacity:0; transform:rotate(-22deg) scale(.75);}
+    to{opacity:1; transform:rotate(-8deg) scale(1);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+
+  @media (max-width:760px){
+    .page{padding:32px 20px 64px;}
+    .registry{padding:32px 24px 28px;}
+    h1{max-width:100%; font-size:28px;}
+    .stamp{position:static; margin:18px 0 0; transform:rotate(-6deg);}
+    .ledger{grid-template-columns:repeat(2,1fr); row-gap:18px;}
+    .ledger-item:nth-child(2n+1){border-left:none; padding-left:0;}
+    .tally{grid-template-columns:1fr;}
+    .tally-item:not(:first-child){border-left:none; border-top:1px solid var(--hairline);}
+    .card{padding:28px 24px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="toolbar">
+    <a class="back-link" href="#">&#8592; Back to programmes</a>
+    <div class="actions">
+      <button class="btn btn--quiet">Content setup</button>
+      <button class="btn btn--quiet">Edit</button>
+      <button class="btn btn--primary">Course manager</button>
+    </div>
+  </div>
+
+  <div class="registry">
+    <p class="eyebrow">Programme record &mdash; AI101</p>
+    <h1>Introduction to AI</h1>
+    <p class="subtitle">Internal certification &middot; Beginner level</p>
+
+    <div class="stamp">
+      <span class="stamp-word">DRAFT</span>
+      <span class="stamp-ref">REC. AI101</span>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-item">
+        <span class="ledger-label">Programme code</span>
+        <span class="ledger-value">AI101</span>
+      </div>
+      <div class="ledger-item">
+        <span class="ledger-label">Examining body</span>
+        <span class="ledger-value">Internal &mdash; Beginner</span>
+      </div>
+      <div class="ledger-item">
+        <span class="ledger-label">Award type</span>
+        <span class="ledger-value">Internal certificate</span>
+      </div>
+      <div class="ledger-item">
+        <span class="ledger-label">Assessment mode</span>
+        <span class="ledger-value">Practical / project</span>
+      </div>
+      <div class="ledger-item">
+        <span class="ledger-label">Created on</span>
+        <span class="ledger-value">18 Jun 2026</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tally">
+    <div class="tally-item">
+      <div class="tally-number">0</div>
+      <div class="tally-label"><span class="tick" style="background:var(--blue)"></span>Total enrolments</div>
+    </div>
+    <div class="tally-item">
+      <div class="tally-number">0</div>
+      <div class="tally-label"><span class="tick" style="background:var(--red)"></span>Active students</div>
+    </div>
+    <div class="tally-item">
+      <div class="tally-number">0</div>
+      <div class="tally-label"><span class="tick" style="background:var(--blue)"></span>Completed</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="card-eyebrow">Course description</span>
+    <div class="card-rule"></div>
+    <p class="body-text">Artificial intelligence increasingly impacts how we study, work, and communicate. You likely already interact with AI via navigation apps, chatbots, or search engines. This practical course uses simple language and real-life examples to explain AI concepts without requiring a technical background. By the end, you will confidently explain how AI works, use AI tools responsibly, and critically evaluate AI-generated results.</p>
+  </div>
+
+  <div class="card">
+    <span class="card-eyebrow">Assigned instructors</span>
+    <div class="card-rule"></div>
+    <div class="vacant-row">
+      <span class="vacant-text">&mdash; vacant &mdash;</span>
+      <button class="btn btn--quiet">+ Assign instructor</button>
+    </div>
+  </div>
+
+  <p class="colophon">AIRADS College &middot; Programme registry</p>
+
+</div>
+
+</body>
+</html>
