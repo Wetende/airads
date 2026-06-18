@@ -41,13 +41,6 @@ import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
 import DashboardLayout from '@/layouts/DashboardLayout';
 
-import '@fontsource/space-grotesk/600.css';
-import '@fontsource/space-grotesk/700.css';
-import '@fontsource/ibm-plex-sans/400.css';
-import '@fontsource/ibm-plex-sans/500.css';
-import '@fontsource/ibm-plex-mono/400.css';
-import '@fontsource/ibm-plex-mono/500.css';
-import '@fontsource/ibm-plex-mono/600.css';
 
 import { tokens } from './programRecordTokens';
 import { Eyebrow, PageTitle, StatusStamp, SectionEyebrow } from './Show.styles';
