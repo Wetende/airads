@@ -195,9 +195,6 @@ export default function ProgramShow({ program, stats, instructors = [], readines
                 </Box>
 
                 {/* Main Content Layout */}
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <Stack spacing={3}>
                         {/* Description */}
                         <Paper variant="outlined" sx={{ borderColor: tokens.hairline, borderRadius: '4px', p: { xs: 3, sm: '40px 44px' }, bgcolor: tokens.card }}>
                             <SectionEyebrow>Course Description</SectionEyebrow>
@@ -258,9 +255,7 @@ export default function ProgramShow({ program, stats, instructors = [], readines
                               </TableContainer>
                             )}
                         </Paper>
-                    </Stack>
-                  </Grid>
-                </Grid>
+
             </Stack>
         </motion.div>
       </Stack>
