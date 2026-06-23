@@ -31,7 +31,6 @@ import GradeIcon from "@mui/icons-material/Grade";
 import InfoIcon from "@mui/icons-material/Info";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import PersonIcon from "@mui/icons-material/Person";
-import SchoolIcon from "@mui/icons-material/School";
 import MailOutlinedIcon from "@mui/icons-material/MailOutlined";
 
 const POLL_INTERVAL_MS = 60_000;
@@ -49,8 +48,6 @@ const notificationIcons = {
     direct_message: <MailOutlinedIcon color="info" />,
     instructor_approved: <PersonIcon color="success" />,
     instructor_rejected: <PersonIcon color="error" />,
-    program_approved: <SchoolIcon color="success" />,
-    program_changes_requested: <SchoolIcon color="warning" />,
     system: <InfoIcon color="action" />,
 };
 

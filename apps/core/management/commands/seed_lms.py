@@ -73,7 +73,7 @@ class Command(BaseCommand):
         instructors_group, _ = Group.objects.get_or_create(name='Instructors')
 
         # 4. Create Users
-        password = 'lms2024'
+        password = 'instructor123'
         
         # Admin
         admin = self._create_user(
@@ -84,8 +84,7 @@ class Command(BaseCommand):
 
         # Instructors
         instructors_data = [
-            {'email': 'john@instructor.com', 'first_name': 'John', 'last_name': 'Wanjiku'},
-            {'email': 'mary@instructor.com', 'first_name': 'Mary', 'last_name': 'Otieno'},
+            {'email': 'mary@instructor.com', 'first_name': 'Mary', 'last_name': 'Instructor'},
         ]
         instructors = []
         for data in instructors_data:
@@ -172,7 +171,8 @@ class Command(BaseCommand):
     def _create_all_programs(self, blueprint, instructors):
         """Create programs with individual instructor assignments."""
         programs = []
-        john, mary = instructors[0], instructors[1]
+        mary = instructors[0]
+        john = mary # Alias so existing assignments work
         
         # Program 1: Certificate in Biblical Studies (Instructor: John)
         program1 = self._create_program(

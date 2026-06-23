@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Box,
     Paper,
@@ -105,6 +105,9 @@ export default function QuestionEditorCard({
             explanations: question.explanations || {},
             media: question.media || null,
         });
+        // Reset only when switching cards; syncing every echoed field update
+        // would overwrite in-progress edits in the debounced local editor.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [question.id]);
 
     // Keep correct selections consistent when switching types
@@ -149,6 +152,9 @@ export default function QuestionEditorCard({
             onChange({ ...question, ...localData });
         }, 500);
         return () => clearTimeout(timer);
+        // Parent callbacks are inline per question row, so localData is the
+        // deliberate trigger for debounced saves to the parent editor state.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [localData]);
 
     // Word count
