@@ -268,8 +268,11 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = os.getenv("MEDIA_URL", "/media/")
+if not MEDIA_URL.endswith("/"):
+    MEDIA_URL = f"{MEDIA_URL}/"
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", str(BASE_DIR / "media"))).expanduser()
+SERVE_MEDIA_FILES = os.getenv("SERVE_MEDIA_FILES", "False").lower() == "true"
 
 CACHE_LOCATION = os.getenv("CACHE_LOCATION", str(BASE_DIR / ".cache" / "django"))
 CACHES = {

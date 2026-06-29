@@ -2,10 +2,34 @@
 URL configuration for LMS project.
 """
 
+import re
+
 from django.contrib import admin
-from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import path, include, re_path
+from django.views.static import serve as serve_static
+
+
+def media_file_urlpatterns():
+    if not getattr(settings, "SERVE_MEDIA_FILES", False):
+        return []
+
+    media_url = settings.MEDIA_URL
+    if not media_url.startswith("/") or "://" in media_url:
+        return []
+
+    prefix = media_url.lstrip("/")
+    if not prefix:
+        return []
+
+    return [
+        re_path(
+            rf"^{re.escape(prefix)}(?P<path>.*)$",
+            serve_static,
+            {"document_root": settings.MEDIA_ROOT},
+        )
+    ]
 
 urlpatterns = [
     path("django-admin/", admin.site.urls),  # Renamed to avoid conflict with /admin/* app routes
@@ -35,3 +59,5 @@ if settings.DEBUG:
             path("__debug__/", include("debug_toolbar.urls")),
             *urlpatterns,
         ]
+else:
+    urlpatterns += media_file_urlpatterns()
