@@ -268,7 +268,7 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 CACHE_LOCATION = os.getenv("CACHE_LOCATION", str(BASE_DIR / ".cache" / "django"))
