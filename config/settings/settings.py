@@ -268,11 +268,31 @@ STORAGES = {
     },
 }
 
+CPANEL_APP_ROOT = Path("/home1/airadsac/lms")
+CPANEL_MEDIA_ROOT = CPANEL_APP_ROOT / "media"
+
+
+def _is_cpanel_app_root() -> bool:
+    return BASE_DIR == CPANEL_APP_ROOT
+
+
+def _default_media_root() -> Path:
+    if _is_cpanel_app_root():
+        return CPANEL_MEDIA_ROOT
+    return BASE_DIR / "media"
+
+
+def _default_serve_media_files() -> bool:
+    return _is_cpanel_app_root()
+
+
 MEDIA_URL = os.getenv("MEDIA_URL", "/media/")
 if not MEDIA_URL.endswith("/"):
     MEDIA_URL = f"{MEDIA_URL}/"
-MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", str(BASE_DIR / "media"))).expanduser()
-SERVE_MEDIA_FILES = os.getenv("SERVE_MEDIA_FILES", "False").lower() == "true"
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", str(_default_media_root()))).expanduser()
+SERVE_MEDIA_FILES = (
+    os.getenv("SERVE_MEDIA_FILES", str(_default_serve_media_files())).lower() == "true"
+)
 
 CACHE_LOCATION = os.getenv("CACHE_LOCATION", str(BASE_DIR / ".cache" / "django"))
 CACHES = {

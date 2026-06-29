@@ -1,7 +1,22 @@
 from django.test import override_settings
 from django.views.static import serve as serve_static
 
+import config.settings.settings as app_settings
 from config.urls import media_file_urlpatterns
+
+
+def test_cpanel_media_defaults_enable_passenger_fallback(monkeypatch):
+    monkeypatch.setattr(app_settings, "BASE_DIR", app_settings.CPANEL_APP_ROOT)
+
+    assert app_settings._default_media_root() == app_settings.CPANEL_MEDIA_ROOT
+    assert app_settings._default_serve_media_files() is True
+
+
+def test_local_media_defaults_use_project_media(monkeypatch, tmp_path):
+    monkeypatch.setattr(app_settings, "BASE_DIR", tmp_path / "airads")
+
+    assert app_settings._default_media_root() == tmp_path / "airads" / "media"
+    assert app_settings._default_serve_media_files() is False
 
 
 @override_settings(SERVE_MEDIA_FILES=False, MEDIA_URL="/media/")
