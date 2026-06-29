@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, router, usePage } from "@inertiajs/react";
 import {
   AppBar,
@@ -23,7 +23,7 @@ import { usePublicBrand } from "../../hooks/usePublicBrand";
 
 export default function VirtualNavbar() {
   const brand = usePublicBrand();
-  const { siteContext = {} } = usePage().props;
+  const { platform = {}, siteContext = {} } = usePage().props;
   const routes = siteContext.routes || {};
   const mainHomeHref = routes.mainHome || "/";
   const homeHref = routes.virtualHome || "/";
@@ -32,6 +32,9 @@ export default function VirtualNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+  const categoryOptions = Array.isArray(platform.programCategories)
+    ? platform.programCategories.filter(Boolean)
+    : [];
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
   const closeMobileMenu = () => setMobileMenuOpen(false);
@@ -108,11 +111,12 @@ export default function VirtualNavbar() {
                       mr: 1,
                     }}
                   >
-                    <MenuItem value="all">All Courses</MenuItem>
-                    <MenuItem value="Business">Business</MenuItem>
-                    <MenuItem value="IT">IT & Tech</MenuItem>
-                    <MenuItem value="Engineering">Engineering</MenuItem>
-                    <MenuItem value="Health">Health</MenuItem>
+                    <MenuItem value="all">Categories</MenuItem>
+                    {categoryOptions.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {option}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
                 <InputBase

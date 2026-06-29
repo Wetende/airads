@@ -356,6 +356,7 @@ class PlatformSettingsService:
             "address": settings.address,
             "deploymentMode": settings.deployment_mode,
             "courseLevels": settings.get_course_levels(),
+            "programCategories": settings.get_program_categories(),
             "activeBlueprintId": settings.active_blueprint_id,
             "logo": settings.get_logo_url(),
             "favicon": settings.get_favicon_url(),

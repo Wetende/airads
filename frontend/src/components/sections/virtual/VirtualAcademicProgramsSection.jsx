@@ -1,33 +1,53 @@
-import React, { useState, useMemo } from "react";
-import { Box, Container, Typography, Grid, Button, List, ListItem, ListItemButton, ListItemText, InputBase, Paper } from "@mui/material";
-import { ArrowForward as ArrowForwardIcon, Search as SearchIcon } from "@mui/icons-material";
+import { useState, useMemo } from "react";
+import { Box, Container, Typography, Grid, Button, InputBase, Stack } from "@mui/material";
+import { Search as SearchIcon } from "@mui/icons-material";
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
 import ProgramGrid from "../../lists/ProgramGrid";
 import { usePage } from "@inertiajs/react";
+import {
+  PROGRAM_LEVEL_FILTERS,
+  matchesProgramLevel,
+} from "../../../utils/programClassification";
 
-const CATEGORIES = ["All", "School of Business", "School of Engineering", "School of Hospitality", "School of Health", "School of Beauty", "School of Media"];
+const ALL_CATEGORIES = "all";
 
-export default function VirtualAcademicProgramsSection({ programs = [] }) {
+const getProgramTitle = (program) => program?.name || program?.title || "";
+const getProgramCategory = (program) => program?.category || program?.school?.name || "";
+
+const normalizeProgramForGrid = (program) => ({
+  ...program,
+  name: getProgramTitle(program),
+  publicUrl: program?.publicUrl || (program?.slug ? `/programs/${program.slug}/` : "#"),
+});
+
+export default function VirtualAcademicProgramsSection({ programs = [], categories = [] }) {
   const brand = usePublicBrand();
-  const { auth } = usePage().props;
+  const { auth, platform = {} } = usePage().props;
   const isAuthenticated = !!auth?.user;
 
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [activeTab, setActiveTab] = useState("All");
+  const [activeCategory, setActiveCategory] = useState(ALL_CATEGORIES);
+  const [activeLevel, setActiveLevel] = useState("all");
   const [search, setSearch] = useState("");
+
+  const categoryOptions = useMemo(() => {
+    const configured = categories.length > 0 ? categories : platform.programCategories;
+    return Array.isArray(configured) ? configured.filter(Boolean) : [];
+  }, [categories, platform.programCategories]);
 
   const filteredPrograms = useMemo(() => {
     if (!programs || programs.length === 0) return [];
-    
+
+    const query = search.trim().toLowerCase();
     return programs.filter(program => {
-      // Mock filtering logic for the layout
-      const matchCategory = activeCategory === "All" || program?.school?.name?.includes(activeCategory.replace("School of ", ""));
-      const matchSearch = program?.title?.toLowerCase().includes(search.toLowerCase());
-      const matchTab = activeTab === "All" || program?.level === activeTab;
-      
-      return matchCategory && matchSearch && matchTab;
-    });
-  }, [activeCategory, search, activeTab, programs]);
+      const title = getProgramTitle(program).toLowerCase();
+      const description = (program?.description || "").toLowerCase();
+      const matchCategory =
+        activeCategory === ALL_CATEGORIES || getProgramCategory(program) === activeCategory;
+      const matchSearch = !query || title.includes(query) || description.includes(query);
+
+      return matchCategory && matchSearch && matchesProgramLevel(program, activeLevel);
+    }).map(normalizeProgramForGrid);
+  }, [activeCategory, activeLevel, search, programs]);
 
   return (
     <Box component="section" sx={{ py: 10, bgcolor: '#f8fafc' }}>
@@ -40,65 +60,78 @@ export default function VirtualAcademicProgramsSection({ programs = [] }) {
         </Typography>
 
         <Typography variant="h5" sx={{ color: brand.secondary, fontWeight: 700, mb: 4, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          Diploma, Certificate & Artisan
+          Diploma, Certificate, Artisan & Short Courses
         </Typography>
 
-        <Grid container spacing={4}>
-          {/* Sidebar */}
-          <Grid size={{ xs: 12, md: 3 }}>
-            <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden', bgcolor: 'white' }}>
-              <List disablePadding>
-                {CATEGORIES.map((cat, index) => (
-                  <ListItem key={cat} disablePadding divider={index !== CATEGORIES.length - 1}>
-                    <ListItemButton
-                      selected={activeCategory === cat}
-                      onClick={() => setActiveCategory(cat)}
-                      sx={{
-                        py: 2,
-                        '&.Mui-selected': {
-                          bgcolor: brand.primary,
-                          color: 'white',
-                          '&:hover': { bgcolor: brand.primary },
-                        },
-                        '&:hover': { bgcolor: 'grey.50' }
-                      }}
-                    >
-                      <ListItemText
-                        primary={cat}
-                        primaryTypographyProps={{ fontWeight: activeCategory === cat ? 700 : 500, fontSize: '0.95rem' }}
-                      />
-                      {activeCategory === cat && <ArrowForwardIcon fontSize="small" sx={{ color: 'white' }} />}
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-            </Paper>
-          </Grid>
+        <Stack spacing={4}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 1.25,
+              alignItems: 'center',
+            }}
+          >
+            <Button
+              onClick={() => setActiveCategory(ALL_CATEGORIES)}
+              variant={activeCategory === ALL_CATEGORIES ? "contained" : "text"}
+              sx={{
+                borderRadius: 999,
+                textTransform: 'none',
+                fontWeight: 700,
+                px: 2.25,
+                bgcolor: activeCategory === ALL_CATEGORIES ? brand.primary : 'transparent',
+                color: activeCategory === ALL_CATEGORIES ? 'white' : brand.primary,
+                '&:hover': {
+                  bgcolor: activeCategory === ALL_CATEGORIES ? brand.primary : 'rgba(37, 99, 235, 0.08)',
+                },
+              }}
+            >
+              All Categories
+            </Button>
+            {categoryOptions.map((category) => (
+              <Button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                variant={activeCategory === category ? "contained" : "text"}
+                sx={{
+                  borderRadius: 999,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 2,
+                  color: activeCategory === category ? 'white' : brand.primary,
+                  bgcolor: activeCategory === category ? brand.primary : 'transparent',
+                  '&:hover': {
+                    bgcolor: activeCategory === category ? brand.primary : 'rgba(37, 99, 235, 0.08)',
+                  },
+                }}
+              >
+                {category}
+              </Button>
+            ))}
+          </Box>
 
-          {/* Main Content */}
-          <Grid size={{ xs: 12, md: 9 }}>
-            {/* Top Bar */}
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 4, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' } }}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                {["All", "Diploma", "Certificate", "Artisan"].map(tab => (
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' } }}>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {PROGRAM_LEVEL_FILTERS.map(level => (
                   <Button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    variant={activeTab === tab ? "contained" : "outlined"}
+                    key={level.value}
+                    onClick={() => setActiveLevel(level.value)}
+                    variant={activeLevel === level.value ? "contained" : "outlined"}
                     sx={{
                       borderRadius: 1,
                       textTransform: 'none',
                       fontWeight: 600,
-                      bgcolor: activeTab === tab ? brand.secondary : 'transparent',
-                      color: activeTab === tab ? 'white' : 'text.primary',
-                      borderColor: activeTab === tab ? brand.secondary : 'divider',
+                      bgcolor: activeLevel === level.value ? brand.secondary : 'white',
+                      color: activeLevel === level.value ? 'white' : 'text.primary',
+                      borderColor: activeLevel === level.value ? brand.secondary : 'divider',
                       '&:hover': {
-                        bgcolor: activeTab === tab ? brand.secondary : 'grey.100',
-                        borderColor: activeTab === tab ? brand.secondary : 'divider',
+                        bgcolor: activeLevel === level.value ? brand.secondary : 'grey.100',
+                        borderColor: activeLevel === level.value ? brand.secondary : 'divider',
                       }
                     }}
                   >
-                    {tab}
+                    {level.label}
                   </Button>
                 ))}
               </Box>
@@ -114,7 +147,8 @@ export default function VirtualAcademicProgramsSection({ programs = [] }) {
               </Box>
             </Box>
 
-            {/* Grid */}
+          <Grid container spacing={4}>
+            <Grid size={{ xs: 12 }}>
             {filteredPrograms.length > 0 ? (
               <ProgramGrid programs={filteredPrograms} isAuthenticated={isAuthenticated} columns={{ xs: 12, sm: 6, md: 6, lg: 4 }} />
             ) : (
@@ -126,6 +160,7 @@ export default function VirtualAcademicProgramsSection({ programs = [] }) {
             )}
           </Grid>
         </Grid>
+        </Stack>
       </Container>
     </Box>
   );

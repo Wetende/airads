@@ -12,6 +12,8 @@ from django.utils import timezone
 from datetime import date
 
 from apps.certifications.models import Certificate, VerificationLog
+from apps.platform.models import PlatformSettings
+from apps.progression.tests.factories import ProgramFactory
 
 
 HYPOTHESIS_SETTINGS = settings(
@@ -55,6 +57,57 @@ def test_virtual_host_courses_route_uses_virtual_catalog(client):
 
     assert response.status_code == 200
     assert b"Public/VirtualCourses" in response.content
+
+
+@override_settings(
+    ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
+    VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
+)
+@pytest.mark.django_db
+def test_virtual_catalog_receives_admin_categories(client):
+    settings = PlatformSettings.get_settings()
+    settings.program_categories = ["Engineering & ICT", "Business Management"]
+    settings.save(update_fields=["program_categories", "updated_at"])
+
+    response = client.get(
+        "/courses/?category=Engineering%20%26%20ICT",
+        HTTP_HOST="virtual.airads.ac.ke",
+        HTTP_X_INERTIA="true",
+    )
+
+    assert response.status_code == 200
+    props = response.json()["props"]
+    assert props["categories"] == ["Engineering & ICT", "Business Management"]
+    assert props["filters"]["category"] == "Engineering & ICT"
+
+
+@override_settings(
+    ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
+    VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
+)
+@pytest.mark.django_db
+def test_virtual_landing_program_payload_includes_classification_fields(client):
+    ProgramFactory(
+        name="Introduction to AI",
+        category="Engineering & ICT",
+        level="Beginner",
+        exam_body="Internal",
+        qualification_family="Short Course",
+        award_type="Internal Certificate of Completion",
+    )
+
+    response = client.get(
+        "/",
+        HTTP_HOST="virtual.airads.ac.ke",
+        HTTP_X_INERTIA="true",
+    )
+
+    assert response.status_code == 200
+    props = response.json()["props"]
+    [program] = props["programs"]
+    assert program["examBody"] == "Internal"
+    assert program["qualificationFamily"] == "Short Course"
+    assert program["awardType"] == "Internal Certificate of Completion"
 
 
 @override_settings(

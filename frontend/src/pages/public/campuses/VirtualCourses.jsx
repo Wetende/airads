@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Head, usePage, router } from "@inertiajs/react";
 import { Box, Container, Typography, Grid, Paper, InputBase, Select, MenuItem, Button, Pagination } from "@mui/material";
 import { Search as SearchIcon, FilterList as FilterIcon } from "@mui/icons-material";
@@ -7,10 +7,14 @@ import ProgramGrid from "../../../components/lists/ProgramGrid";
 import { getProgramsListState } from "../programsState";
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
 import EmptyState from "../../../components/EmptyState";
+import {
+  PROGRAM_LEVEL_FILTERS,
+  matchesProgramLevel,
+} from "../../../utils/programClassification";
 
-export default function VirtualCourses({ programs = [], filters = {} }) {
+export default function VirtualCourses({ programs = [], filters = {}, categories = [] }) {
   const brand = usePublicBrand();
-  const { auth, siteContext = {} } = usePage().props;
+  const { auth, platform = {}, siteContext = {} } = usePage().props;
   const routes = siteContext.routes || {};
   const coursesHref = routes.virtualCourses || "/courses/";
   const isAuthenticated = !!auth?.user;
@@ -20,10 +24,26 @@ export default function VirtualCourses({ programs = [], filters = {} }) {
   const [level, setLevel] = useState(filters.level || "all");
   const [page, setPage] = useState(1);
   const itemsPerPage = 9;
+  const categoryOptions = useMemo(() => {
+    const configured = categories.length > 0 ? categories : platform.programCategories;
+    const options = Array.isArray(configured) ? configured.filter(Boolean) : [];
+    if (category !== "all" && category && !options.includes(category)) {
+      return [category, ...options];
+    }
+    return options;
+  }, [categories, category, platform.programCategories]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    router.get(coursesHref, { search, category, level }, { preserveState: true, replace: true });
+    router.get(
+      coursesHref,
+      {
+        search,
+        category: category !== "all" ? category : "",
+        level: level !== "all" ? level : "",
+      },
+      { preserveState: true, replace: true },
+    );
   };
 
   const handleClearFilters = () => {
@@ -37,7 +57,7 @@ export default function VirtualCourses({ programs = [], filters = {} }) {
     return programs.filter(prog => {
       const matchSearch = prog?.title?.toLowerCase().includes(search.toLowerCase());
       const matchCat = category === "all" || prog?.category === category || prog?.school?.name?.includes(category);
-      const matchLevel = level === "all" || prog?.level === level;
+      const matchLevel = matchesProgramLevel(prog, level);
       return matchSearch && matchCat && matchLevel;
     });
   }, [programs, search, category, level]);
@@ -98,11 +118,12 @@ export default function VirtualCourses({ programs = [], filters = {} }) {
                     onChange={(e) => setCategory(e.target.value)}
                     sx={{ borderRadius: 1 }}
                   >
-                    <MenuItem value="all">All Categories</MenuItem>
-                    <MenuItem value="Business">Business & Management</MenuItem>
-                    <MenuItem value="Computer">IT & Computer Science</MenuItem>
-                    <MenuItem value="Health">Health Sciences</MenuItem>
-                    <MenuItem value="Engineering">Engineering</MenuItem>
+                    <MenuItem value="all">Categories</MenuItem>
+                    {categoryOptions.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {option}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </Box>
 
@@ -115,11 +136,11 @@ export default function VirtualCourses({ programs = [], filters = {} }) {
                     onChange={(e) => setLevel(e.target.value)}
                     sx={{ borderRadius: 1 }}
                   >
-                    <MenuItem value="all">All Levels</MenuItem>
-                    <MenuItem value="Diploma">Diploma</MenuItem>
-                    <MenuItem value="Certificate">Certificate</MenuItem>
-                    <MenuItem value="Artisan">Artisan</MenuItem>
-                    <MenuItem value="Short Courses">Short Courses</MenuItem>
+                    {PROGRAM_LEVEL_FILTERS.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.value === "all" ? "All Levels" : option.label}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </Box>
 

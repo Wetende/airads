@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, router, usePage } from "@inertiajs/react";
 import {
     Alert,
@@ -67,7 +67,13 @@ export default function SettingsPanel({
     const canManageFeatured = getUserIsStaff(authUser);
     const availablePrerequisites = props.availablePrerequisites || [];
     const availableCoInstructors = props.availableCoInstructors || [];
-    const categories = props.platform?.programCategories || [];
+    const configuredCategories = useMemo(
+        () =>
+            Array.isArray(props.platform?.programCategories)
+                ? props.platform.programCategories.filter(Boolean)
+                : [],
+        [props.platform?.programCategories],
+    );
     const examBodyRegistry = useMemo(
         () => props.examBodyRegistry || {},
         [props.examBodyRegistry],
@@ -75,7 +81,10 @@ export default function SettingsPanel({
     const isTvetMode = deploymentMode === "tvet";
     const hasExamBodies =
         isTvetMode && Object.keys(examBodyRegistry).length > 0;
+    const thumbnailInputRef = useRef(null);
     const fileInputRef = useRef(null);
+    const [selectedThumbnailPreviewUrl, setSelectedThumbnailPreviewUrl] =
+        useState("");
 
     const {
         data: formData,
@@ -117,6 +126,16 @@ export default function SettingsPanel({
         drip_enabled: program.dripEnabled || false,
         drip_mode: program.dripMode || "none",
     });
+
+    const categoryOptions = useMemo(() => {
+        if (
+            formData.category &&
+            !configuredCategories.includes(formData.category)
+        ) {
+            return [formData.category, ...configuredCategories];
+        }
+        return configuredCategories;
+    }, [configuredCategories, formData.category]);
 
     const examBodies = useMemo(
         () => Object.keys(examBodyRegistry),
@@ -177,29 +196,57 @@ export default function SettingsPanel({
         }));
     };
 
-    const getSubmitPayload = () => {
+    useEffect(() => {
+        if (!formData.thumbnail) {
+            setSelectedThumbnailPreviewUrl("");
+            return undefined;
+        }
+
+        if (
+            typeof URL === "undefined" ||
+            typeof URL.createObjectURL !== "function"
+        ) {
+            return undefined;
+        }
+
+        const objectUrl = URL.createObjectURL(formData.thumbnail);
+        setSelectedThumbnailPreviewUrl(objectUrl);
+
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [formData.thumbnail]);
+
+    const thumbnailPreviewUrl =
+        selectedThumbnailPreviewUrl || program.thumbnail || "";
+
+    const handleThumbnailChange = (event) => {
+        const selectedFile = event.target.files?.[0] || null;
+        setData("thumbnail", selectedFile);
+        event.target.value = "";
+    };
+
+    const getSubmitPayload = (currentData = formData) => {
         if (activeTab === "settings") {
             if (settingsSection === "main") {
                 const payload = {
                     tab: "settings",
                     section: "main",
-                    name: formData.name,
-                    category: formData.category,
-                    duration_hours: formData.duration_hours,
-                    video_hours: formData.video_hours,
-                    description: formData.description,
-                    whatYouLearn: formData.whatYouLearn,
-                    preview_description: formData.preview_description,
-                    lock_lessons_in_order: formData.lock_lessons_in_order,
+                    name: currentData.name,
+                    category: currentData.category,
+                    duration_hours: currentData.duration_hours,
+                    video_hours: currentData.video_hours,
+                    description: currentData.description,
+                    whatYouLearn: currentData.whatYouLearn,
+                    preview_description: currentData.preview_description,
+                    lock_lessons_in_order: currentData.lock_lessons_in_order,
                 };
                 if (!hasExamBodies) {
-                    payload.level = formData.level;
+                    payload.level = currentData.level;
                 }
                 if (canManageFeatured) {
-                    payload.is_featured = formData.is_featured;
+                    payload.is_featured = currentData.is_featured;
                 }
-                if (formData.thumbnail) {
-                    payload.thumbnail = formData.thumbnail;
+                if (currentData.thumbnail) {
+                    payload.thumbnail = currentData.thumbnail;
                 }
                 return payload;
             }
@@ -207,15 +254,15 @@ export default function SettingsPanel({
                 const payload = {
                     tab: "settings",
                     section: "academic",
-                    code: formData.code,
+                    code: currentData.code,
                     co_instructor_ids: JSON.stringify(
-                        formData.co_instructor_ids || [],
+                        currentData.co_instructor_ids || [],
                     ),
                 };
                 if (hasExamBodies) {
-                    payload.examBody = formData.examBody;
-                    payload.qualificationFamily = formData.qualificationFamily;
-                    payload.level = formData.level;
+                    payload.examBody = currentData.examBody;
+                    payload.qualificationFamily = currentData.qualificationFamily;
+                    payload.level = currentData.level;
                 }
                 return payload;
             }
@@ -223,8 +270,8 @@ export default function SettingsPanel({
                 return {
                     tab: "settings",
                     section: "access",
-                    access_duration_days: formData.access_time_limit_enabled
-                        ? formData.access_duration_days || ""
+                    access_duration_days: currentData.access_time_limit_enabled
+                        ? currentData.access_duration_days || ""
                         : "",
                 };
             }
@@ -233,9 +280,9 @@ export default function SettingsPanel({
                     tab: "settings",
                     section: "prerequisites",
                     prerequisite_passing_percent:
-                        formData.prerequisite_passing_percent,
+                        currentData.prerequisite_passing_percent,
                     prerequisite_program_ids: JSON.stringify(
-                        formData.prerequisite_program_ids || [],
+                        currentData.prerequisite_program_ids || [],
                     ),
                 };
             }
@@ -244,9 +291,9 @@ export default function SettingsPanel({
                     tab: "settings",
                     section: "files",
                     deleteResourceIds: JSON.stringify(
-                        formData.deleteResourceIds || [],
+                        currentData.deleteResourceIds || [],
                     ),
-                    materials: formData.materials,
+                    materials: currentData.materials,
                 };
             }
             return { tab: "settings", section: settingsSection };
@@ -257,18 +304,18 @@ export default function SettingsPanel({
                 return {
                     tab: activeTab,
                     custom_pricing: JSON.stringify(
-                        formData.custom_pricing || {},
+                        currentData.custom_pricing || {},
                     ),
                 };
             case "faq":
                 return {
                     tab: activeTab,
-                    faq: JSON.stringify(formData.faq || []),
+                    faq: JSON.stringify(currentData.faq || []),
                 };
             case "notice":
                 return {
                     tab: activeTab,
-                    notices: JSON.stringify(formData.notices || []),
+                    notices: JSON.stringify(currentData.notices || []),
                 };
             default:
                 return { tab: activeTab };
@@ -276,7 +323,7 @@ export default function SettingsPanel({
     };
 
     const handleSubmit = () => {
-        transform(() => getSubmitPayload());
+        transform((currentData) => getSubmitPayload(currentData));
         post(`/instructor/programs/${program.id}/manage/settings/`, {
             forceFormData: true,
             preserveScroll: true,
@@ -493,34 +540,28 @@ export default function SettingsPanel({
 
                 <Box>
                     {renderFieldLabel("Category")}
-                    {categories.length > 0 ? (
-                        <FormControl fullWidth>
-                            <Select
-                                value={formData.category}
-                                displayEmpty
-                                onChange={(event) =>
-                                    setData("category", event.target.value)
-                                }
-                            >
-                                <MenuItem value="">
-                                    <em>None</em>
-                                </MenuItem>
-                                {categories.map((category) => (
-                                    <MenuItem key={category} value={category}>
-                                        {category}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    ) : (
-                        <TextField
-                            fullWidth
+                    <FormControl fullWidth disabled={categoryOptions.length === 0}>
+                        <Select
                             value={formData.category}
+                            displayEmpty
                             onChange={(event) =>
                                 setData("category", event.target.value)
                             }
-                        />
-                    )}
+                        >
+                            <MenuItem value="" disabled={configuredCategories.length > 0}>
+                                <em>
+                                    {configuredCategories.length > 0
+                                        ? "Select category"
+                                        : "No categories configured"}
+                                </em>
+                            </MenuItem>
+                            {categoryOptions.map((category) => (
+                                <MenuItem key={category} value={category}>
+                                    {category}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                 </Box>
 
                 {!hasExamBodies && (
@@ -539,11 +580,15 @@ export default function SettingsPanel({
 
                 <Box>
                     {renderFieldLabel("Image")}
-                    {program.thumbnail && (
+                    {thumbnailPreviewUrl && (
                         <Box
                             component="img"
-                            src={program.thumbnail}
-                            alt="Current course thumbnail"
+                            src={thumbnailPreviewUrl}
+                            alt={
+                                formData.thumbnail
+                                    ? "Selected course thumbnail preview"
+                                    : "Current course thumbnail"
+                            }
                             sx={{
                                 width: "100%",
                                 maxHeight: 260,
@@ -555,17 +600,29 @@ export default function SettingsPanel({
                             }}
                         />
                     )}
-                    <Button variant="outlined" component="label" size="small">
-                        {program.thumbnail ? "Change image" : "Upload image"}
-                        <input
-                            type="file"
-                            hidden
-                            accept="image/*"
-                            onChange={(event) =>
-                                setData("thumbnail", event.target.files?.[0] || null)
-                            }
-                        />
-                    </Button>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <Button
+                            variant="outlined"
+                            component="label"
+                            size="small"
+                        >
+                            {thumbnailPreviewUrl ? "Change image" : "Upload image"}
+                            <input
+                                ref={thumbnailInputRef}
+                                type="file"
+                                hidden
+                                accept="image/*"
+                                onChange={handleThumbnailChange}
+                            />
+                        </Button>
+                        {formData.thumbnail && (
+                            <Chip
+                                label={formData.thumbnail.name}
+                                size="small"
+                                variant="outlined"
+                            />
+                        )}
+                    </Stack>
                 </Box>
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
