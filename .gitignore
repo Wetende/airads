@@ -41,6 +41,17 @@ static/*
 !static/.gitkeep
 !static/dist/
 !static/dist/**
+!static/achievement-hero.webp
+!static/airads-virtual.webp
+!static/beauty-practical-card.webp
+!static/driving-practical-card.webp
+!static/driving-school-card.webp
+!static/fashion-main-hero.webp
+!static/health-hero.webp
+!static/health1-main-hero.webp
+!static/health2-main-hero.webp
+!static/online-virtual-hero.webp
+!static/student-life-support-card.webp
 .cache/
 
 # Environment
