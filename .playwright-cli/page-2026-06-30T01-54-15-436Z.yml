@@ -1,0 +1,754 @@
+- generic [active] [ref=e1]:
+  - text: 
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e6]:
+        - generic [ref=e8]:
+          - text: English
+          - generic [ref=e9]: 
+        - generic [ref=e11]:
+          - link " Login" [ref=e12] [cursor=pointer]:
+            - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+            - generic [ref=e13]: 
+            - text: Login
+          - link "Register" [ref=e15] [cursor=pointer]:
+            - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/?mode=register
+        - list [ref=e18]:
+          - listitem [ref=e19]:
+            - link "" [ref=e20] [cursor=pointer]:
+              - /url: https://www.facebook.com/
+              - generic [ref=e21]: 
+          - listitem [ref=e22]:
+            - link "" [ref=e23] [cursor=pointer]:
+              - /url: https://www.twitter.com/
+              - generic [ref=e24]: 
+          - listitem [ref=e25]:
+            - link "" [ref=e26] [cursor=pointer]:
+              - /url: https://www.instagram.com/
+              - generic [ref=e27]: 
+          - listitem [ref=e28]:
+            - link "" [ref=e29] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e30]: 
+          - listitem [ref=e31]:
+            - link "" [ref=e32] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e33]: 
+          - listitem [ref=e34]:
+            - link "" [ref=e35] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e36]: 
+          - listitem [ref=e37]:
+            - link "" [ref=e38] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e39]: 
+          - listitem [ref=e40]:
+            - link "" [ref=e41] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e42]: 
+        - list [ref=e44]:
+          - listitem [ref=e45]:
+            - generic [ref=e46]: 
+            - text: Mon - Sat 8.00 - 18.00
+          - listitem [ref=e47]:
+            - generic [ref=e48]: 
+            - text: 1010 Moon ave, New York, NY US
+          - listitem [ref=e49]:
+            - generic [ref=e50]: 
+            - text: +1 212-226-3126
+      - generic [ref=e53]:
+        - link "Classic LMS – Masterstudy" [ref=e56] [cursor=pointer]:
+          - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/
+          - img "Classic LMS – Masterstudy" [ref=e57]
+        - text:    Hot   
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - link "" [ref=e62] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+              - generic [ref=e63]: 
+            - generic [ref=e66]: 
+          - list [ref=e68]:
+            - listitem [ref=e69]:
+              - link "Home" [ref=e70] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e72]:
+              - link "Courses" [ref=e73] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e74]:
+              - link "Course Formats" [ref=e75] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e76]:
+              - link "Add Course Hot" [ref=e77] [cursor=pointer]:
+                - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/?demo_login=https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/edit-course/873
+            - listitem [ref=e78]:
+              - link "Pages" [ref=e79] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e80]:
+              - link "Demos" [ref=e81] [cursor=pointer]:
+                - /url: "#"
+    - generic [ref=e85]:
+      - generic [ref=e93]:
+        - group "2 / 2":
+          - generic:
+            - generic:
+              - generic:
+                - heading "Take the first step" [level=2]
+                - paragraph: of your journey to success
+                - generic:
+                  - link "Ready to get Started?":
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/
+                    - generic: Ready to get Started?
+        - group "1 / 2" [ref=e94]:
+          - generic [ref=e97]:
+            - heading "Take the first step" [level=2] [ref=e98]
+            - paragraph [ref=e99]: to knowledge with us
+            - link "Ready to get Started?" [ref=e101] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/
+              - generic [ref=e102]: Ready to get Started?
+        - group "2 / 2":
+          - generic:
+            - generic:
+              - generic:
+                - heading "Take the first step" [level=2]
+                - paragraph: of your journey to success
+                - generic:
+                  - link "Ready to get Started?":
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/
+                    - generic: Ready to get Started?
+        - group "1 / 2":
+          - generic:
+            - generic:
+              - generic:
+                - heading "Take the first step" [level=2]
+                - paragraph: to knowledge with us
+                - generic:
+                  - link "Ready to get Started?":
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/
+                    - generic: Ready to get Started?
+      - generic [ref=e109]:
+        - link " Graphic & Web-design" [ref=e111] [cursor=pointer]:
+          - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=47&category%5B%5D=47
+          - generic [ref=e112]: 
+          - heading "Graphic & Web-design" [level=4] [ref=e113]
+        - link " Environmental Sciences" [ref=e115] [cursor=pointer]:
+          - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=48&category%5B%5D=48
+          - generic [ref=e116]: 
+          - heading "Environmental Sciences" [level=4] [ref=e117]
+        - link " Economics & Finances" [ref=e119] [cursor=pointer]:
+          - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=98&category%5B%5D=98
+          - generic [ref=e120]: 
+          - heading "Economics & Finances" [level=4] [ref=e121]
+        - link " Analysis of Algorithms" [ref=e123] [cursor=pointer]:
+          - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=113&category%5B%5D=113
+          - generic [ref=e124]: 
+          - heading "Analysis of Algorithms" [level=4] [ref=e125]
+        - link " Software Development" [ref=e127] [cursor=pointer]:
+          - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=124&category%5B%5D=124
+          - generic [ref=e128]: 
+          - heading "Software Development" [level=4] [ref=e129]
+      - generic [ref=e136]:
+        - generic [ref=e137]:
+          - heading "Top Courses" [level=2] [ref=e138]
+          - list [ref=e139]:
+            - listitem [ref=e140]:
+              - generic [ref=e141]: Newest
+            - listitem [ref=e142]:
+              - generic [ref=e143]: Oldest
+            - listitem [ref=e144]:
+              - generic [ref=e145]: Overall Rating
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - generic [ref=e150]:
+              - generic [ref=e152]: Special
+              - img [ref=e153]
+              - generic [ref=e154]:
+                - link "Environmental Sciences" [ref=e156] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=48&category%5B%5D=48
+                - link "Basics of MasterStudy" [ref=e157] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/course-basics-of-masterstudy/
+                  - heading "Basics of MasterStudy" [level=3] [ref=e158]
+                - generic [ref=e161]: Free
+                - generic:
+                  - generic [ref=e162]: MasterStudy is the best choice for everyone! Masterstudy LMS is a feature-rich WP product f...
+                  - generic [ref=e163]:
+                    - generic [ref=e164]:
+                      - generic [ref=e165]:
+                        - text: 
+                        - generic [ref=e166]: 
+                      - generic [ref=e168]: "4.7"
+                    - link "" [ref=e171] [cursor=pointer]:
+                      - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                      - generic [ref=e172]: 
+                  - generic [ref=e173]:
+                    - generic [ref=e174]:
+                      - generic [ref=e175]: 
+                      - generic [ref=e176]: "6788"
+                    - generic: ·
+                    - generic [ref=e177]:
+                      - generic [ref=e178]: 
+                      - generic [ref=e179]: "32585"
+            - generic [ref=e181]:
+              - img [ref=e182]
+              - generic [ref=e183]:
+                - link "360 photos" [ref=e185] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=111&category%5B%5D=111
+                - link "How to get comfortable on camera" [ref=e186] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/how-to-work-with-legendary-red-camera/
+                  - heading "How to get comfortable on camera" [level=3] [ref=e187]
+                - generic [ref=e188]:
+                  - generic [ref=e190]: $59.99
+                  - generic [ref=e192]: $39.99
+                - generic:
+                  - generic [ref=e193]: Natural light is best for filming, and the golden hour can make all the difference in how yo...
+                  - generic [ref=e194]:
+                    - generic [ref=e195]:
+                      - generic [ref=e196]:
+                        - text: 
+                        - generic [ref=e197]: 
+                      - generic [ref=e199]: "3.0"
+                    - link "" [ref=e202] [cursor=pointer]:
+                      - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                      - generic [ref=e203]: 
+                  - generic [ref=e204]:
+                    - generic [ref=e205]:
+                      - generic [ref=e206]: 
+                      - generic [ref=e207]: "631"
+                    - generic: ·
+                    - generic [ref=e208]:
+                      - generic [ref=e209]: 
+                      - generic [ref=e210]: "20693"
+            - generic [ref=e212]:
+              - generic [ref=e214]: Hot
+              - img [ref=e215]
+              - generic [ref=e216]:
+                - link "Electronic" [ref=e218] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=115&category%5B%5D=115
+                - link "How to be a DJ? Make Electronic Music" [ref=e219] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/how-to-be-a-dj-make-electronic-music/
+                  - heading "How to be a DJ? Make Electronic Music" [level=3] [ref=e220]
+                - generic [ref=e223]: Free
+                - generic:
+                  - generic [ref=e224]: This masterclass course is dedicated to anyone wanting to learn how to DJ with NO LAPTOP, US...
+                  - generic [ref=e225]:
+                    - generic [ref=e226]:
+                      - generic [ref=e227]:
+                        - text: 
+                        - generic [ref=e228]: 
+                      - generic [ref=e230]: "5.0"
+                    - link "" [ref=e233] [cursor=pointer]:
+                      - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                      - generic [ref=e234]: 
+                  - generic [ref=e235]:
+                    - generic [ref=e236]:
+                      - generic [ref=e237]: 
+                      - generic [ref=e238]: "1767"
+                    - generic: ·
+                    - generic [ref=e239]:
+                      - generic [ref=e240]: 
+                      - generic [ref=e241]: "32713"
+            - generic [ref=e243]:
+              - generic [ref=e245]: Special
+              - img [ref=e246]
+              - generic [ref=e247]:
+                - link "Fashion" [ref=e249] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=131&category%5B%5D=131
+                - link "Fashion Photography from professional" [ref=e250] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/fashion-photography-from-professional/
+                  - heading "Fashion Photography from professional" [level=3] [ref=e251]
+                - generic [ref=e252]:
+                  - generic [ref=e254]: $29.99
+                  - generic [ref=e256]: $49.99
+                - generic:
+                  - generic [ref=e257]: In the digital era, fashion photography tips are more popular than it has ever been before. ...
+                  - generic [ref=e258]:
+                    - generic [ref=e259]:
+                      - generic [ref=e260]:
+                        - text: 
+                        - generic [ref=e261]: 
+                      - generic [ref=e263]: "4.0"
+                    - link "" [ref=e266] [cursor=pointer]:
+                      - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                      - generic [ref=e267]: 
+                  - generic [ref=e268]:
+                    - generic [ref=e269]:
+                      - generic [ref=e270]: 
+                      - generic [ref=e271]: "13"
+                    - generic: ·
+                    - generic [ref=e272]:
+                      - generic [ref=e273]: 
+                      - generic [ref=e274]: "9281"
+            - generic [ref=e276]:
+              - img [ref=e277]
+              - generic [ref=e278]:
+                - link "Environmental Sciences" [ref=e280] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=48&category%5B%5D=48
+                - link "Vector Design Basics Masterclass" [ref=e281] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/vector-instruments-for-communication/
+                  - heading "Vector Design Basics Masterclass" [level=3] [ref=e282]
+                - generic [ref=e283]:
+                  - generic [ref=e285]: $79.99
+                  - generic [ref=e287]: $89.99
+                - generic:
+                  - generic [ref=e288]: Are you intimidated by learning photoshop, illustrator or InDesign and want to learn through...
+                  - generic [ref=e289]:
+                    - generic [ref=e290]:
+                      - generic [ref=e291]:
+                        - text: 
+                        - generic [ref=e292]: 
+                      - generic [ref=e294]: "5.0"
+                    - link "" [ref=e297] [cursor=pointer]:
+                      - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                      - generic [ref=e298]: 
+                  - generic [ref=e299]:
+                    - generic [ref=e300]:
+                      - generic [ref=e301]: 
+                      - generic [ref=e302]: "13"
+                    - generic: ·
+                    - generic [ref=e303]:
+                      - generic [ref=e304]: 
+                      - generic [ref=e305]: "8113"
+            - generic [ref=e307]:
+              - generic [ref=e309]: New
+              - img [ref=e310]
+              - generic [ref=e311]:
+                - link "Graphic & Web-design" [ref=e313] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=47&category%5B%5D=47
+                - link "Interior design concepts Masterclass" [ref=e314] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/make-your-concept-right-and-beautiful/
+                  - heading "Interior design concepts Masterclass" [level=3] [ref=e315]
+                - generic [ref=e318]: Free
+                - generic:
+                  - generic [ref=e319]: Are you intimidated by learning photoshop, illustrator or InDesign and want to learn through...
+                  - generic [ref=e320]:
+                    - generic [ref=e321]:
+                      - generic [ref=e322]:
+                        - text: 
+                        - generic [ref=e323]: 
+                      - generic [ref=e325]: "4.5"
+                    - link "" [ref=e328] [cursor=pointer]:
+                      - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                      - generic [ref=e329]: 
+                  - generic [ref=e330]:
+                    - generic [ref=e331]:
+                      - generic [ref=e332]: 
+                      - generic [ref=e333]: "654"
+                    - generic: ·
+                    - generic [ref=e334]:
+                      - generic [ref=e335]: 
+                      - generic [ref=e336]: "10253"
+            - generic [ref=e338]:
+              - img [ref=e339]
+              - generic [ref=e340]:
+                - link "Bicycling" [ref=e342] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=49&category%5B%5D=49
+                - link "Road Bike Manual or How to Be a Champion" [ref=e343] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/road-bike-manual-or-how-to-be-a-champion/
+                  - heading "Road Bike Manual or How to Be a Champion" [level=3] [ref=e344]
+                - generic [ref=e345]:
+                  - generic [ref=e347]: $9.99
+                  - generic [ref=e349]: $19.99
+                - generic:
+                  - generic [ref=e350]: Mountain Biking 101 is your ultimate beginner’s guide to the world of off-road biking. In th...
+                  - generic [ref=e351]:
+                    - generic [ref=e352]:
+                      - generic [ref=e353]:
+                        - text: 
+                        - generic [ref=e354]: 
+                      - generic [ref=e356]: "4.0"
+                    - link "" [ref=e359] [cursor=pointer]:
+                      - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                      - generic [ref=e360]: 
+                  - generic [ref=e361]:
+                    - generic [ref=e362]:
+                      - generic [ref=e363]: 
+                      - generic [ref=e364]: "33"
+                    - generic: ·
+                    - generic [ref=e365]:
+                      - generic [ref=e366]: 
+                      - generic [ref=e367]: "6751"
+            - generic [ref=e369]:
+              - generic [ref=e371]: New
+              - img [ref=e372]
+              - generic [ref=e373]:
+                - link "Conceptual Art" [ref=e375] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=129&category%5B%5D=129
+                - link "Real Things Art Painting by Jason Ni" [ref=e376] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/real-things-art-painting-by-jason-ni/
+                  - heading "Real Things Art Painting by Jason Ni" [level=3] [ref=e377]
+                - generic [ref=e378]:
+                  - generic [ref=e380]: $44.99
+                  - generic [ref=e382]: $59.99
+                - generic:
+                  - generic [ref=e383]: This is the video course where you learn to become adept at coloring and painting profession...
+                  - generic [ref=e384]:
+                    - generic [ref=e385]:
+                      - generic [ref=e386]:
+                        - text: 
+                        - generic [ref=e387]: 
+                      - generic [ref=e389]: "4.0"
+                    - link "" [ref=e392] [cursor=pointer]:
+                      - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                      - generic [ref=e393]: 
+                  - generic [ref=e394]:
+                    - generic [ref=e395]:
+                      - generic [ref=e396]: 
+                      - generic [ref=e397]: "37"
+                    - generic: ·
+                    - generic [ref=e398]:
+                      - generic [ref=e399]: 
+                      - generic [ref=e400]: "4457"
+          - button "Load More" [ref=e403] [cursor=pointer]
+      - generic [ref=e408]:
+        - heading "SCHOOL ACHIEVEMENTS" [level=2] [ref=e412]
+        - heading "Here you can review some statistics about our Education Center" [level=4] [ref=e419]
+        - generic [ref=e421]:
+          - generic [ref=e426]:
+            - generic [ref=e428]: 
+            - generic [ref=e429]: "0"
+            - generic [ref=e430]: Foreign followers
+          - generic [ref=e435]:
+            - generic [ref=e437]: 
+            - generic [ref=e438]: "0"
+            - generic [ref=e439]: Classes complete
+          - generic [ref=e444]:
+            - generic [ref=e446]: 
+            - generic [ref=e447]: "0"
+            - generic [ref=e448]: Students enrolled
+          - generic [ref=e453]:
+            - generic [ref=e455]: 
+            - generic [ref=e456]: "0"
+            - generic [ref=e457]: Certified teachers
+      - generic [ref=e464]:
+        - generic [ref=e465]:
+          - link "Teacher of Month" [ref=e466] [cursor=pointer]:
+            - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-public-account/3139
+          - link "Demo Instructor" [ref=e467] [cursor=pointer]:
+            - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-public-account/3139
+          - generic [ref=e468]: Professor of Business Administration
+          - generic [ref=e469]: Together won't. Darkness make hath also moved dominion, they're. Don't is subdue had them sixth, cattle evening divided had fowl, kind cattle seas lesser made thing. Sea replenish doesn't it two given. Gathered life.One blessed there thing good don't very stars thing. Kind moveth hath greater seasons Whose kind.
+          - generic [ref=e470]: "Teacher courses:"
+        - generic [ref=e471]:
+          - generic [ref=e473]:
+            - generic [ref=e475]: Special
+            - img [ref=e476]
+            - generic [ref=e477]:
+              - link "Environmental Sciences" [ref=e479] [cursor=pointer]:
+                - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=48&category%5B%5D=48
+              - link "Basics of MasterStudy" [ref=e480] [cursor=pointer]:
+                - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/course-basics-of-masterstudy/
+                - heading "Basics of MasterStudy" [level=3] [ref=e481]
+              - generic [ref=e484]: Free
+              - generic:
+                - generic [ref=e485]: MasterStudy is the best choice for everyone! Masterstudy LMS is a feature-rich WP product f...
+                - generic [ref=e486]:
+                  - generic [ref=e487]:
+                    - generic [ref=e488]:
+                      - text: 
+                      - generic [ref=e489]: 
+                    - generic [ref=e491]: "4.7"
+                  - link "" [ref=e494] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                    - generic [ref=e495]: 
+                - generic [ref=e496]:
+                  - generic [ref=e497]:
+                    - generic [ref=e498]: 
+                    - generic [ref=e499]: "6788"
+                  - generic: ·
+                  - generic [ref=e500]:
+                    - generic [ref=e501]: 
+                    - generic [ref=e502]: "32585"
+          - generic [ref=e504]:
+            - img [ref=e505]
+            - generic [ref=e506]:
+              - link "360 photos" [ref=e508] [cursor=pointer]:
+                - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=111&category%5B%5D=111
+              - link "How to get comfortable on camera" [ref=e509] [cursor=pointer]:
+                - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/how-to-work-with-legendary-red-camera/
+                - heading "How to get comfortable on camera" [level=3] [ref=e510]
+              - generic [ref=e511]:
+                - generic [ref=e513]: $59.99
+                - generic [ref=e515]: $39.99
+              - generic:
+                - generic [ref=e516]: Natural light is best for filming, and the golden hour can make all the difference in how yo...
+                - generic [ref=e517]:
+                  - generic [ref=e518]:
+                    - generic [ref=e519]:
+                      - text: 
+                      - generic [ref=e520]: 
+                    - generic [ref=e522]: "3.0"
+                  - link "" [ref=e525] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                    - generic [ref=e526]: 
+                - generic [ref=e527]:
+                  - generic [ref=e528]:
+                    - generic [ref=e529]: 
+                    - generic [ref=e530]: "631"
+                  - generic: ·
+                  - generic [ref=e531]:
+                    - generic [ref=e532]: 
+                    - generic [ref=e533]: "20693"
+          - generic [ref=e535]:
+            - generic [ref=e537]: Hot
+            - img [ref=e538]
+            - generic [ref=e539]:
+              - link "Electronic" [ref=e541] [cursor=pointer]:
+                - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=115&category%5B%5D=115
+              - link "How to be a DJ? Make Electronic Music" [ref=e542] [cursor=pointer]:
+                - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/how-to-be-a-dj-make-electronic-music/
+                - heading "How to be a DJ? Make Electronic Music" [level=3] [ref=e543]
+              - generic [ref=e546]: Free
+              - generic:
+                - generic [ref=e547]: This masterclass course is dedicated to anyone wanting to learn how to DJ with NO LAPTOP, US...
+                - generic [ref=e548]:
+                  - generic [ref=e549]:
+                    - generic [ref=e550]:
+                      - text: 
+                      - generic [ref=e551]: 
+                    - generic [ref=e553]: "5.0"
+                  - link "" [ref=e556] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                    - generic [ref=e557]: 
+                - generic [ref=e558]:
+                  - generic [ref=e559]:
+                    - generic [ref=e560]: 
+                    - generic [ref=e561]: "1767"
+                  - generic: ·
+                  - generic [ref=e562]:
+                    - generic [ref=e563]: 
+                    - generic [ref=e564]: "32713"
+          - generic [ref=e566]:
+            - generic [ref=e568]: Special
+            - img [ref=e569]
+            - generic [ref=e570]:
+              - link "Fashion" [ref=e572] [cursor=pointer]:
+                - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/?terms%5B%5D=131&category%5B%5D=131
+              - link "Fashion Photography from professional" [ref=e573] [cursor=pointer]:
+                - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/fashion-photography-from-professional/
+                - heading "Fashion Photography from professional" [level=3] [ref=e574]
+              - generic [ref=e575]:
+                - generic [ref=e577]: $29.99
+                - generic [ref=e579]: $49.99
+              - generic:
+                - generic [ref=e580]: In the digital era, fashion photography tips are more popular than it has ever been before. ...
+                - generic [ref=e581]:
+                  - generic [ref=e582]:
+                    - generic [ref=e583]:
+                      - text: 
+                      - generic [ref=e584]: 
+                    - generic [ref=e586]: "4.0"
+                  - link "" [ref=e589] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/user-account/
+                    - generic [ref=e590]: 
+                - generic [ref=e591]:
+                  - generic [ref=e592]:
+                    - generic [ref=e593]: 
+                    - generic [ref=e594]: "13"
+                  - generic: ·
+                  - generic [ref=e595]:
+                    - generic [ref=e596]: 
+                    - generic [ref=e597]: "9281"
+      - generic [ref=e599]:
+        - generic [ref=e601]:
+          - heading "Subscribe our newsletter" [level=4] [ref=e605]
+          - heading "There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words" [level=5] [ref=e609]
+        - generic [ref=e615]:
+          - heading "Your e-mail address" [level=5] [ref=e616]
+          - generic [ref=e618]:
+            - textbox "Enter your E-mail" [ref=e620]
+            - button "Subscribe" [ref=e621] [cursor=pointer]
+            - generic [ref=e622]: Please wait...
+      - generic [ref=e626]:
+        - heading "MASTERSTUDY BLOG" [level=2] [ref=e630]
+        - generic [ref=e643]:
+          - generic [ref=e645]:
+            - link "View post details" [ref=e647] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/our-main-target-is-to-developing-yourself-as-a-leader/
+            - generic [ref=e648]:
+              - generic [ref=e650]:
+                - generic [ref=e651]: "09"
+                - generic [ref=e652]: Aug
+              - generic [ref=e654]:
+                - link "Our main target is to “Developing Yourself as a Leader”" [ref=e655] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/our-main-target-is-to-developing-yourself-as-a-leader/
+                - paragraph [ref=e657]: The upcoming budget for the Chicago Public Schools will rely on $500 million in yet-to-be-enacted pension savings by Illinois, school officials said on Monday.
+                - generic [ref=e659]:
+                  - text: "Posted in:"
+                  - link "Adverisement" [ref=e660] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/category/adverisement/
+                - generic [ref=e661]:
+                  - text: "Tags:"
+                  - link "developing" [ref=e662] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/tag/developing/
+                  - text: ","
+                  - link "leader" [ref=e663] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/tag/leader/
+                  - text: ","
+                  - link "target" [ref=e664] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/tag/target/
+          - generic [ref=e666]:
+            - link "View post details" [ref=e668] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/those-other-college-expenses/
+            - generic [ref=e669]:
+              - generic [ref=e671]:
+                - generic [ref=e672]: "03"
+                - generic [ref=e673]: Jun
+                - generic [ref=e674]: Sticky Post
+              - generic [ref=e676]:
+                - 'link "Those Other College Expenses You Aren`t Thinking About" [ref=e677] [cursor=pointer]':
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/those-other-college-expenses/
+                - paragraph [ref=e679]: Thousands of teenagers across the UK will have school lessons in mindfulness in an experiment designed to see if it can protect against mental illness.
+                - generic [ref=e681]:
+                  - text: "Posted in:"
+                  - link "Hobbies" [ref=e682] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/category/hobbies/
+                - generic [ref=e683]:
+                  - text: "Tags:"
+                  - link "college" [ref=e684] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/tag/college/
+                  - text: ","
+                  - link "teens" [ref=e685] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/tag/teens/
+                  - text: ","
+                  - link "thinking" [ref=e686] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/tag/thinking/
+          - generic [ref=e688]:
+            - link "View post details" [ref=e690] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/the-surprising-reason-college-tuition/
+            - generic [ref=e691]:
+              - generic [ref=e693]:
+                - generic [ref=e694]: "03"
+                - generic [ref=e695]: Jun
+              - generic [ref=e697]:
+                - link "The Surprising Reason College Tuition Is Crazy Expensive" [ref=e698] [cursor=pointer]:
+                  - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/the-surprising-reason-college-tuition/
+                - paragraph [ref=e700]: The upcoming budget for the Chicago Public Schools will rely on $500 million in yet-to-be-enacted pension savings by Illinois, school officials said on Monday.
+                - generic [ref=e702]:
+                  - text: "Posted in:"
+                  - link "Adverisement" [ref=e703] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/category/adverisement/
+                  - text: ","
+                  - link "Hobbies" [ref=e704] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/category/hobbies/
+                - generic [ref=e705]:
+                  - text: "Tags:"
+                  - link "Childhood" [ref=e706] [cursor=pointer]:
+                    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/tag/childhood/
+  - contentinfo [ref=e707]:
+    - generic [ref=e712]:
+      - complementary [ref=e713]:
+        - heading "About" [level=3] [ref=e715]
+        - generic [ref=e716]:
+          - paragraph [ref=e717]:
+            - link "Masterstudy" [ref=e718] [cursor=pointer]:
+              - /url: https://masterstudy.//classic-lms-elementor/
+            - text: is Education WordPress theme featured by Learning Management System (LMS) for online education.
+            - text: Developed by
+            - link "StylemixThemes." [ref=e719] [cursor=pointer]:
+              - /url: https:////
+          - paragraph [ref=e720]:
+            - text: Lorem ipsum dolor sit amet, onsectetur adipiscing elit. Morbi at egestas magna.
+            - link "Learning Now" [ref=e721] [cursor=pointer]:
+              - /url: /classic-lms-elementor/courses-archive/
+      - complementary [ref=e722]:
+        - heading "Popular Courses" [level=3] [ref=e724]
+        - list [ref=e725]:
+          - listitem [ref=e726]:
+            - link "Web Coding and Apache Basics theory By Demo Instructor" [ref=e727] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/web-coding-and-apache-basics/
+              - generic [ref=e728]:
+                - generic [ref=e729]: Web Coding and Apache Basics theory
+                - generic [ref=e730]: By Demo Instructor
+          - listitem [ref=e731]:
+            - link "Concept Art Printing on 3d Printer By George Clinton" [ref=e732] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/concept-art-printing-on-3d-printer/
+              - generic [ref=e733]:
+                - generic [ref=e734]: Concept Art Printing on 3d Printer
+                - generic [ref=e735]: By George Clinton
+          - listitem [ref=e736]:
+            - link "Group 8943 Basics of MasterStudy By Demo Instructor" [ref=e737] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/courses-archive/course-basics-of-masterstudy/
+              - img "Group 8943" [ref=e738]
+              - generic [ref=e739]:
+                - generic [ref=e740]: Basics of MasterStudy
+                - generic [ref=e741]: By Demo Instructor
+      - complementary [ref=e742]:
+        - heading "Pages" [level=3] [ref=e744]
+        - list [ref=e745]:
+          - listitem [ref=e746]:
+            - link "About Us" [ref=e747] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/about-us/
+          - listitem [ref=e748]:
+            - link "Blog" [ref=e749] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/blog/
+          - listitem [ref=e750]:
+            - link "Contact Us" [ref=e751] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/contact-us/
+          - listitem [ref=e752]:
+            - link "Shortcodes" [ref=e753] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/shortcodes/
+          - listitem [ref=e754]:
+            - link "Membership Plans" [ref=e755] [cursor=pointer]:
+              - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/membership-account/membership-plans/
+      - complementary [ref=e756]:
+        - heading "Contact" [level=3] [ref=e758]
+        - list [ref=e759]:
+          - listitem [ref=e760]:
+            - generic [ref=e762]: 
+            - generic [ref=e763]: USA, Callifornia 20, First Avenue, Callifornia
+          - listitem [ref=e764]:
+            - generic [ref=e766]: 
+            - generic [ref=e767]: "Tel.: +1 212 458 300 32"
+          - listitem [ref=e768]:
+            - generic [ref=e770]: 
+            - generic [ref=e771]: "Fax: +1 212 375 24 14"
+          - listitem [ref=e772]:
+            - generic [ref=e774]: 
+            - link "info@masterstudy.com" [ref=e776] [cursor=pointer]:
+              - /url: mailto:info@masterstudy.com
+  - text: 
+  - generic [ref=e777]:
+    - generic [ref=e778]: 
+    - link "":
+      - /url: https://stylemix.net/~service8922366
+      - generic [ref=e779] [cursor=pointer]: 
+    - link "":
+      - /url: https://support.stylemixthemes.com/manuals/masterstudy/
+      - generic [ref=e780] [cursor=pointer]: 
+    - link "":
+      - /url: https://1.envato.market/c/1240813/475676/4415?u=http%3A%2F%2Fthemeforest.net%2Fitem%2Fmasterstudy-education-center-wordpress-theme%2F12170274%3Fref%3Dstylemixthemes
+      - generic [ref=e781] [cursor=pointer]: 
+    - generic [ref=e782]: 
+  - link "BACK-END DEMO" [ref=e787] [cursor=pointer]:
+    - /url: https://masterstudy.stylemixthemes.com/classic-lms-elementor/home-page-two/?try-free-demo&nonce=25522bf0fc
+  - generic [ref=e788]: desktop
+  - generic [ref=e789]:
+    - generic [ref=e790]:
+      - link "Envato Market" [ref=e792] [cursor=pointer]:
+        - /url: https://1.envato.market/c/1240813/475676/4415?u=http%3A%2F%2Fthemeforest.net%2Fitem%2Fmasterstudy-education-center-wordpress-theme%2F12170274%3Fref%3Dstylemixthemes
+      - link "More themes" [ref=e795] [cursor=pointer]:
+        - /url: "#"
+        - text: More themes
+        - img [ref=e797]
+    - generic [ref=e799]:
+      - link "Theme Customization Get a free quote" [ref=e801] [cursor=pointer]:
+        - /url: https://stylemix.net/ticket-form/
+        - img [ref=e802]
+        - generic [ref=e804]:
+          - generic [ref=e805]: Theme Customization
+          - generic [ref=e806]: Get a free quote
+      - generic [ref=e807]:
+        - link "Tutorials" [ref=e808] [cursor=pointer]:
+          - /url: https://www.youtube.com/channel/UCpuJgzrLAbVKCHDo_1lluKA
+          - img [ref=e809]
+          - text: Tutorials
+        - link "Blog" [ref=e811] [cursor=pointer]:
+          - /url: https://stylemixthemes.com/wp/
+          - img [ref=e812]
+          - text: Blog
+    - generic [ref=e814]:
+      - link "Buy now" [ref=e816] [cursor=pointer]:
+        - /url: https://1.envato.market/c/1240813/475676/4415?u=https://themeforest.net/cart/configure_before_adding/12170274
+      - link "Remove Frame" [ref=e818] [cursor=pointer]:
+        - /url: "#"
+        - img [ref=e819]
+        - text: Remove Frame

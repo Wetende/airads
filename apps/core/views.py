@@ -9430,6 +9430,7 @@ def airads_virtual_courses(request):
             "search": request.GET.get("search", ""),
             "category": request.GET.get("category", ""),
             "level": request.GET.get("level", ""),
+            "pathway": request.GET.get("pathway", ""),
         },
         "siteContext": _build_site_context(request),
     }

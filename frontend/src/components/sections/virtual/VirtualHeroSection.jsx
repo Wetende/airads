@@ -1,215 +1,465 @@
-import React from "react";
-import { usePage } from "@inertiajs/react";
-import { Box, Container, Typography, Grid, Button, Chip, Card, CardContent } from "@mui/material";
-import { ArrowForward, CheckCircle, WorkOutlined } from "@mui/icons-material";
-import { usePublicBrand } from "../../../hooks/usePublicBrand";
+import { useEffect, useMemo, useState } from "react";
+import { Link, usePage } from "@inertiajs/react";
+import { Box, Button, Container, Grid, IconButton, Typography } from "@mui/material";
+import {
+  AccountBalance as AccountBalanceIcon,
+  ArrowForward as ArrowForwardIcon,
+  BusinessCenter as BusinessCenterIcon,
+  KeyboardArrowLeft as KeyboardArrowLeftIcon,
+  KeyboardArrowRight as KeyboardArrowRightIcon,
+  Computer as ComputerIcon,
+  Engineering as EngineeringIcon,
+  MenuBook as MenuBookIcon,
+} from "@mui/icons-material";
+import { FONT_BODY } from "../../../config";
 
-export default function VirtualHeroSection() {
-  const brand = usePublicBrand();
+const fallbackCategories = [
+  "ICT & Computer Studies",
+  "Business & Management",
+  "Engineering & Technical",
+  "Hospitality & Tourism",
+  "Professional Short Courses",
+];
+
+const categoryColors = ["#10c45c", "#1ec1d9", "#307ad5", "#eab830", "#d94da6"];
+const HERO_ACCENT = "#E53935";
+const categoryIcons = [
+  ComputerIcon,
+  BusinessCenterIcon,
+  EngineeringIcon,
+  AccountBalanceIcon,
+  MenuBookIcon,
+];
+
+const heroSlides = [
+  {
+    kicker: "Learn Anytime, Anywhere With",
+    title: "AIRADS Virtual Campus",
+    body: "Self-paced online courses with dedicated trainers and 20 years of excellence.",
+    image: "/static/online-virtual-hero.webp",
+    position: "center 32%",
+  },
+  {
+    kicker: "AIRADS Is Kenya's",
+    title: "Trusted Virtual Campus",
+    body: "Flexible online learning and practical skills designed for career-ready professionals.",
+    image: "/static/airads-virtual.webp",
+    position: "center 18%",
+  },
+  {
+    kicker: "Your Journey To Success",
+    title: "Starts Here",
+    body: "Study online at your own pace with practical, career-ready TVET programs.",
+    image: "/static/health1-hero.webp",
+    position: "center 46%",
+  },
+];
+
+function splitCategoryLabel(label) {
+  const parts = String(label || "").split("&");
+  if (parts.length < 2) return label;
+  return `${parts[0].trim()} & ${parts.slice(1).join("&").trim()}`;
+}
+
+export default function VirtualHeroSection({ categories = [] }) {
   const { siteContext = {} } = usePage().props;
   const routes = siteContext.routes || {};
   const coursesHref = routes.virtualCourses || "/courses/";
-  const applyHref = routes.virtualApply || "/apply/";
+  const [activeSlide, setActiveSlide] = useState(0);
+  const currentSlide = heroSlides[activeSlide];
+
+  const categoryTiles = useMemo(() => {
+    const configured = Array.isArray(categories)
+      ? categories.filter(Boolean).slice(0, 5)
+      : [];
+    const names = configured.length > 0 ? configured : fallbackCategories;
+
+    return names.slice(0, 5).map((name, index) => {
+      const Icon = categoryIcons[index % categoryIcons.length];
+      return {
+        name,
+        Icon,
+        color: categoryColors[index % categoryColors.length],
+        href: `${coursesHref}?category=${encodeURIComponent(name)}`,
+      };
+    });
+  }, [categories, coursesHref]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      setActiveSlide((slide) => (slide + 1) % heroSlides.length);
+    }, 6200);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const goToPreviousSlide = () => {
+    setActiveSlide((slide) => (slide - 1 + heroSlides.length) % heroSlides.length);
+  };
+
+  const goToNextSlide = () => {
+    setActiveSlide((slide) => (slide + 1) % heroSlides.length);
+  };
 
   return (
     <Box
+      component="section"
       sx={{
-        position: 'relative',
-        pt: { xs: 8, md: 12 },
-        pb: { xs: 8, md: 10 },
-        overflow: 'hidden',
-        bgcolor: '#fefefe',
+        position: "relative",
+        minHeight: { xs: 720, md: 780 },
+        display: "flex",
+        alignItems: "center",
+        overflow: "visible",
+        color: "white",
+        bgcolor: "#08142c",
+        zIndex: 1,
+        mb: { xs: 0, md: 12 },
       }}
     >
-      <Box sx={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '100%',
-        background: `linear-gradient(135deg, ${brand.softBlue} 0%, rgba(255,255,255,0) 100%)`,
-        zIndex: 0
-      }} />
+      {heroSlides.map((slide, index) => {
+        const isActive = index === activeSlide;
 
-      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-        <Grid container spacing={6} alignItems="center">
-          {/* Left Content */}
-          <Grid size={{ xs: 12, md: 7 }}>
-            <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
-              <Chip
-                label="Virtual Campus"
-                sx={{
-                  bgcolor: brand.accent,
-                  color: 'white',
-                  fontWeight: 800,
-                  fontSize: '0.8rem',
-                  letterSpacing: 0.5,
-                  borderRadius: 1.5,
-                }}
-              />
-              <Chip
-                label="Learn & Grow"
-                sx={{
-                  bgcolor: brand.primary,
-                  color: 'white',
-                  fontWeight: 800,
-                  fontSize: '0.8rem',
-                  letterSpacing: 0.5,
-                  borderRadius: 1.5,
-                }}
-              />
-            </Box>
+        return (
+          <Box
+            key={slide.title}
+            aria-hidden="true"
+            sx={{
+              position: "absolute",
+              inset: 0,
+              opacity: isActive ? 1 : 0,
+              transition: "opacity 1000ms ease",
+              backgroundImage: `linear-gradient(90deg, rgba(8, 20, 44, 0.68) 0%, rgba(12, 30, 62, 0.46) 45%, rgba(8, 20, 44, 0.66) 100%), url('${slide.image}')`,
+              backgroundSize: "cover",
+              backgroundPosition: slide.position,
+              transform: isActive ? "scale(1.10)" : "scale(1)",
+              transformOrigin: "center",
+              animation: isActive ? "virtualHeroKenBurns 6.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards" : "none",
+              "@keyframes virtualHeroKenBurns": {
+                "0%": { transform: "scale(1)" },
+                "100%": { transform: "scale(1.10)" },
+              },
+            }}
+          />
+        );
+      })}
 
-            <Typography
-              variant="h1"
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          bgcolor: "rgba(6, 18, 40, 0.06)",
+          pointerEvents: "none",
+        }}
+      />
+      <Box
+        aria-hidden="true"
+        sx={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 46%, rgba(8,20,44,0.18) 100%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: { xs: "relative", md: "static" },
+          zIndex: 1,
+          pt: { xs: 16, md: 15 },
+          pb: { xs: 14, md: 18 },
+        }}
+      >
+        <Box
+          key={currentSlide.title}
+          sx={{
+            maxWidth: 980,
+            mx: "auto",
+            textAlign: "center",
+            /* Unique animations per slide */
+            "@keyframes kickerDrop": {
+              "0%": { opacity: 0, transform: "translateY(-30px)" },
+              "100%": { opacity: 1, transform: "translateY(0)" },
+            },
+            "@keyframes titleExpand": {
+              "0%": { opacity: 0, transform: "scale(0.88)", letterSpacing: "-0.04em" },
+              "100%": { opacity: 1, transform: "scale(1)", letterSpacing: "-0.01em" },
+            },
+            "@keyframes kickerSlideLeft": {
+              "0%": { opacity: 0, transform: "translateX(-480px)" },
+              "100%": { opacity: 1, transform: "translateX(0)" },
+            },
+            "@keyframes titleSlideLeft": {
+              "0%": { opacity: 0, transform: "translateX(-640px)" },
+              "100%": { opacity: 1, transform: "translateX(0)" },
+            },
+            "@keyframes bodySlideLeft": {
+              "0%": { opacity: 0, transform: "translateX(-520px)" },
+              "100%": { opacity: 1, transform: "translateX(0)" },
+            },
+            "@keyframes btnSlideUp": {
+              "0%": { opacity: 0, transform: "translateY(75px)" },
+              "100%": { opacity: 1, transform: "translateY(0)" },
+            },
+            "@keyframes kickerScaleDown": {
+              "0%": { opacity: 0, transform: "scale(1.28)" },
+              "100%": { opacity: 1, transform: "scale(1)" },
+            },
+            "@keyframes titleSpringUp": {
+              "0%": { opacity: 0, transform: "translateY(50px) scale(0.92)" },
+              "100%": { opacity: 1, transform: "translateY(0) scale(1)" },
+            },
+            "@keyframes bodyGlideUp": {
+              "0%": { opacity: 0, transform: "translateY(22px)" },
+              "100%": { opacity: 1, transform: "translateY(0)" },
+            },
+            "@keyframes btnPopIn": {
+              "0%": { opacity: 0, transform: "scale(0.85)" },
+              "100%": { opacity: 1, transform: "scale(1)" },
+            },
+          }}
+        >
+          <Typography
+            component="p"
+            sx={{
+              mb: 1.5,
+              color: HERO_ACCENT,
+              fontFamily: FONT_BODY,
+              fontSize: { xs: "1.15rem", sm: "1.65rem", md: "2.35rem" },
+              fontWeight: 900,
+              lineHeight: 1.15,
+              textTransform: "uppercase",
+              letterSpacing: "0.03em",
+              textShadow: "0 10px 26px rgba(0,0,0,0.32)",
+              animation:
+                activeSlide === 0
+                  ? "kickerDrop 650ms cubic-bezier(0.16, 1, 0.3, 1) both"
+                  : activeSlide === 1
+                  ? "kickerSlideLeft 950ms cubic-bezier(0.16, 1, 0.3, 1) both"
+                  : "kickerScaleDown 650ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            }}
+          >
+            {currentSlide.kicker}
+          </Typography>
+
+          <Typography
+            variant="h1"
+            sx={{
+              mb: 3,
+              color: "white",
+              fontFamily: FONT_BODY,
+              fontSize:
+                currentSlide.title === "Trusted Virtual Campus"
+                  ? { xs: "2.2rem", sm: "3.2rem", md: "4.2rem" }
+                  : { xs: "2.25rem", sm: "3.6rem", md: "4.95rem" },
+              fontWeight: 900,
+              lineHeight: { xs: 1.08, md: 1.02 },
+              letterSpacing: "-0.01em",
+              textTransform: "uppercase",
+              whiteSpace: { md: currentSlide.title === "Trusted Virtual Campus" ? "nowrap" : "normal" },
+              textShadow: "0 10px 30px rgba(0,0,0,0.35)",
+              animation:
+                activeSlide === 0
+                  ? "titleExpand 800ms cubic-bezier(0.16, 1, 0.3, 1) 140ms both"
+                  : activeSlide === 1
+                  ? "titleSlideLeft 1100ms cubic-bezier(0.16, 1, 0.3, 1) 140ms both"
+                  : "titleSpringUp 900ms cubic-bezier(0.34, 1.56, 0.64, 1) 150ms both",
+            }}
+          >
+            {currentSlide.title}
+          </Typography>
+
+          <Typography
+            sx={{
+              mb: 4.5,
+              mx: "auto",
+              maxWidth: 720,
+              color: "rgba(255,255,255,0.88)",
+              fontFamily: FONT_BODY,
+              fontSize: { xs: "1rem", md: "1.15rem" },
+              lineHeight: 1.65,
+              animation:
+                activeSlide === 1
+                  ? "bodySlideLeft 1000ms cubic-bezier(0.16, 1, 0.3, 1) 280ms both"
+                  : "bodyGlideUp 700ms cubic-bezier(0.16, 1, 0.3, 1) 280ms both",
+            }}
+          >
+            {currentSlide.body}
+          </Typography>
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 2.5,
+              flexWrap: "wrap",
+              animation:
+                activeSlide === 1
+                  ? "btnSlideUp 850ms cubic-bezier(0.16, 1, 0.3, 1) 420ms both"
+                  : "btnPopIn 650ms cubic-bezier(0.34, 1.56, 0.64, 1) 400ms both",
+            }}
+          >
+            <Button
+              component={Link}
+              href={coursesHref}
+              variant="outlined"
+              endIcon={<ArrowForwardIcon />}
               sx={{
-                fontWeight: 900,
-                fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
-                lineHeight: 1.1,
-                mb: 3,
-                letterSpacing: '-0.02em',
+                minHeight: 54,
+                px: { xs: 3.5, md: 4.5 },
+                color: "white",
+                border: "2px solid rgba(255,255,255,0.88)",
+                borderRadius: 999,
+                fontFamily: FONT_BODY,
+                fontSize: "1rem",
+                fontWeight: 800,
+                textTransform: "none",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  borderColor: "white",
+                  bgcolor: "rgba(255,255,255,0.15)",
+                },
               }}
             >
-              <Box component="span" sx={{ color: brand.secondary }}>
-                Flexible Learning &<br />
-              </Box>
-              <Box component="span" sx={{ color: brand.accent }}>
-                Upskilling
-              </Box>
-            </Typography>
+              Ready to get started?
+            </Button>
+          </Box>
+        </Box>
 
-            <Typography
-              variant="h6"
+        <Box
+          sx={{
+            position: "absolute",
+            top: { md: "50%" },
+            left: { md: 4 },
+            right: { md: 4 },
+            display: { xs: "none", md: "flex" },
+            justifyContent: "space-between",
+            transform: "translateY(-40%)",
+            pointerEvents: "none",
+          }}
+        >
+          {[
+            { label: "Previous slide", onClick: goToPreviousSlide, Icon: KeyboardArrowLeftIcon },
+            { label: "Next slide", onClick: goToNextSlide, Icon: KeyboardArrowRightIcon },
+          ].map(({ label, onClick, Icon }) => (
+            <IconButton
+              key={label}
+              aria-label={label}
+              onClick={onClick}
               sx={{
-                color: 'text.secondary',
-                mb: 5,
-                fontWeight: 400,
-                lineHeight: 1.8,
-                maxWidth: 540,
+                width: 46,
+                height: 46,
+                color: "white",
+                border: "2px solid rgba(255,255,255,0.54)",
+                bgcolor: "rgba(5, 15, 34, 0.18)",
+                pointerEvents: "auto",
+                "&:hover": {
+                  bgcolor: HERO_ACCENT,
+                  borderColor: HERO_ACCENT,
+                },
               }}
             >
-              Learning is easy with us, learn any course and stack it up to your dream career and qualification from anywhere, anytime.
-            </Typography>
+              <Icon />
+            </IconButton>
+          ))}
+        </Box>
 
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                href={coursesHref}
-                sx={{
-                  bgcolor: brand.primary,
-                  color: 'white',
-                  px: 3,
-                  py: 1,
-                  borderRadius: 2,
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  boxShadow: '0 4px 6px rgba(30, 58, 138, 0.1)',
-                  '&:hover': { bgcolor: brand.secondary, transform: 'translateY(-1px)' },
-                  transition: 'all 0.2s',
-                }}
-              >
-                Explore Courses
-              </Button>
-              <Button
-                variant="outlined"
-                endIcon={<ArrowForward />}
-                href={applyHref}
-                sx={{
-                  color: brand.secondary,
-                  borderColor: brand.secondary,
-                  px: 3,
-                  py: 1,
-                  borderRadius: 2,
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  '&:hover': { bgcolor: brand.softBlue, borderColor: brand.primary },
-                }}
-              >
-                Apply Now
-              </Button>
-            </Box>
+        <Box
+          sx={{
+            position: "absolute",
+            left: "50%",
+            bottom: { xs: 118, md: 110 },
+            display: "flex",
+            gap: 1.25,
+            transform: "translateX(-50%)",
+            zIndex: 4,
+          }}
+        >
+          {heroSlides.map((slide, index) => (
+            <Box
+              key={slide.title}
+              component="button"
+              type="button"
+              aria-label={`Show slide ${index + 1}`}
+              onClick={() => setActiveSlide(index)}
+              sx={{
+                width: index === activeSlide ? 34 : 10,
+                height: 10,
+                p: 0,
+                border: 0,
+                borderRadius: 999,
+                bgcolor: index === activeSlide ? HERO_ACCENT : "rgba(255,255,255,0.72)",
+                cursor: "pointer",
+                transition: "width 240ms ease, background-color 240ms ease",
+              }}
+            />
+          ))}
+        </Box>
 
-            <Box sx={{ mt: 5, display: 'flex', gap: 4 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CheckCircle sx={{ color: brand.accent, fontSize: 20 }} />
-                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>TVETA Approved</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CheckCircle sx={{ color: brand.accent, fontSize: 20 }} />
-                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>CDACC Certified</Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          {/* Right Content */}
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Box sx={{ position: 'relative' }}>
+        <Grid
+          container
+          spacing={{ xs: 1.5, md: 2 }}
+          sx={{
+            position: { xs: "relative", md: "absolute" },
+            left: { md: "50%" },
+            right: { md: "auto" },
+            bottom: { md: -92 },
+            width: { md: "calc(100% - 48px)" },
+            maxWidth: { md: 1170 },
+            transform: { md: "translateX(-50%)" },
+            mt: { xs: 7, md: 0 },
+            zIndex: 5,
+          }}
+        >
+          {categoryTiles.map(({ name, Icon, color, href }) => (
+            <Grid key={name} size={{ xs: 6, sm: 4, md: 2.4 }}>
               <Box
-                component="img" loading="lazy"
-                src="https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80"
-                alt="Virtual class student studying"
+                component={Link}
+                href={href}
                 sx={{
-                  width: '100%',
-                  height: 480,
-                  objectFit: 'cover',
-                  borderRadius: 6,
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                }}
-              />
-              
-              {/* Floating Card */}
-              <Card
-                elevation={4}
-                sx={{
-                  position: 'absolute',
-                  bottom: -30,
-                  left: -40,
-                  width: 280,
-                  borderRadius: 4,
-                  display: { xs: 'none', sm: 'block' },
-                  animation: 'float 6s ease-in-out infinite',
-                  '@keyframes float': {
-                    '0%': { transform: 'translateY(0px)' },
-                    '50%': { transform: 'translateY(-15px)' },
-                    '100%': { transform: 'translateY(0px)' },
-                  }
+                  height: "100%",
+                  minHeight: { xs: 140, md: 184 },
+                  p: { xs: 2, md: 2.5 },
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 1.5,
+                  bgcolor: color,
+                  color: "white",
+                  textDecoration: "none",
+                  borderRadius: 2.5,
+                  boxShadow: "0 16px 32px rgba(15, 23, 42, 0.22)",
+                  transition: "all 220ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  "&:hover": {
+                    transform: "translateY(-8px)",
+                    boxShadow: "0 24px 44px rgba(15, 23, 42, 0.32)",
+                  },
                 }}
               >
-                <CardContent sx={{ p: 3 }}>
-                  <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: brand.softBlue, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <WorkOutlined sx={{ color: brand.primary }} />
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: brand.secondary, lineHeight: 1.2 }}>
-                        Are you looking for a job or internship?
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2, lineHeight: 1.5 }}>
-                    Check out what we have for you in our career and jobs portal
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    size="small"
-                    sx={{
-                      bgcolor: brand.secondary,
-                      borderRadius: 8,
-                      fontWeight: 700,
-                      textTransform: 'none',
-                    }}
-                  >
-                    Learn More
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Decorative Elements */}
-              <Box sx={{ position: 'absolute', top: 40, right: -20, width: 64, height: 64, bgcolor: brand.accent, borderRadius: '20px', opacity: 0.2, transform: 'rotate(15deg)' }} />
-              <Box sx={{ position: 'absolute', bottom: 80, right: -40, width: 96, height: 96, bgcolor: brand.primary, borderRadius: '50%', opacity: 0.1 }} />
-            </Box>
-          </Grid>
+                <Icon sx={{ fontSize: { xs: 36, md: 44 }, strokeWidth: 1 }} />
+                <Typography
+                  component="h3"
+                  sx={{
+                    maxWidth: 140,
+                    color: "white",
+                    fontFamily: FONT_BODY,
+                    fontSize: { xs: "0.85rem", md: "0.95rem" },
+                    fontWeight: 800,
+                    lineHeight: 1.25,
+                    textAlign: "center",
+                  }}
+                >
+                  {splitCategoryLabel(name)}
+                </Typography>
+              </Box>
+            </Grid>
+          ))}
         </Grid>
       </Container>
     </Box>

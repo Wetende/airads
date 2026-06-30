@@ -1,0 +1,404 @@
+[
+  {
+    "visibleText": [
+      {
+        "tag": "A",
+        "text": "Login",
+        "top": 11,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "12px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Register",
+        "top": 13,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "12px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Home",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Courses",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Course Formats",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Add Course",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Pages",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Demos",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "H2",
+        "text": "Take the first step",
+        "top": 286,
+        "color": "rgb(234, 184, 48)",
+        "fontSize": "50px",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)"
+      },
+      {
+        "tag": "P",
+        "text": "of your journey to success",
+        "top": 336,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "70px",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)"
+      },
+      {
+        "tag": "A",
+        "text": "Ready to get Started?",
+        "top": 447,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Graphic & Web-design",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Environmental Sciences",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Economics & Finances",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Analysis of Algorithms",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Software Development",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      }
+    ],
+    "heroBackgrounds": [],
+    "sliderClass": "elementor-section elementor-top-section elementor-element elementor-element-60210b0 elementor-section-stretched elementor-section-full_width elementor-section-height-default elementor-section-height-d"
+  },
+  {
+    "visibleText": [
+      {
+        "tag": "A",
+        "text": "Login",
+        "top": 11,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "12px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Register",
+        "top": 13,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "12px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Home",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Courses",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Course Formats",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Add Course",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Pages",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Demos",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "H2",
+        "text": "Take the first step",
+        "top": 286,
+        "color": "rgb(234, 184, 48)",
+        "fontSize": "50px",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)"
+      },
+      {
+        "tag": "P",
+        "text": "to knowledge with us",
+        "top": 336,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "70px",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)"
+      },
+      {
+        "tag": "A",
+        "text": "Ready to get Started?",
+        "top": 447,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Graphic & Web-design",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Environmental Sciences",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Economics & Finances",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Analysis of Algorithms",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Software Development",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      }
+    ],
+    "heroBackgrounds": [],
+    "sliderClass": "elementor-section elementor-top-section elementor-element elementor-element-60210b0 elementor-section-stretched elementor-section-full_width elementor-section-height-default elementor-section-height-d"
+  },
+  {
+    "visibleText": [
+      {
+        "tag": "A",
+        "text": "Login",
+        "top": 11,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "12px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Register",
+        "top": 13,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "12px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Home",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Courses",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Course Formats",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Add Course",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Pages",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Demos",
+        "top": 69,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "H2",
+        "text": "Take the first step",
+        "top": 286,
+        "color": "rgb(234, 184, 48)",
+        "fontSize": "50px",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)"
+      },
+      {
+        "tag": "P",
+        "text": "of your journey to success",
+        "top": 336,
+        "color": "rgb(255, 255, 255)",
+        "fontSize": "70px",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)"
+      },
+      {
+        "tag": "A",
+        "text": "Ready to get Started?",
+        "top": 447,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Graphic & Web-design",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Environmental Sciences",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Economics & Finances",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Analysis of Algorithms",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      },
+      {
+        "tag": "A",
+        "text": "Software Development",
+        "top": 725,
+        "color": "rgb(44, 117, 228)",
+        "fontSize": "14px",
+        "transform": "none"
+      }
+    ],
+    "heroBackgrounds": [],
+    "sliderClass": "elementor-section elementor-top-section elementor-element elementor-element-60210b0 elementor-section-stretched elementor-section-full_width elementor-section-height-default elementor-section-height-d"
+  }
+]

@@ -8,22 +8,27 @@ import {
   Button,
   IconButton,
   InputBase,
-  Select,
-  MenuItem,
-  FormControl,
   Drawer,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
+  Typography,
 } from "@mui/material";
-import { Search as SearchIcon, Menu as MenuIcon, Close as CloseIcon } from "@mui/icons-material";
+import {
+  AccessTime as AccessTimeIcon,
+  Login as LoginIcon,
+  Menu as MenuIcon,
+  PhoneInTalk as PhoneInTalkIcon,
+  Search as SearchIcon,
+  Close as CloseIcon,
+} from "@mui/icons-material";
 import AiradsLogoLockup from "./AiradsLogoLockup";
 import { usePublicBrand } from "../../hooks/usePublicBrand";
 
-export default function VirtualNavbar() {
+export default function VirtualNavbar({ homepage = false }) {
   const brand = usePublicBrand();
-  const { platform = {}, siteContext = {} } = usePage().props;
+  const { siteContext = {} } = usePage().props;
   const routes = siteContext.routes || {};
   const mainHomeHref = routes.mainHome || "/";
   const homeHref = routes.virtualHome || "/";
@@ -31,48 +36,103 @@ export default function VirtualNavbar() {
   const applyHref = routes.virtualApply || "/apply/";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
-  const categoryOptions = Array.isArray(platform.programCategories)
-    ? platform.programCategories.filter(Boolean)
-    : [];
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    router.get(coursesHref, { search, category: category !== "all" ? category : "" }, { preserveState: true });
+    router.get(coursesHref, { search }, { preserveState: true });
   };
+
+  const homepageNavItems = [
+    { label: "Home", href: homeHref, internal: true },
+    { label: "Courses", href: coursesHref, internal: true },
+    { label: "Admissions", href: applyHref, internal: true },
+    { label: "Main Site", href: mainHomeHref, internal: false },
+    { label: "Apply Now", href: applyHref, internal: true, isButton: true },
+  ];
 
   return (
     <>
       <AppBar
-        position="fixed"
-        elevation={1}
+        position={homepage ? "absolute" : "fixed"}
+        elevation={homepage ? 0 : 1}
         sx={{
-          bgcolor: "rgba(255, 255, 255, 0.98)",
-          backdropFilter: "blur(10px)",
-          color: "text.primary",
-          borderBottom: "1px solid",
-          borderColor: "divider",
+          bgcolor: homepage ? "transparent" : "rgba(255, 255, 255, 0.98)",
+          backdropFilter: homepage ? "none" : "blur(10px)",
+          color: homepage ? "white" : "text.primary",
+          borderBottom: homepage ? 0 : "1px solid",
+          borderColor: homepage ? "transparent" : "divider",
+          boxShadow: "none",
         }}
       >
-        <Container maxWidth="xl">
-          <Toolbar sx={{ justifyContent: "space-between", py: 1, minHeight: { xs: 72, md: 80 } }}>
+        {homepage && (
+          <Box sx={{ bgcolor: brand.primary, color: "white", fontSize: 13 }}>
+            <Container maxWidth="lg">
+              <Box
+                sx={{
+                  minHeight: { xs: 36, md: 38 },
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 2,
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, md: 3 }, minWidth: 0 }}>
+                  <Typography sx={{ display: { xs: "none", sm: "inline-flex" }, alignItems: "center", gap: 0.75, fontSize: 13, fontWeight: 700 }}>
+                    Virtual Campus
+                  </Typography>
+                  <Typography sx={{ display: "inline-flex", alignItems: "center", gap: 0.75, fontSize: 13, whiteSpace: "nowrap" }}>
+                    <PhoneInTalkIcon sx={{ fontSize: 16 }} />
+                    0723 555 999
+                  </Typography>
+                  <Typography sx={{ display: { xs: "none", md: "inline-flex" }, alignItems: "center", gap: 0.75, fontSize: 13, whiteSpace: "nowrap" }}>
+                    <AccessTimeIcon sx={{ fontSize: 16 }} />
+                    Mon - Sat 8.00 - 18.00
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
+                  <Button component={Link} href="/login/" startIcon={<LoginIcon />} sx={{ minWidth: "auto", px: 0, color: "white", fontSize: 13, fontWeight: 700, textTransform: "none" }}>
+                    Login
+                  </Button>
+                  <Typography sx={{ display: { xs: "none", sm: "block" }, opacity: 0.55 }}>|</Typography>
+                  <Button component={Link} href={applyHref} sx={{ display: { xs: "none", sm: "inline-flex" }, minWidth: "auto", px: 0, color: "white", fontSize: 13, fontWeight: 700, textTransform: "none" }}>
+                    Register
+                  </Button>
+                </Box>
+              </Box>
+            </Container>
+          </Box>
+        )}
+
+        <Container maxWidth={homepage ? "lg" : "xl"}>
+          <Toolbar
+            sx={{
+              justifyContent: "space-between",
+              py: homepage ? { xs: 1.5, md: 2.25 } : 1,
+              px: { xs: 0 },
+              minHeight: homepage ? { xs: 84, md: 110 } : { xs: 78, md: 92 },
+              borderBottom: homepage ? "1px solid rgba(255,255,255,0.16)" : 0,
+            }}
+          >
             {/* Left: Logo */}
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <AiradsLogoLockup
                 href={homeHref}
-                gap={{ xs: 1, sm: 1.25 }}
-                crestHeight={{ xs: 46, sm: 54 }}
-                headlineColor={brand.accent}
-                subheadColor={brand.primary}
-                taglineColor={brand.accent}
+                gap={{ xs: 1.25, sm: 1.5 }}
+                crestHeight={homepage ? { xs: 58, sm: 74, md: 82 } : { xs: 54, sm: 66 }}
+                headlineColor={homepage ? "white" : brand.accent}
+                subheadColor={homepage ? "rgba(255,255,255,0.86)" : brand.primary}
+                taglineColor={homepage ? brand.accent : brand.accent}
+                headlineFontSize={homepage ? { xs: "1.05rem", sm: "1.3rem", md: "1.45rem" } : { xs: "1rem", sm: "1.2rem" }}
+                subheadFontSize={homepage ? { xs: "0.72rem", sm: "0.9rem", md: "1.05rem" } : { xs: "0.75rem", sm: "0.85rem" }}
+                taglineFontSize={homepage ? { xs: "0.5rem", sm: "0.65rem", md: "0.72rem" } : { xs: "0.5rem", sm: "0.6rem" }}
               />
             </Box>
 
             {/* Middle: Search Pill (Desktop) */}
-            <Box sx={{ display: { xs: "none", md: "flex" }, flex: 1, maxWidth: 600, mx: 4 }}>
+            <Box sx={{ display: { xs: "none", md: homepage ? "none" : "flex" }, flex: 1, maxWidth: 600, mx: 4 }}>
               <Box
                 component="form"
                 onSubmit={handleSearch}
@@ -93,37 +153,11 @@ export default function VirtualNavbar() {
                   },
                 }}
               >
-                <FormControl size="small" sx={{ minWidth: 140 }}>
-                  <Select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    variant="standard"
-                    disableUnderline
-                    sx={{
-                      pl: 2,
-                      py: 1,
-                      fontWeight: 600,
-                      color: "text.secondary",
-                      fontSize: "0.9rem",
-                      "& .MuiSelect-select": { py: 0.5 },
-                      borderRight: "1px solid",
-                      borderColor: "grey.300",
-                      mr: 1,
-                    }}
-                  >
-                    <MenuItem value="all">Categories</MenuItem>
-                    {categoryOptions.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
                 <InputBase
-                  placeholder="Search virtual courses..."
+                  placeholder="Search courses, certificates, or short programs..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  sx={{ ml: 1, flex: 1, fontSize: "0.95rem" }}
+                  sx={{ px: 2, py: 0.5, flex: 1, fontSize: "0.95rem" }}
                 />
                 <IconButton type="submit" sx={{ p: "8px", bgcolor: brand.primary, color: "white", "&:hover": { bgcolor: brand.secondary }, borderRadius: "50%" }}>
                   <SearchIcon />
@@ -131,8 +165,55 @@ export default function VirtualNavbar() {
               </Box>
             </Box>
 
+            {homepage && (
+              <Box
+                component="nav"
+                aria-label="Virtual campus navigation"
+                sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 3.5, ml: "auto", mr: 3 }}
+              >
+                {homepageNavItems.map((item) => (
+                  <Button
+                    key={item.label}
+                    component={item.internal ? Link : "a"}
+                    href={item.href}
+                    variant={item.isButton ? "contained" : "text"}
+                    sx={{
+                      position: "relative",
+                      minWidth: "auto",
+                      px: item.isButton ? 2.5 : 0,
+                      py: item.isButton ? 0.7 : 0,
+                      borderRadius: item.isButton ? 999 : 0,
+                      bgcolor: item.isButton ? brand.accent : "transparent",
+                      color: "white",
+                      fontSize: item.isButton ? "0.82rem" : "0.86rem",
+                      fontWeight: 900,
+                      textTransform: "uppercase",
+                      boxShadow: item.isButton ? "0 4px 14px rgba(220,37,37,0.35)" : "none",
+                      "&:hover": {
+                        bgcolor: item.isButton ? "#b81c1c" : "transparent",
+                        color: item.isButton ? "white" : brand.accent,
+                      },
+                      "&::after": item.isButton
+                        ? { display: "none" }
+                        : {
+                            content: '""',
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            bottom: -14,
+                            height: item.label === "Home" ? 3 : 0,
+                            bgcolor: brand.accent,
+                          },
+                    }}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </Box>
+            )}
+
             {/* Right: Links & CTA */}
-            <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 2 }}>
+            <Box sx={{ display: { xs: "none", md: homepage ? "none" : "flex" }, alignItems: "center", gap: 2 }}>
               <Button component="a" href={mainHomeHref} sx={{ color: "text.primary", fontWeight: 600, "&:hover": { color: brand.primary } }}>
                 Main Site
               </Button>
@@ -147,9 +228,30 @@ export default function VirtualNavbar() {
               </Button>
             </Box>
 
+            {homepage && (
+              <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}>
+                <IconButton
+                  component={Link}
+                  href={coursesHref}
+                  aria-label="Search courses"
+                  sx={{
+                    color: "white",
+                    border: "2px solid rgba(255,255,255,0.85)",
+                    width: 44,
+                    height: 44,
+                    borderRadius: 0,
+                    transition: "all 0.2s",
+                    "&:hover": { bgcolor: "rgba(255,255,255,0.15)", borderColor: "white" },
+                  }}
+                >
+                  <SearchIcon />
+                </IconButton>
+              </Box>
+            )}
+
             {/* Mobile Menu Toggle */}
             <Box sx={{ display: { xs: "flex", md: "none" } }}>
-              <IconButton onClick={toggleMobileMenu} sx={{ color: brand.primary }}>
+              <IconButton onClick={toggleMobileMenu} sx={{ color: homepage ? "white" : brand.primary }}>
                 <MenuIcon />
               </IconButton>
             </Box>
@@ -175,6 +277,11 @@ export default function VirtualNavbar() {
             <ListItem disablePadding>
               <ListItemButton component={Link} href={coursesHref} onClick={closeMobileMenu}>
                 <ListItemText primary="Virtual Catalog" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton component={Link} href={applyHref} onClick={closeMobileMenu}>
+                <ListItemText primary="Apply Now" />
               </ListItemButton>
             </ListItem>
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>

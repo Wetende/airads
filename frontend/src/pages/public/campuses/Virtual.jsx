@@ -1,19 +1,19 @@
 import { Head } from "@inertiajs/react";
 import VirtualCampusLayout from "../../../layouts/VirtualCampusLayout";
 import VirtualHeroSection from "../../../components/sections/virtual/VirtualHeroSection";
-import VirtualShortCoursesSection from "../../../components/sections/virtual/VirtualShortCoursesSection";
 import VirtualAcademicProgramsSection from "../../../components/sections/virtual/VirtualAcademicProgramsSection";
+import VirtualHomepageStorySections from "../../../components/sections/virtual/VirtualHomepageStorySections";
 
 export default function Virtual({ programs = [], categories = [] }) {
   return (
-    <VirtualCampusLayout>
+    <VirtualCampusLayout homepage>
       <Head title="Virtual Campus - AIRADS College" />
       
-      <VirtualHeroSection />
-      
-      <VirtualShortCoursesSection />
+      <VirtualHeroSection categories={categories} />
       
       <VirtualAcademicProgramsSection programs={programs} categories={categories} />
+
+      <VirtualHomepageStorySections programs={programs} />
       
     </VirtualCampusLayout>
   );

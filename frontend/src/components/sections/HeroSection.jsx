@@ -10,7 +10,7 @@ import { FONT_HEADING } from '../../config';
 
 const slides = [
   {
-    image: '/static/63.webp',
+    image: '/static/health2-main-hero.webp',
     title: 'Centre of Excellence',
     subtitle: '20 Years of Consistent KNEC Excellence',
     description: 'AIRADS College — A Centre of Excellence with 90-100% pass rate in KNEC, NITA, ICM & KASNEB Exams.',
@@ -25,7 +25,7 @@ const slides = [
     isLive: true,
   },
   {
-    image: '/static/6.7.webp',
+    image: '/static/fashion-main-hero.webp',
     title: 'Practical Skills Training',
     subtitle: 'TVET Education for Real-World Impact',
     description: 'Empowering trainees with practical skills for a competitive job market through hands-on training.',
@@ -69,7 +69,7 @@ const HeroSection = () => {
         overflow: 'hidden',
       }}
     >
-      {/* Background images (crossfade) */}
+      {/* Background images (crossfade + Ken Burns zoom) */}
       {slides.map((s, i) => (
         <Box
           key={i}
@@ -78,6 +78,13 @@ const HeroSection = () => {
             inset: 0,
             transition: 'opacity 1s ease-in-out',
             opacity: i === currentIndex ? 1 : 0,
+            transform: i === currentIndex ? 'scale(1.10)' : 'scale(1)',
+            transformOrigin: 'center',
+            animation: i === currentIndex ? 'landingHeroKenBurns 6.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards' : 'none',
+            '@keyframes landingHeroKenBurns': {
+              '0%': { transform: 'scale(1)' },
+              '100%': { transform: 'scale(1.10)' },
+            },
           }}
         >
           <Box
@@ -95,7 +102,7 @@ const HeroSection = () => {
         sx={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(to right, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0.5) 50%, rgba(15,23,42,0.2) 100%)',
+          background: 'linear-gradient(to right, rgba(15,23,42,0.68) 0%, rgba(15,23,42,0.34) 50%, rgba(15,23,42,0.1) 100%)',
           zIndex: 2,
         }}
       />
@@ -111,7 +118,37 @@ const HeroSection = () => {
           alignItems: 'center',
         }}
       >
-        <Box sx={{ maxWidth: { xs: '100%', md: '55%' }, color: 'white' }}>
+        <Box
+          key={slide.title}
+          sx={{
+            maxWidth: { xs: '100%', md: '55%' },
+            color: 'white',
+            '@keyframes lTitleDrop': {
+              '0%': { opacity: 0, transform: 'translateY(-35px)' },
+              '100%': { opacity: 1, transform: 'translateY(0)' },
+            },
+            '@keyframes lTitleFlip': {
+              '0%': { opacity: 0, transform: 'perspective(800px) rotateX(45deg) translateY(24px)' },
+              '100%': { opacity: 1, transform: 'perspective(800px) rotateX(0deg) translateY(0)' },
+            },
+            '@keyframes lTitleSpring': {
+              '0%': { opacity: 0, transform: 'translateY(45px) scale(0.92)' },
+              '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
+            },
+            '@keyframes lSubExpand': {
+              '0%': { opacity: 0, transform: 'scale(0.88)' },
+              '100%': { opacity: 1, transform: 'scale(1)' },
+            },
+            '@keyframes lSubSlideRight': {
+              '0%': { opacity: 0, transform: 'translateX(-40px)' },
+              '100%': { opacity: 1, transform: 'translateX(0)' },
+            },
+            '@keyframes lDescUp': {
+              '0%': { opacity: 0, transform: 'translateY(22px)' },
+              '100%': { opacity: 1, transform: 'translateY(0)' },
+            },
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
             <Typography
               variant="h2"
@@ -122,6 +159,12 @@ const HeroSection = () => {
                 fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem', lg: '3.5rem' },
                 lineHeight: 1.15,
                 textShadow: '0 2px 12px rgba(0,0,0,0.3)',
+                animation:
+                  currentIndex === 0
+                    ? 'lTitleDrop 750ms cubic-bezier(0.16, 1, 0.3, 1) both'
+                    : currentIndex === 1
+                    ? 'lTitleFlip 850ms cubic-bezier(0.16, 1, 0.3, 1) both'
+                    : 'lTitleSpring 900ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
               }}
             >
               {slide.title}
@@ -161,6 +204,12 @@ const HeroSection = () => {
               mb: 2,
               opacity: 0.9,
               color: 'rgba(255,255,255,0.9)',
+              animation:
+                currentIndex === 0
+                  ? 'lSubExpand 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both'
+                  : currentIndex === 1
+                  ? 'lSubSlideRight 700ms cubic-bezier(0.16, 1, 0.3, 1) 160ms both'
+                  : 'lDescUp 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both',
             }}
           >
             {slide.subtitle}
@@ -173,11 +222,12 @@ const HeroSection = () => {
               mb: 4,
               maxWidth: 520,
               opacity: 0.85,
+              animation: 'lDescUp 700ms cubic-bezier(0.16, 1, 0.3, 1) 280ms both',
             }}
           >
             {slide.description}
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start', animation: 'lDescUp 650ms cubic-bezier(0.34, 1.56, 0.64, 1) 400ms both' }}>
             <Button
               component={Link}
               href={slide.cta.href}

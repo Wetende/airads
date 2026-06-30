@@ -24,7 +24,7 @@ export const trainingPathways = [
     title: "Professional Short Courses",
     eyebrow: "Fast skills",
     description: "Focused short programmes for learners who need job-ready skills, upskilling, or career refreshers.",
-    image: "/static/course-12.webp",
+    image: "/static/beauty-practical-card.webp",
     href: "/schools/professional-short-courses/",
   },
   {
@@ -38,7 +38,7 @@ export const trainingPathways = [
     title: "Driving School",
     eyebrow: "Driver training",
     description: "Theory and practical driving preparation connected to road safety, testing, and licensing readiness.",
-    image: "/static/Driving one.webp",
+    image: "/static/driving-school-card.webp",
     href: "/schools/driving-school/",
   },
 ];
@@ -68,7 +68,7 @@ export const tvetSchoolCards = [
   {
     title: "School of Beauty & Hairdressing",
     description: "Beauty therapy, hairdressing, cosmetology, grooming, and salon-ready practical training.",
-    image: "/static/beauty-1.webp",
+    image: "/static/beauty-practical-card.webp",
     href: "/schools/beauty-hairdressing/",
     programmes: ["Beauty Therapy", "Hairdressing", "Cosmetology", "Barbering"],
   },
@@ -172,7 +172,7 @@ export const pathwayPages = {
     headTitle: "Professional Short Courses - AIRADS College",
     title: "Professional Short Courses",
     kicker: "Focused skills for work, business, and career refreshers",
-    image: "/static/course-12.webp",
+    image: "/static/beauty-practical-card.webp",
     summary:
       "Short, practical courses for learners who want specific workplace skills without committing to a long programme immediately.",
     introTitle: "Small courses with practical outcomes",
@@ -254,7 +254,7 @@ export const pathwayPages = {
     headTitle: "Driving School - AIRADS College",
     title: "Driving School",
     kicker: "Road safety, theory, and practical driving preparation",
-    image: "/static/Driving one.webp",
+    image: "/static/driving-school-card.webp",
     summary:
       "A driver-training pathway focused on safe road use, practical vehicle handling, traffic rules, and test readiness.",
     introTitle: "Driving training with safety at the center",

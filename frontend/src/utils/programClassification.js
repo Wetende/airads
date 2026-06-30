@@ -44,3 +44,35 @@ export function matchesProgramLevel(program, activeLevel) {
 
     return searchableFields.some((field) => field.includes(target));
 }
+
+/**
+ * Match a program against an active pathway (exam body) filter value.
+ */
+export function matchesPathway(program, activePathway) {
+    const target = normalize(activePathway);
+    if (!target || target === "all") {
+        return true;
+    }
+    const examBody = normalize(program?.examBody || program?.exam_body);
+    return examBody === target;
+}
+
+/**
+ * Derive pathway filter options dynamically from program data.
+ * Returns [{value, label}] with "all" prepended. Only includes pathways
+ * that have at least one matching program.
+ */
+export function derivePathwayFilters(programs) {
+    const seen = new Set();
+    for (const program of programs) {
+        const raw = (program?.examBody || program?.exam_body || "").trim();
+        if (raw) {
+            seen.add(raw);
+        }
+    }
+    const sorted = [...seen].sort((a, b) => a.localeCompare(b));
+    return [
+        { value: "all", label: "All" },
+        ...sorted.map((value) => ({ value, label: value })),
+    ];
+}

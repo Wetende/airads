@@ -227,13 +227,13 @@ export default function PublicProgramCard({
                         color: "#6B7280",
                     }}
                 >
-                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Stack direction="row" sx={{ alignItems: "center" }} spacing={0.5}>
                         <IconList size={15} />
                         <Typography variant="caption" fontWeight={600} fontSize="0.72rem">
                             {program.lecture_count || program.lectureCount || program.lessons_count || program.lessonsCount || 0} Lectures
                         </Typography>
                     </Stack>
-                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Stack direction="row" sx={{ alignItems: "center" }} spacing={0.5}>
                         <IconClock size={15} />
                         <Typography variant="caption" fontWeight={600} fontSize="0.72rem">
                             {program.duration_hours || program.durationHours || 0} Hours
@@ -247,7 +247,7 @@ export default function PublicProgramCard({
                     <Stack
                         direction="row"
                         spacing={0.5}
-                        alignItems="center"
+                        sx={{ alignItems: "center" }}
                     >
                         <Rating
                             value={program.rating || 0}
@@ -263,7 +263,7 @@ export default function PublicProgramCard({
                     {/* Price */}
                     <Box sx={{ minHeight: 24 }}>
                         {priceDisplay.showPrice ? (
-                            <Stack direction="row" spacing={1} alignItems="center">
+                            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                                 <Typography
                                     variant="body1"
                                     fontWeight={700}

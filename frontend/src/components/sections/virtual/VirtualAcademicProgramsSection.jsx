@@ -1,12 +1,27 @@
 import { useState, useMemo } from "react";
-import { Box, Container, Typography, Grid, Button, InputBase, Stack } from "@mui/material";
-import { Search as SearchIcon } from "@mui/icons-material";
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  Button,
+  InputBase,
+  Stack,
+  Paper,
+  List,
+  ListItemButton,
+  ListItemText,
+} from "@mui/material";
+import { ArrowForward as ArrowForwardIcon, Search as SearchIcon } from "@mui/icons-material";
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
+import { FONT_BODY } from "../../../config";
 import ProgramGrid from "../../lists/ProgramGrid";
 import { usePage } from "@inertiajs/react";
 import {
   PROGRAM_LEVEL_FILTERS,
   matchesProgramLevel,
+  matchesPathway,
+  derivePathwayFilters,
 } from "../../../utils/programClassification";
 
 const ALL_CATEGORIES = "all";
@@ -27,12 +42,15 @@ export default function VirtualAcademicProgramsSection({ programs = [], categori
 
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORIES);
   const [activeLevel, setActiveLevel] = useState("all");
+  const [activePathway, setActivePathway] = useState("all");
   const [search, setSearch] = useState("");
 
   const categoryOptions = useMemo(() => {
     const configured = categories.length > 0 ? categories : platform.programCategories;
     return Array.isArray(configured) ? configured.filter(Boolean) : [];
   }, [categories, platform.programCategories]);
+
+  const pathwayOptions = useMemo(() => derivePathwayFilters(programs), [programs]);
 
   const filteredPrograms = useMemo(() => {
     if (!programs || programs.length === 0) return [];
@@ -45,122 +63,168 @@ export default function VirtualAcademicProgramsSection({ programs = [], categori
         activeCategory === ALL_CATEGORIES || getProgramCategory(program) === activeCategory;
       const matchSearch = !query || title.includes(query) || description.includes(query);
 
-      return matchCategory && matchSearch && matchesProgramLevel(program, activeLevel);
+      return matchCategory && matchSearch && matchesProgramLevel(program, activeLevel) && matchesPathway(program, activePathway);
     }).map(normalizeProgramForGrid);
-  }, [activeCategory, activeLevel, search, programs]);
+  }, [activeCategory, activeLevel, activePathway, search, programs]);
 
   return (
     <Box component="section" sx={{ py: 10, bgcolor: '#f8fafc' }}>
       <Container maxWidth="lg">
-        <Typography variant="h3" component="h2" sx={{ fontWeight: 'bold', color: brand.neutralText, mb: 1, fontSize: { xs: '2rem', md: '2.5rem' } }}>
-          Academic <Box component="span" sx={{ bgcolor: brand.secondary, color: 'white', px: 2, py: 0.5, borderRadius: 2 }}>Programs</Box>
+        <Typography variant="h3" component="h2" sx={{ fontFamily: FONT_BODY, fontWeight: 900, color: brand.neutralText, mb: 1, fontSize: { xs: '2.2rem', md: '2.8rem' } }}>
+          Our Courses
         </Typography>
-        <Typography variant="subtitle1" sx={{ color: 'text.secondary', mb: 6, maxWidth: 800 }}>
-          Fully accredited TVETA and CDACC programs designed to build your expertise from artisan to diploma levels.
-        </Typography>
-
-        <Typography variant="h5" sx={{ color: brand.secondary, fontWeight: 700, mb: 4, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          Diploma, Certificate, Artisan & Short Courses
+        <Typography variant="subtitle1" sx={{ fontFamily: FONT_BODY, color: 'text.secondary', mb: 6, maxWidth: 800, fontSize: '1.08rem' }}>
+          Browse AIRADS courses from artisan and certificate to diploma and short course levels.
         </Typography>
 
-        <Stack spacing={4}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 1.25,
-              alignItems: 'center',
-            }}
-          >
-            <Button
-              onClick={() => setActiveCategory(ALL_CATEGORIES)}
-              variant={activeCategory === ALL_CATEGORIES ? "contained" : "text"}
+        <Grid container spacing={4}>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Paper
+              elevation={0}
               sx={{
-                borderRadius: 999,
-                textTransform: 'none',
-                fontWeight: 700,
-                px: 2.25,
-                bgcolor: activeCategory === ALL_CATEGORIES ? brand.primary : 'transparent',
-                color: activeCategory === ALL_CATEGORIES ? 'white' : brand.primary,
-                '&:hover': {
-                  bgcolor: activeCategory === ALL_CATEGORIES ? brand.primary : 'rgba(37, 99, 235, 0.08)',
-                },
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 3,
+                overflow: 'hidden',
+                bgcolor: 'white',
               }}
             >
-              All Categories
-            </Button>
-            {categoryOptions.map((category) => (
-              <Button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                variant={activeCategory === category ? "contained" : "text"}
-                sx={{
-                  borderRadius: 999,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 2,
-                  color: activeCategory === category ? 'white' : brand.primary,
-                  bgcolor: activeCategory === category ? brand.primary : 'transparent',
-                  '&:hover': {
-                    bgcolor: activeCategory === category ? brand.primary : 'rgba(37, 99, 235, 0.08)',
-                  },
-                }}
-              >
-                {category}
-              </Button>
-            ))}
-          </Box>
-
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' } }}>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {PROGRAM_LEVEL_FILTERS.map(level => (
-                  <Button
-                    key={level.value}
-                    onClick={() => setActiveLevel(level.value)}
-                    variant={activeLevel === level.value ? "contained" : "outlined"}
+              <List disablePadding>
+                <ListItemButton
+                  selected={activeCategory === ALL_CATEGORIES}
+                  onClick={() => setActiveCategory(ALL_CATEGORIES)}
+                  sx={{
+                    py: 2,
+                    '&.Mui-selected': {
+                      bgcolor: brand.accent,
+                      color: 'white',
+                      '&:hover': { bgcolor: brand.accent },
+                    },
+                    '&:hover': { bgcolor: 'grey.50' },
+                  }}
+                >
+                  <ListItemText
+                    primary="All"
+                    slotProps={{
+                      primary: {
+                        fontWeight: activeCategory === ALL_CATEGORIES ? 700 : 500,
+                        fontSize: '0.98rem',
+                      },
+                    }}
+                  />
+                  {activeCategory === ALL_CATEGORIES && <ArrowForwardIcon fontSize="small" sx={{ color: 'white' }} />}
+                </ListItemButton>
+                {categoryOptions.map((category) => (
+                  <ListItemButton
+                    key={category}
+                    selected={activeCategory === category}
+                    onClick={() => setActiveCategory(category)}
                     sx={{
-                      borderRadius: 1,
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      bgcolor: activeLevel === level.value ? brand.secondary : 'white',
-                      color: activeLevel === level.value ? 'white' : 'text.primary',
-                      borderColor: activeLevel === level.value ? brand.secondary : 'divider',
-                      '&:hover': {
-                        bgcolor: activeLevel === level.value ? brand.secondary : 'grey.100',
-                        borderColor: activeLevel === level.value ? brand.secondary : 'divider',
-                      }
+                      py: 2,
+                      borderTop: '1px solid',
+                      borderColor: 'divider',
+                    '&.Mui-selected': {
+                        bgcolor: brand.accent,
+                        color: 'white',
+                        '&:hover': { bgcolor: brand.accent },
+                      },
+                      '&:hover': { bgcolor: 'grey.50' },
                     }}
                   >
-                    {level.label}
-                  </Button>
+                    <ListItemText
+                      primary={category}
+                      slotProps={{
+                        primary: {
+                          fontWeight: activeCategory === category ? 700 : 500,
+                          fontSize: '0.98rem',
+                        },
+                      }}
+                    />
+                    {activeCategory === category && <ArrowForwardIcon fontSize="small" sx={{ color: 'white' }} />}
+                  </ListItemButton>
                 ))}
-              </Box>
+              </List>
+            </Paper>
+          </Grid>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', border: '1px solid', borderColor: 'divider', borderRadius: 1, px: 2, py: 0.5, bgcolor: 'white', width: { xs: '100%', sm: 280 } }}>
-                <InputBase
-                  placeholder="Search programs..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  sx={{ flex: 1, fontSize: '0.9rem' }}
-                />
-                <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-              </Box>
-            </Box>
+          <Grid size={{ xs: 12, md: 9 }}>
+            <Stack spacing={4}>
+              <Stack spacing={2}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2, justifyContent: 'space-between', alignItems: { xs: 'stretch', lg: 'center' } }}>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {PROGRAM_LEVEL_FILTERS.map(level => (
+                      <Button
+                        key={level.value}
+                        onClick={() => setActiveLevel(level.value)}
+                        variant={activeLevel === level.value ? "contained" : "outlined"}
+                        sx={{
+                          borderRadius: 1,
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          bgcolor: activeLevel === level.value ? brand.secondary : 'white',
+                          color: activeLevel === level.value ? 'white' : 'text.primary',
+                          borderColor: activeLevel === level.value ? brand.secondary : 'divider',
+                          '&:hover': {
+                            bgcolor: activeLevel === level.value ? brand.secondary : 'grey.100',
+                            borderColor: activeLevel === level.value ? brand.secondary : 'divider',
+                          }
+                        }}
+                      >
+                        {level.label}
+                      </Button>
+                    ))}
+                  </Box>
 
-          <Grid container spacing={4}>
-            <Grid size={{ xs: 12 }}>
-            {filteredPrograms.length > 0 ? (
-              <ProgramGrid programs={filteredPrograms} isAuthenticated={isAuthenticated} columns={{ xs: 12, sm: 6, md: 6, lg: 4 }} />
-            ) : (
-              <Box sx={{ py: 8, textAlign: 'center', bgcolor: 'white', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
-                <Typography variant="body1" color="text.secondary">
-                  No programs found matching your criteria.
-                </Typography>
-              </Box>
-            )}
+                  <Box sx={{ display: 'flex', alignItems: 'center', border: '1px solid', borderColor: 'divider', borderRadius: 1, px: 2, py: 0.5, bgcolor: 'white', width: { xs: '100%', sm: 280 } }}>
+                    <InputBase
+                      placeholder="Search courses..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      sx={{ flex: 1, fontSize: '0.9rem' }}
+                    />
+                    <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                  </Box>
+                </Box>
+
+                {pathwayOptions.length > 2 && (
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {pathwayOptions.map(pw => (
+                      <Button
+                        key={pw.value}
+                        onClick={() => setActivePathway(pw.value)}
+                        variant={activePathway === pw.value ? "contained" : "outlined"}
+                        sx={{
+                          borderRadius: 1,
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          bgcolor: activePathway === pw.value ? brand.primary : 'white',
+                          color: activePathway === pw.value ? 'white' : 'text.primary',
+                          borderColor: activePathway === pw.value ? brand.primary : 'divider',
+                          '&:hover': {
+                            bgcolor: activePathway === pw.value ? brand.primary : 'grey.100',
+                            borderColor: activePathway === pw.value ? brand.primary : 'divider',
+                          }
+                        }}
+                      >
+                        {pw.label}
+                      </Button>
+                    ))}
+                  </Box>
+                )}
+              </Stack>
+
+              {filteredPrograms.length > 0 ? (
+                <ProgramGrid programs={filteredPrograms} isAuthenticated={isAuthenticated} columns={{ xs: 12, sm: 6, md: 6, lg: 4 }} />
+              ) : (
+                <Box sx={{ py: 8, textAlign: 'center', bgcolor: 'white', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No courses found matching your criteria.
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
           </Grid>
         </Grid>
-        </Stack>
       </Container>
     </Box>
   );

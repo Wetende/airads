@@ -10,6 +10,8 @@ import EmptyState from "../../../components/EmptyState";
 import {
   PROGRAM_LEVEL_FILTERS,
   matchesProgramLevel,
+  matchesPathway,
+  derivePathwayFilters,
 } from "../../../utils/programClassification";
 
 export default function VirtualCourses({ programs = [], filters = {}, categories = [] }) {
@@ -22,6 +24,7 @@ export default function VirtualCourses({ programs = [], filters = {}, categories
   const [search, setSearch] = useState(filters.search || "");
   const [category, setCategory] = useState(filters.category || "all");
   const [level, setLevel] = useState(filters.level || "all");
+  const [pathway, setPathway] = useState(filters.pathway || "all");
   const [page, setPage] = useState(1);
   const itemsPerPage = 9;
   const categoryOptions = useMemo(() => {
@@ -33,6 +36,8 @@ export default function VirtualCourses({ programs = [], filters = {}, categories
     return options;
   }, [categories, category, platform.programCategories]);
 
+  const pathwayOptions = useMemo(() => derivePathwayFilters(programs), [programs]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     router.get(
@@ -41,6 +46,7 @@ export default function VirtualCourses({ programs = [], filters = {}, categories
         search,
         category: category !== "all" ? category : "",
         level: level !== "all" ? level : "",
+        pathway: pathway !== "all" ? pathway : "",
       },
       { preserveState: true, replace: true },
     );
@@ -50,6 +56,7 @@ export default function VirtualCourses({ programs = [], filters = {}, categories
     setSearch("");
     setCategory("all");
     setLevel("all");
+    setPathway("all");
     router.get(coursesHref);
   };
 
@@ -58,15 +65,16 @@ export default function VirtualCourses({ programs = [], filters = {}, categories
       const matchSearch = prog?.title?.toLowerCase().includes(search.toLowerCase());
       const matchCat = category === "all" || prog?.category === category || prog?.school?.name?.includes(category);
       const matchLevel = matchesProgramLevel(prog, level);
-      return matchSearch && matchCat && matchLevel;
+      const matchPw = matchesPathway(prog, pathway);
+      return matchSearch && matchCat && matchLevel && matchPw;
     });
-  }, [programs, search, category, level]);
+  }, [programs, search, category, level, pathway]);
 
   const paginatedPrograms = filteredPrograms.slice((page - 1) * itemsPerPage, page * itemsPerPage);
   const pageCount = Math.ceil(filteredPrograms.length / itemsPerPage);
 
   const listState = getProgramsListState({
-    filters: { search, category, level: level !== "all" ? level : "" },
+    filters: { search, category, level: level !== "all" ? level : "", pathway: pathway !== "all" ? pathway : "" },
     isLoadingPrograms: false,
     totalPrograms: filteredPrograms.length,
   });
@@ -75,13 +83,68 @@ export default function VirtualCourses({ programs = [], filters = {}, categories
     <VirtualCampusLayout>
       <Head title="Virtual Courses Catalog - AIRADS College" />
       
-      {/* Catalog Hero */}
-      <Box sx={{ bgcolor: brand.secondary, color: 'white', py: { xs: 8, md: 12 }, textAlign: 'center' }}>
-        <Container maxWidth="md">
-          <Typography variant="h2" sx={{ fontWeight: 800, mb: 3 }}>Virtual Course Catalog</Typography>
-          <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.9 }}>
-            Browse our comprehensive list of online programs, short courses, and certifications designed for your career growth.
-          </Typography>
+      <Box sx={{ bgcolor: "#f5f6f8", borderBottom: "1px solid", borderColor: "divider", py: { xs: 3.5, md: 5 } }}>
+        <Container maxWidth="lg">
+          <Box
+            component="form"
+            onSubmit={handleSearch}
+            sx={{
+              width: "100%",
+              maxWidth: 1180,
+              mx: "auto",
+              display: "flex",
+              alignItems: "center",
+              bgcolor: "white",
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 999,
+              px: { xs: 2, sm: 3 },
+              py: { xs: 0.75, sm: 1 },
+              boxShadow: "none",
+              transition: "border-color 180ms ease, box-shadow 180ms ease",
+              "&:focus-within": {
+                borderColor: brand.primary,
+                boxShadow: "0 0 0 4px rgba(37, 99, 235, 0.08)",
+              },
+            }}
+          >
+            <InputBase
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search courses, certificates, or short programs..."
+              inputProps={{ "aria-label": "Search virtual courses" }}
+              sx={{
+                flex: 1,
+                minHeight: { xs: 44, sm: 48 },
+                color: brand.neutralText,
+                fontSize: { xs: "0.95rem", sm: "1.05rem" },
+                textAlign: "left",
+                "& input::placeholder": {
+                  color: "rgba(100, 116, 139, 0.9)",
+                  opacity: 1,
+                },
+              }}
+            />
+            <Button
+              type="submit"
+              aria-label="Search courses"
+              sx={{
+                minWidth: { xs: 48, sm: 56 },
+                width: { xs: 48, sm: 56 },
+                height: { xs: 48, sm: 56 },
+                borderRadius: "50%",
+                color: "text.secondary",
+                boxShadow: "none",
+                "&:hover": {
+                  bgcolor: "grey.100",
+                  color: brand.primary,
+                  boxShadow: "none",
+                },
+              }}
+            >
+              <SearchIcon />
+            </Button>
+          </Box>
         </Container>
       </Box>
 
@@ -143,6 +206,25 @@ export default function VirtualCourses({ programs = [], filters = {}, categories
                     ))}
                   </Select>
                 </Box>
+
+                {pathwayOptions.length > 2 && (
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}>Pathway</Typography>
+                    <Select
+                      fullWidth
+                      size="small"
+                      value={pathway}
+                      onChange={(e) => setPathway(e.target.value)}
+                      sx={{ borderRadius: 1 }}
+                    >
+                      {pathwayOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.value === "all" ? "All Pathways" : option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Box>
+                )}
 
                 <Button type="submit" variant="contained" fullWidth sx={{ bgcolor: brand.primary, mt: 2 }}>
                   Apply Filters

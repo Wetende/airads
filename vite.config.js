@@ -13,6 +13,7 @@ export default defineConfig(({ command }) => ({
     server: {
         host: "localhost",
         port: 5173,
+        origin: "http://localhost:5173",
         open: false,
         watch: {
             usePolling: true,
