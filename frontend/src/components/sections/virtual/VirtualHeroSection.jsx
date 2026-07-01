@@ -50,7 +50,7 @@ const heroSlides = [
     kicker: "Your Journey To Success",
     title: "Starts Here",
     body: "Study online at your own pace with practical, career-ready TVET programs.",
-    image: "/static/health1-hero.webp",
+    image: "/static/health1-main-hero.webp",
     position: "center 46%",
   },
 ];
