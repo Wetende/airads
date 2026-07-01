@@ -21,6 +21,7 @@ urlpatterns = [
     path("courses/", views.airads_courses, name="airads.courses"),
     path("programs/", views.public_programs_list, name="programs"),
     path("programs/<slug:slug>/", views.public_program_detail, name="program_detail"),
+    path("programs/<int:pk>/interest/", views.public_program_interest_submit, name="program_interest_submit"),
     path("programs/<int:pk>/review/", views.program_review_submit, name="program_review_submit"),
     path("campuses/", views.airads_campuses, name="airads.campuses"),
     path("campuses/<slug:slug>/", views.airads_campus_detail, name="airads.campus_detail"),
