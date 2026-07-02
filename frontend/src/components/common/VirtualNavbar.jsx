@@ -34,6 +34,9 @@ export default function VirtualNavbar({ homepage = false }) {
   const homeHref = routes.virtualHome || "/";
   const coursesHref = routes.virtualCourses || "/courses/";
   const applyHref = routes.virtualApply || "/apply/";
+  const mainWebsiteLabel = "AIRADS College";
+  const mobileMainWebsiteLabel = "Visit AIRADS College";
+  const applyLabel = "Apply Now";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -49,8 +52,8 @@ export default function VirtualNavbar({ homepage = false }) {
     { label: "Home", href: homeHref, internal: true },
     { label: "Courses", href: coursesHref, internal: true },
     { label: "Admissions", href: applyHref, internal: true },
-    { label: "Main Site", href: mainHomeHref, internal: false },
-    { label: "Apply Now", href: applyHref, internal: true, isButton: true },
+    { label: mainWebsiteLabel, href: mainHomeHref, internal: false },
+    { label: applyLabel, href: applyHref, internal: true, isButton: true },
   ];
 
   return (
@@ -215,16 +218,16 @@ export default function VirtualNavbar({ homepage = false }) {
             {/* Right: Links & CTA */}
             <Box sx={{ display: { xs: "none", md: homepage ? "none" : "flex" }, alignItems: "center", gap: 2 }}>
               <Button component="a" href={mainHomeHref} sx={{ color: "text.primary", fontWeight: 600, "&:hover": { color: brand.primary } }}>
-                Main Site
+                {mainWebsiteLabel}
               </Button>
               <Button component={Link} href={coursesHref} sx={{ color: "text.primary", fontWeight: 600, "&:hover": { color: brand.primary } }}>
-                Catalog
+                Courses
               </Button>
               <Button component={Link} href="/login/" variant="outlined" sx={{ borderRadius: 8, px: 3, borderColor: brand.primary, color: brand.primary, fontWeight: 600 }}>
                 Login
               </Button>
               <Button component={Link} href={applyHref} variant="contained" sx={{ borderRadius: 8, px: 3, bgcolor: brand.accent, "&:hover": { bgcolor: "#9a1818" }, fontWeight: 600, boxShadow: "none" }}>
-                Get Started
+                {applyLabel}
               </Button>
             </Box>
 
@@ -271,12 +274,12 @@ export default function VirtualNavbar({ homepage = false }) {
           <List sx={{ p: 2 }}>
             <ListItem disablePadding>
               <ListItemButton component="a" href={mainHomeHref} onClick={closeMobileMenu}>
-                <ListItemText primary="Main Site" />
+                <ListItemText primary={mobileMainWebsiteLabel} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton component={Link} href={coursesHref} onClick={closeMobileMenu}>
-                <ListItemText primary="Virtual Catalog" />
+                <ListItemText primary="Courses" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
@@ -289,7 +292,7 @@ export default function VirtualNavbar({ homepage = false }) {
                 Login
               </Button>
               <Button component={Link} href={applyHref} variant="contained" fullWidth sx={{ borderRadius: 8, bgcolor: brand.accent }}>
-                Get Started
+                {applyLabel}
               </Button>
             </Box>
           </List>

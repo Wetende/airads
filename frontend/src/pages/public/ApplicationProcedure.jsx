@@ -133,7 +133,7 @@ const ApplicationProcedure = () => {
         <Box sx={{ pt: { xs: 15, md: 20 }, pb: { xs: 8, md: 12 }, bgcolor: brand.softBlue }}>
           <Container maxWidth="lg" sx={{ textAlign: 'center' }}>
             <Chip 
-              label="MAY/JUNE INTAKE NOW OPEN" 
+              label="SEPTEMBER 2026 INTAKE NOW OPEN" 
               sx={{ mb: 4, px: 2, py: 3, fontSize: '1.1rem', fontWeight: 'bold', bgcolor: brand.accent, color: 'white', border: 'none' }}
             />
             <Typography variant="h2" component="h1" sx={{ fontWeight: 900, mb: 3, color: brand.secondary, fontSize: { xs: '2.5rem', md: '4rem' } }}>
@@ -378,7 +378,7 @@ const ApplicationProcedure = () => {
                     href="/admissions/apply/" 
                     sx={{ bgcolor: 'white', color: brand.accent, fontWeight: 'bold', '&:hover': { bgcolor: '#f1f5f9' }, py: 1.5, px: 3 }}
                   >
-                    Apply for May/June Intake
+                    Apply for September 2026 Intake
                   </Button>
                   <Button 
                     variant="outlined" 

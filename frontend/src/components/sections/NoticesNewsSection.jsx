@@ -11,8 +11,8 @@ const notices = [
     href: '/news/latest/',
   },
   {
-    title: 'May/June Intake Now Open',
-    date: '05/10/2026',
+    title: 'September 2026 Intake Now Open',
+    date: '07/01/2026',
     href: '/news/latest/',
   },
   {

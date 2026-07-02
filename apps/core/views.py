@@ -851,6 +851,7 @@ def public_program_detail(
             "prerequisiteStatus": prerequisite_status,
             "isPreview": is_preview,
             "builderUrl": builder_url,
+            "siteContext": _build_site_context(request),
         },
     )
 
@@ -9600,9 +9601,9 @@ def _get_application_form_options(study_mode: str) -> dict:
             "Other",
         ],
         "intakes": [
-            "January 2026",
-            "May 2026",
             "September 2026",
+            "January 2027",
+            "May 2027",
             "Next Available Intake",
         ],
     }
@@ -9690,7 +9691,7 @@ def airads_application_submit(request):
         _clean_admission_value(data, "programId")
         or _clean_admission_value(data, "preferredProgramme")
     ):
-        required_fields["preferredProgramme"] = "Preferred programme"
+        required_fields["preferredProgramme"] = "Preferred course"
 
     missing_fields = [
         label for key, label in required_fields.items() if not _clean_admission_value(data, key)
@@ -9724,8 +9725,8 @@ def airads_application_submit(request):
     program_id = _clean_admission_value(data, "programId")
     if program_id and program_id.isdigit():
         program = Program.objects.filter(id=program_id, is_published=True).first()
-        if program is None and "Preferred programme" not in missing_fields:
-            missing_fields.append("Preferred programme")
+        if program is None and "Preferred course" not in missing_fields:
+            missing_fields.append("Preferred course")
 
     if missing_fields:
         messages.error(
@@ -9738,11 +9739,13 @@ def airads_application_submit(request):
         program.name if program else _clean_admission_value(data, "preferredProgramme")
     )
     preferred_campus = campus.name if campus else _clean_admission_value(data, "preferredCampus")
+    phone = _clean_admission_value(data, "phone")
+    whatsapp = _clean_admission_value(data, "whatsapp") or phone
 
     AdmissionApplication.objects.create(
         full_name=_clean_admission_value(data, "fullName"),
-        phone=_clean_admission_value(data, "phone"),
-        whatsapp=_clean_admission_value(data, "whatsapp"),
+        phone=phone,
+        whatsapp=whatsapp,
         email=_clean_admission_value(data, "email").lower(),
         study_mode=study_mode,
         campus=campus,

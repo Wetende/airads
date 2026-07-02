@@ -213,7 +213,7 @@ const QuickLinksAdmissionSection = () => {
                   display: 'block',
                 }}
               >
-                May/June intake is now open
+                September 2026 intake is now open
               </Typography>
               <Typography
                 variant="h3"

@@ -1,6 +1,7 @@
 import json
 
 import pytest
+from django.contrib.messages import get_messages
 from django.test import override_settings
 from django.urls import reverse
 
@@ -12,7 +13,6 @@ def test_public_admission_application_submission_creates_pending_application(cli
     payload = {
         "fullName": "  Jane Achieng  ",
         "phone": " 0715 000 111 ",
-        "whatsapp": "0715 000 111",
         "email": " jane@example.com ",
         "preferredCampus": "Eldoret Campus",
         "preferredProgramme": "Information Communication Technology",
@@ -77,7 +77,25 @@ def test_virtual_subdomain_submission_forces_virtual_campus(client):
     assert application.study_mode == AdmissionApplication.STUDY_MODE_VIRTUAL
     assert application.campus.slug == "virtual"
     assert application.preferred_campus == "Virtual Campus"
+    assert application.phone == "0715000111"
+    assert application.whatsapp == "0715000111"
     assert application.source == "virtual_subdomain"
+
+
+@pytest.mark.django_db
+def test_application_submission_uses_course_label_for_missing_course(client):
+    response = client.post(
+        reverse("core:airads.application_submit"),
+        data={
+            "fullName": "Normal Student",
+            "phone": "0715000111",
+            "preferredCampus": "Eldoret Campus",
+        },
+    )
+
+    assert response.status_code == 302
+    messages = [str(message) for message in get_messages(response.wsgi_request)]
+    assert any("Preferred course" in message for message in messages)
 
 
 @pytest.mark.django_db

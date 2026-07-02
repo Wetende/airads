@@ -1,7 +1,6 @@
-import React from "react";
 import { App as InertiaApp } from "@inertiajs/react";
-import { render } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 import ProviderWrapper from "../../../app/ProviderWrapper";
 import ApplicationApply from "../ApplicationApply";
 import Virtual from "./Virtual";
@@ -116,6 +115,15 @@ describe("Public virtual campus pages", () => {
     renderInertiaPage(ApplicationApply, virtualApplyProps, "Public/ApplicationApply");
 
     expect(consoleError).not.toHaveBeenCalled();
+    expect(screen.getAllByText("AFRICAN INSTITUTE").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "Apply Now" })).toBeTruthy();
+    expect(screen.getByText("Share your details and our admissions team will contact you.")).toBeTruthy();
+    expect(screen.getByText("Course Preferences")).toBeTruthy();
+    expect(screen.getByText(/Preferred course/i)).toBeTruthy();
+    expect(screen.queryByText("WhatsApp number")).toBeNull();
+    expect(screen.queryByText("Programme Preferences")).toBeNull();
+    expect(screen.queryByText(/Preferred programme/i)).toBeNull();
+    expect(screen.queryByText("Visit AIRADS College")).toBeNull();
     consoleError.mockRestore();
   });
 

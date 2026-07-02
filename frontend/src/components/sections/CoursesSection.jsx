@@ -166,7 +166,7 @@ const CoursesSection = () => {
             }}
           >
             <Typography variant="h3" component="h3" sx={{ fontWeight: 'bold', mb: 2, fontSize: { xs: '1.75rem', md: '2.5rem' } }}>
-              JANUARY 2026 INTAKE ONGOING
+              SEPTEMBER 2026 INTAKE ONGOING
             </Typography>
             <Typography variant="h6" sx={{ mb: 4, fontWeight: 'normal', opacity: 0.9 }}>
               Intake in Progress in all our Campuses

@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { Link, usePage } from "@inertiajs/react";
 import { Box, Button, Container, Grid, InputBase, Typography } from "@mui/material";
 import {
@@ -7,45 +6,8 @@ import {
   Public as PublicIcon,
   WorkspacePremium as WorkspacePremiumIcon,
 } from "@mui/icons-material";
-import { useCurrency } from "../../../hooks/useCurrency";
 import { usePublicBrand } from "../../../hooks/usePublicBrand";
 import { FONT_BODY } from "../../../config";
-import { resolvePriceDisplay } from "../../../utils/priceDisplay";
-
-const fallbackPrograms = [
-  {
-    id: "virtual-digital-skills",
-    name: "Computer Packages & Digital Skills",
-    category: "ICT & Computer Studies",
-    thumbnail: "/static/ict.webp",
-    publicUrl: "/courses/",
-    priceDisplay: { cardDisplay: "free" },
-  },
-  {
-    id: "virtual-business",
-    name: "Business Management Online Pathway",
-    category: "Business & Management",
-    thumbnail: "/static/course-4.webp",
-    publicUrl: "/courses/",
-    priceDisplay: { cardDisplay: "free" },
-  },
-  {
-    id: "virtual-technical",
-    name: "Technical Skills Foundation",
-    category: "Engineering & Technical",
-    thumbnail: "/static/electrical-1.webp",
-    publicUrl: "/courses/",
-    priceDisplay: { cardDisplay: "free" },
-  },
-  {
-    id: "virtual-career",
-    name: "Career Readiness Short Course",
-    category: "Professional Short Courses",
-    thumbnail: "/static/course-12.webp",
-    publicUrl: "/courses/",
-    priceDisplay: { cardDisplay: "free" },
-  },
-];
 
 const updates = [
   {
@@ -74,125 +36,11 @@ const updates = [
   },
 ];
 
-function getProgramTitle(program) {
-  return program?.name || program?.title || "Virtual course";
-}
-
-function normalizeProgram(program, fallbackHref) {
-  return {
-    ...program,
-    name: getProgramTitle(program),
-    publicUrl: program?.publicUrl || (program?.slug ? `/programs/${program.slug}/` : fallbackHref),
-  };
-}
-
-function formatPriceLabel(program, formatCurrency) {
-  const priceDisplay = resolvePriceDisplay(program);
-
-  if (priceDisplay.showPrice) {
-    return priceDisplay.hasDiscount
-      ? `${formatCurrency(priceDisplay.price)} ${formatCurrency(priceDisplay.originalPrice)}`
-      : formatCurrency(priceDisplay.price);
-  }
-
-  if (priceDisplay.showFree) return "Free";
-
-  return "View course";
-}
-
-function SpotlightCourseCard({ program }) {
-  const brand = usePublicBrand();
-  const { formatCurrency } = useCurrency();
-  const image = String(program.thumbnail || "/static/images/course-placeholder.svg").replace(/"/g, "%22");
-  const priceLabel = formatPriceLabel(program, formatCurrency);
-
-  return (
-    <Box
-      component={Link}
-      href={program.publicUrl}
-      sx={{
-        position: "relative",
-        minHeight: 230,
-        display: "flex",
-        alignItems: "flex-end",
-        overflow: "hidden",
-        p: 2,
-        color: "white",
-        textDecoration: "none",
-        borderRadius: 1,
-        backgroundImage: `linear-gradient(180deg, rgba(8, 18, 38, 0.05) 0%, rgba(8, 18, 38, 0.9) 100%), url("${image}")`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        boxShadow: "0 20px 38px rgba(10, 24, 54, 0.24)",
-        transition: "transform 180ms ease, box-shadow 180ms ease",
-        "&:hover": {
-          transform: "translateY(-5px)",
-          boxShadow: "0 26px 48px rgba(10, 24, 54, 0.3)",
-        },
-      }}
-    >
-      <Box
-        sx={{
-          position: "absolute",
-          top: 10,
-          left: 10,
-          px: 1,
-          py: 0.35,
-          bgcolor: brand.accent,
-          color: "white",
-          borderRadius: 0.5,
-          fontFamily: FONT_BODY,
-          fontSize: "0.67rem",
-          fontWeight: 900,
-          textTransform: "uppercase",
-        }}
-      >
-        Online
-      </Box>
-
-      <Box sx={{ position: "relative", zIndex: 1 }}>
-        <Typography sx={{ mb: 0.45, color: "rgba(255,255,255,0.72)", fontSize: "0.75rem", fontWeight: 700 }}>
-          {program.category || "Virtual Campus"}
-        </Typography>
-        <Typography
-          component="h3"
-          sx={{
-            mb: 0.75,
-            color: "white",
-            fontFamily: FONT_BODY,
-            fontSize: "0.95rem",
-            fontWeight: 900,
-            lineHeight: 1.16,
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          {program.name}
-        </Typography>
-        <Typography sx={{ color: priceLabel === "Free" ? "#ffffff" : "#60a5fa", fontSize: "0.8rem", fontWeight: 900 }}>
-          {priceLabel}
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
-
-export default function VirtualHomepageStorySections({ programs = [] }) {
+export default function VirtualHomepageStorySections() {
   const brand = usePublicBrand();
   const { siteContext = {} } = usePage().props;
   const routes = siteContext.routes || {};
-  const coursesHref = routes.virtualCourses || "/courses/";
   const applyHref = routes.virtualApply || "/apply/";
-
-  const featuredPrograms = useMemo(() => {
-    const normalized = Array.isArray(programs)
-      ? programs.filter((program) => getProgramTitle(program)).slice(0, 4).map((program) => normalizeProgram(program, coursesHref))
-      : [];
-
-    return [...normalized, ...fallbackPrograms.map((program) => normalizeProgram({ ...program, publicUrl: coursesHref }, coursesHref))].slice(0, 4);
-  }, [coursesHref, programs]);
 
   const stats = [
     { icon: PublicIcon, value: "6", label: "Campus networks" },
@@ -315,7 +163,7 @@ export default function VirtualHomepageStorySections({ programs = [] }) {
                   "&:hover": { bgcolor: brand.accentHover },
                 }}
               >
-                Start Application
+                Apply Now
               </Button>
             </Grid>
 
@@ -335,19 +183,6 @@ export default function VirtualHomepageStorySections({ programs = [] }) {
               />
             </Grid>
           </Grid>
-
-          <Box sx={{ mt: { xs: 5, md: 6 } }}>
-            <Typography sx={{ mb: 2, color: "rgba(255,255,255,0.92)", fontSize: "0.76rem", fontWeight: 900, textTransform: "uppercase" }}>
-              Featured virtual courses:
-            </Typography>
-            <Grid container spacing={2}>
-              {featuredPrograms.map((program) => (
-                <Grid key={program.id || program.name} size={{ xs: 12, sm: 6, md: 3 }}>
-                  <SpotlightCourseCard program={program} />
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
         </Container>
       </Box>
 

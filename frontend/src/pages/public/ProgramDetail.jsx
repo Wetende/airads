@@ -52,6 +52,7 @@ import { useState } from "react";
 import DOMPurify from "dompurify";
 import { CourseDetailsModal } from "@/components/modals";
 import MainNavbar from "@/components/common/MainNavbar";
+import VirtualNavbar from "@/components/common/VirtualNavbar";
 import AIRADSFooter from "@/components/common/AIRADSFooter";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -745,7 +746,7 @@ export default function ProgramDetail({
     isPreview = false,
     builderUrl = null,
 }) {
-    const { auth, platform } = usePage().props;
+    const { auth, platform, siteContext = {} } = usePage().props;
     const { addToCart } = useCart();
     const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
     const [tabValue, setTabValue] = useState(0);
@@ -755,6 +756,7 @@ export default function ProgramDetail({
     const [interestErrors, setInterestErrors] = useState({});
     const [interestSubmitting, setInterestSubmitting] = useState(false);
     const [cartSnackbar, setCartSnackbar] = useState({ open: false, message: "", severity: "success" });
+    const isVirtualCampus = !!siteContext?.isVirtualCampus;
     const shortDescription = truncatePlainText(program.description, 200);
 
     const handleShowDetails = () => setDetailsModalOpen(true);
@@ -892,7 +894,7 @@ export default function ProgramDetail({
 
             <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
                 {/* Navbar */}
-                <MainNavbar />
+                {isVirtualCampus ? <VirtualNavbar /> : <MainNavbar />}
 
                 {isPreview && (
                     <Box

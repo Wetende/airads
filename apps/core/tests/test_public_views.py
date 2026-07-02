@@ -129,6 +129,26 @@ def test_virtual_host_apply_route_uses_virtual_application_context(client):
     ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
     VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
 )
+@pytest.mark.django_db
+def test_virtual_host_program_detail_receives_virtual_site_context(client):
+    program = ProgramFactory(name="Virtual ICT", is_published=True)
+
+    response = client.get(
+        f"/programs/{program.slug}/",
+        HTTP_HOST="virtual.airads.ac.ke",
+        HTTP_X_INERTIA="true",
+    )
+
+    assert response.status_code == 200
+    props = response.json()["props"]
+    assert props["siteContext"]["isVirtualCampus"] is True
+    assert props["siteContext"]["routes"]["virtualApply"] == "/apply/"
+
+
+@override_settings(
+    ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
+    VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
+)
 def test_main_host_apply_route_redirects_to_virtual_subdomain(client):
     response = client.get("/apply/", HTTP_HOST="testserver")
 

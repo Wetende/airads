@@ -12,10 +12,10 @@ const News = () => {
 
   const newsItems = [
     {
-      title: "MAY/JUNE INTAKE ONGOING",
-      date: "May 5th, 2026",
+      title: "SEPTEMBER 2026 INTAKE ONGOING",
+      date: "July 1st, 2026",
       category: "Admissions",
-      excerpt: "Applications are now open for the July 2026 intake across all our campuses. Join us for quality technical education.",
+      excerpt: "Applications are now open for the September 2026 intake across all our campuses. Join us for quality technical education.",
       image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&w=600&q=80"
     },
     {

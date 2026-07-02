@@ -335,7 +335,7 @@ const AtAGlanceSection = () => {
                   }}
                 >
                   <Typography variant="body2" component="span" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                    Study Online with AIRADS Virtual Campus. | Intake Open for 2026. | Earn your Certificate, Diploma or Artisan degree from anywhere.
+                    Study Online with AIRADS Virtual Campus. | September 2026 Intake Open. | Earn your Certificate, Diploma or Artisan degree from anywhere.
                   </Typography>
                 </Box>
               </Box>
@@ -407,7 +407,7 @@ const AtAGlanceSection = () => {
                     '&:hover': { bgcolor: brand.accentHover },
                   }}
                 >
-                  Intake Open for 2026
+                  September 2026 Intake Open
                 </Button>
                 <Button
                   component="a"

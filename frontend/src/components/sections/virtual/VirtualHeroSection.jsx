@@ -36,8 +36,8 @@ const heroSlides = [
     kicker: "Learn Anytime, Anywhere With",
     title: "AIRADS Virtual Campus",
     body: "Self-paced online courses with dedicated trainers and 20 years of excellence.",
-    image: "/static/online-virtual-hero.webp",
-    position: "center 32%",
+    image: "/static/computer-virtual-hero.webp",
+    position: "center 38%",
   },
   {
     kicker: "AIRADS Is Kenya's",
@@ -65,6 +65,7 @@ export default function VirtualHeroSection({ categories = [] }) {
   const { siteContext = {} } = usePage().props;
   const routes = siteContext.routes || {};
   const coursesHref = routes.virtualCourses || "/courses/";
+  const applyHref = routes.virtualApply || "/apply/";
   const [activeSlide, setActiveSlide] = useState(0);
   const currentSlide = heroSlides[activeSlide];
 
@@ -306,6 +307,31 @@ export default function VirtualHeroSection({ categories = [] }) {
           >
             <Button
               component={Link}
+              href={applyHref}
+              variant="contained"
+              endIcon={<ArrowForwardIcon />}
+              sx={{
+                minHeight: 54,
+                px: { xs: 3.5, md: 4.5 },
+                color: "white",
+                bgcolor: HERO_ACCENT,
+                borderRadius: 999,
+                fontFamily: FONT_BODY,
+                fontSize: "1rem",
+                fontWeight: 900,
+                textTransform: "none",
+                boxShadow: "0 14px 28px rgba(229,57,53,0.32)",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  bgcolor: "#c62828",
+                  boxShadow: "0 18px 34px rgba(229,57,53,0.38)",
+                },
+              }}
+            >
+              Apply Now
+            </Button>
+            <Button
+              component={Link}
               href={coursesHref}
               variant="outlined"
               endIcon={<ArrowForwardIcon />}
@@ -326,7 +352,7 @@ export default function VirtualHeroSection({ categories = [] }) {
                 },
               }}
             >
-              Ready to get started?
+              Explore Courses
             </Button>
           </Box>
         </Box>
