@@ -409,14 +409,16 @@ class NotificationService:
         return notification
 
     @staticmethod
-    def notify_user_registered(user):
+    def notify_user_registered(user, authentication_method="password"):
         """Send notification to user upon successful registration."""
         from django.template.loader import render_to_string
         from django.utils.html import strip_tags
         
         context = {
             'first_name': user.first_name or user.email.split('@')[0],
-            'login_url': 'https://airads.ac.ke/login/'
+            'login_url': 'https://airads.ac.ke/login/',
+            'uses_google': authentication_method == "google",
+            'account_email': user.email,
         }
         html_message = render_to_string('emails/registration_successful.html', context)
         text_message = strip_tags(html_message)
