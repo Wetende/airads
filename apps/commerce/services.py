@@ -707,7 +707,7 @@ class AccessGrantService:
         paid_at = paid_at or timezone.now()
         expires_at = AccessGrantService._approved_payment_expiry(program, paid_at)
 
-        enrollment, _ = Enrollment.objects.get_or_create(
+        enrollment, enrollment_created = Enrollment.objects.get_or_create(
             user=order.user,
             program=program,
             defaults={
@@ -790,6 +790,28 @@ class AccessGrantService:
         if order.enrollment_id != enrollment.id:
             order.enrollment = enrollment
             order.save(update_fields=["enrollment", "updated_at"])
+
+        from apps.core.models import AdmissionApplication
+
+        AdmissionApplication.objects.filter(
+            order=order,
+            program=program,
+        ).update(
+            enrollment=enrollment,
+            status=AdmissionApplication.STATUS_ACCEPTED,
+            updated_at=timezone.now(),
+        )
+
+        if enrollment_created:
+            from apps.notifications.services import NotificationService
+
+            try:
+                NotificationService.notify_enrollment_confirmed(enrollment)
+            except Exception:
+                logger.exception(
+                    "Could not send paid enrollment notification for enrollment %s.",
+                    enrollment.id,
+                )
 
         return grant
 

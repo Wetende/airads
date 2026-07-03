@@ -20,6 +20,11 @@ urlpatterns = [
     # AIRADS Public Pages
     path("courses/", views.airads_courses, name="airads.courses"),
     path("programs/", views.public_programs_list, name="programs"),
+    path(
+        "programs/enrollment/resume/",
+        views.public_program_enrollment_resume,
+        name="program_enrollment_resume",
+    ),
     path("programs/<slug:slug>/", views.public_program_detail, name="program_detail"),
     path("programs/<int:pk>/interest/", views.public_program_interest_submit, name="program_interest_submit"),
     path("programs/<int:pk>/review/", views.program_review_submit, name="program_review_submit"),
@@ -134,6 +139,42 @@ urlpatterns = [
     path("admin/reviews/", views.admin_reviews, name="admin.reviews"),
     path("admin/reviews/<int:review_id>/approve/", views.admin_review_approve, name="admin.review.approve"),
     path("admin/reviews/<int:review_id>/reject/", views.admin_review_reject, name="admin.review.reject"),
+    # Admin Admissions / Public Leads
+    path(
+        "admin/admissions/",
+        views.admin_admission_applications,
+        name="admin.admission_applications",
+    ),
+    path(
+        "admin/admissions/<int:pk>/",
+        views.admin_admission_application_detail,
+        name="admin.admission_application",
+    ),
+    path(
+        "admin/admissions/<int:pk>/link-user/",
+        views.admin_admission_application_link_user,
+        name="admin.admission_application.link_user",
+    ),
+    path(
+        "admin/admissions/<int:pk>/create-user/",
+        views.admin_admission_application_create_user,
+        name="admin.admission_application.create_user",
+    ),
+    path(
+        "admin/admissions/<int:pk>/payment-order/",
+        views.admin_admission_application_create_payment_order,
+        name="admin.admission_application.payment_order",
+    ),
+    path(
+        "admin/admissions/<int:pk>/direct-enroll/",
+        views.admin_admission_application_direct_enroll,
+        name="admin.admission_application.direct_enroll",
+    ),
+    path(
+        "admin/admissions/<int:pk>/status/",
+        views.admin_admission_application_update_status,
+        name="admin.admission_application.status",
+    ),
     # Admin Announcements
     path("admin/announcements/", views.admin_announcements_index, name="admin.announcements"),
     path("admin/announcements/create/", views.admin_announcement_create, name="admin.announcement_create"),

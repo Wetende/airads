@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from inertia import render
 
-from apps.core.models import Program
+from apps.core.models import AdmissionApplication, Program
 from apps.core.services.course_prerequisites import CoursePrerequisiteService
 from apps.core.utils import get_post_data, is_admin
 
@@ -311,6 +311,7 @@ def commerce_orders(request):
             or Order.PROVIDER_PAYSTACK
         )
         raw_program_ids = data.get("programIds") or data.get("program_ids")
+        application = None
         if raw_program_ids is not None:
             raw_values = raw_program_ids if isinstance(raw_program_ids, list) else [raw_program_ids]
             try:
@@ -320,12 +321,49 @@ def commerce_orders(request):
             if not program_ids:
                 raise CommerceError("No programs selected for checkout.", code="empty_checkout")
             programs = [_lookup_program(program_id) for program_id in program_ids]
+
+            raw_application_id = data.get("applicationId") or data.get("application_id")
+            if raw_application_id:
+                try:
+                    application_id = int(raw_application_id)
+                except (TypeError, ValueError):
+                    raise CommerceError(
+                        "Invalid admission application.",
+                        code="invalid_admission_application",
+                    )
+                if len(programs) != 1:
+                    raise CommerceError(
+                        "An admission application can only be used for one course.",
+                        code="invalid_admission_application",
+                    )
+                application = AdmissionApplication.objects.filter(
+                    pk=application_id,
+                    user=request.user,
+                    program=programs[0],
+                    source="program_detail_modal",
+                ).first()
+                if not application:
+                    raise CommerceError(
+                        "This admission application does not match your account.",
+                        code="invalid_admission_application",
+                        status_code=403,
+                    )
+
+            order_metadata = {"source": "direct_checkout"}
+            if application:
+                order_metadata = {
+                    "source": "program_detail_modal",
+                    "admission_application_id": application.id,
+                }
             order = CheckoutService.create_order_from_programs(
                 request.user,
                 programs,
                 payment_method,
-                metadata={"source": "direct_checkout"},
+                metadata=order_metadata,
             )
+            if application and application.order_id != order.id:
+                application.order = order
+                application.save(update_fields=["order", "updated_at"])
         else:
             order = CheckoutService.create_order_from_cart(request.user, payment_method)
         payload = {"order": serialize_order(order)}
@@ -740,6 +778,7 @@ def checkout_page(request):
             "checkout": {
                 "mode": request.GET.get("mode") or "cart",
                 "programId": request.GET.get("programId"),
+                "applicationId": request.GET.get("applicationId"),
             },
         },
     )

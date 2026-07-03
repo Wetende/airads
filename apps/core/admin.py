@@ -49,11 +49,15 @@ class AdmissionApplicationAdmin(admin.ModelAdmin):
         "study_mode",
         "campus",
         "preferred_programme",
+        "user",
+        "order",
+        "enrollment",
         "status",
         "source",
         "created_at",
     ]
     list_filter = ["status", "study_mode", "campus", "source", "intake"]
     search_fields = ["full_name", "phone", "email", "preferred_programme"]
+    autocomplete_fields = ["user", "program", "order", "enrollment"]
     ordering = ["-created_at"]
     date_hierarchy = "created_at"

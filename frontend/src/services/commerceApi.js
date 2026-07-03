@@ -60,10 +60,13 @@ export function getOrders() {
     return request("get", "/commerce/orders/");
 }
 
-export function createOrder(paymentMethod, programIds = null) {
+export function createOrder(paymentMethod, programIds = null, applicationId = null) {
     const payload = { paymentMethod };
     if (Array.isArray(programIds) && programIds.length > 0) {
         payload.programIds = programIds;
+    }
+    if (applicationId) {
+        payload.applicationId = applicationId;
     }
     return request("post", "/commerce/orders/", payload);
 }

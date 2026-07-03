@@ -95,6 +95,10 @@
 
             <p>Your registration was successful! You can now explore our courses, apply for programs, and manage your student profile through our portal.</p>
 
+            {% if uses_google %}
+            <p>Your account uses <strong>{{ account_email }}</strong>. To sign in later, choose <strong>Continue with Google</strong> and use this same Google account. You do not need a separate AIRADS password.</p>
+            {% endif %}
+
             <div class="button-container">
                 <a href="{{ login_url }}" class="button">Log In to Your Account</a>
             </div>

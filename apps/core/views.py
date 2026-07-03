@@ -4,6 +4,7 @@ Requirements: 1.1-1.4, 2.1-2.6, 3.1-3.6, 4.1-4.5, 5.1-5.6, 6.1-6.6
 """
 
 from datetime import datetime
+import logging
 import re
 from urllib.parse import urlencode
 from typing import Optional
@@ -15,6 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.core import signing
 from django.db.models import Count, Q
 from django.db import transaction
 from django.http import Http404, JsonResponse
@@ -73,6 +75,8 @@ from apps.core.utils import (
     is_instructor,
     should_render_inertia_prop,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def get_dashboard_url(role: str) -> str:
@@ -156,6 +160,38 @@ def _program_pricing_fields(program, pricing_context: dict | None = None) -> dic
         "original_price": pricing.get("original_price"),
         "priceDisplay": serialize_price_display(pricing),
     }
+
+
+ENROLLMENT_INTENT_SALT = "core.program-enrollment"
+ENROLLMENT_INTENT_MAX_AGE_SECONDS = 60 * 60 * 24
+
+
+def _program_enrollment_mode(program) -> str:
+    context = _get_platform_pricing_context()
+    pricing = get_program_pricing(
+        program,
+        deployment_mode=context["deployment_mode"],
+        platform_features=context["platform_features"],
+        currency_code=context["currency_code"],
+    )
+    price_display = serialize_price_display(pricing)
+    if price_display["allowsOnlineCheckout"] or price_display["allowsOfflinePayment"]:
+        return "paid"
+    if pricing.get("requires_approval", False):
+        return "approval"
+    return "free"
+
+
+def _build_enrollment_intent_url(application: AdmissionApplication) -> str:
+    token = signing.dumps(
+        {"application_id": application.id},
+        salt=ENROLLMENT_INTENT_SALT,
+        compress=True,
+    )
+    return (
+        f"{reverse('core:program_enrollment_resume')}?"
+        f"{urlencode({'intent': token})}"
+    )
 
 
 def _default_custom_pricing_for_program_data(cleaned: dict) -> dict:
@@ -769,13 +805,7 @@ def public_program_detail(
     price_display = serialize_price_display(pricing)
     price = pricing.get("price", 0)
 
-    # Determine enrollment mode based on pricing
-    if price_display["allowsOnlineCheckout"] or price_display["allowsOfflinePayment"]:
-        enrollment_mode = "paid"
-    elif pricing.get("requires_approval", False):
-        enrollment_mode = "approval"
-    else:
-        enrollment_mode = "free"
+    enrollment_mode = _program_enrollment_mode(program)
 
     from apps.core.services.course_prerequisites import CoursePrerequisiteService
 
@@ -921,7 +951,7 @@ def public_program_interest_submit(request, pk: int):
         ).first()
         preferred_campus = campus.name if campus else "Virtual Campus"
 
-    AdmissionApplication.objects.create(
+    application = AdmissionApplication.objects.create(
         full_name=full_name,
         phone=phone,
         whatsapp=phone,
@@ -936,8 +966,126 @@ def public_program_interest_submit(request, pk: int):
         source="program_detail_modal",
     )
 
-    messages.success(request, "Thanks. Our admissions team will contact you soon.")
-    return redirect(program_detail_url)
+    return redirect(_build_enrollment_intent_url(application))
+
+
+@login_required
+@require_GET
+def public_program_enrollment_resume(request):
+    """Resume a lead's enrollment after the visitor authenticates."""
+    intent = str(request.GET.get("intent") or "").strip()
+    try:
+        payload = signing.loads(
+            intent,
+            salt=ENROLLMENT_INTENT_SALT,
+            max_age=ENROLLMENT_INTENT_MAX_AGE_SECONDS,
+        )
+        application_id = int(payload["application_id"])
+    except (signing.BadSignature, signing.SignatureExpired, KeyError, TypeError, ValueError):
+        messages.error(request, "This enrollment link is invalid or has expired.")
+        return redirect("core:programs")
+
+    application = (
+        AdmissionApplication.objects.select_related("program", "user")
+        .filter(
+            pk=application_id,
+            source="program_detail_modal",
+            program__is_published=True,
+        )
+        .first()
+    )
+    if not application or not application.program_id:
+        messages.error(request, "This course enrollment could not be found.")
+        return redirect("core:programs")
+
+    program = application.program
+    account_email = str(request.user.email or "").strip().lower()
+    application_email = str(application.email or "").strip().lower()
+    if not account_email or account_email != application_email:
+        messages.error(
+            request,
+            f"Please sign in with {application.email} to continue this enrollment.",
+        )
+        return redirect(_program_public_url(program))
+
+    user_update_fields = []
+    if application.phone and not request.user.phone:
+        request.user.phone = application.phone
+        user_update_fields.append("phone")
+    if user_update_fields:
+        request.user.save(update_fields=user_update_fields)
+
+    if application.user_id != request.user.id:
+        application.user = request.user
+        application.save(update_fields=["user", "updated_at"])
+
+    from apps.core.services.course_prerequisites import CoursePrerequisiteService
+
+    prerequisite_evaluation = CoursePrerequisiteService.evaluate(request.user, program)
+    if prerequisite_evaluation.required and not prerequisite_evaluation.eligible:
+        messages.error(request, prerequisite_evaluation.blocking_message)
+        return redirect(_program_public_url(program))
+
+    enrollment_mode = _program_enrollment_mode(program)
+    if enrollment_mode == "paid":
+        messages.info(
+            request,
+            "Your details are saved. Complete payment to activate your course access.",
+        )
+        checkout_query = urlencode(
+            {
+                "mode": "direct",
+                "programId": program.id,
+                "applicationId": application.id,
+            }
+        )
+        return redirect(f"/checkout/?{checkout_query}")
+
+    if enrollment_mode == "approval":
+        messages.success(
+            request,
+            "Your details are saved. Our admissions team will contact you.",
+        )
+        return redirect(_program_public_url(program))
+
+    from apps.notifications.services import NotificationService
+    from apps.progression.models import Enrollment
+
+    with transaction.atomic():
+        enrollment, created = Enrollment.objects.get_or_create(
+            user=request.user,
+            program=program,
+            defaults={
+                "status": "active",
+                "access_source": "free",
+            },
+        )
+        application.enrollment = enrollment
+        if enrollment.status in {"active", "completed"}:
+            application.status = AdmissionApplication.STATUS_ACCEPTED
+            update_fields = ["enrollment", "status", "updated_at"]
+        else:
+            update_fields = ["enrollment", "updated_at"]
+        application.save(update_fields=update_fields)
+
+    if created:
+        try:
+            NotificationService.notify_enrollment_confirmed(enrollment)
+        except Exception:
+            logger.exception(
+                "Could not send free enrollment notification for enrollment %s.",
+                enrollment.id,
+            )
+
+    if enrollment.status not in {"active", "completed"}:
+        messages.info(
+            request,
+            "Your existing course access needs review. Our admissions team can help.",
+        )
+        return redirect(_program_public_url(program))
+
+    messages.success(request, f"You are now enrolled in {program.name}.")
+    return redirect("progression:student.program", pk=program.id)
 
 
 def _recompute_program_rating(program_id: int):
@@ -2082,6 +2230,633 @@ def _validate_password_strength(password: str) -> Optional[str]:
 def _require_admin(user) -> bool:
     """Check if user is admin or superadmin."""
     return user.is_staff or user.is_superuser
+
+
+def _admission_status_choices() -> list[dict]:
+    return [
+        {"value": value, "label": label}
+        for value, label in AdmissionApplication.STATUS_CHOICES
+    ]
+
+
+def _admission_choice_label(choices: list[tuple[str, str]], value: str) -> str:
+    return dict(choices).get(value, value.replace("_", " ").title() if value else "")
+
+
+def _admission_user_payload(user: User | None) -> dict | None:
+    if not user:
+        return None
+    return {
+        "id": user.id,
+        "name": user.get_full_name() or user.email or user.username,
+        "email": user.email or "",
+        "phone": user.phone or "",
+        "isActive": user.is_active,
+        "editUrl": f"/admin/users/{user.id}/edit/",
+    }
+
+
+def _admission_program_payload(program: Program | None) -> dict | None:
+    if not program:
+        return None
+    return {
+        "id": program.id,
+        "name": program.name,
+        "code": program.code or "",
+        "slug": program.slug,
+        "publicUrl": _program_public_url(program) if program.slug else "",
+    }
+
+
+def _admission_matching_user(application: AdmissionApplication) -> User | None:
+    email = (application.email or "").strip()
+    if not email:
+        return None
+    return User.objects.filter(email__iexact=email).order_by("id").first()
+
+
+def _admission_effective_user(application: AdmissionApplication) -> User | None:
+    if application.user_id:
+        return application.user
+    return None
+
+
+def _admission_order_item_for(
+    application: AdmissionApplication,
+    user: User | None,
+    program: Program | None,
+):
+    if not user or not program:
+        return None
+
+    from apps.commerce.models import OrderItem
+
+    order_items = OrderItem.objects.select_related("order", "program").filter(
+        order__user=user,
+        program=program,
+    )
+
+    if application.order_id:
+        linked_item = order_items.filter(order_id=application.order_id).first()
+        if linked_item:
+            return linked_item
+
+    return order_items.order_by("-order__created_at", "-created_at").first()
+
+
+def _serialize_admission_payment_status(
+    application: AdmissionApplication,
+    user: User | None,
+    program: Program | None,
+) -> dict:
+    if not user:
+        return {"state": "unlinked", "label": "Link user first"}
+    if not program:
+        return {"state": "no_program", "label": "No linked course"}
+
+    from apps.commerce.models import Order, OrderItem
+
+    order_item = _admission_order_item_for(application, user, program)
+    if not order_item:
+        return {"state": "none", "label": "No order"}
+
+    order = order_item.order
+    if order.status == Order.STATUS_PAID or order_item.status == OrderItem.STATUS_PAID:
+        state = "paid"
+        label = "Paid"
+    elif order.status in {
+        Order.STATUS_PENDING_PAYMENT,
+        Order.STATUS_PENDING_MANUAL_PAYMENT,
+        Order.STATUS_CREATED,
+    }:
+        state = "pending"
+        label = "Pending payment"
+    elif order.status in {
+        Order.STATUS_REFUNDED,
+        Order.STATUS_PARTIALLY_REFUNDED,
+    }:
+        state = "refunded"
+        label = _admission_choice_label(Order.STATUS_CHOICES, order.status)
+    elif order.status in {
+        Order.STATUS_FAILED,
+        Order.STATUS_CANCELLED,
+        Order.STATUS_EXPIRED,
+    }:
+        state = order.status
+        label = _admission_choice_label(Order.STATUS_CHOICES, order.status)
+    else:
+        state = order.status or order_item.status
+        label = _admission_choice_label(Order.STATUS_CHOICES, order.status)
+
+    return {
+        "state": state,
+        "label": label,
+        "orderId": order.id,
+        "reference": order.reference,
+        "provider": order.provider,
+        "orderStatus": order.status,
+        "orderStatusLabel": _admission_choice_label(Order.STATUS_CHOICES, order.status),
+        "itemStatus": order_item.status,
+        "itemStatusLabel": _admission_choice_label(
+            OrderItem.STATUS_CHOICES,
+            order_item.status,
+        ),
+        "amountMinor": order_item.amount_minor,
+        "currency": order_item.currency,
+        "paidAt": order_item.paid_at.isoformat() if order_item.paid_at else None,
+        "createdAt": order.created_at.isoformat() if order.created_at else None,
+        "adminUrl": "/admin/commerce/orders/page/",
+    }
+
+
+def _admission_enrollment_for(
+    application: AdmissionApplication,
+    user: User | None,
+    program: Program | None,
+):
+    if not user:
+        return None
+    if application.enrollment_id:
+        return application.enrollment
+    if not program:
+        return None
+
+    from apps.progression.models import Enrollment
+
+    return (
+        Enrollment.objects.filter(user=user, program=program)
+        .order_by("-enrolled_at", "-created_at")
+        .first()
+    )
+
+
+def _serialize_admission_enrollment_status(
+    application: AdmissionApplication,
+    user: User | None,
+    program: Program | None,
+) -> dict:
+    if not user:
+        return {"state": "unlinked", "label": "Link user first"}
+    if not program:
+        return {"state": "no_program", "label": "No linked course"}
+
+    enrollment = _admission_enrollment_for(application, user, program)
+    if not enrollment:
+        return {"state": "not_enrolled", "label": "Not enrolled"}
+
+    return {
+        "state": enrollment.status,
+        "label": enrollment.status.replace("_", " ").title(),
+        "enrollmentId": enrollment.id,
+        "accessSource": enrollment.access_source,
+        "enrolledAt": (
+            enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None
+        ),
+        "completedAt": (
+            enrollment.completed_at.isoformat() if enrollment.completed_at else None
+        ),
+    }
+
+
+def _serialize_admission_application(
+    application: AdmissionApplication,
+    *,
+    include_detail: bool = False,
+) -> dict:
+    user = _admission_effective_user(application)
+    matching_user = None if user else _admission_matching_user(application)
+    program = application.program
+    payment_status = _serialize_admission_payment_status(application, user, program)
+    enrollment_status = _serialize_admission_enrollment_status(
+        application,
+        user,
+        program,
+    )
+
+    data = {
+        "id": application.id,
+        "fullName": application.full_name,
+        "phone": application.phone,
+        "email": application.email,
+        "studyMode": application.study_mode,
+        "studyModeLabel": _admission_choice_label(
+            AdmissionApplication.STUDY_MODE_CHOICES,
+            application.study_mode,
+        ),
+        "campus": (
+            {"id": application.campus_id, "name": application.campus.name}
+            if application.campus_id
+            else None
+        ),
+        "preferredCampus": application.preferred_campus,
+        "program": _admission_program_payload(program),
+        "preferredProgramme": application.preferred_programme,
+        "source": application.source,
+        "status": application.status,
+        "statusLabel": _admission_choice_label(
+            AdmissionApplication.STATUS_CHOICES,
+            application.status,
+        ),
+        "linkedUser": _admission_user_payload(user),
+        "matchingUser": _admission_user_payload(matching_user),
+        "paymentStatus": payment_status,
+        "enrollmentStatus": enrollment_status,
+        "createdAt": application.created_at.isoformat(),
+        "updatedAt": application.updated_at.isoformat(),
+    }
+
+    if include_detail:
+        data.update(
+            {
+                "whatsapp": application.whatsapp,
+                "intake": application.intake,
+                "educationLevel": application.education_level,
+                "message": application.message,
+                "internalNotes": application.internal_notes,
+                "linkedOrder": (
+                    {
+                        "id": application.order_id,
+                        "reference": application.order.reference,
+                        "status": application.order.status,
+                        "statusLabel": _admission_choice_label(
+                            application.order.STATUS_CHOICES,
+                            application.order.status,
+                        ),
+                        "adminUrl": "/admin/commerce/orders/page/",
+                    }
+                    if application.order_id
+                    else None
+                ),
+                "linkedEnrollment": (
+                    {
+                        "id": application.enrollment_id,
+                        "status": application.enrollment.status,
+                        "accessSource": application.enrollment.access_source,
+                    }
+                    if application.enrollment_id
+                    else None
+                ),
+            }
+        )
+
+    return data
+
+
+def _split_admission_name(full_name: str) -> tuple[str, str]:
+    parts = [part for part in str(full_name or "").strip().split() if part]
+    if not parts:
+        return "", ""
+    if len(parts) == 1:
+        return parts[0], ""
+    return parts[0], " ".join(parts[1:])
+
+
+def _unique_username_from_admission(application: AdmissionApplication) -> str:
+    base = (application.email or "").strip().lower()
+    if not base:
+        base = slugify(application.full_name) or f"admission-{application.id}"
+    base = base[:140]
+    candidate = base
+    suffix = 1
+    while User.objects.filter(username=candidate).exists():
+        suffix += 1
+        candidate = f"{base[:135]}-{suffix}"
+    return candidate
+
+
+@login_required
+def admin_admission_applications(request):
+    """Admin queue for student admission applications and course-detail leads."""
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    status = request.GET.get("status", "")
+    source = request.GET.get("source", "")
+    program_id = request.GET.get("program", "")
+    search = request.GET.get("search", "")
+    try:
+        page = max(int(request.GET.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
+    per_page = 20
+
+    include_applications = should_render_inertia_prop(request, "applications")
+    include_filters = should_render_inertia_prop(request, "filters")
+    include_pagination = should_render_inertia_prop(request, "pagination")
+    include_programs = should_render_inertia_prop(request, "programs")
+    include_status_choices = should_render_inertia_prop(request, "statusChoices")
+    include_sources = should_render_inertia_prop(request, "sources")
+
+    applications_query = AdmissionApplication.objects.select_related(
+        "campus",
+        "program",
+        "user",
+        "order",
+        "enrollment",
+    )
+
+    if status:
+        applications_query = applications_query.filter(status=status)
+    if source:
+        applications_query = applications_query.filter(source=source)
+    if program_id:
+        applications_query = applications_query.filter(program_id=program_id)
+    if search:
+        applications_query = applications_query.filter(
+            Q(full_name__icontains=search)
+            | Q(email__icontains=search)
+            | Q(phone__icontains=search)
+            | Q(preferred_programme__icontains=search)
+        )
+
+    total = applications_query.count()
+    applications_data = []
+    if include_applications:
+        applications = list(
+            applications_query.order_by("-created_at")[
+                (page - 1) * per_page : page * per_page
+            ]
+        )
+        applications_data = [
+            _serialize_admission_application(application)
+            for application in applications
+        ]
+
+    props = {}
+    if include_applications:
+        props["applications"] = applications_data
+    if include_filters:
+        props["filters"] = {
+            "status": status,
+            "source": source,
+            "program": program_id,
+            "search": search,
+        }
+    if include_pagination:
+        props["pagination"] = _build_pagination(page, per_page, total)
+    if include_programs:
+        props["programs"] = cache.get_or_set(
+            "admin_admissions:programs",
+            lambda: list(Program.objects.order_by("name").values("id", "name")),
+            900,
+        )
+    if include_status_choices:
+        props["statusChoices"] = _admission_status_choices()
+    if include_sources:
+        props["sources"] = list(
+            AdmissionApplication.objects.exclude(source="")
+            .values_list("source", flat=True)
+            .distinct()
+            .order_by("source")
+        )
+
+    return render(request, "Admin/Admissions/Index", props)
+
+
+@login_required
+def admin_admission_application_detail(request, pk: int):
+    """Detail/action page for one admission application."""
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from django.shortcuts import get_object_or_404
+
+    application = get_object_or_404(
+        AdmissionApplication.objects.select_related(
+            "campus",
+            "program",
+            "user",
+            "order",
+            "enrollment",
+        ),
+        pk=pk,
+    )
+    return render(
+        request,
+        "Admin/Admissions/Detail",
+        {
+            "application": _serialize_admission_application(
+                application,
+                include_detail=True,
+            ),
+            "statusChoices": _admission_status_choices(),
+        },
+    )
+
+
+@login_required
+@require_POST
+def admin_admission_application_link_user(request, pk: int):
+    """Link an application to an existing user by supplied id or matching email."""
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from django.shortcuts import get_object_or_404
+
+    application = get_object_or_404(AdmissionApplication, pk=pk)
+    data = get_post_data(request)
+    user_id = data.get("userId") or data.get("user_id")
+
+    if user_id:
+        user = User.objects.filter(pk=user_id).first()
+    else:
+        user = _admission_matching_user(application)
+
+    if not user:
+        messages.error(request, "No existing user was found for this application.")
+        return redirect("core:admin.admission_application", pk=pk)
+
+    application.user = user
+    application.save(update_fields=["user", "updated_at"])
+    messages.success(request, f"Linked application to {user.email or user.username}.")
+    return redirect("core:admin.admission_application", pk=pk)
+
+
+@login_required
+@require_POST
+def admin_admission_application_create_user(request, pk: int):
+    """Create a student account from application details and link it."""
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from django.shortcuts import get_object_or_404
+
+    application = get_object_or_404(AdmissionApplication, pk=pk)
+    email = (application.email or "").strip().lower()
+    if not email:
+        messages.error(request, "An email address is required to create a student account.")
+        return redirect("core:admin.admission_application", pk=pk)
+
+    with transaction.atomic():
+        user = User.objects.filter(email__iexact=email).order_by("id").first()
+        if not user:
+            first_name, last_name = _split_admission_name(application.full_name)
+            user = User.objects.create_user(
+                username=_unique_username_from_admission(application),
+                email=email,
+                password=None,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            if application.phone and not user.phone:
+                user.phone = application.phone
+                user.save(update_fields=["phone"])
+            messages.success(request, f"Created student account for {email}.")
+        else:
+            messages.info(request, f"Existing student account found for {email}.")
+
+        application.user = user
+        application.save(update_fields=["user", "updated_at"])
+
+    return redirect("core:admin.admission_application", pk=pk)
+
+
+@login_required
+@require_POST
+def admin_admission_application_create_payment_order(request, pk: int):
+    """Create a pending commerce order for the linked user and application course."""
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from apps.commerce.exceptions import CommerceError
+    from apps.commerce.models import Order
+    from apps.commerce.services import CheckoutService
+    from django.shortcuts import get_object_or_404
+
+    application = get_object_or_404(
+        AdmissionApplication.objects.select_related("user", "program"),
+        pk=pk,
+    )
+    if not application.user_id:
+        messages.error(request, "Link or create a student account before creating an order.")
+        return redirect("core:admin.admission_application", pk=pk)
+    if not application.program_id:
+        messages.error(request, "This application needs a linked course before payment.")
+        return redirect("core:admin.admission_application", pk=pk)
+
+    data = get_post_data(request)
+    payment_method = (
+        data.get("paymentMethod")
+        or data.get("payment_method")
+        or Order.PROVIDER_OFFLINE_BANK_TRANSFER
+    )
+
+    try:
+        order = CheckoutService.create_order_from_programs(
+            application.user,
+            [application.program],
+            payment_method,
+            metadata={
+                "source": "admin_admission_application",
+                "admission_application_id": application.id,
+            },
+        )
+    except CommerceError as error:
+        messages.error(request, error.message if hasattr(error, "message") else str(error))
+        return redirect("core:admin.admission_application", pk=pk)
+
+    application.order = order
+    if application.status == AdmissionApplication.STATUS_NEW:
+        application.status = AdmissionApplication.STATUS_CONTACTED
+        update_fields = ["order", "status", "updated_at"]
+    else:
+        update_fields = ["order", "updated_at"]
+    application.save(update_fields=update_fields)
+
+    messages.success(request, f"Payment order {order.reference} is ready for follow-up.")
+    return redirect("core:admin.admission_application", pk=pk)
+
+
+@login_required
+@require_POST
+def admin_admission_application_direct_enroll(request, pk: int):
+    """Enroll the linked user directly in the application course."""
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from apps.notifications.services import NotificationService
+    from apps.progression.models import Enrollment, EnrollmentRequest
+    from django.shortcuts import get_object_or_404
+
+    application = get_object_or_404(
+        AdmissionApplication.objects.select_related("user", "program"),
+        pk=pk,
+    )
+    if not application.user_id:
+        messages.error(request, "Link or create a student account before enrolling.")
+        return redirect("core:admin.admission_application", pk=pk)
+    if not application.program_id:
+        messages.error(request, "This application needs a linked course before enrollment.")
+        return redirect("core:admin.admission_application", pk=pk)
+
+    with transaction.atomic():
+        enrollment, created = Enrollment.objects.get_or_create(
+            user=application.user,
+            program=application.program,
+            defaults={
+                "status": "active",
+                "access_source": "admin",
+            },
+        )
+        EnrollmentRequest.objects.filter(
+            user=application.user,
+            program=application.program,
+            status="pending",
+        ).update(
+            status="approved",
+            reviewed_by=request.user,
+            reviewed_at=timezone.now(),
+        )
+
+        application.enrollment = enrollment
+        application.status = AdmissionApplication.STATUS_ACCEPTED
+        application.save(update_fields=["enrollment", "status", "updated_at"])
+
+    if created:
+        NotificationService.notify_enrollment_confirmed(enrollment)
+
+    if created:
+        messages.success(
+            request,
+            f"{application.full_name} is enrolled in {application.program.name}.",
+        )
+    else:
+        messages.info(
+            request,
+            f"This application is linked to the existing {application.program.name} enrollment.",
+        )
+    return redirect("core:admin.admission_application", pk=pk)
+
+
+@login_required
+@require_POST
+def admin_admission_application_update_status(request, pk: int):
+    """Mark an admission application as contacted, accepted, or declined."""
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from django.shortcuts import get_object_or_404
+
+    application = get_object_or_404(AdmissionApplication, pk=pk)
+    data = get_post_data(request)
+    status = str(data.get("status") or "").strip()
+    valid_statuses = {value for value, _ in AdmissionApplication.STATUS_CHOICES}
+    if status not in valid_statuses:
+        messages.error(request, "Select a valid application status.")
+        return redirect("core:admin.admission_application", pk=pk)
+
+    application.status = status
+    if "internalNotes" in data or "internal_notes" in data:
+        application.internal_notes = str(
+            data.get("internalNotes") or data.get("internal_notes") or ""
+        ).strip()
+        update_fields = ["status", "internal_notes", "updated_at"]
+    else:
+        update_fields = ["status", "updated_at"]
+    application.save(update_fields=update_fields)
+
+    messages.success(request, f"Application marked {application.get_status_display()}.")
+    return redirect("core:admin.admission_application", pk=pk)
 
 
 @login_required

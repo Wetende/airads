@@ -47,6 +47,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import CampaignIcon from "@mui/icons-material/Campaign";
@@ -277,6 +278,11 @@ const roleNavigation = {
                     label: "Instructor Vetting",
                     href: "/admin/instructor-applications/",
                     icon: VerifiedUserIcon,
+                },
+                {
+                    label: "Admissions",
+                    href: "/admin/admissions/",
+                    icon: AssignmentIndIcon,
                 },
                 {
                     label: "Enrollments",

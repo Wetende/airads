@@ -58,6 +58,10 @@ export default function Checkout({ paystack }) {
     const [phoneNumber, setPhoneNumber] = useState("");
     const isDirectMode = checkout?.mode === "direct" && !!checkout?.programId;
     const directProgramId = isDirectMode ? Number(checkout.programId) : null;
+    const admissionApplicationId =
+        isDirectMode && checkout?.applicationId
+            ? Number(checkout.applicationId)
+            : null;
 
     const handlePaid = useCallback((paidOrder) => {
         if (!paidOrder) {
@@ -158,6 +162,7 @@ export default function Checkout({ paystack }) {
         const orderRes = await commerceApi.createOrder(
             provider,
             isDirectMode ? [directProgramId] : null,
+            Number.isFinite(admissionApplicationId) ? admissionApplicationId : null,
         );
         if (!orderRes.ok) {
             setError(orderRes.message || "Failed to create order.");
@@ -258,7 +263,18 @@ export default function Checkout({ paystack }) {
                 );
             }
         }
-    }, [availablePaymentMethods.length, getOrderPageUrl, handlePaid, isDirectMode, directProgramId, paystack, refreshCart, paymentMethod, phoneNumber]);
+    }, [
+        admissionApplicationId,
+        availablePaymentMethods.length,
+        getOrderPageUrl,
+        handlePaid,
+        isDirectMode,
+        directProgramId,
+        paystack,
+        refreshCart,
+        paymentMethod,
+        phoneNumber,
+    ]);
 
     // Determine primary program ID for "Go to Course" after payment
     const primaryProgramId = order?.items?.[0]?.program?.id || order?.program?.id || null;

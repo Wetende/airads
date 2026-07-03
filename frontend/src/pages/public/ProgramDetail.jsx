@@ -96,6 +96,9 @@ function EnrollmentInterestModal({
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                         {program?.name}
                     </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        We save your details first so admissions can call if you need help.
+                    </Typography>
                 </DialogTitle>
 
                 <IconButton
@@ -155,7 +158,7 @@ function EnrollmentInterestModal({
                         Cancel
                     </Button>
                     <Button type="submit" variant="contained" disabled={submitting}>
-                        {submitting ? "Submitting..." : "Submit details"}
+                        {submitting ? "Saving..." : "Continue"}
                     </Button>
                 </DialogActions>
             </Box>
@@ -764,10 +767,6 @@ export default function ProgramDetail({
 
     const isWishlisted = (wishlist?.items || []).some((item) => item.program?.id === program.id);
 
-    const handleBuyNow = (programId) => {
-        router.visit(`/checkout/?mode=direct&programId=${programId}`);
-    };
-
     const getDefaultInterestForm = () => ({
         fullName: auth?.user?.fullName || auth?.user?.name || "",
         email: auth?.user?.email || "",
@@ -828,26 +827,6 @@ export default function ProgramDetail({
             onStart: () => setInterestSubmitting(true),
             onSuccess: () => {
                 setInterestModalOpen(false);
-                setCartSnackbar({
-                    open: true,
-                    message: "Thanks. Our admissions team will contact you soon.",
-                    severity: "success",
-                });
-
-                if (!auth?.user) return;
-
-                if (ctaState === "not_enrolled_paid") {
-                    handleBuyNow(program.id);
-                    return;
-                }
-
-                router.post(
-                    `/programs/${program.id}/enroll/`,
-                    {
-                        message: "Enrollment interest submitted from the course detail page.",
-                    },
-                    { preserveScroll: true },
-                );
             },
             onError: (errors) => {
                 setInterestErrors(errors || {});

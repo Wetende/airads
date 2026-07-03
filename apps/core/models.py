@@ -183,6 +183,27 @@ class AdmissionApplication(TimeStampedModel):
         blank=True,
         related_name="admission_applications",
     )
+    user = models.ForeignKey(
+        "User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admission_applications",
+    )
+    order = models.ForeignKey(
+        "commerce.Order",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admission_applications",
+    )
+    enrollment = models.ForeignKey(
+        "progression.Enrollment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admission_applications",
+    )
     preferred_campus = models.CharField(max_length=120)
     preferred_programme = models.CharField(max_length=255)
     intake = models.CharField(max_length=120, blank=True, default="")
