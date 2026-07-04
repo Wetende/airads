@@ -17,6 +17,9 @@ import {
 import { IconEye, IconEyeOff, IconMail, IconLock } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import PlatformLogo from "@/components/common/PlatformLogo";
+import GoogleOneTapDiagnostics, {
+    GOOGLE_ONE_TAP_MOMENT_CALLBACK,
+} from "@/features/auth/components/GoogleOneTapDiagnostics";
 
 const fadeInUp = {
     initial: { opacity: 0, y: 20 },
@@ -65,7 +68,10 @@ export default function Login({
         <>
             <Head title="Sign In">
                 {socialAuth.google?.enabled && (
-                    <script src="https://accounts.google.com/gsi/client" async defer />
+                    <>
+                        <GoogleOneTapDiagnostics />
+                        <script src="https://accounts.google.com/gsi/client" async defer />
+                    </>
                 )}
             </Head>
             <Box
@@ -123,6 +129,7 @@ export default function Login({
                                             data-context="signin"
                                             data-ux_mode="popup"
                                             data-auto_prompt="true"
+                                            data-moment_callback={GOOGLE_ONE_TAP_MOMENT_CALLBACK}
                                         />
                                         <div
                                             className="g_id_signin"
