@@ -335,16 +335,16 @@ const ApplicationForm = () => {
               
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField fullWidth label="Name *" variant="outlined" />
+                  <TextField fullWidth required label="Name" variant="outlined" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField fullWidth label="Email *" type="email" variant="outlined" />
+                  <TextField fullWidth required label="Email" type="email" variant="outlined" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField fullWidth label="Website" type="url" variant="outlined" />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <TextField fullWidth label="Comment *" multiline rows={6} variant="outlined" />
+                  <TextField fullWidth required label="Comment" multiline rows={6} variant="outlined" />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <Button variant="contained" size="large" sx={{ bgcolor: brand.primary, fontWeight: 'bold', py: 1.5, px: 4, '&:hover': { bgcolor: brand.primaryHover, boxShadow: 4 } }}>

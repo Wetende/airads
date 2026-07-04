@@ -165,7 +165,7 @@ export default function ApplicationApply({
           <Grid container spacing={2.5}>
             <Grid size={{ xs: 12 }}>
               <TextField
-                label="Full name *"
+                label="Full name"
                 value={data.fullName}
                 onChange={(event) => setData("fullName", event.target.value)}
                 required
@@ -175,7 +175,7 @@ export default function ApplicationApply({
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Phone number *"
+                label="Phone number"
                 value={data.phone}
                 onChange={(event) => setData("phone", event.target.value)}
                 required
@@ -214,7 +214,7 @@ export default function ApplicationApply({
               ) : (
                 <TextField
                   select
-                  label="Preferred campus *"
+                  label="Preferred campus"
                   value={data.campusId}
                   onChange={(event) => {
                     const selectedCampus = campuses.find((campus) => String(campus.id) === String(event.target.value));
@@ -253,7 +253,7 @@ export default function ApplicationApply({
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 select
-                label="Preferred course *"
+                label="Preferred course"
                 value={data.programId}
                 onChange={(event) => {
                   if (event.target.value === "__not_sure__") {

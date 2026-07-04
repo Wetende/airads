@@ -743,10 +743,11 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                             <FormControl
                                 fullWidth
                                 size="small"
+                                required
                                 error={!!getFieldError("timezone")}
                             >
                                 <InputLabel shrink sx={{ fontWeight: 500 }}>
-                                    Timezone *
+                                    Timezone
                                 </InputLabel>
                                 <Select
                                     value={timezone}
@@ -754,7 +755,7 @@ export default function ContentEditor({ node, onSave, blueprint }) {
                                         setTimezone(e.target.value)
                                     }
                                     onBlur={() => handleBlur("timezone")}
-                                    label="Timezone *"
+                                    label="Timezone"
                                     displayEmpty
                                 >
                                     <MenuItem value="" disabled>

@@ -820,12 +820,12 @@ const UploadPage = ({ onLogout }) => {
 
                   {/* Campus Selector */}
                   <Box sx={{ mb: 3 }}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Select Campus *</InputLabel>
+                    <FormControl fullWidth size="small" required>
+                      <InputLabel>Select Campus</InputLabel>
                       <Select
                         value={selectedCampus}
                         onChange={(e) => setSelectedCampus(e.target.value)}
-                        label="Select Campus *"
+                        label="Select Campus"
                       >
                         <MenuItem value="">Choose a campus...</MenuItem>
                         {expectedFiles.map((file) => (
