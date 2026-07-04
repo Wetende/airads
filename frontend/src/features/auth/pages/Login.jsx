@@ -67,12 +67,6 @@ export default function Login({
     return (
         <>
             <Head title="Sign In">
-                {socialAuth.google?.enabled && (
-                    <>
-                        <GoogleOneTapDiagnostics />
-                        <script src="https://accounts.google.com/gsi/client" async defer />
-                    </>
-                )}
             </Head>
             <Box
                 sx={{
@@ -120,6 +114,7 @@ export default function Login({
 
                             {socialAuth.google?.enabled && (
                                 <>
+                                    <GoogleOneTapDiagnostics />
                                     <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
                                         <div
                                             id="g_id_onload"

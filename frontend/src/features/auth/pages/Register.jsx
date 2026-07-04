@@ -119,12 +119,6 @@ export default function Register({
     return (
         <>
             <Head title="Create Account">
-                {socialAuth.google?.enabled && (
-                    <>
-                        <GoogleOneTapDiagnostics />
-                        <script src="https://accounts.google.com/gsi/client" async defer />
-                    </>
-                )}
             </Head>
             <Box
                 sx={{
@@ -207,6 +201,7 @@ export default function Register({
 
                             {socialAuth.google?.enabled && (
                                 <>
+                                    <GoogleOneTapDiagnostics />
                                     <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
                                         <div
                                             id="g_id_onload"
