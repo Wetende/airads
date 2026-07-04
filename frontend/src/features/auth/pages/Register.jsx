@@ -30,9 +30,7 @@ import {
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import PlatformLogo from "@/components/common/PlatformLogo";
-import GoogleOneTapDiagnostics, {
-    GOOGLE_ONE_TAP_MOMENT_CALLBACK,
-} from "@/features/auth/components/GoogleOneTapDiagnostics";
+import GoogleIdentityScript from "@/features/auth/components/GoogleIdentityScript";
 
 const fadeInUp = {
     initial: { opacity: 0, y: 20 },
@@ -201,7 +199,7 @@ export default function Register({
 
                             {socialAuth.google?.enabled && (
                                 <>
-                                    <GoogleOneTapDiagnostics />
+                                    <GoogleIdentityScript />
                                     <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
                                         <div
                                             id="g_id_onload"
@@ -211,7 +209,6 @@ export default function Register({
                                             data-context="signup"
                                             data-ux_mode="redirect"
                                             data-auto_prompt="true"
-                                            data-moment_callback={GOOGLE_ONE_TAP_MOMENT_CALLBACK}
                                         />
                                         <div
                                             className="g_id_signin"

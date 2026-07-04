@@ -1,0 +1,1 @@
+import{r as c}from"./vendor-dnd-BTQ_q32O.js";const t="google-identity-services-client";function r(){return c.useEffect(()=>{if(document.getElementById(t))return;const e=document.createElement("script");e.id=t,e.src="https://accounts.google.com/gsi/client",e.async=!0,e.defer=!0,document.head.appendChild(e)},[]),null}export{r as G};

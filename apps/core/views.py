@@ -1424,67 +1424,33 @@ def _login_url_with_next(request) -> str:
     return login_url
 
 
-def _google_one_tap_log_context(request) -> dict:
-    """Return credential-safe context for debugging Google One Tap flow."""
-    return {
-        "host": request.get_host(),
-        "path": request.path,
-        "is_secure": request.is_secure(),
-        "origin": request.META.get("HTTP_ORIGIN", ""),
-        "referer": request.META.get("HTTP_REFERER", ""),
-        "user_agent": request.META.get("HTTP_USER_AGENT", ""),
-        "ip": _get_client_ip(request),
-        "next": str(request.POST.get("next") or request.GET.get("next") or ""),
-        "has_credential": bool(request.POST.get("credential")),
-        "has_google_csrf_cookie": bool(request.COOKIES.get("g_csrf_token")),
-        "has_google_csrf_body": bool(request.POST.get("g_csrf_token")),
-    }
-
-
 @csrf_exempt
 @require_POST
 def google_one_tap_login(request):
     """Accept a Google One Tap credential POST and establish a Django session."""
-    log_context = _google_one_tap_log_context(request)
-    logger.info("Google One Tap POST received: %s", log_context)
-
     if not getattr(settings, "GOOGLE_ONE_TAP_ENABLED", False):
-        logger.warning("Google One Tap rejected because it is disabled: %s", log_context)
         messages.error(request, "Google sign-in is not configured.")
         return redirect(_login_url_with_next(request))
 
     csrf_cookie = request.COOKIES.get("g_csrf_token")
     csrf_body = request.POST.get("g_csrf_token")
     if not csrf_cookie or not csrf_body or csrf_cookie != csrf_body:
-        logger.warning("Google One Tap rejected by Google CSRF check: %s", log_context)
         messages.error(request, "Google sign-in could not be verified. Please try again.")
         return redirect(_login_url_with_next(request))
 
     credential = request.POST.get("credential", "")
     if not credential:
-        logger.warning("Google One Tap rejected because credential was missing: %s", log_context)
         messages.error(request, "Google did not return a sign-in credential.")
         return redirect(_login_url_with_next(request))
 
     try:
         payload = _verify_google_one_tap_credential(credential)
         user, created = _get_or_create_google_one_tap_user(payload)
-    except Exception as exc:
-        logger.exception(
-            "Google One Tap credential processing failed: error=%s context=%s",
-            exc,
-            log_context,
-        )
+    except Exception:
         messages.error(request, "Google sign-in failed. Please try again.")
         return redirect(_login_url_with_next(request))
 
     if not user.is_active:
-        logger.warning(
-            "Google One Tap rejected inactive user: user_id=%s email=%s context=%s",
-            user.pk,
-            user.email,
-            log_context,
-        )
         messages.error(
             request,
             "Your account is pending approval. Please wait for an administrator to activate your account.",
@@ -1501,25 +1467,10 @@ def google_one_tap_login(request):
                 user,
                 authentication_method="google",
             )
-        except Exception as exc:
-            logger.warning(
-                "Google One Tap registration notification failed: user_id=%s email=%s error=%s",
-                user.pk,
-                user.email,
-                exc,
-            )
+        except Exception:
             pass
 
-    redirect_url = _safe_next_url(request)
-    logger.info(
-        "Google One Tap login succeeded: user_id=%s email=%s created=%s redirect=%s context=%s",
-        user.pk,
-        user.email,
-        created,
-        redirect_url,
-        log_context,
-    )
-    return redirect(redirect_url)
+    return redirect(_safe_next_url(request))
 
 
 @ensure_csrf_cookie
