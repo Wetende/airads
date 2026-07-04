@@ -209,7 +209,7 @@ export default function Register({
                                             data-login_uri={socialAuth.google.loginUrl}
                                             data-next={nextUrl || undefined}
                                             data-context="signup"
-                                            data-ux_mode="popup"
+                                            data-ux_mode="redirect"
                                             data-auto_prompt="true"
                                             data-moment_callback={GOOGLE_ONE_TAP_MOMENT_CALLBACK}
                                         />

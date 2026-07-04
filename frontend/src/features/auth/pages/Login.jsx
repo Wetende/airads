@@ -122,7 +122,7 @@ export default function Login({
                                             data-login_uri={socialAuth.google.loginUrl}
                                             data-next={nextUrl || undefined}
                                             data-context="signin"
-                                            data-ux_mode="popup"
+                                            data-ux_mode="redirect"
                                             data-auto_prompt="true"
                                             data-moment_callback={GOOGLE_ONE_TAP_MOMENT_CALLBACK}
                                         />
