@@ -433,6 +433,108 @@ class NotificationService:
         )
 
     @staticmethod
+    def notify_course_enrollment_access(
+        *,
+        user,
+        application,
+        program,
+        enrollment_mode,
+        account_state,
+        temporary_password=None,
+        login_url="",
+        reset_url="",
+        course_url="",
+        checkout_url="",
+        primary_action_url="",
+    ):
+        """Send account and next-step details after the public course form."""
+        from django.template.loader import render_to_string
+
+        is_paid = enrollment_mode == "paid"
+        is_free = enrollment_mode == "free"
+        if is_paid:
+            subject = f"Complete payment for {program.name}"
+            action_label = "Complete Payment"
+            next_step = (
+                "Complete payment to activate your course access. After payment is confirmed, "
+                "the course will be added to your student account."
+            )
+        elif is_free:
+            subject = f"You are enrolled in {program.name}"
+            action_label = "Open Your Course"
+            next_step = "Your course has been added to your student account."
+        else:
+            subject = f"We received your course request for {program.name}"
+            action_label = "Log In to AIRADS"
+            next_step = "Our admissions team will contact you about the next step."
+
+        context = {
+            "first_name": user.first_name or application.full_name.split()[0],
+            "account_email": user.email,
+            "course_name": program.name,
+            "account_state": account_state,
+            "is_new_account": account_state == "created",
+            "is_existing_account": account_state == "existing",
+            "is_paid": is_paid,
+            "is_free": is_free,
+            "temporary_password": temporary_password or "",
+            "login_url": login_url,
+            "reset_url": reset_url,
+            "course_url": course_url,
+            "checkout_url": checkout_url,
+            "primary_action_url": primary_action_url or checkout_url or course_url or login_url,
+            "primary_action_label": action_label,
+            "next_step": next_step,
+        }
+        html_message = render_to_string("emails/course_enrollment_access.html", context)
+        text_lines = [
+            f"Dear {context['first_name']},",
+            f"We received your request for {program.name}.",
+            next_step,
+            f"Account email: {user.email}",
+        ]
+        if temporary_password:
+            text_lines.append(f"Temporary password: {temporary_password}")
+            text_lines.append(
+                "You can sign in with this password, then change it from your account."
+            )
+        elif account_state == "existing":
+            text_lines.append(
+                "This course request is linked to your existing AIRADS account."
+            )
+        if reset_url:
+            text_lines.append(f"Set or change your password: {reset_url}")
+        if primary_action_url:
+            text_lines.append(f"{action_label}: {primary_action_url}")
+        if is_paid:
+            text_lines.append("Payment is required before course access is activated.")
+        text_lines.append(
+            "If you are using a shared phone or computer, make sure the Google account shown belongs to you before continuing with Google."
+        )
+        text_lines.append("Best regards,\nAIRADS College Team")
+        text_message = "\n\n".join(text_lines)
+
+        NotificationService.create(
+            recipient=user,
+            notification_type="system",
+            title=subject,
+            message=next_step,
+            action_url=checkout_url or course_url or login_url,
+            related_program_id=program.id,
+            related_enrollment_id=application.enrollment_id,
+        )
+
+        sender = getattr(settings, "DEFAULT_FROM_EMAIL", None) or "admissions@airads.ac.ke"
+        return send_mail(
+            subject=subject,
+            message=text_message,
+            from_email=sender,
+            recipient_list=[user.email],
+            fail_silently=True,
+            html_message=html_message,
+        ) > 0
+
+    @staticmethod
     def notify_student_application_received(enrollment_request):
         """Send application received notification to the student."""
         from django.template.loader import render_to_string

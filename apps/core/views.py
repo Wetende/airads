@@ -31,6 +31,7 @@ from django.utils.http import (
     urlsafe_base64_decode,
     urlsafe_base64_encode,
 )
+from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
@@ -164,6 +165,7 @@ def _program_pricing_fields(program, pricing_context: dict | None = None) -> dic
 
 ENROLLMENT_INTENT_SALT = "core.program-enrollment"
 ENROLLMENT_INTENT_MAX_AGE_SECONDS = 60 * 60 * 24
+PROGRAM_INTEREST_SUCCESS_SESSION_KEY = "program_interest_success"
 
 
 def _program_enrollment_mode(program) -> str:
@@ -192,6 +194,182 @@ def _build_enrollment_intent_url(application: AdmissionApplication) -> str:
         f"{reverse('core:program_enrollment_resume')}?"
         f"{urlencode({'intent': token})}"
     )
+
+
+def _build_enrollment_login_url(intent_url: str) -> str:
+    return f"{reverse('core:login')}?{urlencode({'next': intent_url})}"
+
+
+def _build_program_checkout_url(program: Program, application: AdmissionApplication) -> str:
+    return (
+        f"/checkout/?"
+        f"{urlencode({'mode': 'direct', 'programId': program.id, 'applicationId': application.id})}"
+    )
+
+
+def _build_password_reset_url(request, user: User) -> str:
+    token = default_token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    return request.build_absolute_uri(
+        reverse("core:reset_password", kwargs={"uidb64": uid, "token": token})
+    )
+
+
+def _split_full_name(full_name: str) -> tuple[str, str]:
+    parts = str(full_name or "").strip().split(maxsplit=1)
+    if not parts:
+        return "", ""
+    if len(parts) == 1:
+        return parts[0], ""
+    return parts[0], parts[1]
+
+
+def _generate_temporary_password() -> str:
+    random_part = get_random_string(
+        10,
+        allowed_chars="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789",
+    )
+    return f"Aa7{random_part}"
+
+
+def _update_user_from_application_details(user: User, full_name: str, phone: str) -> list[str]:
+    first_name, last_name = _split_full_name(full_name)
+    update_fields = []
+    if first_name and not user.first_name:
+        user.first_name = first_name
+        update_fields.append("first_name")
+    if last_name and not user.last_name:
+        user.last_name = last_name
+        update_fields.append("last_name")
+    if phone and not user.phone:
+        user.phone = phone
+        update_fields.append("phone")
+    if update_fields:
+        user.save(update_fields=update_fields)
+    return update_fields
+
+
+def _get_or_create_program_interest_user(
+    *,
+    full_name: str,
+    email: str,
+    phone: str,
+    authenticated_user: User | None = None,
+) -> tuple[User, str, str | None]:
+    if authenticated_user and authenticated_user.is_authenticated:
+        _update_user_from_application_details(authenticated_user, full_name, phone)
+        return authenticated_user, "authenticated", None
+
+    user = User.objects.filter(email__iexact=email).order_by("id").first()
+    if user:
+        _update_user_from_application_details(user, full_name, phone)
+        return user, "existing", None
+
+    first_name, last_name = _split_full_name(full_name)
+    temporary_password = _generate_temporary_password()
+    user = User.objects.create_user(
+        username=_unique_username_from_email(email),
+        email=email,
+        password=temporary_password,
+        first_name=first_name,
+        last_name=last_name,
+    )
+    if phone:
+        user.phone = phone
+        user.save(update_fields=["phone"])
+    return user, "created", temporary_password
+
+
+def _store_program_interest_success(request, payload: dict) -> None:
+    request.session[PROGRAM_INTEREST_SUCCESS_SESSION_KEY] = payload
+    request.session.modified = True
+
+
+def _pop_program_interest_success(request, program: Program) -> dict | None:
+    payload = request.session.get(PROGRAM_INTEREST_SUCCESS_SESSION_KEY)
+    if not isinstance(payload, dict):
+        return None
+    if int(payload.get("programId") or 0) != program.id:
+        return None
+    return request.session.pop(PROGRAM_INTEREST_SUCCESS_SESSION_KEY, None)
+
+
+def _build_program_interest_success_payload(
+    request,
+    *,
+    application: AdmissionApplication,
+    user: User,
+    account_state: str,
+    enrollment_mode: str,
+    enrollment=None,
+) -> dict:
+    program = application.program
+    intent_url = _build_enrollment_intent_url(application)
+    login_url = _build_enrollment_login_url(intent_url)
+    checkout_url = (
+        _build_program_checkout_url(program, application)
+        if enrollment_mode == "paid"
+        else ""
+    )
+    course_url = (
+        reverse("progression:student.program", kwargs={"pk": program.id})
+        if enrollment is not None and enrollment.status in {"active", "completed"}
+        else ""
+    )
+    action_url = checkout_url or course_url or intent_url
+
+    if enrollment_mode == "paid":
+        title = "Your account is ready."
+        message = (
+            f"We saved {program.name} for you. Complete payment to activate your course access."
+        )
+    elif enrollment_mode == "approval":
+        title = "Your details are saved."
+        message = "Our admissions team will contact you about the next step."
+    else:
+        title = "You are enrolled."
+        message = (
+            f"Your AIRADS student account is ready and {program.name} has been added to it."
+        )
+
+    if account_state == "created":
+        account_message = (
+            "Check your email for your temporary password. You can also continue with Google "
+            "using the same email address."
+        )
+    elif account_state == "existing":
+        account_message = (
+            "Use your existing AIRADS password, reset it if needed, or continue with Google "
+            "using the same email address."
+        )
+    else:
+        account_message = "You are signed in, so you can continue from here."
+
+    return {
+        "programId": program.id,
+        "applicationId": application.id,
+        "courseName": program.name,
+        "email": user.email,
+        "mode": enrollment_mode,
+        "accountState": account_state,
+        "title": title,
+        "message": message,
+        "accountMessage": account_message,
+        "resumeUrl": intent_url,
+        "googleNextUrl": intent_url,
+        "loginUrl": login_url,
+        "checkoutUrl": checkout_url,
+        "courseUrl": course_url,
+        "dashboardUrl": get_dashboard_url("student"),
+        "primaryActionUrl": action_url,
+        "absolute": {
+            "loginUrl": request.build_absolute_uri(login_url),
+            "resumeUrl": request.build_absolute_uri(intent_url),
+            "checkoutUrl": request.build_absolute_uri(checkout_url) if checkout_url else "",
+            "courseUrl": request.build_absolute_uri(course_url) if course_url else "",
+            "primaryActionUrl": request.build_absolute_uri(action_url),
+        },
+    }
 
 
 def _default_custom_pricing_for_program_data(cleaned: dict) -> dict:
@@ -889,13 +1067,15 @@ def public_program_detail(
             "isPreview": is_preview,
             "builderUrl": builder_url,
             "siteContext": _build_site_context(request),
+            "socialAuth": _get_social_auth_context(request),
+            "programInterestSuccess": _pop_program_interest_success(request, program),
         },
     )
 
 
 @require_POST
 def public_program_interest_submit(request, pk: int):
-    """Capture lightweight enrollment interest from a public program page."""
+    """Capture public course enrollment interest and prepare account access."""
     program = Program.objects.filter(pk=pk, is_published=True).first()
     if not program:
         messages.error(request, "Program not found.")
@@ -904,11 +1084,21 @@ def public_program_interest_submit(request, pk: int):
     program_detail_url = f"/programs/{program.slug}/"
 
     data = get_post_data(request)
-    full_name = _clean_admission_value(data, "fullName") or _clean_admission_value(
-        data, "name"
-    )
-    email = _clean_admission_value(data, "email").lower()
-    phone = _clean_admission_value(data, "phone")
+    if request.user.is_authenticated:
+        email = str(request.user.email or "").strip().lower()
+        full_name = (
+            request.user.get_full_name()
+            or _clean_admission_value(data, "fullName")
+            or _clean_admission_value(data, "name")
+            or email.split("@")[0]
+        )
+        phone = _clean_admission_value(data, "phone") or (request.user.phone or "")
+    else:
+        full_name = _clean_admission_value(data, "fullName") or _clean_admission_value(
+            data, "name"
+        )
+        email = _clean_admission_value(data, "email").lower()
+        phone = _clean_admission_value(data, "phone")
 
     field_errors = {}
     if not full_name:
@@ -951,6 +1141,21 @@ def public_program_interest_submit(request, pk: int):
         ).first()
         preferred_campus = campus.name if campus else "Virtual Campus"
 
+    user, account_state, temporary_password = _get_or_create_program_interest_user(
+        full_name=full_name,
+        email=email,
+        phone=phone,
+        authenticated_user=request.user if request.user.is_authenticated else None,
+    )
+    enrollment_mode = _program_enrollment_mode(program)
+
+    from apps.core.services.course_prerequisites import CoursePrerequisiteService
+
+    prerequisite_evaluation = CoursePrerequisiteService.evaluate(user, program)
+    if prerequisite_evaluation.required and not prerequisite_evaluation.eligible:
+        messages.error(request, prerequisite_evaluation.blocking_message)
+        return redirect(program_detail_url)
+
     application = AdmissionApplication.objects.create(
         full_name=full_name,
         phone=phone,
@@ -959,6 +1164,7 @@ def public_program_interest_submit(request, pk: int):
         study_mode=study_mode,
         campus=campus,
         program=program,
+        user=user,
         preferred_campus=preferred_campus,
         preferred_programme=program.name,
         message=_clean_admission_value(data, "message")
@@ -966,7 +1172,57 @@ def public_program_interest_submit(request, pk: int):
         source="program_detail_modal",
     )
 
-    return redirect(_build_enrollment_intent_url(application))
+    enrollment = None
+    if enrollment_mode == "free":
+        from apps.progression.models import Enrollment
+
+        with transaction.atomic():
+            enrollment, _ = Enrollment.objects.get_or_create(
+                user=user,
+                program=program,
+                defaults={
+                    "status": "active",
+                    "access_source": "free",
+                },
+            )
+            application.enrollment = enrollment
+            if enrollment.status in {"active", "completed"}:
+                application.status = AdmissionApplication.STATUS_ACCEPTED
+            application.save(update_fields=["enrollment", "status", "updated_at"])
+
+    success_payload = _build_program_interest_success_payload(
+        request,
+        application=application,
+        user=user,
+        account_state=account_state,
+        enrollment_mode=enrollment_mode,
+        enrollment=enrollment,
+    )
+
+    try:
+        from apps.notifications.services import NotificationService
+
+        NotificationService.notify_course_enrollment_access(
+            user=user,
+            application=application,
+            program=program,
+            enrollment_mode=enrollment_mode,
+            account_state=account_state,
+            temporary_password=temporary_password,
+            login_url=success_payload["absolute"]["loginUrl"],
+            reset_url=_build_password_reset_url(request, user),
+            course_url=success_payload["absolute"]["courseUrl"],
+            checkout_url=success_payload["absolute"]["checkoutUrl"],
+            primary_action_url=success_payload["absolute"]["primaryActionUrl"],
+        )
+    except Exception:
+        logger.exception(
+            "Could not send course enrollment access email for application %s.",
+            application.id,
+        )
+
+    _store_program_interest_success(request, success_payload)
+    return redirect(program_detail_url)
 
 
 @login_required

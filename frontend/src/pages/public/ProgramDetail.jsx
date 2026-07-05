@@ -46,14 +46,17 @@ import {
     IconLock,
     IconFolder,
     IconX,
+    IconMail,
+    IconCreditCard,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import { CourseDetailsModal } from "@/components/modals";
 import MainNavbar from "@/components/common/MainNavbar";
 import VirtualNavbar from "@/components/common/VirtualNavbar";
 import AIRADSFooter from "@/components/common/AIRADSFooter";
+import GoogleIdentityScript from "@/features/auth/components/GoogleIdentityScript";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -75,9 +78,14 @@ function EnrollmentInterestModal({
     form,
     errors,
     submitting,
+    success,
+    socialAuth,
+    phoneOnly,
     onFieldChange,
     onSubmit,
 }) {
+    const showGoogle = success && socialAuth?.google?.enabled && success.accountState !== "authenticated";
+
     return (
         <Dialog
             open={open}
@@ -88,16 +96,115 @@ function EnrollmentInterestModal({
                 sx: { borderRadius: 2, overflow: "hidden" },
             }}
         >
+            {success ? (
+                <Box>
+                    <DialogTitle sx={{ pr: 6, pb: 1 }}>
+                        <Typography variant="h6" fontWeight={800}>
+                            {success.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            {success.courseName}
+                        </Typography>
+                    </DialogTitle>
+
+                    <IconButton
+                        aria-label="Close enrollment confirmation"
+                        onClick={onClose}
+                        sx={{ position: "absolute", top: 10, right: 10 }}
+                    >
+                        <IconX size={20} />
+                    </IconButton>
+
+                    <DialogContent sx={{ pt: 2 }}>
+                        <Stack spacing={2.25}>
+                            <MuiAlert severity="success" variant="outlined">
+                                {success.message}
+                            </MuiAlert>
+
+                            <Box>
+                                <Typography variant="body2" color="text.secondary">
+                                    {success.accountMessage}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                    Account email: <strong>{success.email}</strong>
+                                </Typography>
+                            </Box>
+
+                            {showGoogle && (
+                                <Box sx={{ display: "flex", justifyContent: "center" }}>
+                                    <GoogleIdentityScript />
+                                    <div
+                                        id="g_id_onload"
+                                        data-client_id={socialAuth.google.clientId}
+                                        data-login_uri={socialAuth.google.loginUrl}
+                                        data-next={success.googleNextUrl}
+                                        data-context="signin"
+                                        data-ux_mode="redirect"
+                                        data-auto_prompt="false"
+                                    />
+                                    <div
+                                        className="g_id_signin"
+                                        data-type="standard"
+                                        data-size="large"
+                                        data-theme="outline"
+                                        data-text="continue_with"
+                                        data-shape="rectangular"
+                                        data-logo_alignment="left"
+                                    />
+                                </Box>
+                            )}
+
+                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                                {success.accountState !== "authenticated" && (
+                                    <Button
+                                        component={Link}
+                                        href={success.loginUrl}
+                                        variant="outlined"
+                                        startIcon={<IconMail size={18} />}
+                                        fullWidth
+                                    >
+                                        Log in with email
+                                    </Button>
+                                )}
+                                {success.accountState === "authenticated" && success.checkoutUrl && (
+                                    <Button
+                                        component={Link}
+                                        href={success.checkoutUrl}
+                                        variant="contained"
+                                        startIcon={<IconCreditCard size={18} />}
+                                        fullWidth
+                                    >
+                                        Complete payment
+                                    </Button>
+                                )}
+                                {success.accountState === "authenticated" && success.courseUrl && (
+                                    <Button
+                                        component={Link}
+                                        href={success.courseUrl}
+                                        variant="contained"
+                                        startIcon={<IconPlayerPlay size={18} />}
+                                        fullWidth
+                                    >
+                                        Open course
+                                    </Button>
+                                )}
+                            </Stack>
+                        </Stack>
+                    </DialogContent>
+                </Box>
+            ) : (
             <Box component="form" noValidate onSubmit={onSubmit}>
                 <DialogTitle sx={{ pr: 6, pb: 1 }}>
                     <Typography variant="h6" fontWeight={800}>
-                        Enroll now
+                        {phoneOnly ? "Add your phone number" : "Enroll now"}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                         {program?.name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        We save your details first so admissions can call if you need help.
+                        {phoneOnly
+                            ? "We need a phone number so admissions can call if you need help."
+                            : "We save your details first so admissions can call if you need help."}
                     </Typography>
                 </DialogTitle>
 
@@ -112,31 +219,35 @@ function EnrollmentInterestModal({
 
                 <DialogContent sx={{ pt: 2 }}>
                     <Stack spacing={2.25}>
-                        <TextField
-                            label="Full name"
-                            name="fullName"
-                            value={form.fullName}
-                            onChange={(event) => onFieldChange("fullName", event.target.value)}
-                            placeholder="e.g. Mary Wanjiku"
-                            autoComplete="name"
-                            required
-                            fullWidth
-                            error={!!errors.fullName}
-                            helperText={errors.fullName}
-                        />
-                        <TextField
-                            label="Email address"
-                            name="email"
-                            type="email"
-                            value={form.email}
-                            onChange={(event) => onFieldChange("email", event.target.value)}
-                            placeholder="mary@example.com"
-                            autoComplete="email"
-                            required
-                            fullWidth
-                            error={!!errors.email}
-                            helperText={errors.email}
-                        />
+                        {!phoneOnly && (
+                            <>
+                                <TextField
+                                    label="Full name"
+                                    name="fullName"
+                                    value={form.fullName}
+                                    onChange={(event) => onFieldChange("fullName", event.target.value)}
+                                    placeholder="e.g. Mary Wanjiku"
+                                    autoComplete="name"
+                                    required
+                                    fullWidth
+                                    error={!!errors.fullName}
+                                    helperText={errors.fullName}
+                                />
+                                <TextField
+                                    label="Email address"
+                                    name="email"
+                                    type="email"
+                                    value={form.email}
+                                    onChange={(event) => onFieldChange("email", event.target.value)}
+                                    placeholder="mary@example.com"
+                                    autoComplete="email"
+                                    required
+                                    fullWidth
+                                    error={!!errors.email}
+                                    helperText={errors.email}
+                                />
+                            </>
+                        )}
                         <TextField
                             label="Phone number"
                             name="phone"
@@ -162,6 +273,7 @@ function EnrollmentInterestModal({
                     </Button>
                 </DialogActions>
             </Box>
+            )}
         </Dialog>
     );
 }
@@ -748,6 +860,8 @@ export default function ProgramDetail({
     prerequisiteStatus = null,
     isPreview = false,
     builderUrl = null,
+    socialAuth = {},
+    programInterestSuccess = null,
 }) {
     const { auth, platform, siteContext = {} } = usePage().props;
     const { addToCart } = useCart();
@@ -758,9 +872,18 @@ export default function ProgramDetail({
     const [interestForm, setInterestForm] = useState(emptyInterestForm);
     const [interestErrors, setInterestErrors] = useState({});
     const [interestSubmitting, setInterestSubmitting] = useState(false);
+    const [interestSuccess, setInterestSuccess] = useState(programInterestSuccess);
     const [cartSnackbar, setCartSnackbar] = useState({ open: false, message: "", severity: "success" });
     const isVirtualCampus = !!siteContext?.isVirtualCampus;
     const shortDescription = truncatePlainText(program.description, 200);
+    const phoneOnlyInterest = !!auth?.user && !auth.user.phone;
+
+    useEffect(() => {
+        if (programInterestSuccess) {
+            setInterestSuccess(programInterestSuccess);
+            setInterestModalOpen(true);
+        }
+    }, [programInterestSuccess]);
 
     const handleShowDetails = () => setDetailsModalOpen(true);
     const handleCloseDetails = () => setDetailsModalOpen(false);
@@ -774,14 +897,26 @@ export default function ProgramDetail({
     });
 
     const handleOpenEnrollmentInterest = () => {
-        setInterestForm(getDefaultInterestForm());
+        const defaults = getDefaultInterestForm();
+        setInterestSuccess(null);
+        setInterestForm(defaults);
         setInterestErrors({});
+        if (auth?.user && defaults.phone) {
+            setCartSnackbar({
+                open: true,
+                message: "Preparing your enrollment...",
+                severity: "info",
+            });
+            submitEnrollmentInterest(defaults);
+            return;
+        }
         setInterestModalOpen(true);
     };
 
     const handleCloseEnrollmentInterest = () => {
         if (interestSubmitting) return;
         setInterestModalOpen(false);
+        setInterestSuccess(null);
     };
 
     const handleInterestFieldChange = (field, value) => {
@@ -814,19 +949,22 @@ export default function ProgramDetail({
         return Object.keys(nextErrors).length === 0;
     };
 
-    const handleSubmitEnrollmentInterest = (event) => {
-        event.preventDefault();
-        if (!validateInterestForm()) return;
-
+    function submitEnrollmentInterest(formValues) {
         router.post(`/programs/${program.id}/interest/`, {
-            fullName: interestForm.fullName.trim(),
-            email: interestForm.email.trim(),
-            phone: interestForm.phone.trim(),
+            fullName: formValues.fullName.trim(),
+            email: formValues.email.trim(),
+            phone: formValues.phone.trim(),
         }, {
             preserveScroll: true,
             onStart: () => setInterestSubmitting(true),
-            onSuccess: () => {
-                setInterestModalOpen(false);
+            onSuccess: (page) => {
+                const successPayload = page?.props?.programInterestSuccess;
+                if (successPayload) {
+                    setInterestSuccess(successPayload);
+                    setInterestModalOpen(true);
+                } else {
+                    setInterestModalOpen(false);
+                }
             },
             onError: (errors) => {
                 setInterestErrors(errors || {});
@@ -838,6 +976,12 @@ export default function ProgramDetail({
             },
             onFinish: () => setInterestSubmitting(false),
         });
+    }
+
+    const handleSubmitEnrollmentInterest = (event) => {
+        event.preventDefault();
+        if (!validateInterestForm()) return;
+        submitEnrollmentInterest(interestForm);
     };
 
     const handleAddToCart = async (programId) => {
@@ -1363,6 +1507,9 @@ export default function ProgramDetail({
                 form={interestForm}
                 errors={interestErrors}
                 submitting={interestSubmitting}
+                success={interestSuccess}
+                socialAuth={socialAuth}
+                phoneOnly={phoneOnlyInterest}
                 onFieldChange={handleInterestFieldChange}
                 onSubmit={handleSubmitEnrollmentInterest}
             />

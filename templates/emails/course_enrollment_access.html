@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>AIRADS course access</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #F8FAFC;
+            color: #1A1C1E;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #FFFFFF;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            background-color: #2563EB;
+            color: #FFFFFF;
+            padding: 24px;
+            border-bottom: 5px solid #EF4444;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 32px 24px;
+        }
+        .button-container {
+            text-align: center;
+            margin: 28px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563EB;
+            color: #FFFFFF;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .details {
+            background-color: #F1F5F9;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .warning {
+            color: #92400E;
+            background-color: #FEF3C7;
+            border-radius: 6px;
+            padding: 12px;
+        }
+        .footer {
+            background-color: #F1F5F9;
+            color: #64748B;
+            padding: 16px 24px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AIRADS College</h1>
+        </div>
+        <div class="content">
+            <p>Dear <strong>{{ first_name }}</strong>,</p>
+
+            <p>We received your request for <strong>{{ course_name }}</strong>.</p>
+            <p>{{ next_step }}</p>
+
+            <div class="details">
+                <p><strong>Account email:</strong> {{ account_email }}</p>
+                {% if is_new_account %}
+                    <p><strong>Temporary password:</strong> {{ temporary_password }}</p>
+                    <p>You can sign in with this password, then change it from your account. You can also use Continue with Google if this email is a Google account.</p>
+                {% elif is_existing_account %}
+                    <p>This course request is linked to your existing AIRADS account. Use your current password, reset it if needed, or continue with Google if this email is a Google account.</p>
+                {% else %}
+                    <p>This course request is linked to the AIRADS account you were signed into.</p>
+                {% endif %}
+            </div>
+
+            {% if reset_url %}
+                <p><a href="{{ reset_url }}">Set or change your password</a></p>
+                <p>{{ reset_url }}</p>
+            {% endif %}
+
+            {% if primary_action_url %}
+                <div class="button-container">
+                    <a href="{{ primary_action_url }}" class="button">{{ primary_action_label }}</a>
+                </div>
+                <p>If the button does not open, use this link:</p>
+                <p>{{ primary_action_url }}</p>
+            {% endif %}
+
+            {% if is_paid %}
+                <p class="warning">Payment is required before course access is activated.</p>
+            {% endif %}
+
+            <p>If you are using a shared phone or computer, make sure the Google account shown belongs to you before continuing with Google.</p>
+
+            <p>Best regards,<br>
+            <strong>AIRADS College Team</strong></p>
+        </div>
+        <div class="footer">
+            &copy; {% now "Y" %} AIRADS College. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>

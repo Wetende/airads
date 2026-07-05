@@ -93,10 +93,11 @@
 
             <p>Thank you for creating an account with <span class="highlight">AIRADS College</span>.</p>
 
-            <p>Your registration was successful! You can now explore our courses, apply for programs, and manage your student profile through our portal.</p>
+            <p>Your registration was successful. You can now explore courses, apply for programs, and manage your student profile through the AIRADS portal.</p>
 
             {% if uses_google %}
-            <p>Your account uses <strong>{{ account_email }}</strong>. To sign in later, choose <strong>Continue with Google</strong> and use this same Google account. You do not need a separate AIRADS password.</p>
+            <p>Your account email is <strong>{{ account_email }}</strong>. You can sign in with <strong>Continue with Google</strong> if this email is a Google account, or use email and password if you set one.</p>
+            <p>If you are using a shared phone or computer, make sure the Google account shown belongs to you before continuing.</p>
             {% endif %}
 
             <div class="button-container">

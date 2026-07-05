@@ -1,8 +1,10 @@
 import json
+import re
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import pytest
 from django.contrib.messages import get_messages
+from django.core import mail
 from django.test import override_settings
 from django.urls import reverse
 
@@ -118,11 +120,16 @@ def test_normal_submission_requires_physical_campus(client):
 
 
 @pytest.mark.django_db
-def test_program_interest_submission_creates_pending_application(client):
-    from apps.core.models import AdmissionApplication
+def test_program_interest_submission_creates_account_and_free_enrollment(client):
+    from apps.core.models import AdmissionApplication, User
+    from apps.progression.models import Enrollment
     from apps.progression.tests.factories import ProgramFactory
 
-    program = ProgramFactory(name="Introduction to AI", is_published=True)
+    program = ProgramFactory(
+        name="Introduction to AI",
+        is_published=True,
+        custom_pricing={"price": 0},
+    )
 
     response = client.post(
         reverse("core:program_interest_submit", kwargs={"pk": program.id}),
@@ -137,11 +144,11 @@ def test_program_interest_submission_creates_pending_application(client):
     )
 
     assert response.status_code == 302
-    assert response.url.startswith(
-        reverse("core:program_enrollment_resume") + "?intent="
-    )
+    assert response.url == f"/programs/{program.slug}/"
 
     application = AdmissionApplication.objects.get()
+    user = User.objects.get(email="mary@example.com")
+    enrollment = Enrollment.objects.get(user=user, program=program)
     assert application.full_name == "Mary Wanjiku"
     assert application.email == "mary@example.com"
     assert application.phone == "0715 000 222"
@@ -150,7 +157,28 @@ def test_program_interest_submission_creates_pending_application(client):
     assert application.preferred_programme == "Introduction to AI"
     assert application.preferred_campus == "Course detail enquiry"
     assert application.source == "program_detail_modal"
-    assert application.status == AdmissionApplication.STATUS_NEW
+    assert application.user == user
+    assert application.enrollment == enrollment
+    assert application.status == AdmissionApplication.STATUS_ACCEPTED
+    assert enrollment.access_source == "free"
+    assert user.first_name == "Mary"
+    assert user.last_name == "Wanjiku"
+    assert user.phone == "0715 000 222"
+    assert user.has_usable_password()
+    assert len(mail.outbox) == 1
+    assert "Temporary password:" in mail.outbox[0].body
+    password_match = re.search(r"Temporary password:\s*(\S+)", mail.outbox[0].body)
+    assert password_match
+    assert user.check_password(password_match.group(1))
+
+    page_response = client.get(response.url, HTTP_X_INERTIA=True)
+    success = page_response.json()["props"]["programInterestSuccess"]
+    assert success["mode"] == "free"
+    assert success["accountState"] == "created"
+    assert success["courseUrl"] == reverse(
+        "progression:student.program", kwargs={"pk": program.id}
+    )
+    assert success["loginUrl"].startswith("/login/?next=")
 
 
 @pytest.mark.django_db
@@ -172,7 +200,8 @@ def test_google_sign_in_resumes_free_course_enrollment(client, monkeypatch):
             "phone": "0715000222",
         },
     )
-    intent_url = lead_response.url
+    success_response = client.get(lead_response.url, HTTP_X_INERTIA=True)
+    intent_url = success_response.json()["props"]["programInterestSuccess"]["resumeUrl"]
 
     login_response = client.get(intent_url)
     assert login_response.status_code == 302
@@ -224,7 +253,170 @@ def test_google_sign_in_resumes_free_course_enrollment(client, monkeypatch):
     assert application.enrollment == enrollment
     assert application.status == AdmissionApplication.STATUS_ACCEPTED
     assert user.phone == "0715000222"
-    assert not user.has_usable_password()
+    assert user.has_usable_password()
+
+
+@pytest.mark.django_db
+def test_program_interest_existing_user_is_linked_without_password_reset(client):
+    from apps.core.models import AdmissionApplication
+    from apps.progression.models import Enrollment
+    from apps.progression.tests.factories import ProgramFactory
+
+    existing_user = UserFactory(
+        email="existing-lead@example.com",
+        password="ExistingPass123",
+        first_name="",
+        last_name="",
+        phone="",
+    )
+    program = ProgramFactory(is_published=True, custom_pricing={"price": 0})
+
+    response = client.post(
+        reverse("core:program_interest_submit", kwargs={"pk": program.id}),
+        {
+            "fullName": "Existing Student",
+            "email": "existing-lead@example.com",
+            "phone": "0715000333",
+        },
+    )
+    page_response = client.get(response.url, HTTP_X_INERTIA=True)
+    success = page_response.json()["props"]["programInterestSuccess"]
+
+    existing_user.refresh_from_db()
+    application = AdmissionApplication.objects.get(email="existing-lead@example.com")
+    enrollment = Enrollment.objects.get(user=existing_user, program=program)
+
+    assert application.user == existing_user
+    assert application.enrollment == enrollment
+    assert existing_user.check_password("ExistingPass123")
+    assert existing_user.phone == "0715000333"
+    assert success["accountState"] == "existing"
+    assert "Temporary password:" not in mail.outbox[0].body
+    assert "_auth_user_id" not in client.session
+
+
+@pytest.mark.django_db
+def test_logged_in_user_with_phone_enrolls_without_public_details_form(client):
+    from apps.core.models import AdmissionApplication
+    from apps.progression.models import Enrollment
+    from apps.progression.tests.factories import ProgramFactory
+
+    user = UserFactory(email="signed-in@example.com", phone="0715000666")
+    program = ProgramFactory(is_published=True, custom_pricing={"price": 0})
+    client.force_login(user)
+
+    response = client.post(
+        reverse("core:program_interest_submit", kwargs={"pk": program.id}),
+        {},
+    )
+    page_response = client.get(response.url, HTTP_X_INERTIA=True)
+    success = page_response.json()["props"]["programInterestSuccess"]
+
+    application = AdmissionApplication.objects.get(email="signed-in@example.com")
+    enrollment = Enrollment.objects.get(user=user, program=program)
+    assert application.user == user
+    assert application.phone == "0715000666"
+    assert application.enrollment == enrollment
+    assert success["accountState"] == "authenticated"
+    assert success["courseUrl"] == reverse(
+        "progression:student.program", kwargs={"pk": program.id}
+    )
+
+
+@pytest.mark.django_db
+def test_logged_in_user_without_phone_must_supply_phone(client):
+    from apps.core.models import AdmissionApplication
+    from apps.progression.models import Enrollment
+    from apps.progression.tests.factories import ProgramFactory
+
+    user = UserFactory(email="missing-phone@example.com", phone="")
+    program = ProgramFactory(is_published=True, custom_pricing={"price": 0})
+    client.force_login(user)
+
+    response = client.post(
+        reverse("core:program_interest_submit", kwargs={"pk": program.id}),
+        {},
+    )
+
+    assert response.status_code == 302
+    assert response.url == f"/programs/{program.slug}/"
+    assert AdmissionApplication.objects.count() == 0
+    assert not Enrollment.objects.filter(user=user, program=program).exists()
+    messages = [str(message) for message in get_messages(response.wsgi_request)]
+    assert any("Phone number is required" in message for message in messages)
+
+
+@pytest.mark.django_db
+def test_paid_guest_interest_creates_account_but_waits_for_payment(client):
+    from apps.core.models import AdmissionApplication, User
+    from apps.progression.models import Enrollment
+
+    program = _create_paid_program(code="ADM-PAY-GUEST")
+
+    response = client.post(
+        reverse("core:program_interest_submit", kwargs={"pk": program.id}),
+        {
+            "fullName": "Paid Guest",
+            "email": "paid-guest@example.com",
+            "phone": "0715000777",
+        },
+    )
+    page_response = client.get(response.url, HTTP_X_INERTIA=True)
+    success = page_response.json()["props"]["programInterestSuccess"]
+
+    user = User.objects.get(email="paid-guest@example.com")
+    application = AdmissionApplication.objects.get(email="paid-guest@example.com")
+    assert application.user == user
+    assert application.status == AdmissionApplication.STATUS_NEW
+    assert not Enrollment.objects.filter(user=user, program=program).exists()
+    assert user.has_usable_password()
+    assert success["mode"] == "paid"
+    assert success["accountState"] == "created"
+    assert success["checkoutUrl"].startswith("/checkout/?")
+    assert "Temporary password:" in mail.outbox[0].body
+    assert "Payment is required" in mail.outbox[0].body
+
+
+@pytest.mark.django_db
+@override_settings(
+    ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
+    VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
+)
+def test_virtual_host_program_interest_uses_virtual_links(client):
+    from apps.core.models import AdmissionApplication, Campus
+    from apps.progression.tests.factories import ProgramFactory
+
+    Campus.objects.get_or_create(
+        slug="virtual",
+        defaults={
+            "name": "Virtual Campus",
+            "campus_type": Campus.CAMPUS_TYPE_VIRTUAL,
+            "contact_email": "virtualcampus@airads.ac.ke",
+        },
+    )
+    program = ProgramFactory(is_published=True, custom_pricing={"price": 0})
+
+    response = client.post(
+        reverse("core:program_interest_submit", kwargs={"pk": program.id}),
+        {
+            "fullName": "Virtual Learner",
+            "email": "virtual-learner@example.com",
+            "phone": "0715000888",
+        },
+        HTTP_HOST="virtual.airads.ac.ke",
+    )
+    page_response = client.get(
+        response.url,
+        HTTP_X_INERTIA=True,
+        HTTP_HOST="virtual.airads.ac.ke",
+    )
+    success = page_response.json()["props"]["programInterestSuccess"]
+    application = AdmissionApplication.objects.get(email="virtual-learner@example.com")
+
+    assert application.study_mode == AdmissionApplication.STUDY_MODE_VIRTUAL
+    assert application.preferred_campus == "Virtual Campus"
+    assert success["absolute"]["loginUrl"].startswith("http://virtual.airads.ac.ke")
+    assert "http://virtual.airads.ac.ke" in mail.outbox[0].body
 
 
 @pytest.mark.django_db
@@ -242,15 +434,17 @@ def test_enrollment_resume_rejects_account_with_different_email(client):
             "phone": "0715000444",
         },
     )
+    success_response = client.get(response.url, HTTP_X_INERTIA=True)
+    intent_url = success_response.json()["props"]["programInterestSuccess"]["resumeUrl"]
     other_user = UserFactory(email="different@example.com")
     client.force_login(other_user)
 
-    resume_response = client.get(response.url)
+    resume_response = client.get(intent_url)
 
     assert resume_response.status_code == 302
     assert resume_response.url == f"/programs/{program.slug}/"
     application = AdmissionApplication.objects.get(email="correct@example.com")
-    assert application.user is None
+    assert application.user.email == "correct@example.com"
     assert not Enrollment.objects.filter(user=other_user, program=program).exists()
 
 
@@ -272,8 +466,10 @@ def test_paid_course_resume_links_checkout_order_and_paid_enrollment(client):
             "phone": "0715000555",
         },
     )
+    success_response = client.get(response.url, HTTP_X_INERTIA=True)
+    success = success_response.json()["props"]["programInterestSuccess"]
 
-    resume_response = client.get(response.url)
+    resume_response = client.get(success["resumeUrl"])
     checkout_query = parse_qs(urlparse(resume_response.url).query)
     application = AdmissionApplication.objects.get(email="paid-google@example.com")
 
@@ -282,6 +478,10 @@ def test_paid_course_resume_links_checkout_order_and_paid_enrollment(client):
     assert checkout_query["programId"] == [str(program.id)]
     assert checkout_query["applicationId"] == [str(application.id)]
     assert application.user == user
+    assert success["mode"] == "paid"
+    assert success["accountState"] == "authenticated"
+    assert success["checkoutUrl"].startswith("/checkout/?")
+    assert not Enrollment.objects.filter(user=user, program=program).exists()
 
     order_response = client.post(
         "/commerce/orders/",
