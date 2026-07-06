@@ -136,7 +136,7 @@ def test_program_interest_submission_creates_account_and_free_enrollment(client)
         data=json.dumps(
             {
                 "fullName": "  Mary Wanjiku  ",
-                "email": " MARY@example.com ",
+                "email": " MARY@gmail.com ",
                 "phone": " 0715 000 222 ",
             }
         ),
@@ -147,10 +147,10 @@ def test_program_interest_submission_creates_account_and_free_enrollment(client)
     assert response.url == f"/programs/{program.slug}/"
 
     application = AdmissionApplication.objects.get()
-    user = User.objects.get(email="mary@example.com")
+    user = User.objects.get(email="mary@gmail.com")
     enrollment = Enrollment.objects.get(user=user, program=program)
     assert application.full_name == "Mary Wanjiku"
-    assert application.email == "mary@example.com"
+    assert application.email == "mary@gmail.com"
     assert application.phone == "0715 000 222"
     assert application.whatsapp == "0715 000 222"
     assert application.program == program
@@ -178,6 +178,7 @@ def test_program_interest_submission_creates_account_and_free_enrollment(client)
     assert success["courseUrl"] == reverse(
         "progression:student.program", kwargs={"pk": program.id}
     )
+    assert success["emailInboxUrl"] == "https://mail.google.com/mail/"
     assert success["loginUrl"].startswith("/login/?next=")
 
 

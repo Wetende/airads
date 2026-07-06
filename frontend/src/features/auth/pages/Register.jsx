@@ -30,7 +30,7 @@ import {
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import PlatformLogo from "@/components/common/PlatformLogo";
-import GoogleIdentityScript from "@/features/auth/components/GoogleIdentityScript";
+import { GoogleSignInButton } from "@/features/auth/components/GoogleIdentityScript";
 
 const fadeInUp = {
     initial: { opacity: 0, y: 20 },
@@ -199,25 +199,14 @@ export default function Register({
 
                             {socialAuth.google?.enabled && (
                                 <>
-                                    <GoogleIdentityScript />
                                     <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-                                        <div
-                                            id="g_id_onload"
-                                            data-client_id={socialAuth.google.clientId}
-                                            data-login_uri={socialAuth.google.loginUrl}
-                                            data-next={nextUrl || undefined}
-                                            data-context="signup"
-                                            data-ux_mode="redirect"
-                                            data-auto_prompt="true"
-                                        />
-                                        <div
-                                            className="g_id_signin"
-                                            data-type="standard"
-                                            data-size="large"
-                                            data-theme="outline"
-                                            data-text="signup_with"
-                                            data-shape="rectangular"
-                                            data-logo_alignment="left"
+                                        <GoogleSignInButton
+                                            clientId={socialAuth.google.clientId}
+                                            loginUri={socialAuth.google.loginUrl}
+                                            nextUrl={nextUrl}
+                                            context="signup"
+                                            text="signup_with"
+                                            autoPrompt={!nextUrl}
                                         />
                                     </Box>
                                     <Divider sx={{ mb: 2 }}>

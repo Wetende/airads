@@ -573,7 +573,7 @@ class Command(BaseCommand):
                 "lessons": [
                     {"title": "AWS Core Services", "desc": "EC2, S3, and RDS fundamentals", "image": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200"},
                     {"title": "Serverless Architecture", "desc": "Lambda and API Gateway", "image": "https://images.unsplash.com/photo-1639322537228-f710d846310a?w=1200"},
-                    {"title": "Infrastructure as Code", "desc": "CloudFormation and Terraform", "image": "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=1200"},
+                    {"title": "Infrastructure as Code", "desc": "CloudFormation and Terraform", "image": "https://images.unsplash.com/photo-1667372393119-c81c0cda0c18?w=800&q=80", "thumbnail": "devops.jpg"},
                 ]
             },
             {
@@ -591,21 +591,6 @@ class Command(BaseCommand):
                     {"title": "Data Visualization", "desc": "Matplotlib and Seaborn", "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200"},
                     {"title": "Machine Learning Basics", "desc": "Supervised and unsupervised learning", "image": "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200"},
                 ]
-            },
-            {
-                "code": "DEVOPS-401",
-                "name": "DevOps Engineering Mastery",
-                "description": "CI/CD pipelines, containerization, and Kubernetes orchestration.",
-                "level": "Advanced",
-                "duration_hours": 55,
-                "video_hours": 22,
-                "category": "DevOps",
-                "thumbnail": "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=800&h=450&fit=crop",
-                "lessons": [
-                    {"title": "Docker Containerization", "desc": "Building and managing containers", "image": "https://images.unsplash.com/photo-1605745341112-85968b19335b?w=1200"},
-                    {"title": "Kubernetes Orchestration", "desc": "Deploy and scale containerized apps", "image": "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=1200"},
-                    {"title": "CI/CD with Jenkins", "desc": "Automated testing and deployment", "image": "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=1200"},
-                ]
             }
         ]
 
@@ -616,6 +601,7 @@ class Command(BaseCommand):
                 defaults={
                     "name": course_data["name"],
                     "description": course_data["description"],
+                    "what_you_learn_html": course_data.get("what_you_learn_html", ""),
                     "blueprint": blueprint,
                     "is_published": True,
                     "level": course_data["level"],
@@ -626,6 +612,12 @@ class Command(BaseCommand):
                 }
             )
             
+            # Ensure description and learning outcomes are updated if they changed
+            if not created:
+                program.description = course_data["description"]
+                program.what_you_learn_html = course_data.get("what_you_learn_html", "")
+                program.save()
+            
             # Set thumbnail URL
             if not program.custom_pricing.get("thumbnail_url"):
                 program.custom_pricing["thumbnail_url"] = course_data["thumbnail"]
@@ -634,7 +626,7 @@ class Command(BaseCommand):
             if mary not in program.instructors.all():
                 program.instructors.add(mary)
 
-            # Create module
+            # Backward-compatible flat lessons structure
             module = CurriculumNode.objects.filter(
                 program=program,
                 title=f"Module 1: {course_data['name']} Essentials"
@@ -668,13 +660,14 @@ class Command(BaseCommand):
                         description=lesson_data["desc"],
                         position=idx,
                         is_published=True,
-                        properties={"thumbnail": lesson_data["image"]}
+                        properties={"thumbnail": lesson_data["image"], "lesson_type": "text"}
                     )
                     lesson.save(skip_validation=True)
                 else:
                     # Update with thumbnail if not present
-                    if not lesson.properties.get("thumbnail"):
+                    if not lesson.properties.get("thumbnail") or not lesson.properties.get("lesson_type"):
                         lesson.properties["thumbnail"] = lesson_data["image"]
+                        lesson.properties["lesson_type"] = "text"
                         lesson.save(skip_validation=True)
 
                 # Add content blocks with Unsplash images
@@ -704,5 +697,14 @@ class Command(BaseCommand):
                         "data": {"provider": "youtube", "url": f"https://youtube.com/watch?v=demo_{idx}", "duration": 600}
                     }
                 )
+
+        # Call the standalone seed command for the thorough DevOps Engineering Mastery course
+        self.stdout.write("Delegating DEVOPS-401 seeding to seed_devops_course...")
+        from django.core.management import call_command
+        call_command("seed_devops_course", instructor_email=mary.email, stdout=self.stdout)
+
+        # Call resync_quiz_properties to update all quiz node properties from Quiz records
+        self.stdout.write("Rebuilding quiz properties in node.properties...")
+        call_command("resync_quiz_properties", stdout=self.stdout)
 
         self.stdout.write(self.style.SUCCESS(f"✓ Created 4 additional courses for Mary"))

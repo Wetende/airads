@@ -56,7 +56,7 @@ import { CourseDetailsModal } from "@/components/modals";
 import MainNavbar from "@/components/common/MainNavbar";
 import VirtualNavbar from "@/components/common/VirtualNavbar";
 import AIRADSFooter from "@/components/common/AIRADSFooter";
-import GoogleIdentityScript from "@/features/auth/components/GoogleIdentityScript";
+import { GoogleSignInButton } from "@/features/auth/components/GoogleIdentityScript";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -85,6 +85,8 @@ function EnrollmentInterestModal({
     onSubmit,
 }) {
     const showGoogle = success && socialAuth?.google?.enabled && success.accountState !== "authenticated";
+    const emailActionUrl = success?.emailInboxUrl || success?.loginUrl;
+    const opensEmailInbox = Boolean(success?.emailInboxUrl);
 
     return (
         <Dialog
@@ -122,49 +124,58 @@ function EnrollmentInterestModal({
                             </MuiAlert>
 
                             <Box>
-                                <Typography variant="body2" color="text.secondary">
-                                    {success.accountMessage}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                {success.accountState === "authenticated" && (
+                                    <Typography variant="body2" color="text.secondary">
+                                        {success.accountMessage}
+                                    </Typography>
+                                )}
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ mt: success.accountState === "authenticated" ? 1 : 0 }}
+                                >
                                     Account email: <strong>{success.email}</strong>
                                 </Typography>
                             </Box>
 
                             {showGoogle && (
-                                <Box sx={{ display: "flex", justifyContent: "center" }}>
-                                    <GoogleIdentityScript />
-                                    <div
-                                        id="g_id_onload"
-                                        data-client_id={socialAuth.google.clientId}
-                                        data-login_uri={socialAuth.google.loginUrl}
-                                        data-next={success.googleNextUrl}
-                                        data-context="signin"
-                                        data-ux_mode="redirect"
-                                        data-auto_prompt="false"
-                                    />
-                                    <div
-                                        className="g_id_signin"
-                                        data-type="standard"
-                                        data-size="large"
-                                        data-theme="outline"
-                                        data-text="continue_with"
-                                        data-shape="rectangular"
-                                        data-logo_alignment="left"
-                                    />
-                                </Box>
+                                <>
+                                    <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+                                        <GoogleSignInButton
+                                            clientId={socialAuth.google.clientId}
+                                            loginUri={socialAuth.google.loginUrl}
+                                            nextUrl={success.googleNextUrl}
+                                            context="signin"
+                                            text="continue_with"
+                                            autoPrompt={false}
+                                        />
+                                    </Box>
+                                    <Divider>
+                                        <Typography variant="caption" color="text.secondary">
+                                            or continue with email
+                                        </Typography>
+                                    </Divider>
+                                </>
                             )}
 
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                                 {success.accountState !== "authenticated" && (
-                                    <Button
-                                        component={Link}
-                                        href={success.loginUrl}
-                                        variant="outlined"
-                                        startIcon={<IconMail size={18} />}
-                                        fullWidth
-                                    >
-                                        Log in with email
-                                    </Button>
+                                    <Stack spacing={1.25} sx={{ width: "100%" }}>
+                                        <Typography variant="body2" color="text.secondary" align="center">
+                                            Use the sign-in details sent to <strong>{success.email}</strong>.
+                                        </Typography>
+                                        <Button
+                                            component={opensEmailInbox ? "a" : Link}
+                                            href={emailActionUrl}
+                                            target={opensEmailInbox ? "_blank" : undefined}
+                                            rel={opensEmailInbox ? "noopener noreferrer" : undefined}
+                                            variant="outlined"
+                                            startIcon={<IconMail size={18} />}
+                                            fullWidth
+                                        >
+                                            Use email
+                                        </Button>
+                                    </Stack>
                                 )}
                                 {success.accountState === "authenticated" && success.checkoutUrl && (
                                     <Button

@@ -226,6 +226,40 @@ def test_google_one_tap_preserves_posted_enrollment_return_url(client, monkeypat
 
 
 @pytest.mark.django_db
+def test_google_one_tap_preserves_button_state_return_url(client, monkeypatch):
+    next_url = "/programs/enrollment/resume/?intent=signed-intent"
+
+    def fake_verify(_credential):
+        return {
+            "email": "google-state-student@example.com",
+            "email_verified": True,
+            "given_name": "State",
+            "family_name": "Student",
+            "sub": "google-state-subject-id",
+        }
+
+    monkeypatch.setattr("apps.core.views._verify_google_one_tap_credential", fake_verify)
+    client.cookies["g_csrf_token"] = "csrf-from-google"
+
+    with override_settings(
+        GOOGLE_ONE_TAP_ENABLED=True,
+        GOOGLE_ONE_TAP_CLIENT_ID="google-client-id",
+    ):
+        response = client.post(
+            "/auth/google/onetap/",
+            {
+                "credential": "signed-google-jwt",
+                "g_csrf_token": "csrf-from-google",
+                "state": next_url,
+            },
+        )
+
+    assert response.status_code == 302
+    assert response.url == next_url
+    assert User.objects.filter(email="google-state-student@example.com").exists()
+
+
+@pytest.mark.django_db
 def test_google_one_tap_rejects_missing_google_csrf_token(client):
     with override_settings(
         GOOGLE_ONE_TAP_ENABLED=True,

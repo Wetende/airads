@@ -82,9 +82,9 @@
                 <p><strong>Account email:</strong> {{ account_email }}</p>
                 {% if is_new_account %}
                     <p><strong>Temporary password:</strong> {{ temporary_password }}</p>
-                    <p>You can sign in with this password, then change it from your account. You can also use Continue with Google if this email is a Google account.</p>
+                    <p>Continue with Google if this is your Google email, or sign in with this password.</p>
                 {% elif is_existing_account %}
-                    <p>This course request is linked to your existing AIRADS account. Use your current password, reset it if needed, or continue with Google if this email is a Google account.</p>
+                    <p>Continue with Google if this is your Google email, or use your existing password.</p>
                 {% else %}
                     <p>This course request is linked to the AIRADS account you were signed into.</p>
                 {% endif %}

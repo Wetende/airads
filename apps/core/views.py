@@ -294,6 +294,23 @@ def _pop_program_interest_success(request, program: Program) -> dict | None:
     return request.session.pop(PROGRAM_INTEREST_SUCCESS_SESSION_KEY, None)
 
 
+def _build_email_inbox_url(email: str) -> str:
+    domain = str(email or "").split("@")[-1].lower()
+    if domain in {"gmail.com", "googlemail.com"}:
+        return "https://mail.google.com/mail/"
+    if domain in {"outlook.com", "hotmail.com", "live.com", "msn.com"}:
+        return "https://outlook.live.com/mail/"
+    if domain in {"yahoo.com", "ymail.com", "rocketmail.com"}:
+        return "https://mail.yahoo.com/"
+    if domain in {"icloud.com", "me.com", "mac.com"}:
+        return "https://www.icloud.com/mail/"
+    if domain in {"proton.me", "protonmail.com"}:
+        return "https://mail.proton.me/"
+    if domain == "zoho.com":
+        return "https://mail.zoho.com/"
+    return ""
+
+
 def _build_program_interest_success_payload(
     request,
     *,
@@ -319,28 +336,27 @@ def _build_program_interest_success_payload(
     action_url = checkout_url or course_url or intent_url
 
     if enrollment_mode == "paid":
-        title = "Your account is ready."
-        message = (
-            f"We saved {program.name} for you. Complete payment to activate your course access."
-        )
+        title = "Account ready."
+        message = f"Complete payment to unlock {program.name}."
     elif enrollment_mode == "approval":
         title = "Your details are saved."
         message = "Our admissions team will contact you about the next step."
+    elif account_state == "authenticated":
+        title = "You're enrolled."
+        message = f"{program.name} is ready in your AIRADS account."
     else:
-        title = "You are enrolled."
+        title = "You're enrolled."
         message = (
-            f"Your AIRADS student account is ready and {program.name} has been added to it."
+            f"Your AIRADS account is ready. {program.name} is available after sign-in."
         )
 
     if account_state == "created":
         account_message = (
-            "Check your email for your temporary password. You can also continue with Google "
-            "using the same email address."
+            f"Continue with Google now, or use the sign-in details sent to {user.email}."
         )
     elif account_state == "existing":
         account_message = (
-            "Use your existing AIRADS password, reset it if needed, or continue with Google "
-            "using the same email address."
+            f"Continue with Google now, or use the email we sent to {user.email}."
         )
     else:
         account_message = "You are signed in, so you can continue from here."
@@ -355,6 +371,7 @@ def _build_program_interest_success_payload(
         "title": title,
         "message": message,
         "accountMessage": account_message,
+        "emailInboxUrl": _build_email_inbox_url(user.email),
         "resumeUrl": intent_url,
         "googleNextUrl": intent_url,
         "loginUrl": login_url,
@@ -1662,7 +1679,9 @@ def _get_or_create_google_one_tap_user(payload: dict) -> tuple[User, bool]:
 
 def _safe_next_url(request, fallback: str = "/dashboard/") -> str:
     data = get_post_data(request) if request.method == "POST" else {}
-    next_url = str(data.get("next") or request.GET.get("next") or "").strip()
+    next_url = str(
+        data.get("next") or data.get("state") or request.GET.get("next") or ""
+    ).strip()
     if next_url and url_has_allowed_host_and_scheme(
         next_url,
         allowed_hosts={request.get_host()},

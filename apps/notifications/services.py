@@ -456,13 +456,13 @@ class NotificationService:
             subject = f"Complete payment for {program.name}"
             action_label = "Complete Payment"
             next_step = (
-                "Complete payment to activate your course access. After payment is confirmed, "
-                "the course will be added to your student account."
+                f"Complete payment to unlock {program.name}. After payment is confirmed, "
+                "the course will be added to your AIRADS account."
             )
         elif is_free:
             subject = f"You are enrolled in {program.name}"
             action_label = "Open Your Course"
-            next_step = "Your course has been added to your student account."
+            next_step = f"{program.name} is ready in your AIRADS account."
         else:
             subject = f"We received your course request for {program.name}"
             action_label = "Log In to AIRADS"
@@ -496,11 +496,11 @@ class NotificationService:
         if temporary_password:
             text_lines.append(f"Temporary password: {temporary_password}")
             text_lines.append(
-                "You can sign in with this password, then change it from your account."
+                "Continue with Google if this is your Google email, or sign in with this password."
             )
         elif account_state == "existing":
             text_lines.append(
-                "This course request is linked to your existing AIRADS account."
+                "Continue with Google if this is your Google email, or use your existing password."
             )
         if reset_url:
             text_lines.append(f"Set or change your password: {reset_url}")
