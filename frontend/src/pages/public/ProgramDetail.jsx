@@ -62,6 +62,11 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import { truncatePlainText } from "@/utils/htmlText";
 import { resolvePriceDisplay } from "@/utils/priceDisplay";
+import {
+    formatCourseDuration,
+    formatMetricNumber,
+    resolveCourseMetrics,
+} from "@/utils/courseMetrics";
 
 // --- Helper Components ---
 
@@ -70,6 +75,46 @@ const emptyInterestForm = {
     email: "",
     phone: "",
 };
+
+function CourseDetailRow({ icon, label, value }) {
+    return (
+        <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1.5}
+            sx={{ minWidth: 0 }}
+        >
+            <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ minWidth: 0 }}
+            >
+                {icon}
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ minWidth: 0 }}
+                >
+                    {label}
+                </Typography>
+            </Stack>
+            <Typography
+                variant="body2"
+                fontWeight={700}
+                sx={{
+                    ml: "auto",
+                    pl: 2,
+                    textAlign: "right",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                }}
+            >
+                {value}
+            </Typography>
+        </Stack>
+    );
+}
 
 function EnrollmentInterestModal({
     open,
@@ -308,6 +353,7 @@ function CourseDetailsSidebar({
     const isCompleted = enrollmentData?.isCompleted;
     const progressPercent = enrollmentData?.progressPercent || 0;
     const ctaText = "ENROLL NOW";
+    const metrics = resolveCourseMetrics(program);
 
     return (
         <Card sx={{ mb: 3, position: "sticky", top: 100 }}>
@@ -667,81 +713,26 @@ function CourseDetailsSidebar({
                 </Typography>
 
                 <Stack spacing={2}>
-                    <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                    >
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <IconClock
-                                size={18}
-                                color={theme.palette.text.secondary}
-                            />
-                            <Typography variant="body2" color="text.secondary">
-                                Duration
-                            </Typography>
-                        </Stack>
-                        <Typography variant="body2" fontWeight={600}>
-                            {program.duration_hours} hours
-                        </Typography>
-                    </Stack>
-
-                    <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                    >
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <IconBook
-                                size={18}
-                                color={theme.palette.text.secondary}
-                            />
-                            <Typography variant="body2" color="text.secondary">
-                                Lessons
-                            </Typography>
-                        </Stack>
-                        <Typography variant="body2" fontWeight={600}>
-                            {program.lecture_count}
-                        </Typography>
-                    </Stack>
-
-                    <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                    >
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <IconClipboardCheck
-                                size={18}
-                                color={theme.palette.text.secondary}
-                            />
-                            <Typography variant="body2" color="text.secondary">
-                                Assessments
-                            </Typography>
-                        </Stack>
-                        <Typography variant="body2" fontWeight={600}>
-                            {program.assessment_count || 0}
-                        </Typography>
-                    </Stack>
-
-                    <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                    >
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <IconChartBar
-                                size={18}
-                                color={theme.palette.text.secondary}
-                            />
-                            <Typography variant="body2" color="text.secondary">
-                                Level
-                            </Typography>
-                        </Stack>
-                        <Typography variant="body2" fontWeight={600}>
-                            {program.level || "No level"}
-                        </Typography>
-                    </Stack>
+                    <CourseDetailRow
+                        icon={<IconClock size={18} color={theme.palette.text.secondary} />}
+                        label="Duration"
+                        value={formatCourseDuration(metrics.durationHours)}
+                    />
+                    <CourseDetailRow
+                        icon={<IconBook size={18} color={theme.palette.text.secondary} />}
+                        label="Lessons"
+                        value={formatMetricNumber(metrics.lessonsCount)}
+                    />
+                    <CourseDetailRow
+                        icon={<IconClipboardCheck size={18} color={theme.palette.text.secondary} />}
+                        label="Assessments"
+                        value={formatMetricNumber(metrics.assessmentsCount)}
+                    />
+                    <CourseDetailRow
+                        icon={<IconChartBar size={18} color={theme.palette.text.secondary} />}
+                        label="Level"
+                        value={program.level || "No level"}
+                    />
                 </Stack>
             </CardContent>
         </Card>
