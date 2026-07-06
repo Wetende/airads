@@ -30,6 +30,7 @@ import {
     FolderOutlined as FilesIcon,
     Link as LinkIcon,
     LockOutlined as AccessIcon,
+    RateReviewOutlined as ReviewsIcon,
     SchoolOutlined as AcademicIcon,
     Settings as MainIcon,
 } from "@mui/icons-material";
@@ -45,6 +46,7 @@ const SETTINGS_SECTION_ICONS = {
     access: AccessIcon,
     prerequisites: LinkIcon,
     files: FilesIcon,
+    reviews: ReviewsIcon,
     certificate: CertificateIcon,
 };
 
@@ -121,6 +123,8 @@ export default function SettingsPanel({
         prerequisite_passing_percent: program.prerequisitePassingPercent ?? 50,
         prerequisite_program_ids: program.prerequisiteProgramIds || [],
         custom_pricing: program.customPricing || {},
+        rating_average: program.ratingAverage ?? 4,
+        rating_count: program.ratingCount ?? 60,
         faq: program.faq || [],
         notices: program.notices || [],
         drip_enabled: program.dripEnabled || false,
@@ -294,6 +298,14 @@ export default function SettingsPanel({
                         currentData.deleteResourceIds || [],
                     ),
                     materials: currentData.materials,
+                };
+            }
+            if (settingsSection === "reviews") {
+                return {
+                    tab: "settings",
+                    section: "reviews",
+                    rating_average: currentData.rating_average,
+                    rating_count: currentData.rating_count,
                 };
             }
             return { tab: "settings", section: settingsSection };
@@ -1063,6 +1075,49 @@ export default function SettingsPanel({
             </Stack>,
         );
 
+    const renderReviewsSettings = () =>
+        renderSectionPanel(
+            "Reviews",
+            <Stack spacing={3}>
+                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                    <Box sx={{ flex: 1 }}>
+                        {renderFieldLabel("Average rating")}
+                        <TextField
+                            type="number"
+                            fullWidth
+                            value={formData.rating_average}
+                            onChange={(event) =>
+                                setData("rating_average", event.target.value)
+                            }
+                            inputProps={{ min: 0, max: 5, step: 0.1 }}
+                            error={Boolean(errors.rating_average)}
+                            helperText={
+                                errors.rating_average ||
+                                "Controls the public star rating, from 0 to 5."
+                            }
+                        />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                        {renderFieldLabel("Review count")}
+                        <TextField
+                            type="number"
+                            fullWidth
+                            value={formData.rating_count}
+                            onChange={(event) =>
+                                setData("rating_count", event.target.value)
+                            }
+                            inputProps={{ min: 0, step: 1 }}
+                            error={Boolean(errors.rating_count)}
+                            helperText={
+                                errors.rating_count ||
+                                "Controls how many reviews appear on course cards."
+                            }
+                        />
+                    </Box>
+                </Stack>
+            </Stack>,
+        );
+
     const isAccessTimeLimitIncomplete =
         activeTab === "settings" &&
         settingsSection === "access" &&
@@ -1103,6 +1158,7 @@ export default function SettingsPanel({
             access: renderAccessSettings,
             prerequisites: renderPrerequisiteSettings,
             files: renderCourseFilesSettings,
+            reviews: renderReviewsSettings,
             certificate: renderCertificateSettings,
         };
         const renderSection =
