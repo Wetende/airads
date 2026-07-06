@@ -96,6 +96,7 @@ describe("Public virtual campus pages", () => {
 
     renderInertiaPage(Virtual, virtualPageProps);
 
+    expect(screen.getByRole("link", { name: "Register" })).toHaveAttribute("href", "/register/");
     expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
@@ -119,7 +120,7 @@ describe("Public virtual campus pages", () => {
     expect(screen.getByRole("heading", { name: "Apply Now" })).toBeTruthy();
     expect(screen.getByText("Share your details and our admissions team will contact you.")).toBeTruthy();
     expect(screen.getByText("Course Preferences")).toBeTruthy();
-    expect(screen.getByText(/Preferred course/i)).toBeTruthy();
+    expect(screen.getAllByText(/Preferred course/i).length).toBeGreaterThan(0);
     expect(screen.queryByText("WhatsApp number")).toBeNull();
     expect(screen.queryByText("Programme Preferences")).toBeNull();
     expect(screen.queryByText(/Preferred programme/i)).toBeNull();

@@ -372,7 +372,7 @@ export default function ApplicationApply({
 
         <Box component="main" sx={{ py: { xs: 4, md: 7 } }}>
           <Container maxWidth="md">
-            <Stack spacing={3} alignItems="center">
+            <Stack spacing={3} sx={{ alignItems: "center" }}>
               {centeredLogo}
               {applicationForm}
             </Stack>
@@ -389,7 +389,7 @@ export default function ApplicationApply({
 
       <Box component="main" sx={{ py: { xs: 4, md: 7 } }}>
         <Container maxWidth="md">
-          <Stack spacing={3} alignItems="center">
+          <Stack spacing={3} sx={{ alignItems: "center" }}>
             {centeredLogo}
             {applicationForm}
           </Stack>

@@ -124,7 +124,7 @@ export default function VirtualHomepageStorySections() {
         }}
       >
         <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
-          <Grid container spacing={{ xs: 4, md: 6 }} alignItems="center">
+          <Grid container spacing={{ xs: 4, md: 6 }} sx={{ alignItems: "center" }}>
             <Grid size={{ xs: 12, md: 6 }}>
               <Box sx={{ display: "inline-flex", mb: 2, px: 1.2, py: 0.55, bgcolor: brand.accent, color: "white", fontSize: "0.72rem", fontWeight: 900, textTransform: "uppercase" }}>
                 Virtual mentor spotlight
@@ -188,7 +188,7 @@ export default function VirtualHomepageStorySections() {
 
       <Box component="section" sx={{ py: { xs: 4, md: 5 }, bgcolor: brand.primary, color: "white" }}>
         <Container maxWidth="lg">
-          <Grid container spacing={{ xs: 3, md: 5 }} alignItems="center">
+          <Grid container spacing={{ xs: 3, md: 5 }} sx={{ alignItems: "center" }}>
             <Grid size={{ xs: 12, md: 6 }}>
               <Typography sx={{ mb: 1, fontFamily: FONT_BODY, fontSize: { xs: "1.35rem", md: "1.65rem" }, fontWeight: 900 }}>
                 Subscribe to virtual campus updates

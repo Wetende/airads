@@ -10,18 +10,20 @@ import {
   Computer as ComputerIcon,
   Engineering as EngineeringIcon,
   MenuBook as MenuBookIcon,
+  Videocam as VideocamIcon,
 } from "@mui/icons-material";
 import { FONT_BODY } from "../../../config";
 
-const fallbackCategories = [
-  "ICT & Computer Studies",
-  "Business & Management",
-  "Engineering & Technical",
+const HERO_CATEGORIES = [
+  "Engineering & ICT",
+  "Business Management",
   "Hospitality & Tourism",
-  "Professional Short Courses",
+  "Medical Health & Social Sciences",
+  "Beauty & Hairdressing",
+  "Media Studies",
 ];
 
-const categoryColors = ["#10c45c", "#1ec1d9", "#307ad5", "#eab830", "#d94da6"];
+const categoryColors = ["#10c45c", "#1ec1d9", "#307ad5", "#eab830", "#d94da6", "#7c3aed"];
 const HERO_ACCENT = "#E53935";
 const categoryIcons = [
   ComputerIcon,
@@ -29,6 +31,7 @@ const categoryIcons = [
   EngineeringIcon,
   AccountBalanceIcon,
   MenuBookIcon,
+  VideocamIcon,
 ];
 
 const heroSlides = [
@@ -70,12 +73,7 @@ export default function VirtualHeroSection({ categories = [] }) {
   const currentSlide = heroSlides[activeSlide];
 
   const categoryTiles = useMemo(() => {
-    const configured = Array.isArray(categories)
-      ? categories.filter(Boolean).slice(0, 5)
-      : [];
-    const names = configured.length > 0 ? configured : fallbackCategories;
-
-    return names.slice(0, 5).map((name, index) => {
+    return HERO_CATEGORIES.map((name, index) => {
       const Icon = categoryIcons[index % categoryIcons.length];
       return {
         name,
@@ -84,7 +82,7 @@ export default function VirtualHeroSection({ categories = [] }) {
         href: `${coursesHref}?category=${encodeURIComponent(name)}`,
       };
     });
-  }, [categories, coursesHref]);
+  }, [coursesHref]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -307,31 +305,6 @@ export default function VirtualHeroSection({ categories = [] }) {
           >
             <Button
               component={Link}
-              href={applyHref}
-              variant="contained"
-              endIcon={<ArrowForwardIcon />}
-              sx={{
-                minHeight: 54,
-                px: { xs: 3.5, md: 4.5 },
-                color: "white",
-                bgcolor: HERO_ACCENT,
-                borderRadius: 999,
-                fontFamily: FONT_BODY,
-                fontSize: "1rem",
-                fontWeight: 900,
-                textTransform: "none",
-                boxShadow: "0 14px 28px rgba(229,57,53,0.32)",
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  bgcolor: "#c62828",
-                  boxShadow: "0 18px 34px rgba(229,57,53,0.38)",
-                },
-              }}
-            >
-              Apply Now
-            </Button>
-            <Button
-              component={Link}
               href={coursesHref}
               variant="outlined"
               endIcon={<ArrowForwardIcon />}
@@ -347,8 +320,10 @@ export default function VirtualHeroSection({ categories = [] }) {
                 textTransform: "none",
                 transition: "all 0.2s ease",
                 "&:hover": {
-                  borderColor: "white",
-                  bgcolor: "rgba(255,255,255,0.15)",
+                  borderColor: HERO_ACCENT,
+                  bgcolor: HERO_ACCENT,
+                  color: "white",
+                  boxShadow: "0 14px 28px rgba(229,57,53,0.32)",
                 },
               }}
             >
@@ -443,7 +418,7 @@ export default function VirtualHeroSection({ categories = [] }) {
           }}
         >
           {categoryTiles.map(({ name, Icon, color, href }) => (
-            <Grid key={name} size={{ xs: 6, sm: 4, md: 2.4 }}>
+            <Grid key={name} size={{ xs: 6, sm: 4, md: 2 }}>
               <Box
                 component={Link}
                 href={href}

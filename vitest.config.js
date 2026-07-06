@@ -1,6 +1,8 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
-import { resolve } from "path";
+import { fileURLToPath } from "node:url";
+
+const fromRoot = (path) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig({
     plugins: [react()],
@@ -9,6 +11,16 @@ export default defineConfig({
         globals: true,
         setupFiles: ["./frontend/src/test/setup.js"],
         include: ["frontend/src/**/*.test.{js,jsx}"],
+        alias: {
+            "react-transition-group/TransitionGroupContext": fromRoot(
+                "./node_modules/react-transition-group/esm/TransitionGroupContext.js",
+            ),
+        },
+        server: {
+            deps: {
+                inline: ["@mui/material"],
+            },
+        },
         coverage: {
             reporter: ["text", "json", "html"],
             include: ["frontend/src/**/*.{js,jsx}"],
@@ -17,7 +29,7 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            "@": resolve(__dirname, "./frontend/src"),
+            "@": fromRoot("./frontend/src"),
         },
     },
 });

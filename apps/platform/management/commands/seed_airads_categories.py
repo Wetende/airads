@@ -7,7 +7,7 @@ AIRADS_CATEGORIES = [
     "Engineering & ICT",
     "Business Management",
     "Hospitality & Tourism",
-    "Health & Social Sciences",
+    "Medical Health & Social Sciences",
     "Beauty & Hairdressing",
     "Media Studies",
 ]

@@ -34,6 +34,7 @@ export default function VirtualNavbar({ homepage = false }) {
   const homeHref = routes.virtualHome || "/";
   const coursesHref = routes.virtualCourses || "/courses/";
   const applyHref = routes.virtualApply || "/apply/";
+  const registerHref = routes.register || "/register/";
   const mainWebsiteLabel = "AIRADS College";
   const mobileMainWebsiteLabel = "Visit AIRADS College";
   const applyLabel = "Apply Now";
@@ -100,7 +101,7 @@ export default function VirtualNavbar({ homepage = false }) {
                     Login
                   </Button>
                   <Typography sx={{ display: { xs: "none", sm: "block" }, opacity: 0.55 }}>|</Typography>
-                  <Button component={Link} href={applyHref} sx={{ display: { xs: "none", sm: "inline-flex" }, minWidth: "auto", px: 0, color: "white", fontSize: 13, fontWeight: 700, textTransform: "none" }}>
+                  <Button component={Link} href={registerHref} sx={{ display: { xs: "none", sm: "inline-flex" }, minWidth: "auto", px: 0, color: "white", fontSize: 13, fontWeight: 700, textTransform: "none" }}>
                     Register
                   </Button>
                 </Box>
