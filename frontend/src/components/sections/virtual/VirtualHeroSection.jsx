@@ -15,11 +15,11 @@ import {
 import { FONT_BODY } from "../../../config";
 
 const HERO_CATEGORIES = [
-  "Engineering & ICT",
-  "Business Management",
-  "Hospitality & Tourism",
+  "Engineering & ICT Studies",
+  "Business & Management Studies",
+  "Hospitality & Tourism Studies",
   "Medical Health & Social Sciences",
-  "Beauty & Hairdressing",
+  "Beauty & Hairdressing Studies",
   "Media Studies",
 ];
 
@@ -417,24 +417,24 @@ export default function VirtualHeroSection({ categories = [] }) {
             zIndex: 5,
           }}
         >
-          {categoryTiles.map(({ name, Icon, color, href }) => (
-            <Grid key={name} size={{ xs: 6, sm: 4, md: 2 }}>
+           {categoryTiles.map(({ name, Icon, color, href }) => (
+            <Grid key={name} size={{ xs: 4, sm: 4, md: 2 }}>
               <Box
                 component={Link}
                 href={href}
                 sx={{
                   height: "100%",
-                  minHeight: { xs: 140, md: 184 },
-                  p: { xs: 2, md: 2.5 },
+                  minHeight: { xs: 100, md: 184 },
+                  p: { xs: 1.5, md: 2.5 },
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 1.5,
+                  gap: { xs: 0.75, md: 1.5 },
                   bgcolor: color,
                   color: "white",
                   textDecoration: "none",
-                  borderRadius: 2.5,
+                  borderRadius: { xs: 2, md: 2.5 },
                   boxShadow: "0 16px 32px rgba(15, 23, 42, 0.22)",
                   transition: "all 220ms cubic-bezier(0.4, 0, 0.2, 1)",
                   "&:hover": {
@@ -443,14 +443,14 @@ export default function VirtualHeroSection({ categories = [] }) {
                   },
                 }}
               >
-                <Icon sx={{ fontSize: { xs: 36, md: 44 }, strokeWidth: 1 }} />
+                <Icon sx={{ fontSize: { xs: 28, md: 44 }, strokeWidth: 1 }} />
                 <Typography
                   component="h3"
                   sx={{
                     maxWidth: 140,
                     color: "white",
                     fontFamily: FONT_BODY,
-                    fontSize: { xs: "0.85rem", md: "0.95rem" },
+                    fontSize: { xs: "0.72rem", md: "0.95rem" },
                     fontWeight: 800,
                     lineHeight: 1.25,
                     textAlign: "center",
