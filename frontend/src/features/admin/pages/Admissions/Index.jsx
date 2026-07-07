@@ -24,6 +24,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import DataTable from '@/components/DataTable';
 import { formatAmount } from '@/services/commerceApi';
+import { ReportToolbar } from '@/features/reports';
 
 const statusColors = {
   new: 'info',
@@ -227,7 +228,19 @@ export default function AdmissionsIndex({
               Public applications, course-detail leads, payments, and enrollments
             </Typography>
           </Box>
-          <SchoolIcon color="action" />
+          <Stack direction="row" spacing={1} alignItems="center">
+            <ReportToolbar
+              scope="admin"
+              reportId="admin.admissions"
+              queryParams={{
+                search: filters.search,
+                status: filters.status,
+                source: filters.source,
+                program: filters.program,
+              }}
+            />
+            <SchoolIcon color="action" />
+          </Stack>
         </Box>
 
         <Card>

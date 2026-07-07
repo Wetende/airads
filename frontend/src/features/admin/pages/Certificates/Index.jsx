@@ -38,6 +38,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { FONT_BODY } from '@/config';
+import { ReportToolbar } from '@/features/reports';
 
 function StatCard({ title, value, icon: Icon, color = 'primary' }) {
   return (
@@ -132,7 +133,12 @@ export default function CertificatesIndex({ certificates = [], stats = {} }) {
           </Typography>
         </Box>
 
-        <Stack direction="row" justifyContent="flex-end">
+        <Stack direction="row" justifyContent="flex-end" spacing={1}>
+          <ReportToolbar
+            scope="admin"
+            reportId="admin.certificates"
+            queryParams={{ search: searchQuery }}
+          />
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}

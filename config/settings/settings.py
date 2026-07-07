@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     "apps.events",
     "apps.reviews",
     "apps.commerce",
+    "apps.reports",
 ]
 
 if DEBUG and importlib.util.find_spec("debug_toolbar"):
