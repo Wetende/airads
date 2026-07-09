@@ -18,6 +18,8 @@ import {
 import {
   AccessTime as AccessTimeIcon,
   Login as LoginIcon,
+  Logout as LogoutIcon,
+  AccountCircle as AccountCircleIcon,
   Menu as MenuIcon,
   PhoneInTalk as PhoneInTalkIcon,
   Search as SearchIcon,
@@ -25,10 +27,13 @@ import {
 } from "@mui/icons-material";
 import AiradsLogoLockup from "./AiradsLogoLockup";
 import { usePublicBrand } from "../../hooks/usePublicBrand";
+import useLogout from "../../hooks/useLogout";
 
 export default function VirtualNavbar({ homepage = false }) {
   const brand = usePublicBrand();
-  const { siteContext = {} } = usePage().props;
+  const { siteContext = {}, auth } = usePage().props;
+  const isAuthenticated = !!auth?.user;
+  const triggerLogout = useLogout();
   const routes = siteContext.routes || {};
   const mainHomeHref = routes.mainHome || "/";
   const homeHref = routes.virtualHome || "/";
@@ -97,13 +102,27 @@ export default function VirtualNavbar({ homepage = false }) {
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
-                  <Button component={Link} href="/login/" startIcon={<LoginIcon />} sx={{ minWidth: "auto", px: 0, color: "white", fontSize: 13, fontWeight: 700, textTransform: "none" }}>
-                    Login
-                  </Button>
-                  <Typography sx={{ display: { xs: "none", sm: "block" }, opacity: 0.55 }}>|</Typography>
-                  <Button component={Link} href={registerHref} sx={{ display: { xs: "none", sm: "inline-flex" }, minWidth: "auto", px: 0, color: "white", fontSize: 13, fontWeight: 700, textTransform: "none" }}>
-                    Register
-                  </Button>
+                  {isAuthenticated ? (
+                    <>
+                      <Button component={Link} href="/dashboard/" startIcon={<AccountCircleIcon />} sx={{ minWidth: "auto", px: 0, color: "white", fontSize: 13, fontWeight: 700, textTransform: "none" }}>
+                        My Account
+                      </Button>
+                      <Typography sx={{ display: { xs: "none", sm: "block" }, opacity: 0.55 }}>|</Typography>
+                      <Button onClick={() => triggerLogout()} startIcon={<LogoutIcon />} sx={{ display: { xs: "none", sm: "inline-flex" }, minWidth: "auto", px: 0, color: "white", fontSize: 13, fontWeight: 700, textTransform: "none" }}>
+                        Logout
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button component={Link} href="/login/" startIcon={<LoginIcon />} sx={{ minWidth: "auto", px: 0, color: "white", fontSize: 13, fontWeight: 700, textTransform: "none" }}>
+                        Login
+                      </Button>
+                      <Typography sx={{ display: { xs: "none", sm: "block" }, opacity: 0.55 }}>|</Typography>
+                      <Button component={Link} href={registerHref} sx={{ display: { xs: "none", sm: "inline-flex" }, minWidth: "auto", px: 0, color: "white", fontSize: 13, fontWeight: 700, textTransform: "none" }}>
+                        Register
+                      </Button>
+                    </>
+                  )}
                 </Box>
               </Box>
             </Container>
@@ -224,9 +243,20 @@ export default function VirtualNavbar({ homepage = false }) {
               <Button component={Link} href={coursesHref} sx={{ color: "text.primary", fontWeight: 600, "&:hover": { color: brand.primary } }}>
                 Courses
               </Button>
-              <Button component={Link} href="/login/" variant="outlined" sx={{ borderRadius: 8, px: 3, borderColor: brand.primary, color: brand.primary, fontWeight: 600 }}>
-                Login
-              </Button>
+              {isAuthenticated ? (
+                <>
+                  <Button component={Link} href="/dashboard/" variant="outlined" sx={{ borderRadius: 8, px: 3, borderColor: brand.primary, color: brand.primary, fontWeight: 600 }}>
+                    My Account
+                  </Button>
+                  <Button onClick={() => triggerLogout()} variant="outlined" sx={{ borderRadius: 8, px: 3, borderColor: brand.primary, color: brand.primary, fontWeight: 600 }}>
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Button component={Link} href="/login/" variant="outlined" sx={{ borderRadius: 8, px: 3, borderColor: brand.primary, color: brand.primary, fontWeight: 600 }}>
+                  Login
+                </Button>
+              )}
               <Button component={Link} href={applyHref} variant="contained" sx={{ borderRadius: 8, px: 3, bgcolor: brand.accent, "&:hover": { bgcolor: "#9a1818" }, fontWeight: 600, boxShadow: "none" }}>
                 {applyLabel}
               </Button>
@@ -289,10 +319,21 @@ export default function VirtualNavbar({ homepage = false }) {
               </ListItemButton>
             </ListItem>
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-              <Button component={Link} href="/login/" variant="outlined" fullWidth sx={{ borderRadius: 8 }}>
-                Login
-              </Button>
-              <Button component={Link} href={applyHref} variant="contained" fullWidth sx={{ borderRadius: 8, bgcolor: brand.accent }}>
+              {isAuthenticated ? (
+                <>
+                  <Button component={Link} href="/dashboard/" variant="outlined" fullWidth sx={{ borderRadius: 8 }} onClick={closeMobileMenu}>
+                    My Account
+                  </Button>
+                  <Button onClick={() => { closeMobileMenu(); triggerLogout(); }} variant="outlined" fullWidth sx={{ borderRadius: 8 }}>
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Button component={Link} href="/login/" variant="outlined" fullWidth sx={{ borderRadius: 8 }} onClick={closeMobileMenu}>
+                  Login
+                </Button>
+              )}
+              <Button component={Link} href={applyHref} variant="contained" fullWidth sx={{ borderRadius: 8, bgcolor: brand.accent }} onClick={closeMobileMenu}>
                 {applyLabel}
               </Button>
             </Box>
