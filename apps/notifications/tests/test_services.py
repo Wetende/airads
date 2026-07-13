@@ -2,9 +2,13 @@
 Tests for notification services.
 """
 
+from pathlib import Path
+
+from django.conf import settings
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.template.loader import render_to_string
 from apps.core.models import Program
 from apps.progression.models import Enrollment
 from apps.notifications.models import Notification
@@ -12,6 +16,25 @@ from apps.notifications.models import NotificationPreference
 from apps.notifications.services import NotificationService
 
 User = get_user_model()
+
+
+class EmailTemplateBrandingTests(TestCase):
+    """Every HTML email should display the AIRADS logo."""
+
+    def test_all_email_templates_include_airads_logo(self):
+        email_templates = sorted(
+            (Path(settings.BASE_DIR) / "templates" / "emails").glob("*.html")
+        )
+
+        self.assertTrue(email_templates)
+        for template_path in email_templates:
+            with self.subTest(template=template_path.name):
+                rendered = render_to_string(f"emails/{template_path.name}")
+                self.assertIn(
+                    'src="https://airads.ac.ke/static/airads-logo.png"',
+                    rendered,
+                )
+                self.assertIn('alt="AIRADS College Logo"', rendered)
 
 
 class NotificationServiceTests(TestCase):
