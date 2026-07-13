@@ -64,6 +64,7 @@ export default function ApplicationApply({
   const errorMessage = flashMessages.find((message) => message.type === "error")?.message;
   const isVirtual = applicationContext?.isVirtual;
   const defaultCampus = isVirtual ? campuses[0] : null;
+  const notSureCourse = "Not Sure Yet";
 
   const { data, setData, post, processing, reset, wasSuccessful } = useForm({
     fullName: "",
@@ -254,20 +255,22 @@ export default function ApplicationApply({
               <TextField
                 select
                 label="Preferred course"
-                value={data.programId}
+                value={isVirtual ? data.programId : data.preferredProgramme}
                 onChange={(event) => {
-                  if (event.target.value === "__not_sure__") {
+                  if (event.target.value === notSureCourse) {
                     setData({
                       ...data,
-                      programId: "__not_sure__",
-                      preferredProgramme: "Not Sure Yet",
+                      programId: isVirtual ? notSureCourse : "",
+                      preferredProgramme: notSureCourse,
                     });
                     return;
                   }
-                  const selectedProgramme = programmes.find((programme) => String(programme.id) === String(event.target.value));
+                  const selectedProgramme = programmes.find((programme) => (
+                    String(isVirtual ? programme.id : programme.name) === String(event.target.value)
+                  ));
                   setData({
                     ...data,
-                    programId: event.target.value,
+                    programId: isVirtual ? event.target.value : "",
                     preferredProgramme: selectedProgramme?.name || "",
                   });
                 }}
@@ -275,12 +278,15 @@ export default function ApplicationApply({
                 fullWidth
               >
                 {programmes.map((programme) => (
-                  <MenuItem key={programme.id} value={programme.id}>
+                  <MenuItem
+                    key={programme.id || programme.name}
+                    value={isVirtual ? programme.id : programme.name}
+                  >
                     {programme.name}
                   </MenuItem>
                 ))}
-                <MenuItem value="__not_sure__">
-                  Not Sure Yet
+                <MenuItem value={notSureCourse}>
+                  {notSureCourse}
                 </MenuItem>
               </TextField>
             </Grid>

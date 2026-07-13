@@ -11142,13 +11142,26 @@ def airads_application_form(request):
 
 
 def _get_application_form_options(study_mode: str) -> dict:
+    from apps.core.admission_course_options import MAIN_SITE_APPLICATION_COURSE_NAMES
+
     campuses = Campus.objects.filter(is_active=True)
     if study_mode == AdmissionApplication.STUDY_MODE_VIRTUAL:
         campuses = campuses.filter(campus_type=Campus.CAMPUS_TYPE_VIRTUAL)
+        programmes = [
+            {
+                "id": program.id,
+                "name": program.name,
+                "level": program.level,
+                "category": program.category or "",
+            }
+            for program in Program.objects.filter(is_published=True).order_by("name")
+        ]
     else:
         campuses = campuses.filter(campus_type=Campus.CAMPUS_TYPE_PHYSICAL)
-
-    programs = Program.objects.filter(is_published=True).order_by("name")
+        programmes = [
+            {"name": course_name}
+            for course_name in MAIN_SITE_APPLICATION_COURSE_NAMES
+        ]
 
     return {
         "campuses": [
@@ -11160,15 +11173,7 @@ def _get_application_form_options(study_mode: str) -> dict:
             }
             for campus in campuses.order_by("name")
         ],
-        "programmes": [
-            {
-                "id": program.id,
-                "name": program.name,
-                "level": program.level,
-                "category": program.category or "",
-            }
-            for program in programs
-        ],
+        "programmes": programmes,
         "educationLevels": [
             "KCPE",
             "KCSE",

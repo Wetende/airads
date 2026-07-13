@@ -68,7 +68,13 @@ const virtualCoursesProps = {
 
 const mainApplyProps = {
   campuses: [{ id: 2, name: "Eldoret Campus", slug: "eldoret", type: "physical" }],
-  programmes: [{ id: 1, name: "ICT", level: "certificate", category: "IT" }],
+  programmes: [
+    { name: "Electrical Engineering" },
+    { name: "KASNEB CPA" },
+    { name: "NITA Welding Technology" },
+    { name: "Driving School" },
+    { name: "Computer Packages" },
+  ],
   educationLevels: ["KCSE"],
   intakes: ["Next Available Intake"],
   applicationContext: {

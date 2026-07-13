@@ -8,7 +8,57 @@ from django.core import mail
 from django.test import override_settings
 from django.urls import reverse
 
+from apps.core.admission_course_options import MAIN_SITE_APPLICATION_COURSE_NAMES
 from apps.core.tests.factories import UserFactory
+
+
+@pytest.mark.django_db
+def test_main_application_form_uses_flat_curated_course_list(client):
+    from apps.progression.tests.factories import ProgramFactory
+
+    ProgramFactory(name="Database-only Virtual Course", is_published=True)
+
+    response = client.get(
+        reverse("core:airads.application_apply"),
+        HTTP_X_INERTIA=True,
+    )
+
+    assert response.status_code == 200
+    programmes = response.json()["props"]["programmes"]
+    assert [programme["name"] for programme in programmes] == list(
+        MAIN_SITE_APPLICATION_COURSE_NAMES
+    )
+    assert all(set(programme) == {"name"} for programme in programmes)
+    assert "Database-only Virtual Course" not in {
+        programme["name"] for programme in programmes
+    }
+
+
+@pytest.mark.django_db
+@override_settings(
+    ALLOWED_HOSTS=["testserver", "virtual.airads.ac.ke"],
+    VIRTUAL_CAMPUS_HOSTS=["virtual.airads.ac.ke"],
+)
+def test_virtual_application_form_keeps_published_database_courses(client):
+    from apps.progression.tests.factories import ProgramFactory
+
+    programme = ProgramFactory(name="Virtual Database Course", is_published=True)
+
+    response = client.get(
+        "/apply/",
+        HTTP_HOST="virtual.airads.ac.ke",
+        HTTP_X_INERTIA=True,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["props"]["programmes"] == [
+        {
+            "id": programme.id,
+            "name": programme.name,
+            "level": programme.level,
+            "category": programme.category or "",
+        }
+    ]
 
 
 @pytest.mark.django_db

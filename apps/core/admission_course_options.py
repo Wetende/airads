@@ -1,0 +1,46 @@
+"""Curated course choices for the main AIRADS admissions form."""
+
+
+# Keep this list flat: the public application form intentionally presents one
+# dropdown without pathway headings. The names mirror the course offerings on
+# the local TVET/CDACC, KASNEB, NITA, Driving School, and Computer Packages pages.
+MAIN_SITE_APPLICATION_COURSE_NAMES = (
+    "Electrical Engineering",
+    "Electronics",
+    "Information Technology",
+    "Computer Skills",
+    "Hotel Management",
+    "Catering",
+    "Tourism",
+    "Event Service",
+    "Community Health",
+    "Social Work",
+    "Counseling",
+    "Public Health",
+    "Beauty Therapy",
+    "Hairdressing",
+    "Cosmetology",
+    "Barbering",
+    "Journalism",
+    "Broadcasting",
+    "Photography",
+    "Digital Media",
+    "Business Management",
+    "Project Management",
+    "Entrepreneurship",
+    "Administration",
+    "KASNEB CPA",
+    "KASNEB CS",
+    "KASNEB CIFA",
+    "KASNEB CCP",
+    "KASNEB CISSE",
+    "KASNEB CQP",
+    "NITA Welding Technology",
+    "NITA Motor Vehicle Mechanics",
+    "NITA Electrical Installation",
+    "NITA Plumbing Technology",
+    "NITA Carpentry and Joinery",
+    "NITA Masonry",
+    "Driving School",
+    "Computer Packages",
+)
