@@ -1569,6 +1569,81 @@ class QuizLinkIntegrityTest(TestCase):
         self.assertEqual(payload["maxAttempts"], 3)
         self.assertEqual(payload["attemptsRemaining"], 2)
 
+    def test_student_quiz_submit_empty_payload_grades_saved_answers(self):
+        program = self._create_program(
+            name="Quiz Submit Saved Answers",
+            code="QUIZ-SUBMIT-SAVED",
+        )
+        student = User.objects.create_user(
+            username="student.submit.saved",
+            email="student.submit.saved@test.com",
+            password="password123",
+        )
+        enrollment = Enrollment.objects.create(
+            user=student,
+            program=program,
+            status="active",
+        )
+        node = CurriculumNode.objects.create(
+            program=program,
+            title="Saved Answer Quiz Node",
+            node_type="Session",
+            properties={"lesson_type": "quiz"},
+            is_published=True,
+        )
+        quiz = Quiz.objects.create(
+            node=node,
+            title="Saved Answer Quiz",
+            is_published=True,
+            max_attempts=3,
+            pass_threshold=70,
+        )
+        question = Question.objects.create(
+            quiz=quiz,
+            question_type="mcq",
+            text="Pick one",
+            points=1,
+            position=0,
+            answer_data={"correct": 0},
+        )
+        correct_option = QuestionOption.objects.create(
+            question=question,
+            text="Correct",
+            is_correct=True,
+            position=0,
+        )
+        QuizAttempt.objects.create(
+            enrollment=enrollment,
+            quiz=quiz,
+            attempt_number=1,
+            started_at=timezone.now(),
+            answers={str(question.id): str(correct_option.id)},
+            runtime_state={"current_question_index": 0},
+        )
+
+        self.client.force_login(student)
+        response = self.client.post(
+            reverse("core:student.quiz_submit", kwargs={"quiz_id": quiz.id}),
+            data=json.dumps(
+                {
+                    "response": "json",
+                    "enrollment_id": enrollment.id,
+                    "node_id": node.id,
+                    "answers": {},
+                    "runtime_state": {"current_question_index": 0},
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["score"], 100.0)
+        self.assertTrue(payload["passed"])
+
+        attempt = QuizAttempt.objects.get(enrollment=enrollment, quiz=quiz)
+        self.assertEqual(attempt.answers.get(str(question.id)), str(correct_option.id))
+
     def test_student_quiz_submit_after_expiry_grades_saved_answers_only(self):
         program = self._create_program(name="Quiz Expiry", code="QUIZ-EXP")
         student = User.objects.create_user(
@@ -1788,6 +1863,7 @@ class QuizLinkIntegrityTest(TestCase):
             pass_threshold=70,
             max_attempts=3,
             show_answers_after_submit=True,
+            answer_release_policy=Quiz.AnswerReleasePolicy.AFTER_EACH_ATTEMPT,
         )
         quiz_node.properties["quiz_id"] = quiz.id
         quiz_node.save(update_fields=["properties"])
@@ -1896,6 +1972,7 @@ class QuizLinkIntegrityTest(TestCase):
             is_published=True,
             max_attempts=3,
             show_answers_after_submit=True,
+            answer_release_policy=Quiz.AnswerReleasePolicy.AFTER_EACH_ATTEMPT,
         )
         node.properties["quiz_id"] = quiz.id
         node.save(update_fields=["properties"])
@@ -2062,3 +2139,95 @@ class QuizLinkIntegrityTest(TestCase):
         self.assertEqual(current_node["bestAttempt"]["number"], 1)
         self.assertEqual(current_node["bestAttempt"]["score"], 90.0)
         self.assertTrue(current_node["bestAttempt"]["passed"])
+
+    def test_course_player_defaults_to_safe_results_and_requires_explicit_retake(self):
+        program = self._create_program(name="Safe Quiz Payload", code="SAFE-QUIZ")
+        student = User.objects.create_user(
+            username="student.safe.quiz",
+            email="student.safe.quiz@test.com",
+            password="password123",
+        )
+        enrollment = Enrollment.objects.create(
+            user=student,
+            program=program,
+            status="active",
+        )
+        node = CurriculumNode.objects.create(
+            program=program,
+            title="Safe Quiz",
+            node_type="Session",
+            properties={
+                "lesson_type": "quiz",
+                "questions": [
+                    {
+                        "id": "authoring-question",
+                        "text": "Private answer",
+                        "correct": 0,
+                    }
+                ],
+            },
+            is_published=True,
+        )
+        quiz = Quiz.objects.create(
+            node=node,
+            title="Safe Quiz",
+            is_published=True,
+            max_attempts=3,
+            answer_release_policy=Quiz.AnswerReleasePolicy.AFTER_PASS_OR_FINAL,
+        )
+        node.properties["quiz_id"] = quiz.id
+        node.save(update_fields=["properties"])
+        question = Question.objects.create(
+            quiz=quiz,
+            question_type="mcq",
+            text="Private answer",
+            points=1,
+            position=0,
+            answer_data={"correct": 0},
+        )
+        wrong_option = QuestionOption.objects.create(
+            question=question,
+            text="Wrong",
+            is_correct=False,
+            position=1,
+        )
+        QuizAttempt.objects.create(
+            enrollment=enrollment,
+            quiz=quiz,
+            attempt_number=1,
+            started_at=timezone.now(),
+            submitted_at=timezone.now(),
+            answers={str(question.id): str(wrong_option.id)},
+            points_earned=0,
+            points_possible=1,
+            score=0,
+            passed=False,
+        )
+
+        self.client.force_login(student)
+        session_url = reverse(
+            "progression:student.session",
+            kwargs={"pk": enrollment.id, "node_id": node.id},
+        )
+        response = self.client.get(session_url, HTTP_X_INERTIA=True)
+
+        self.assertEqual(response.status_code, 200)
+        props = response.json()["props"]
+        active_properties = props["node"]["properties"]
+        self.assertNotIn("questions", active_properties)
+        self.assertIn("quizResults", active_properties)
+        self.assertFalse(active_properties["quizResults"]["correctAnswersReleased"])
+
+        curriculum_node = next(
+            item for item in props["curriculum"] if item["id"] == node.id
+        )
+        self.assertNotIn("questions", curriculum_node["properties"])
+
+        retake_response = self.client.get(
+            f"{session_url}?start_quiz=1",
+            HTTP_X_INERTIA=True,
+        )
+        self.assertEqual(retake_response.status_code, 200)
+        retake_properties = retake_response.json()["props"]["node"]["properties"]
+        self.assertNotIn("questions", retake_properties)
+        self.assertNotIn("quizResults", retake_properties)
