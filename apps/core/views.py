@@ -3,8 +3,9 @@ Core views - Public pages and authentication.
 Requirements: 1.1-1.4, 2.1-2.6, 3.1-3.6, 4.1-4.5, 5.1-5.6, 6.1-6.6
 """
 
-from datetime import datetime
 from collections import defaultdict
+import csv
+from datetime import datetime
 import logging
 import re
 from urllib.parse import urlencode
@@ -20,7 +21,7 @@ from django.core.mail import send_mail
 from django.core import signing
 from django.db.models import Count, Q
 from django.db import transaction
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.dateparse import parse_date, parse_datetime
@@ -33,7 +34,6 @@ from django.utils.http import (
     urlsafe_base64_encode,
 )
 from django.utils.crypto import get_random_string
-from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from inertia import render
@@ -59,7 +59,13 @@ from apps.core.learning_outcomes import (
     extract_learning_outcome_items_from_html,
     resolve_learning_outcomes_html,
 )
-from apps.core.models import AdmissionApplication, Campus, Program, User
+from apps.core.models import (
+    AdmissionApplication,
+    AdmissionOnboardingBatch,
+    Campus,
+    Program,
+    User,
+)
 from apps.core.services.pricing import (
     get_program_pricing,
     normalize_custom_pricing as normalize_custom_pricing_policy,
@@ -2793,28 +2799,6 @@ def _serialize_admission_application(
     return data
 
 
-def _split_admission_name(full_name: str) -> tuple[str, str]:
-    parts = [part for part in str(full_name or "").strip().split() if part]
-    if not parts:
-        return "", ""
-    if len(parts) == 1:
-        return parts[0], ""
-    return parts[0], " ".join(parts[1:])
-
-
-def _unique_username_from_admission(application: AdmissionApplication) -> str:
-    base = (application.email or "").strip().lower()
-    if not base:
-        base = slugify(application.full_name) or f"admission-{application.id}"
-    base = base[:140]
-    candidate = base
-    suffix = 1
-    while User.objects.filter(username=candidate).exists():
-        suffix += 1
-        candidate = f"{base[:135]}-{suffix}"
-    return candidate
-
-
 @login_required
 def admin_admission_applications(request):
     """Admin queue for student admission applications and course-detail leads."""
@@ -2837,6 +2821,10 @@ def admin_admission_applications(request):
     include_programs = should_render_inertia_prop(request, "programs")
     include_status_choices = should_render_inertia_prop(request, "statusChoices")
     include_sources = should_render_inertia_prop(request, "sources")
+    include_onboarding_batches = should_render_inertia_prop(
+        request,
+        "onboardingBatches",
+    )
 
     applications_query = AdmissionApplication.objects.select_related(
         "campus",
@@ -2900,6 +2888,11 @@ def admin_admission_applications(request):
             .distinct()
             .order_by("source")
         )
+    if include_onboarding_batches:
+        props["onboardingBatches"] = [
+            _serialize_admission_onboarding_batch(batch)
+            for batch in AdmissionOnboardingBatch.objects.all()[:5]
+        ]
 
     return render(request, "Admin/Admissions/Index", props)
 
@@ -2933,6 +2926,231 @@ def admin_admission_application_detail(request, pk: int):
             "statusChoices": _admission_status_choices(),
         },
     )
+
+
+def _serialize_admission_onboarding_batch(batch) -> dict:
+    progress_percent = (
+        round((batch.processed_count / batch.total_count) * 100, 1)
+        if batch.total_count
+        else 0
+    )
+    return {
+        "id": batch.id,
+        "status": batch.status,
+        "statusLabel": batch.get_status_display(),
+        "selectionMode": batch.selection_mode,
+        "selectionFilters": batch.selection_filters,
+        "previewCounts": batch.preview_counts,
+        "totalCount": batch.total_count,
+        "processedCount": batch.processed_count,
+        "succeededCount": batch.succeeded_count,
+        "skippedCount": batch.skipped_count,
+        "failedCount": batch.failed_count,
+        "emailFailedCount": batch.email_failed_count,
+        "progressPercent": progress_percent,
+        "isDraft": batch.status == batch.STATUS_DRAFT,
+        "isProcessing": batch.status == batch.STATUS_PROCESSING,
+        "isComplete": batch.status
+        in {batch.STATUS_COMPLETED, batch.STATUS_COMPLETED_WITH_ERRORS},
+        "createdAt": batch.created_at.isoformat(),
+        "startedAt": batch.started_at.isoformat() if batch.started_at else None,
+        "completedAt": batch.completed_at.isoformat() if batch.completed_at else None,
+        "startUrl": reverse("core:admin.admission_onboarding.start", args=[batch.id]),
+        "processUrl": reverse(
+            "core:admin.admission_onboarding.process_next", args=[batch.id]
+        ),
+        "retryEmailsUrl": reverse(
+            "core:admin.admission_onboarding.retry_emails", args=[batch.id]
+        ),
+        "resultsCsvUrl": reverse(
+            "core:admin.admission_onboarding.results_csv", args=[batch.id]
+        ),
+    }
+
+
+def _serialize_admission_onboarding_item(item) -> dict:
+    application = item.application
+    return {
+        "id": item.id,
+        "applicationId": application.id,
+        "applicant": application.full_name,
+        "email": application.email,
+        "program": (
+            application.program.name
+            if application.program_id
+            else application.preferred_programme
+        ),
+        "status": item.status,
+        "statusLabel": item.get_status_display(),
+        "outcome": item.outcome,
+        "accountState": item.account_state,
+        "emailStatus": item.email_status,
+        "emailStatusLabel": item.get_email_status_display(),
+        "errorMessage": item.error_message,
+        "userId": item.user_id,
+        "enrollmentId": item.enrollment_id,
+        "applicationUrl": reverse(
+            "core:admin.admission_application", args=[application.id]
+        ),
+    }
+
+
+@login_required
+@require_POST
+def admin_admission_onboarding_preview(request):
+    """Snapshot selected applications and redirect to an Inertia preview page."""
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from apps.core.services.admission_onboarding import AdmissionOnboardingService
+
+    data = get_post_data(request)
+    selection = data.get("selection") if isinstance(data.get("selection"), dict) else data
+    try:
+        batch = AdmissionOnboardingService.create_preview_batch(
+            created_by=request.user,
+            selection=selection,
+        )
+    except ValueError as error:
+        messages.error(request, str(error))
+        return redirect("core:admin.admission_applications")
+    return redirect("core:admin.admission_onboarding", batch_id=batch.id)
+
+
+@login_required
+def admin_admission_onboarding(request, batch_id: int):
+    """Render preview, progress, and per-applicant results for one batch."""
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from django.shortcuts import get_object_or_404
+
+    batch = get_object_or_404(AdmissionOnboardingBatch, pk=batch_id)
+    try:
+        page = max(int(request.GET.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
+    per_page = 50
+    include_batch = should_render_inertia_prop(request, "batch")
+    include_items = should_render_inertia_prop(request, "items")
+    include_pagination = should_render_inertia_prop(request, "pagination")
+
+    props = {}
+    if include_batch:
+        props["batch"] = _serialize_admission_onboarding_batch(batch)
+    if include_items or include_pagination:
+        items_query = batch.items.select_related(
+            "application__program", "user", "enrollment"
+        ).order_by("id")
+        total = items_query.count()
+        if include_items:
+            props["items"] = [
+                _serialize_admission_onboarding_item(item)
+                for item in items_query[(page - 1) * per_page : page * per_page]
+            ]
+        if include_pagination:
+            props["pagination"] = _build_pagination(page, per_page, total)
+    return render(request, "Admin/Admissions/Onboarding", props)
+
+
+@login_required
+@require_POST
+def admin_admission_onboarding_start(request, batch_id: int):
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from apps.core.services.admission_onboarding import AdmissionOnboardingService
+    from django.shortcuts import get_object_or_404
+
+    batch = get_object_or_404(AdmissionOnboardingBatch, pk=batch_id)
+    AdmissionOnboardingService.start(batch)
+    messages.success(request, "Admissions onboarding started.")
+    return redirect("core:admin.admission_onboarding", batch_id=batch.id)
+
+
+@login_required
+@require_POST
+def admin_admission_onboarding_process_next(request, batch_id: int):
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from apps.core.services.admission_onboarding import AdmissionOnboardingService
+    from django.shortcuts import get_object_or_404
+
+    batch = get_object_or_404(AdmissionOnboardingBatch, pk=batch_id)
+    AdmissionOnboardingService.process_next(
+        batch,
+        base_url=request.build_absolute_uri("/").rstrip("/"),
+    )
+    if batch.status in {
+        batch.STATUS_COMPLETED,
+        batch.STATUS_COMPLETED_WITH_ERRORS,
+    }:
+        messages.success(request, "Admissions onboarding finished.")
+    return redirect("core:admin.admission_onboarding", batch_id=batch.id)
+
+
+@login_required
+@require_POST
+def admin_admission_onboarding_retry_emails(request, batch_id: int):
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from apps.core.services.admission_onboarding import AdmissionOnboardingService
+    from django.shortcuts import get_object_or_404
+
+    batch = get_object_or_404(AdmissionOnboardingBatch, pk=batch_id)
+    AdmissionOnboardingService.retry_failed_emails(
+        batch,
+        base_url=request.build_absolute_uri("/").rstrip("/"),
+    )
+    messages.info(request, "Failed onboarding emails were retried.")
+    return redirect("core:admin.admission_onboarding", batch_id=batch.id)
+
+
+@login_required
+@require_GET
+def admin_admission_onboarding_results_csv(request, batch_id: int):
+    if not _require_admin(request.user):
+        return redirect("/dashboard/")
+
+    from django.shortcuts import get_object_or_404
+
+    batch = get_object_or_404(AdmissionOnboardingBatch, pk=batch_id)
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = (
+        f'attachment; filename="admission-onboarding-{batch.id}.csv"'
+    )
+    writer = csv.writer(response)
+    writer.writerow(
+        [
+            "Application ID",
+            "Applicant",
+            "Email",
+            "Course",
+            "Result",
+            "Account",
+            "Email status",
+            "Error",
+        ]
+    )
+    for item in batch.items.select_related("application__program").order_by("id"):
+        application = item.application
+        writer.writerow(
+            [
+                application.id,
+                application.full_name,
+                application.email,
+                application.program.name
+                if application.program_id
+                else application.preferred_programme,
+                item.outcome,
+                item.account_state,
+                item.email_status,
+                item.error_message,
+            ]
+        )
+    return response
 
 
 @login_required
@@ -2972,32 +3190,37 @@ def admin_admission_application_create_user(request, pk: int):
 
     from django.shortcuts import get_object_or_404
 
-    application = get_object_or_404(AdmissionApplication, pk=pk)
-    email = (application.email or "").strip().lower()
-    if not email:
-        messages.error(request, "An email address is required to create a student account.")
+    application = get_object_or_404(
+        AdmissionApplication.objects.select_related("program", "user"),
+        pk=pk,
+    )
+    from apps.core.services.admission_onboarding import AdmissionOnboardingService
+
+    try:
+        with transaction.atomic():
+            user, account_state, temporary_password = (
+                AdmissionOnboardingService.create_or_link_account(application)
+            )
+            if application.program_id:
+                base_url = request.build_absolute_uri("/").rstrip("/")
+                transaction.on_commit(
+                    lambda: AdmissionOnboardingService.send_account_access_email(
+                        application=application,
+                        user=user,
+                        account_state=account_state,
+                        temporary_password=temporary_password,
+                        base_url=base_url,
+                        enrollment_mode="approval",
+                    )
+                )
+    except ValueError as error:
+        messages.error(request, str(error))
         return redirect("core:admin.admission_application", pk=pk)
 
-    with transaction.atomic():
-        user = User.objects.filter(email__iexact=email).order_by("id").first()
-        if not user:
-            first_name, last_name = _split_admission_name(application.full_name)
-            user = User.objects.create_user(
-                username=_unique_username_from_admission(application),
-                email=email,
-                password=None,
-                first_name=first_name,
-                last_name=last_name,
-            )
-            if application.phone and not user.phone:
-                user.phone = application.phone
-                user.save(update_fields=["phone"])
-            messages.success(request, f"Created student account for {email}.")
-        else:
-            messages.info(request, f"Existing student account found for {email}.")
-
-        application.user = user
-        application.save(update_fields=["user", "updated_at"])
+    if account_state == "created":
+        messages.success(request, f"Created student account for {user.email}.")
+    else:
+        messages.info(request, f"Existing student account found for {user.email}.")
 
     return redirect("core:admin.admission_application", pk=pk)
 

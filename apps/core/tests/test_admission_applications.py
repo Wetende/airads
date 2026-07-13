@@ -628,7 +628,7 @@ def test_admin_can_create_student_account_from_admission_application(client):
     assert user.first_name == "Grace"
     assert user.last_name == "Njeri Wambui"
     assert user.phone == "0700111222"
-    assert not user.has_usable_password()
+    assert user.has_usable_password()
 
 
 @pytest.mark.django_db

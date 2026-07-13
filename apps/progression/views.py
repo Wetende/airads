@@ -4414,6 +4414,9 @@ def admin_enrollment_bulk(request):
     if not _require_admin(request.user):
         return redirect("/dashboard/")
 
+    if request.method == "GET":
+        return redirect("/admin/admissions/?onboarding=1")
+
     if request.method == "POST":
         data = _get_post_data(request)
         program_id = data.get("programId")
@@ -4465,14 +4468,7 @@ def admin_enrollment_bulk(request):
 
         return redirect("progression:admin.enrollments")
 
-    return render(
-        request,
-        "Admin/Enrollments/Bulk",
-        {
-            "programs": _get_programs_for_enrollment(),
-            "students": _get_students_for_enrollment(),
-        },
-    )
+    return redirect("/admin/admissions/?onboarding=1")
 
 
 @login_required

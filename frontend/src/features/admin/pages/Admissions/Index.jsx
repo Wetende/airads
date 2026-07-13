@@ -5,6 +5,11 @@ import {
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   InputLabel,
   MenuItem,
@@ -20,6 +25,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import SearchIcon from '@mui/icons-material/Search';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SchoolIcon from '@mui/icons-material/School';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
 
 import DashboardLayout from '@/layouts/DashboardLayout';
 import DataTable from '@/components/DataTable';
@@ -70,11 +76,25 @@ export default function AdmissionsIndex({
   pagination = {},
   statusChoices = [],
   sources = [],
+  onboardingBatches = [],
 }) {
   const [search, setSearch] = useState(filters.search || '');
   const [status, setStatus] = useState(filters.status || '');
   const [source, setSource] = useState(filters.source || '');
   const [program, setProgram] = useState(filters.program || '');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [onboardingMode, setOnboardingMode] = useState(null);
+  const [submittingOnboarding, setSubmittingOnboarding] = useState(false);
+
+  const visibleIds = applications.map((application) => application.id);
+  const visibleSelectedIds = selectedIds.filter((id) => visibleIds.includes(id));
+
+  const handlePageSelection = (nextVisibleIds) => {
+    setSelectedIds((current) => [
+      ...current.filter((id) => !visibleIds.includes(id)),
+      ...nextVisibleIds,
+    ]);
+  };
 
   const handleFilter = () => {
     const params = new URLSearchParams();
@@ -83,9 +103,32 @@ export default function AdmissionsIndex({
     if (source) params.set('source', source);
     if (program) params.set('program', program);
 
+    setSelectedIds([]);
     router.visit(`/admin/admissions/?${params.toString()}`, {
       only: ['applications', 'filters', 'pagination'],
       preserveState: true,
+    });
+  };
+
+  const handleOnboardingSubmit = () => {
+    if (!onboardingMode || (onboardingMode === 'ids' && selectedIds.length === 0)) return;
+
+    const selection = onboardingMode === 'filters'
+      ? {
+          mode: 'filters',
+          filters: {
+            search: filters.search || '',
+            status: filters.status || '',
+            source: filters.source || '',
+            program: filters.program || '',
+          },
+          excludedIds: [],
+        }
+      : { mode: 'ids', ids: selectedIds };
+
+    setSubmittingOnboarding(true);
+    router.post('/admin/admissions/onboarding/preview/', { selection }, {
+      onFinish: () => setSubmittingOnboarding(false),
     });
   };
 
@@ -228,7 +271,23 @@ export default function AdmissionsIndex({
               Public applications, course-detail leads, payments, and enrollments
             </Typography>
           </Box>
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+            <Button
+              variant="contained"
+              startIcon={<GroupAddIcon />}
+              disabled={selectedIds.length === 0}
+              onClick={() => setOnboardingMode('ids')}
+            >
+              Onboard selected ({selectedIds.length})
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<GroupAddIcon />}
+              disabled={!pagination.total}
+              onClick={() => setOnboardingMode('filters')}
+            >
+              Onboard all matching ({pagination.total || 0})
+            </Button>
             <ReportToolbar
               scope="admin"
               reportId="admin.admissions"
@@ -302,6 +361,38 @@ export default function AdmissionsIndex({
           </CardContent>
         </Card>
 
+        {onboardingBatches.length > 0 && (
+          <Card variant="outlined">
+            <CardContent>
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'flex-start', md: 'center' }}
+                spacing={2}
+              >
+                <Box>
+                  <Typography fontWeight={700}>Recent onboarding batches</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Reopen a preview, resume processing, or review completed results.
+                  </Typography>
+                </Box>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  {onboardingBatches.map((batch) => (
+                    <Button
+                      key={batch.id}
+                      variant="outlined"
+                      size="small"
+                      onClick={() => router.visit(`/admin/admissions/onboarding/${batch.id}/`)}
+                    >
+                      #{batch.id} · {batch.statusLabel} · {batch.processedCount}/{batch.totalCount}
+                    </Button>
+                  ))}
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+        )}
+
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <DataTable
             columns={columns}
@@ -309,10 +400,45 @@ export default function AdmissionsIndex({
             pagination={pagination}
             onPageChange={handlePageChange}
             actions={actions}
+            selectable
+            selectedIds={visibleSelectedIds}
+            onSelectionChange={handlePageSelection}
             emptyMessage="No admission applications found"
           />
         </motion.div>
       </Stack>
+
+      <Dialog
+        open={Boolean(onboardingMode)}
+        onClose={() => setOnboardingMode(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Prepare applicant onboarding</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {onboardingMode === 'filters'
+              ? `Create a preview for all ${pagination.total || 0} applications matching the applied filters.`
+              : `Create a preview for ${selectedIds.length} selected application${selectedIds.length === 1 ? '' : 's'}.`}
+          </DialogContentText>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            The preview will show which applicants can be enrolled immediately, which need payment,
+            and which require manual review. No accounts or enrollments are created until you confirm it.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOnboardingMode(null)} disabled={submittingOnboarding}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleOnboardingSubmit}
+            disabled={submittingOnboarding}
+          >
+            {submittingOnboarding ? 'Preparing…' : 'Create preview'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </DashboardLayout>
   );
 }

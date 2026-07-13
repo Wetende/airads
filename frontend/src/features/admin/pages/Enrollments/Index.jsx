@@ -191,11 +191,11 @@ export default function EnrollmentsIndex({
             />
             <Button
               component={Link}
-              href="/admin/enrollments/bulk/"
+              href="/admin/admissions/?onboarding=1"
               variant="outlined"
               startIcon={<GroupAddIcon />}
             >
-              Bulk Enroll
+              Onboard Applicants
             </Button>
             <Button
               component={Link}

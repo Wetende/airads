@@ -229,6 +229,155 @@ class AdmissionApplication(TimeStampedModel):
         return f"{self.full_name} - {self.preferred_programme}"
 
 
+class AdmissionOnboardingBatch(TimeStampedModel):
+    """A stable, resumable snapshot of admission applications to onboard."""
+
+    STATUS_DRAFT = "draft"
+    STATUS_PROCESSING = "processing"
+    STATUS_COMPLETED = "completed"
+    STATUS_COMPLETED_WITH_ERRORS = "completed_with_errors"
+
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Draft"),
+        (STATUS_PROCESSING, "Processing"),
+        (STATUS_COMPLETED, "Completed"),
+        (STATUS_COMPLETED_WITH_ERRORS, "Completed with errors"),
+    ]
+
+    SELECTION_IDS = "ids"
+    SELECTION_FILTERS = "filters"
+    SELECTION_CHOICES = [
+        (SELECTION_IDS, "Selected applications"),
+        (SELECTION_FILTERS, "All matching filters"),
+    ]
+
+    created_by = models.ForeignKey(
+        "User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admission_onboarding_batches",
+    )
+    status = models.CharField(
+        max_length=32,
+        choices=STATUS_CHOICES,
+        default=STATUS_DRAFT,
+    )
+    selection_mode = models.CharField(max_length=16, choices=SELECTION_CHOICES)
+    selection_filters = models.JSONField(default=dict, blank=True)
+    excluded_ids = models.JSONField(default=list, blank=True)
+    preview_counts = models.JSONField(default=dict, blank=True)
+    total_count = models.PositiveIntegerField(default=0)
+    processed_count = models.PositiveIntegerField(default=0)
+    succeeded_count = models.PositiveIntegerField(default=0)
+    skipped_count = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+    email_failed_count = models.PositiveIntegerField(default=0)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "admission_onboarding_batches"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "-created_at"]),
+            models.Index(fields=["created_by", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Admissions onboarding #{self.pk} ({self.status})"
+
+
+class AdmissionOnboardingItem(TimeStampedModel):
+    """Per-application result and notification audit for an onboarding batch."""
+
+    STATUS_PENDING = "pending"
+    STATUS_SUCCEEDED = "succeeded"
+    STATUS_SKIPPED = "skipped"
+    STATUS_FAILED = "failed"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_SUCCEEDED, "Succeeded"),
+        (STATUS_SKIPPED, "Skipped"),
+        (STATUS_FAILED, "Failed"),
+    ]
+
+    EMAIL_NOT_SENT = "not_sent"
+    EMAIL_SENT = "sent"
+    EMAIL_FAILED = "failed"
+    EMAIL_SKIPPED = "skipped"
+    EMAIL_STATUS_CHOICES = [
+        (EMAIL_NOT_SENT, "Not sent"),
+        (EMAIL_SENT, "Sent"),
+        (EMAIL_FAILED, "Failed"),
+        (EMAIL_SKIPPED, "Skipped"),
+    ]
+
+    batch = models.ForeignKey(
+        AdmissionOnboardingBatch,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+    application = models.ForeignKey(
+        AdmissionApplication,
+        on_delete=models.CASCADE,
+        related_name="onboarding_items",
+    )
+    user = models.ForeignKey(
+        "User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admission_onboarding_items",
+    )
+    order = models.ForeignKey(
+        "commerce.Order",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admission_onboarding_items",
+    )
+    enrollment = models.ForeignKey(
+        "progression.Enrollment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admission_onboarding_items",
+    )
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+    )
+    outcome = models.CharField(max_length=64, blank=True, default="")
+    account_state = models.CharField(max_length=24, blank=True, default="")
+    email_status = models.CharField(
+        max_length=16,
+        choices=EMAIL_STATUS_CHOICES,
+        default=EMAIL_NOT_SENT,
+    )
+    email_attempts = models.PositiveIntegerField(default=0)
+    error_message = models.TextField(blank=True, default="")
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "admission_onboarding_items"
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["batch", "application"],
+                name="unique_onboarding_batch_application",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["batch", "status"]),
+            models.Index(fields=["batch", "email_status"]),
+        ]
+
+    def __str__(self):
+        return f"Batch {self.batch_id}: application {self.application_id}"
+
+
 class Program(TimeStampedModel):
     """
     Program model - represents an academic program/course.

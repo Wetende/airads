@@ -340,7 +340,6 @@ def commerce_orders(request):
                     pk=application_id,
                     user=request.user,
                     program=programs[0],
-                    source="program_detail_modal",
                 ).first()
                 if not application:
                     raise CommerceError(
@@ -352,7 +351,7 @@ def commerce_orders(request):
             order_metadata = {"source": "direct_checkout"}
             if application:
                 order_metadata = {
-                    "source": "program_detail_modal",
+                    "source": application.source or "admission_application",
                     "admission_application_id": application.id,
                 }
             order = CheckoutService.create_order_from_programs(

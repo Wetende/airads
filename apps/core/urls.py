@@ -175,6 +175,36 @@ urlpatterns = [
         views.admin_admission_application_update_status,
         name="admin.admission_application.status",
     ),
+    path(
+        "admin/admissions/onboarding/preview/",
+        views.admin_admission_onboarding_preview,
+        name="admin.admission_onboarding.preview",
+    ),
+    path(
+        "admin/admissions/onboarding/<int:batch_id>/",
+        views.admin_admission_onboarding,
+        name="admin.admission_onboarding",
+    ),
+    path(
+        "admin/admissions/onboarding/<int:batch_id>/start/",
+        views.admin_admission_onboarding_start,
+        name="admin.admission_onboarding.start",
+    ),
+    path(
+        "admin/admissions/onboarding/<int:batch_id>/process-next/",
+        views.admin_admission_onboarding_process_next,
+        name="admin.admission_onboarding.process_next",
+    ),
+    path(
+        "admin/admissions/onboarding/<int:batch_id>/retry-emails/",
+        views.admin_admission_onboarding_retry_emails,
+        name="admin.admission_onboarding.retry_emails",
+    ),
+    path(
+        "admin/admissions/onboarding/<int:batch_id>/results.csv",
+        views.admin_admission_onboarding_results_csv,
+        name="admin.admission_onboarding.results_csv",
+    ),
     # Admin Announcements
     path("admin/announcements/", views.admin_announcements_index, name="admin.announcements"),
     path("admin/announcements/create/", views.admin_announcement_create, name="admin.announcement_create"),
