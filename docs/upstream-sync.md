@@ -1,138 +1,67 @@
-# Upstream Sync Guide (Airads Fork)
+# Sequential Shared-Engine Sync Runbook
 
-This repository (`Wetende/airads`) is a forked product line.
+Use this runbook when shared work originates in `airads` or another fork.
+Promotion is sequential: source fork, then `crossview`, then each downstream
+fork. Do not implement the same shared change independently in parallel.
 
-- `origin` points to `Wetende/airads` (where we push AIRADS work)
-- `upstream` points to `Wetende/crossview` (where we pull shared LMS updates)
+Airads-specific remote setup and conflict guidance lives in
+[`airads-fork-sync.md`](airads-fork-sync.md).
 
-## One-Time Remote Check
+## 1. Freeze and Inventory
 
-```bash
-git remote -v
-```
+1. Fetch every relevant remote and record the source and destination refs.
+2. Record dirty files, worktrees, and stashes without modifying them.
+3. Create isolated integration worktrees from the exact refs being audited.
+4. Classify every source change with `shared-surface-manifest.md`.
 
-Expected:
+## 2. Promote into Crossview
 
-```text
-origin   git@github.com:Wetende/airads.git
-upstream git@github.com:Wetende/crossview.git
-```
+1. Apply shared commits or individual mixed-file hunks without
+   `static/dist/`.
+2. Resolve shared files to the source behavior unless that would import a
+   fork-only extension or violate Crossview's documented dependency stack.
+3. Search added lines for tenant names, domains, admissions/campus copy, and
+   hardcoded assets.
+4. Commit small, reviewable units on the integration branch.
 
-If you are working with local folders instead of GitHub remotes, `upstream` may also be a local path such as `/home/wetende/Projects/crossview`.
+## 3. Crossview Gates
 
-## Recommended Branch Flow
-
-1. Keep `main` clean and deployable.
-2. Build each change in a short-lived feature branch from `main`.
-3. Merge the feature branch into `main` after review and checks.
-4. Pull from `upstream/main` on a regular schedule.
-
-## Sync Upstream Into Airads
-
-```bash
-git checkout main
-git fetch upstream
-git merge upstream/main
-```
-
-Then run checks before pushing:
+Run with the repository's own virtual environment and a non-production test
+secret. `DEBUG=True` is required by this test configuration so HTTP assertions
+do not become HTTPS redirects.
 
 ```bash
-.venv/bin/python manage.py check
-.venv/bin/python manage.py migrate
-.venv/bin/python -m pytest -q
-npm run test -- --run
+env DEBUG=True DJANGO_SECRET_KEY=sync-audit-only \
+  venv/bin/python manage.py check
+env DEBUG=True DJANGO_SECRET_KEY=sync-audit-only \
+  venv/bin/python manage.py makemigrations --check --dry-run
+env DEBUG=True DJANGO_SECRET_KEY=sync-audit-only \
+  venv/bin/pytest -q
+npm test
+npm run build
 ```
 
-If all good:
+`npm test` already invokes Vitest with `--run`; do not append another `--run`.
+Restore generated build output before the source commit unless a separate
+artifact commit is explicitly planned.
 
-```bash
-git push origin main
-```
+## 4. Update the Canonical Branch
 
-## Conflict Strategy
+1. Re-fetch the remote and confirm its target ref has not moved.
+2. Write `docs/sync-reports/YYYY-MM-DD-source-to-crossview.md` with the refs,
+   decisions, and exact gate results.
+3. Push the reviewed integration head to `crossview/main`.
 
-When merges conflict, keep this boundary:
+## 5. Propagate Downstream
 
-- AIRADS-specific surface:
-  - Public pages (`frontend/src/pages/public`)
-  - AIRADS branding, copy, assets, campus and admissions content
-  - AIRADS-only navbar/footer/public marketing components
-- Shared core surface:
-  - Dashboard, player, builder, assessments, enrollment, certifications
-  - Django domain logic, models, services, and shared UI infrastructure
+For each fork, in order:
 
-If a change can help every LMS deployment, keep it generic and upstream-friendly.
+1. Start from the fork's current reviewed main ref in an isolated worktree.
+2. Merge or cherry-pick the accepted Crossview range.
+3. Resolve fork-only boundaries in favor of the fork while preserving the
+   canonical shared behavior.
+4. Run that fork's complete backend, frontend, build, and tenant-boundary gates.
+5. Record a fork sync report and update its remote main.
 
-## Commit Hygiene (Important)
-
-Do not mix these in one commit:
-
-- generic LMS/core improvements
-- AIRADS-only branding or public-site customization
-
-Split them into separate commits. This keeps future upstream merges and cherry-picks manageable.
-
-**Pro-Tip: Use AI for Triage**
-If you make bulk changes across the AIRADS codebase, do not just `git add .`.
-Ask:
-
-*"Look at my uncommitted changes, tell me which ones are generic Crossview features and which ones are AIRADS-specific, and split them into separate commits for me."*
-
-## If Upstream Changes Become Large
-
-Use this safer flow:
-
-```bash
-git checkout -b sync/upstream-YYYY-MM-DD
-git fetch upstream
-git merge upstream/main
-```
-
-Resolve conflicts, run checks, then merge that sync branch into `main`.
-
-## Backporting Airads Features to Crossview
-
-If you build a generic feature in `airads` and want to port it back to `crossview`, link the two local folders directly.
-
-### 1. Set Up the Local Bridge
-In your `crossview` terminal:
-
-```bash
-cd /path/to/crossview
-git remote add airads /path/to/airads
-git fetch airads
-```
-
-If the remote already exists, just run:
-
-```bash
-git fetch airads
-```
-
-### 2. Cherry-Pick the Shared Commit
-Find the commit you want from `airads`:
-
-```bash
-git log --oneline
-```
-
-Then apply just that commit in `crossview`:
-
-```bash
-git cherry-pick <commit-hash>
-```
-
-This is the safest way to move generic LMS work upstream without bringing AIRADS-specific branding or public-page changes with it.
-
-## Recommended Share Order
-
-For shared work, use this order:
-
-1. Build and commit the generic LMS change in `airads`.
-2. Cherry-pick that commit into `crossview`.
-3. Push `crossview`.
-4. Pull or merge `crossview/main` back into `airads`.
-5. Later, pull `crossview/main` into `digika`.
-
-This keeps `crossview` as the parent source of truth for shared LMS behavior.
+After propagation, shared behavior is changed in `crossview` first. Fork-only
+extensions remain in their owning repository.
