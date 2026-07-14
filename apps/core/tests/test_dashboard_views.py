@@ -70,4 +70,4 @@ class TestDashboardViews(TestCase):
         response = self.client.get(reverse('core:landing'), HTTP_X_INERTIA=True)
         assert response.status_code == 200
         data = response.json()
-        assert data['component'] == 'Public/Landing'
+        assert data['component'] == 'Public/Home'
