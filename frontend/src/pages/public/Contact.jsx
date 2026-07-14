@@ -1,14 +1,53 @@
-import React from 'react';
+import { useState } from 'react';
 import { Head } from "@inertiajs/react";
-import { Box, Container, Typography, Grid, Paper, TextField, Button, MenuItem, FormControl, InputLabel, Select } from "@mui/material";
+import { Box, Container, Typography, Grid, Paper, TextField, Button, MenuItem, FormControl, InputLabel, Select, Alert } from "@mui/material";
 import { LocationOn, Phone, Email, Language, Send, WhatsApp, Smartphone, Facebook } from "@mui/icons-material";
 import TopNavbar from "../../components/common/TopNavbar";
 import MainNavbar from "../../components/common/MainNavbar";
 import Footer from "../../components/common/AIRADSFooter";
 import { usePublicBrand } from "../../hooks/usePublicBrand";
+import useInquirySubmission from "@/features/inquiries/hooks/useInquirySubmission";
+
+const emptyContactForm = {
+  name: "",
+  email: "",
+  phone: "",
+  subject: "General Inquiry",
+  message: "",
+  website: "",
+};
 
 const Contact = () => {
   const brand = usePublicBrand();
+  const [form, setForm] = useState(emptyContactForm);
+  const {
+    status,
+    message: submissionMessage,
+    errors,
+    isSubmitting,
+    submit,
+    resetFeedback,
+  } = useInquirySubmission();
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+    if (status !== "idle") {
+      resetFeedback();
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const result = await submit({
+      ...form,
+      kind: "general",
+      source: "contact_page",
+    });
+    if (result.ok) {
+      setForm(emptyContactForm);
+    }
+  };
 
   const campusContacts = [
     { name: "ELDORET Campus", phone: "0715-696-979" },
@@ -51,7 +90,7 @@ const Contact = () => {
                   <Box sx={{ position: 'absolute', bottom: -8, left: 0, width: 80, height: 4, bgcolor: brand.primary, borderRadius: 2, margin: { xs: '0 auto', lg: 0 } }} />
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', mt: 3, fontSize: '1.125rem' }}>
-                  We're here to help you every step of the way
+                  We&apos;re here to help you every step of the way
                 </Typography>
               </Box>
               
@@ -149,45 +188,79 @@ const Contact = () => {
                   <Box sx={{ position: 'absolute', bottom: -8, left: 0, width: 80, height: 4, bgcolor: brand.primary, borderRadius: 2, margin: { xs: '0 auto', lg: 0 } }} />
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', mt: 3, fontSize: '1.125rem' }}>
-                  We'll get back to you within 24 hours
+                  We&apos;ll get back to you within 24 hours
                 </Typography>
               </Box>
               
-              <Paper component="form" sx={{ p: { xs: 3, md: 5 }, borderRadius: 6, border: '1px solid #f1f5f9', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s', '&:hover': { boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' } }}>
+              <Paper component="form" onSubmit={handleSubmit} sx={{ p: { xs: 3, md: 5 }, borderRadius: 6, border: '1px solid #f1f5f9', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s', '&:hover': { boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' } }}>
+                <Box
+                  aria-hidden="true"
+                  sx={{ position: 'absolute', left: -10000, width: 1, height: 1, overflow: 'hidden' }}
+                >
+                  <input
+                    name="website"
+                    value={form.website}
+                    onChange={handleChange}
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </Box>
                 <Grid container spacing={3}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField 
                       fullWidth 
+                      name="name"
                       label="Full Name" 
                       variant="outlined" 
                       placeholder="Enter your full name"
+                      required
+                      value={form.name}
+                      onChange={handleChange}
+                      error={Boolean(errors.name?.length)}
+                      helperText={errors.name?.[0] || ""}
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField 
                       fullWidth 
+                      name="email"
                       label="Email Address" 
                       type="email"
                       variant="outlined" 
                       placeholder="Enter your email"
+                      required
+                      value={form.email}
+                      onChange={handleChange}
+                      error={Boolean(errors.email?.length)}
+                      helperText={errors.email?.[0] || ""}
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField 
                       fullWidth 
+                      name="phone"
                       label="Phone Number" 
                       type="tel"
                       variant="outlined" 
                       placeholder="Enter your phone number"
+                      value={form.phone}
+                      onChange={handleChange}
+                      error={Boolean(errors.phone?.length)}
+                      helperText={errors.phone?.[0] || ""}
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <FormControl fullWidth sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}>
                       <InputLabel>Subject</InputLabel>
-                      <Select label="Subject" defaultValue="General Inquiry">
+                      <Select
+                        name="subject"
+                        label="Subject"
+                        value={form.subject}
+                        onChange={handleChange}
+                      >
                         <MenuItem value="General Inquiry">General Inquiry</MenuItem>
                         <MenuItem value="Admissions">Admissions</MenuItem>
                         <MenuItem value="Course Information">Course Information</MenuItem>
@@ -200,11 +273,17 @@ const Contact = () => {
                   <Grid size={{ xs: 12 }}>
                     <TextField 
                       fullWidth 
+                      name="message"
                       label="Message" 
                       multiline
                       rows={6}
                       variant="outlined" 
                       placeholder="Tell us how we can help you..."
+                      required
+                      value={form.message}
+                      onChange={handleChange}
+                      error={Boolean(errors.message?.length)}
+                      helperText={errors.message?.[0] || ""}
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'grey.50' } }}
                     />
                   </Grid>
@@ -213,6 +292,8 @@ const Contact = () => {
                       type="submit"
                       variant="contained"
                       fullWidth
+                      loading={isSubmitting}
+                      disabled={isSubmitting}
                       endIcon={<Send />}
                       sx={{ 
                         py: 2, 
@@ -224,9 +305,19 @@ const Contact = () => {
                         '&:hover': { bgcolor: brand.primaryHover, transform: 'scale(1.02)', boxShadow: 6 }
                       }}
                     >
-                      Send Message
+                      {isSubmitting ? "Sending" : "Send Message"}
                     </Button>
                   </Grid>
+                  {(status === "success" || status === "error") && (
+                    <Grid size={{ xs: 12 }}>
+                      <Alert
+                        severity={status === "success" ? "success" : "error"}
+                        role={status === "success" ? "status" : "alert"}
+                      >
+                        {submissionMessage}
+                      </Alert>
+                    </Grid>
+                  )}
                 </Grid>
               </Paper>
             </Grid>
