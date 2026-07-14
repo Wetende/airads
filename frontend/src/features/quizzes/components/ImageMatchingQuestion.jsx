@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Box,
     FormControl,
@@ -12,7 +12,7 @@ import {
 export default function ImageMatchingQuestion({
     question,
     onChange,
-    value = {},
+    value = null,
 }) {
     const left = Array.isArray(question.left_items) ? question.left_items : [];
     const right = Array.isArray(question.right_items)
@@ -23,13 +23,9 @@ export default function ImageMatchingQuestion({
 
     useEffect(() => {
         setSelections(value || {});
-    }, [question?.id]);
+    }, [question?.id, value]);
 
-    const rightById = useMemo(() => {
-        const map = new Map();
-        right.forEach((r) => map.set(String(r.id), r));
-        return map;
-    }, [right]);
+    const rightById = new Map(right.map((item) => [String(item.id), item]));
 
     const handleSelect = (leftId, rightId) => {
         const next = {

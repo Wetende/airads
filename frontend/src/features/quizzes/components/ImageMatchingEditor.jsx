@@ -15,6 +15,7 @@ import {
     Edit as EditIcon,
     Add as AddIcon,
     Image as ImageIcon,
+    Close as CloseIcon,
 } from "@mui/icons-material";
 import AnswerExplanationPopover from "./AnswerExplanationPopover";
 
