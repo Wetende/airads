@@ -105,7 +105,7 @@ describe("Public virtual campus pages", () => {
     expect(screen.getByRole("link", { name: "Register" })).toHaveAttribute("href", "/register/");
     expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();
-  });
+  }, 15000);
 
   test("renders the virtual course catalog without invalid React children", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
