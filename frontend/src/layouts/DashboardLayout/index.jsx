@@ -328,6 +328,7 @@ const roleNavigation = {
                     label: "General",
                     href: "/admin/settings/",
                     icon: SettingsIcon,
+                    requiresCapability: "showAdminSettings",
                 },
             ],
         },
@@ -489,6 +490,14 @@ export default function DashboardLayout({
             <Box sx={{ flex: 1, overflow: "auto", py: 1 }}>
                 {navigation.map((section, sectionIndex) => {
                     const filteredItems = section.items.filter((item) => {
+                        if (
+                            item.requiresCapability &&
+                            platform?.capabilities?.[
+                                item.requiresCapability
+                            ] === false
+                        ) {
+                            return false;
+                        }
                         if (!item.requiresFeature) return true;
                         return (
                             platform?.features?.[item.requiresFeature] === true
@@ -777,9 +786,6 @@ export default function DashboardLayout({
                                 </IconButton>
                             </Tooltip>
 
-
-
-
                             {/* Notifications Panel */}
                             <MessageUnreadBadge />
                             <NotificationPanel />
@@ -832,17 +838,19 @@ export default function DashboardLayout({
                                         Profile
                                     </MenuItem>
                                 )}
-                                {role === "admin" && (
-                                    <MenuItem
-                                        component={Link}
-                                        href="/admin/settings/"
-                                    >
-                                        <ListItemIcon>
-                                            <SettingsIcon fontSize="small" />
-                                        </ListItemIcon>
-                                        Settings
-                                    </MenuItem>
-                                )}
+                                {role === "admin" &&
+                                    platform?.capabilities
+                                        ?.showAdminSettings !== false && (
+                                        <MenuItem
+                                            component={Link}
+                                            href="/admin/settings/"
+                                        >
+                                            <ListItemIcon>
+                                                <SettingsIcon fontSize="small" />
+                                            </ListItemIcon>
+                                            Settings
+                                        </MenuItem>
+                                    )}
                                 <Divider />
                                 <MenuItem onClick={handleLogout}>
                                     <ListItemIcon>
@@ -867,7 +875,7 @@ export default function DashboardLayout({
                         maxWidth: "100%",
                     }}
                 >
-                    <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
+                    <Box sx={{ maxWidth: 1200, mx: "auto", width: "100%" }}>
                         {children}
                     </Box>
                 </Box>
