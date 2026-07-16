@@ -295,14 +295,41 @@ function CourseDetailsSidebar({
     isPreview = false,
 }) {
     const theme = useTheme();
+    const { formatCurrency } = useCurrency();
     const isEnrolled = enrollmentStatus === "enrolled";
     const isCompleted = enrollmentData?.isCompleted;
     const progressPercent = enrollmentData?.progressPercent || 0;
     const ctaText = "ENROLL NOW";
+    const priceDisplay = resolvePriceDisplay(program);
 
     return (
         <Card sx={{ mb: 3, position: "sticky", top: 100 }}>
             <CardContent sx={{ p: 3 }}>
+                {!isEnrolled && !priceDisplay.isHidden && (
+                    <Box sx={{ mb: 2 }}>
+                        <Stack direction="row" spacing={1} alignItems="baseline">
+                            <Typography variant="h5" fontWeight={800}>
+                                {priceDisplay.showPrice
+                                    ? formatCurrency(priceDisplay.price)
+                                    : "Free"}
+                            </Typography>
+                            {priceDisplay.hasDiscount && (
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ textDecoration: "line-through" }}
+                                >
+                                    {formatCurrency(priceDisplay.originalPrice)}
+                                </Typography>
+                            )}
+                        </Stack>
+                        {priceDisplay.priceInfo && (
+                            <Typography variant="caption" color="text.secondary">
+                                {priceDisplay.priceInfo}
+                            </Typography>
+                        )}
+                    </Box>
+                )}
                 {/* Enrolled User CTA */}
                 {!isPreview && (isEnrolled ? (
                     <>
