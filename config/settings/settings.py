@@ -84,6 +84,7 @@ INSTALLED_APPS = [
     "apps.reports",
     "apps.inquiries",
     "apps.learning_operations",
+    "apps.live_sessions",
     "apps.google_classroom",
 ]
 
@@ -365,6 +366,7 @@ GOOGLE_CLASSROOM_REDIRECT_URI = os.getenv("GOOGLE_CLASSROOM_REDIRECT_URI", "").s
 GOOGLE_CLASSROOM_TOKEN_ENCRYPTION_KEY = os.getenv(
     "GOOGLE_CLASSROOM_TOKEN_ENCRYPTION_KEY", ""
 ).strip()
+LIVE_SESSION_ENCRYPTION_KEY = os.getenv("LIVE_SESSION_ENCRYPTION_KEY", "").strip()
 PLATFORM_PUBLIC_BASE_URL = os.getenv("PLATFORM_PUBLIC_BASE_URL", "").strip().rstrip("/")
 
 # =============================================================================
