@@ -38,3 +38,8 @@ Google Classroom, Calendar, and Meet adapters are covered by mocked automated te
 ## Promotion status
 
 The Airads candidate is ready for local main-branch fast-forward after this report is committed. No remote branch was pushed and no generated assets were included.
+
+After the downstream portability scan, canonical commit `15209aad` removed an
+Airads-only admissions dependency from the generic LMS checkout. That source
+change is intentionally not applied here because Airads defines and uses the
+dependency when creating an order from an approved admission application.
