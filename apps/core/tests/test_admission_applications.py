@@ -12,6 +12,19 @@ from apps.core.admission_course_options import MAIN_SITE_APPLICATION_COURSE_NAME
 from apps.core.tests.factories import UserFactory
 
 
+@pytest.fixture
+def open_enrollment_mode():
+    """Make direct free enrollment explicit for tests that exercise that policy."""
+    from apps.platform.models import PlatformSettings
+
+    platform_settings = PlatformSettings.get_settings()
+    platform_settings.features = {
+        **(platform_settings.features or {}),
+        "enrollment_mode": "open",
+    }
+    platform_settings.save(update_fields=["features", "updated_at"])
+
+
 @pytest.mark.django_db
 def test_main_application_form_uses_flat_curated_course_list(client):
     from apps.progression.tests.factories import ProgramFactory
@@ -170,7 +183,9 @@ def test_normal_submission_requires_physical_campus(client):
 
 
 @pytest.mark.django_db
-def test_program_interest_submission_creates_account_and_free_enrollment(client):
+def test_program_interest_submission_creates_account_and_free_enrollment(
+    client, open_enrollment_mode
+):
     from apps.core.models import AdmissionApplication, User
     from apps.progression.models import Enrollment
     from apps.progression.tests.factories import ProgramFactory
@@ -233,7 +248,9 @@ def test_program_interest_submission_creates_account_and_free_enrollment(client)
 
 
 @pytest.mark.django_db
-def test_google_sign_in_resumes_free_course_enrollment(client, monkeypatch):
+def test_google_sign_in_resumes_free_course_enrollment(
+    client, monkeypatch, open_enrollment_mode
+):
     from apps.core.models import AdmissionApplication, User
     from apps.progression.models import Enrollment
     from apps.progression.tests.factories import ProgramFactory
@@ -308,7 +325,9 @@ def test_google_sign_in_resumes_free_course_enrollment(client, monkeypatch):
 
 
 @pytest.mark.django_db
-def test_program_interest_existing_user_is_linked_without_password_reset(client):
+def test_program_interest_existing_user_is_linked_without_password_reset(
+    client, open_enrollment_mode
+):
     from apps.core.models import AdmissionApplication
     from apps.progression.models import Enrollment
     from apps.progression.tests.factories import ProgramFactory
@@ -347,7 +366,9 @@ def test_program_interest_existing_user_is_linked_without_password_reset(client)
 
 
 @pytest.mark.django_db
-def test_logged_in_user_with_phone_enrolls_without_public_details_form(client):
+def test_logged_in_user_with_phone_enrolls_without_public_details_form(
+    client, open_enrollment_mode
+):
     from apps.core.models import AdmissionApplication
     from apps.progression.models import Enrollment
     from apps.progression.tests.factories import ProgramFactory
