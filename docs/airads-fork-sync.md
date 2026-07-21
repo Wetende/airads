@@ -3,7 +3,7 @@
 This repository (`Wetende/airads`) is a forked product line.
 
 - `origin` points to `Wetende/airads` (where we push AIRADS work)
-- `upstream` points to `Wetende/crossview` (where we pull shared LMS updates)
+- `upstream` points to the canonical local LMS repository (where we pull shared LMS updates)
 
 ## One-Time Remote Check
 
@@ -15,10 +15,10 @@ Expected:
 
 ```text
 origin   git@github.com:Wetende/airads.git
-upstream git@github.com:Wetende/crossview.git
+upstream /home/wetende/Projects/lms
 ```
 
-If you are working with local folders instead of GitHub remotes, `upstream` may also be a local path such as `/home/wetende/Projects/crossview`.
+The approved local canonical path is `/home/wetende/Projects/lms`.
 
 ## Recommended Branch Flow
 
@@ -77,7 +77,7 @@ Split them into separate commits. This keeps future upstream merges and cherry-p
 If you make bulk changes across the AIRADS codebase, do not just `git add .`.
 Ask:
 
-*"Look at my uncommitted changes, tell me which ones are generic Crossview features and which ones are AIRADS-specific, and split them into separate commits for me."*
+*"Look at my uncommitted changes, tell me which ones are generic LMS features and which ones are AIRADS-specific, and split them into separate commits for me."*
 
 ## If Upstream Changes Become Large
 
@@ -91,15 +91,15 @@ git merge upstream/main
 
 Resolve conflicts, run checks, then merge that sync branch into `main`.
 
-## Backporting Airads Features to Crossview
+## Backporting Airads Features to LMS
 
-If you build a generic feature in `airads` and want to port it back to `crossview`, link the two local folders directly.
+If you build a generic feature in `airads` and want to port it back to `lms`, link the two local folders directly.
 
 ### 1. Set Up the Local Bridge
-In your `crossview` terminal:
+In your `lms` terminal:
 
 ```bash
-cd /path/to/crossview
+cd /home/wetende/Projects/lms
 git remote add airads /path/to/airads
 git fetch airads
 ```
@@ -117,7 +117,7 @@ Find the commit you want from `airads`:
 git log --oneline
 ```
 
-Then apply just that commit in `crossview`:
+Then apply just that commit in `lms`:
 
 ```bash
 git cherry-pick <commit-hash>
@@ -130,9 +130,9 @@ This is the safest way to move generic LMS work upstream without bringing AIRADS
 For shared work, use this order:
 
 1. Build and commit the generic LMS change in `airads`.
-2. Cherry-pick that commit into `crossview`.
-3. Push `crossview`.
-4. Pull or merge `crossview/main` back into `airads`.
-5. Later, pull `crossview/main` into `digika`.
+2. Cherry-pick that commit into `lms`.
+3. Verify and update `lms/main`.
+4. Pull or merge `lms/main` back into `airads`.
+5. Later, pull `lms/main` into `digikatech`.
 
-This keeps `crossview` as the parent source of truth for shared LMS behavior.
+This keeps `lms` as the parent source of truth for shared LMS behavior.
