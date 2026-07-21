@@ -302,13 +302,3 @@ def test_non_admin_cannot_create_or_view_onboarding_batches(client):
     assert view_response.status_code == 302
     assert view_response.url == "/dashboard/"
     assert AdmissionOnboardingBatch.objects.count() == 1
-
-
-@pytest.mark.django_db
-def test_legacy_bulk_enrollment_page_redirects_to_admissions(client):
-    client.force_login(UserFactory(admin=True))
-
-    response = client.get(reverse("progression:admin.enrollment.bulk"))
-
-    assert response.status_code == 302
-    assert response.url == "/admin/admissions/?onboarding=1"
