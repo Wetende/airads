@@ -4,6 +4,8 @@ Events views - Public event pages using Inertia.
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
+from django.utils.html import strip_tags
+from django.views.decorators.http import require_POST
 from inertia import render
 
 from .models import Event, EventRegistration
@@ -30,6 +32,7 @@ def index(request):
 
     events_data = []
     for event in events_qs:
+        description = strip_tags(event.description).strip()
         events_data.append({
             "id": event.id,
             "title": event.title,
@@ -38,7 +41,7 @@ def index(request):
             "end_date": event.end_datetime.isoformat(),
             "location": event.location,
             "image": event.image.url if event.image else "/static/images/course-placeholder.jpg",
-            "description": event.description[:200] + "..." if len(event.description) > 200 else event.description,
+            "description": description[:200] + "..." if len(description) > 200 else description,
         })
 
     return render(request, "Public/Events", {
@@ -113,6 +116,7 @@ def detail(request, slug):
 
 
 @login_required
+@require_POST
 def join(request, slug):
     """
     Handle event registration (JOIN button).

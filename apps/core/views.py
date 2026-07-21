@@ -310,6 +310,8 @@ PROGRAM_INTEREST_SUCCESS_SESSION_KEY = "program_interest_success"
 
 
 def _program_enrollment_mode(program) -> str:
+    from apps.progression.services import get_enrollment_policy_mode
+
     context = _get_platform_pricing_context()
     pricing = get_program_pricing(
         program,
@@ -320,7 +322,7 @@ def _program_enrollment_mode(program) -> str:
     price_display = serialize_price_display(pricing)
     if price_display["allowsOnlineCheckout"] or price_display["allowsOfflinePayment"]:
         return "paid"
-    if pricing.get("requires_approval", False):
+    if get_enrollment_policy_mode() != "open":
         return "approval"
     return "free"
 
@@ -480,8 +482,8 @@ def _build_program_interest_success_payload(
         title = "Account ready."
         message = f"Complete payment to unlock {program.name}."
     elif enrollment_mode == "approval":
-        title = "Your details are saved."
-        message = "Our admissions team will contact you about the next step."
+        title = "Enrollment request sent."
+        message = "Your request is awaiting review. We will notify you when a decision is made."
     elif account_state == "authenticated":
         title = "You're enrolled."
         message = f"{program.name} is ready in your AIRADS account."
@@ -1247,6 +1249,15 @@ def public_program_interest_submit(request, pk: int):
             if enrollment.status in {"active", "completed"}:
                 application.status = AdmissionApplication.STATUS_ACCEPTED
             application.save(update_fields=["enrollment", "status", "updated_at"])
+    elif enrollment_mode == "approval":
+        from apps.progression.services import submit_enrollment_request
+
+        submit_enrollment_request(
+            user=user,
+            program=program,
+            message=application.message,
+            notify_student=False,
+        )
 
     success_payload = _build_program_interest_success_payload(
         request,
@@ -1356,9 +1367,17 @@ def public_program_enrollment_resume(request):
         return redirect(f"/checkout/?{checkout_query}")
 
     if enrollment_mode == "approval":
+        from apps.progression.services import submit_enrollment_request
+
+        submit_enrollment_request(
+            user=request.user,
+            program=program,
+            message=application.message,
+            notify_student=False,
+        )
         messages.success(
             request,
-            "Your details are saved. Our admissions team will contact you.",
+            "Your enrollment request is awaiting review.",
         )
         return redirect(_program_public_url(program))
 

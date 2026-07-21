@@ -112,6 +112,7 @@ const featureMap = {
     "Commerce/Cart": "./features/commerce/pages/Cart.jsx",
     "Commerce/Checkout": "./features/commerce/pages/Checkout.jsx",
     "Commerce/OrderDetail": "./features/commerce/pages/OrderDetail.jsx",
+    "Public/Wishlist": "./features/commerce/pages/Wishlist.jsx",
 
     // Reports
     "Reports/Index": "./features/reports/pages/ReportsIndex.jsx",
@@ -154,6 +155,7 @@ const publicMap = {
     "Public/DrivingSchool": "./pages/public/schools/DrivingSchool.jsx",
     "Public/News": "./pages/public/News.jsx",
     "Public/Events": "./pages/public/Events.jsx",
+    "Public/EventDetail": "./pages/public/EventDetail.jsx",
     "Public/StudentsPortal": "./pages/public/StudentsPortal.jsx",
     "Public/Mission": "./pages/public/Mission.jsx",
     "Public/History": "./pages/public/History.jsx",

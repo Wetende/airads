@@ -27,7 +27,12 @@ class EnrollmentNotificationFlowTests(TestCase):
 
         self.client.force_login(student)
         response = self.client.post(
-            reverse("progression:enroll_request", kwargs={"pk": program.id}),
+            reverse("core:program_interest_submit", kwargs={"pk": program.id}),
+            data={
+                "fullName": student.get_full_name() or "Open Student",
+                "email": student.email,
+                "phone": "+254700000002",
+            },
         )
 
         self.assertEqual(response.status_code, 302)
@@ -36,9 +41,37 @@ class EnrollmentNotificationFlowTests(TestCase):
             recipient=student,
             related_enrollment_id=enrollment.id,
         )
-        self.assertEqual(notification.notification_type, "enrollment_confirmed")
+        self.assertEqual(notification.notification_type, "system")
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(student.email, mail.outbox[0].to)
+
+    def test_program_detail_approval_mode_creates_one_pending_request(self):
+        instructor = UserFactory()
+        student = UserFactory()
+        program = self._create_program("REQUEST")
+        InstructorAssignment.objects.create(instructor=instructor, program=program)
+        platform_settings = PlatformSettings.get_settings()
+        platform_settings.features = {"enrollment_mode": "instructor_approval"}
+        platform_settings.save()
+
+        self.client.force_login(student)
+        submit_url = reverse("core:program_interest_submit", kwargs={"pk": program.id})
+        form_data = {
+            "fullName": student.get_full_name() or "Request Student",
+            "email": student.email,
+            "phone": "+254700000003",
+            "message": "I would like to join.",
+        }
+
+        first_response = self.client.post(submit_url, data=form_data)
+        second_response = self.client.post(submit_url, data=form_data)
+
+        self.assertEqual(first_response.status_code, 302)
+        self.assertEqual(second_response.status_code, 302)
+        self.assertFalse(Enrollment.objects.filter(user=student, program=program).exists())
+        enrollment_request = EnrollmentRequest.objects.get(user=student, program=program)
+        self.assertEqual(enrollment_request.status, "pending")
+        self.assertEqual(enrollment_request.message, "I would like to join.")
 
     def test_approved_request_sends_in_app_and_email(self):
         instructor = UserFactory()

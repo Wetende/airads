@@ -256,6 +256,7 @@ class AdmissionOnboardingService:
     @classmethod
     def program_enrollment_mode(cls, program) -> str:
         from apps.platform.models import PlatformSettings
+        from apps.progression.services import get_enrollment_policy_mode
 
         settings = PlatformSettings.get_settings()
         features = settings.get_default_features_for_mode()
@@ -270,7 +271,7 @@ class AdmissionOnboardingService:
         display = serialize_price_display(pricing)
         if display["allowsOnlineCheckout"] or display["allowsOfflinePayment"]:
             return "paid"
-        if pricing.get("requires_approval", False):
+        if get_enrollment_policy_mode() != "open":
             return "approval"
         return "free"
 

@@ -160,13 +160,8 @@ urlpatterns = [
         name="admin.enrollment.withdraw",
     ),
     # ==========================================================================
-    # Self-Enrollment Routes
+    # Enrollment Review Routes
     # ==========================================================================
-    path(
-        "programs/<int:pk>/enroll/",
-        views.student_enroll_request,
-        name="enroll_request",
-    ),
     path(
         "instructor/programs/<int:pk>/enrollment-requests/",
         views.instructor_enrollment_requests,

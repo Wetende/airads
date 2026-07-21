@@ -97,12 +97,19 @@ def test_public_course_detail_locks_cta_when_prerequisites_are_unmet(client):
     assert props["prerequisiteStatus"]["requirements"][0]["reason"] == "not_enrolled"
 
 
-def test_self_enrollment_blocks_until_prerequisites_are_met(client):
+def test_program_detail_enrollment_blocks_until_prerequisites_are_met(client):
     student = UserFactory()
     _, advanced = _make_prerequisite_chain(required_percent=75)
     client.force_login(student)
 
-    response = client.post(reverse("progression:enroll_request", kwargs={"pk": advanced.id}))
+    response = client.post(
+        reverse("core:program_interest_submit", kwargs={"pk": advanced.id}),
+        data={
+            "fullName": student.get_full_name() or "Test Student",
+            "email": student.email,
+            "phone": "+254700000001",
+        },
+    )
 
     assert response.status_code == 302
     assert response["Location"] == reverse(

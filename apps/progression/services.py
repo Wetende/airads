@@ -5,6 +5,7 @@ Handles sequential locking, prerequisite checking, and progress calculation.
 from dataclasses import dataclass
 from typing import Optional, List, Set, Dict, Any
 from django.utils import timezone
+from django.db import transaction
 
 from apps.curriculum.models import CurriculumNode
 from apps.progression.models import NodeCompletion, Enrollment
@@ -16,6 +17,83 @@ from apps.assessments.official_results import (
 
 
 ASSIGNMENT_MODES = {"submission_only", "question_only", "mixed"}
+ENROLLMENT_POLICY_MODES = {"open", "instructor_approval", "admin_approval"}
+
+
+def get_enrollment_policy_mode() -> str:
+    """Return the effective platform policy for free-course enrollment."""
+    from apps.platform.models import PlatformSettings
+
+    platform = PlatformSettings.get_settings()
+    features = platform.get_default_features_for_mode().copy()
+    if isinstance(platform.features, dict):
+        features.update(platform.features)
+    mode = str(features.get("enrollment_mode") or "").strip().lower()
+    return mode if mode in ENROLLMENT_POLICY_MODES else "instructor_approval"
+
+
+def submit_enrollment_request(*, user, program, message="", notify_student=True):
+    """Create or reopen one pending request and notify the correct reviewers."""
+    from apps.core.models import User
+    from apps.notifications.services import NotificationService
+    from apps.progression.models import EnrollmentRequest, InstructorAssignment
+
+    policy_mode = get_enrollment_policy_mode()
+    if policy_mode == "open":
+        raise ValueError("Open enrollment does not require an approval request.")
+
+    with transaction.atomic():
+        enrollment_request, created = EnrollmentRequest.objects.select_for_update().get_or_create(
+            user=user,
+            program=program,
+            defaults={"status": "pending", "message": str(message or "").strip()},
+        )
+        reopened = enrollment_request.status == "rejected"
+        if reopened:
+            enrollment_request.status = "pending"
+            enrollment_request.reviewed_by = None
+            enrollment_request.reviewed_at = None
+            enrollment_request.reviewer_notes = ""
+        if message:
+            enrollment_request.message = str(message).strip()
+        if reopened or (message and not created):
+            enrollment_request.save(
+                update_fields=[
+                    "status",
+                    "message",
+                    "reviewed_by",
+                    "reviewed_at",
+                    "reviewer_notes",
+                    "updated_at",
+                ]
+            )
+
+    should_notify = created or reopened
+    if not should_notify:
+        return enrollment_request, False
+
+    if policy_mode == "instructor_approval":
+        reviewers = User.objects.filter(
+            is_active=True,
+            id__in=InstructorAssignment.objects.filter(program=program).values_list(
+                "instructor_id", flat=True
+            ),
+        )
+        review_action_url = f"/instructor/programs/{program.id}/enrollment-requests/"
+    else:
+        reviewers = User.objects.filter(is_staff=True, is_active=True)
+        review_action_url = "/admin/enrollments/"
+
+    if reviewers.exists():
+        NotificationService.notify_enrollment_requested(
+            enrollment_request,
+            reviewers,
+            action_url=review_action_url,
+        )
+    if notify_student:
+        NotificationService.notify_student_application_received(enrollment_request)
+
+    return enrollment_request, True
 
 
 def _safe_int(value):
