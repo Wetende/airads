@@ -1006,6 +1006,9 @@ class Command(BaseCommand):
                             node=lesson,
                             title=lesson_data["title"],
                             description=lesson_data["desc"],
+                            # Five module assessments contribute 20% of the
+                            # course grade in total; each quiz carries 4%.
+                            weight=4,
                             pass_threshold=75,
                             is_published=True
                         )
