@@ -12,6 +12,21 @@ export default function componentsOverride(theme) {
                     padding: "6px 12px",
                     fontWeight: 600,
                     textTransform: "none",
+                    ...(theme.palette.mode === "dark" && {
+                        "&.MuiButton-containedPrimary": {
+                            backgroundColor: "#0C5AA6",
+                            color: "#FFFFFF",
+                            "&:hover": { backgroundColor: "#176FC1" },
+                        },
+                        "&.MuiButton-outlinedPrimary": {
+                            borderColor: "#5EA4E6",
+                            color: "#EAF2FB",
+                            "&:hover": {
+                                borderColor: "#8BC0EF",
+                                backgroundColor: "rgba(94, 164, 230, 0.1)",
+                            },
+                        },
+                    }),
                 },
                 contained: {
                     boxShadow: "none",
@@ -31,7 +46,11 @@ export default function componentsOverride(theme) {
             styleOverrides: {
                 root: {
                     borderRadius: 12,
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                    border: `1px solid ${theme.palette.divider}`,
+                    boxShadow:
+                        theme.palette.mode === "dark"
+                            ? "0 12px 32px rgba(2, 8, 23, 0.22)"
+                            : "0 10px 30px rgba(8, 47, 99, 0.08)",
                 },
             },
         },
@@ -41,7 +60,10 @@ export default function componentsOverride(theme) {
                     borderRadius: 12,
                 },
                 elevation1: {
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                    boxShadow:
+                        theme.palette.mode === "dark"
+                            ? "0 12px 32px rgba(2, 8, 23, 0.22)"
+                            : "0 10px 30px rgba(8, 47, 99, 0.08)",
                 },
             },
         },

@@ -1,48 +1,47 @@
 /**
- * LMS color palette
+ * Airads College color palette
  * Supports both light and dark modes
  *
- * Primary: Deep Blue (#2563EB) - Trust and professionalism
- * Secondary: Vibrant Teal (#14B8A6) - Innovation and digital learning
- * Success: Fresh Green (#10B981) - Progress, achievements, completion
- * Warning: Warm Coral (#F97316) - CTAs and important notifications
- * Info: Soft Sky Blue (#3B82F6) - Backgrounds and hover states
+ * Primary: Airads Blue (#0C5AA6)
+ * Secondary: Airads Navy (#082F63)
+ * Success: Green (#39B54A)
+ * Warning: Airads Red (#EF2026)
  */
 
-import { generatePaletteFromColor } from './utils/colorUtils';
+import { generatePaletteFromColor } from "./utils/colorUtils";
 
 const lightPalette = {
-    mode: 'light',
+    mode: "light",
     primary: {
-        lighter: "#DBEAFE",
-        light: "#3B82F6",
-        main: "#2563EB",
-        dark: "#1E40AF",
-        darker: "#1E3A8A",
+        lighter: "#EAF2FB",
+        light: "#176FC1",
+        main: "#0C5AA6",
+        dark: "#082F63",
+        darker: "#061F43",
         contrastText: "#FFFFFF",
     },
     secondary: {
-        lighter: "#CCFBF1",
-        light: "#2DD4BF",
-        main: "#14B8A6",
-        dark: "#0D9488",
-        darker: "#115E59",
+        lighter: "#E8EEF6",
+        light: "#174E86",
+        main: "#082F63",
+        dark: "#061F43",
+        darker: "#04152F",
         contrastText: "#FFFFFF",
     },
     success: {
-        lighter: "#D1FAE5",
-        light: "#34D399",
-        main: "#10B981",
-        dark: "#059669",
-        darker: "#065F46",
+        lighter: "#EDFAEF",
+        light: "#72CB7D",
+        main: "#39B54A",
+        dark: "#2EA040",
+        darker: "#247C32",
         contrastText: "#FFFFFF",
     },
     warning: {
-        lighter: "#FFEDD5",
-        light: "#FB923C",
-        main: "#F97316",
-        dark: "#EA580C",
-        darker: "#9A3412",
+        lighter: "#FEEBEC",
+        light: "#F25A5F",
+        main: "#EF2026",
+        dark: "#B7121B",
+        darker: "#7D0C12",
         contrastText: "#FFFFFF",
     },
     info: {
@@ -79,7 +78,7 @@ const lightPalette = {
     },
     divider: "#E2E8F0",
     background: {
-        default: "#F8FAFC",
+        default: "#F4F7FB",
         paper: "#FFFFFF",
     },
     action: {
@@ -89,38 +88,38 @@ const lightPalette = {
 };
 
 const darkPalette = {
-    mode: 'dark',
+    mode: "dark",
     primary: {
-        lighter: "#1E3A8A",
-        light: "#3B82F6",
-        main: "#60A5FA",
-        dark: "#93C5FD",
-        darker: "#DBEAFE",
-        contrastText: "#0F172A",
+        lighter: "#12375D",
+        light: "#5EA4E6",
+        main: "#8BC0EF",
+        dark: "#B7D8F6",
+        darker: "#E1EFFB",
+        contrastText: "#061F43",
     },
     secondary: {
-        lighter: "#115E59",
-        light: "#2DD4BF",
-        main: "#5EEAD4",
-        dark: "#99F6E4",
-        darker: "#CCFBF1",
-        contrastText: "#0F172A",
+        lighter: "#102E50",
+        light: "#477FB7",
+        main: "#78A7D3",
+        dark: "#AAC9E6",
+        darker: "#D9E8F5",
+        contrastText: "#061F43",
     },
     success: {
-        lighter: "#065F46",
-        light: "#34D399",
-        main: "#6EE7B7",
-        dark: "#A7F3D0",
-        darker: "#D1FAE5",
+        lighter: "#173E28",
+        light: "#72CB7D",
+        main: "#7BD487",
+        dark: "#A7E1AF",
+        darker: "#D8F3DC",
         contrastText: "#0F172A",
     },
     warning: {
-        lighter: "#9A3412",
-        light: "#FB923C",
-        main: "#FDBA74",
-        dark: "#FED7AA",
-        darker: "#FFEDD5",
-        contrastText: "#0F172A",
+        lighter: "#65141A",
+        light: "#F25A5F",
+        main: "#F57B7F",
+        dark: "#F8A8AB",
+        darker: "#FCD6D7",
+        contrastText: "#1F0507",
     },
     info: {
         lighter: "#1E40AF",
@@ -151,13 +150,13 @@ const darkPalette = {
         900: "#F8FAFC",
     },
     text: {
-        primary: "#F1F5F9",
-        secondary: "#94A3B8",
+        primary: "#F5F8FC",
+        secondary: "#B8CBE0",
     },
-    divider: "#334155",
+    divider: "#294867",
     background: {
-        default: "#0F172A",
-        paper: "#1E293B",
+        default: "#04152F",
+        paper: "#082744",
     },
     action: {
         hover: "rgba(255, 255, 255, 0.08)",
@@ -165,9 +164,9 @@ const darkPalette = {
     },
 };
 
-export default function palette(mode = 'light', brandColors = {}) {
+export default function palette(mode = "light", brandColors = {}) {
     const { primaryColor, secondaryColor } = brandColors;
-    const basePalette = mode === 'dark' ? darkPalette : lightPalette;
+    const basePalette = mode === "dark" ? darkPalette : lightPalette;
 
     // Use base palette as starting point
     const mergedPalette = { ...basePalette };
@@ -179,7 +178,10 @@ export default function palette(mode = 'light', brandColors = {}) {
 
     // Override secondary if custom color provided
     if (secondaryColor) {
-        mergedPalette.secondary = generatePaletteFromColor(secondaryColor, mode);
+        mergedPalette.secondary = generatePaletteFromColor(
+            secondaryColor,
+            mode,
+        );
     }
 
     return mergedPalette;
@@ -187,14 +189,14 @@ export default function palette(mode = 'light', brandColors = {}) {
 
 // Export color constants for direct access (light mode defaults)
 export const COLORS = {
-    PRIMARY: "#2563EB",
-    SECONDARY: "#14B8A6",
-    SUCCESS: "#10B981",
-    WARNING: "#F97316",
+    PRIMARY: "#0C5AA6",
+    SECONDARY: "#082F63",
+    SUCCESS: "#39B54A",
+    WARNING: "#EF2026",
     INFO: "#3B82F6",
     ERROR: "#EF4444",
     TEXT_PRIMARY: "#1A1C1E",
     TEXT_SECONDARY: "#42474E",
     DIVIDER: "#E2E8F0",
-    BACKGROUND: "#F8FAFC",
+    BACKGROUND: "#F4F7FB",
 };
