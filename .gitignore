@@ -26,6 +26,7 @@ htmlcov/
 .playwright-cli/
 playwright-report/
 test-results/
+lms-inspiration/
 
 # IDE
 .idea/
