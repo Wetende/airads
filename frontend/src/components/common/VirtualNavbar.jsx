@@ -42,7 +42,7 @@ export default function VirtualNavbar({ homepage = false }) {
   const registerHref = routes.register || "/register/";
   const mainWebsiteLabel = "AIRADS College";
   const mobileMainWebsiteLabel = "Visit AIRADS College";
-  const applyLabel = "Apply Now";
+  const exploreCoursesLabel = "Explore Courses";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -59,7 +59,7 @@ export default function VirtualNavbar({ homepage = false }) {
     { label: "Courses", href: coursesHref, internal: true },
     { label: "Admissions", href: applyHref, internal: true },
     { label: mainWebsiteLabel, href: mainHomeHref, internal: false },
-    { label: applyLabel, href: applyHref, internal: true, isButton: true },
+    { label: exploreCoursesLabel, href: coursesHref, internal: true, isButton: true },
   ];
 
   return (
@@ -257,8 +257,8 @@ export default function VirtualNavbar({ homepage = false }) {
                   Login
                 </Button>
               )}
-              <Button component={Link} href={applyHref} variant="contained" sx={{ borderRadius: 8, px: 3, bgcolor: brand.accent, "&:hover": { bgcolor: "#9a1818" }, fontWeight: 600, boxShadow: "none" }}>
-                {applyLabel}
+              <Button component={Link} href={coursesHref} variant="contained" sx={{ borderRadius: 8, px: 3, bgcolor: brand.accent, "&:hover": { bgcolor: "#9a1818" }, fontWeight: 600, boxShadow: "none" }}>
+                {exploreCoursesLabel}
               </Button>
             </Box>
 
@@ -333,8 +333,8 @@ export default function VirtualNavbar({ homepage = false }) {
                   Login
                 </Button>
               )}
-              <Button component={Link} href={applyHref} variant="contained" fullWidth sx={{ borderRadius: 8, bgcolor: brand.accent }} onClick={closeMobileMenu}>
-                {applyLabel}
+              <Button component={Link} href={coursesHref} variant="contained" fullWidth sx={{ borderRadius: 8, bgcolor: brand.accent }} onClick={closeMobileMenu}>
+                {exploreCoursesLabel}
               </Button>
             </Box>
           </List>

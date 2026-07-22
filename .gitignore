@@ -23,6 +23,9 @@ staticfiles/
 .coverage
 htmlcov/
 .tox/
+.playwright-cli/
+playwright-report/
+test-results/
 
 # IDE
 .idea/

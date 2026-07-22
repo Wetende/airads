@@ -1,0 +1,578 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Completing the Airads Digital Platform",
+    "description": "Current progress, essential remaining work, and a four-month continuation proposal for the CEO.",
+    "generatedAt": "2026-07-20T12:00:00+10:00",
+    "sources": [
+      {
+        "id": "code-review",
+        "label": "Airads platform codebase assessment - July 20, 2026",
+        "query": {
+          "description": "Direct review of the current Django, React and Inertia platform, including public website, admissions, LMS, course player, learning operations, live sessions, Google Classroom, notifications, commerce and reporting modules.",
+          "language": "Python, JavaScript and configuration",
+          "executed_at": "2026-07-20T12:00:00+10:00",
+          "tables_used": [
+            "core and platform modules",
+            "curriculum and assessment modules",
+            "progression and learning operations modules",
+            "live sessions and Google Classroom modules",
+            "notifications, commerce and reports modules",
+            "public website and dashboard interfaces"
+          ]
+        }
+      },
+      {
+        "id": "verification",
+        "label": "Focused platform verification - July 20, 2026",
+        "query": {
+          "description": "Django system check and focused automated tests for Google Classroom, learning operations, notifications, payments, admissions, onboarding, course activity and reports.",
+          "language": "Django system checks and pytest",
+          "executed_at": "2026-07-20T12:00:00+10:00",
+          "metric_definitions": [
+            "Focused tests passed: 158",
+            "Django system check issues: 0"
+          ],
+          "tables_used": [
+            "automated test suites",
+            "Django application configuration"
+          ]
+        }
+      },
+      {
+        "id": "readiness-query",
+        "label": "Capability readiness summary - July 20, 2026",
+        "query": {
+          "sql": "SELECT 'Operational software foundation' AS classification, 5 AS count UNION ALL SELECT 'Integration or production completion required', 3 UNION ALL SELECT 'Major capability not implemented', 2",
+          "description": "Groups the ten audited platform capability areas into the three readiness classifications defined in the detailed assessment table.",
+          "engine": "Django database connection",
+          "language": "SQL",
+          "executed_at": "2026-07-20T12:00:00+10:00",
+          "metric_definitions": [
+            "Count is the number of audited capability areas assigned to each classification after direct code review."
+          ],
+          "tables_used": [
+            "reviewed capability assessment"
+          ]
+        }
+      },
+      {
+        "id": "current-state-data",
+        "label": "Current capability assessment dataset",
+        "path": "airads_platform_report_evidence.sqlite",
+        "query": {
+          "sql": "SELECT order_num AS `order`, capability, status, evidence FROM current_state ORDER BY order_num",
+          "description": "Returns the ten capability assessments produced by the direct codebase review.",
+          "engine": "SQLite",
+          "language": "SQL",
+          "executed_at": "2026-07-20T12:00:00+10:00",
+          "tables_used": ["current_state"]
+        }
+      },
+      {
+        "id": "deliverables-data",
+        "label": "Required continuation deliverables dataset",
+        "path": "airads_platform_report_evidence.sqlite",
+        "query": {
+          "sql": "SELECT order_num AS `order`, deliverable, reason, outcome FROM deliverables ORDER BY order_num",
+          "description": "Returns the required continuation deliverables derived from the codebase gap assessment.",
+          "engine": "SQLite",
+          "language": "SQL",
+          "executed_at": "2026-07-20T12:00:00+10:00",
+          "tables_used": ["deliverables"]
+        }
+      },
+      {
+        "id": "decisions-data",
+        "label": "Required executive decisions dataset",
+        "path": "airads_platform_report_evidence.sqlite",
+        "query": {
+          "sql": "SELECT order_num AS `order`, decision, importance FROM decisions ORDER BY order_num",
+          "description": "Returns the executive and departmental decisions required to unblock platform completion.",
+          "engine": "SQLite",
+          "language": "SQL",
+          "executed_at": "2026-07-20T12:00:00+10:00",
+          "tables_used": ["decisions"]
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "current-state-table",
+        "title": "Current platform capability assessment",
+        "subtitle": "Assessment of the present codebase, distinguishing operational foundations from deployment and integration gaps.",
+        "showDescription": true,
+        "dataset": "current_state",
+        "defaultSort": {
+          "field": "order",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "sourceId": "current-state-data",
+        "layout": "full",
+        "columns": [
+          { "field": "order", "label": "#", "type": "number" },
+          { "field": "capability", "label": "Capability", "type": "text" },
+          { "field": "status", "label": "Current position", "type": "text" }
+        ]
+      },
+      {
+        "id": "deliverables-table",
+        "title": "Required continuation deliverables",
+        "subtitle": "The work needed to move from a strong digital learning foundation to a complete institution-wide operating platform.",
+        "showDescription": true,
+        "dataset": "deliverables",
+        "defaultSort": {
+          "field": "order",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "sourceId": "deliverables-data",
+        "layout": "full",
+        "columns": [
+          { "field": "order", "label": "#", "type": "number" },
+          { "field": "deliverable", "label": "We must complete", "type": "text" },
+          { "field": "reason", "label": "Because", "type": "text" }
+        ]
+      },
+      {
+        "id": "decisions-table",
+        "title": "CEO and departmental decisions required",
+        "subtitle": "These decisions unblock implementation and prevent conflicting systems or duplicated records.",
+        "showDescription": true,
+        "dataset": "decisions",
+        "defaultSort": {
+          "field": "order",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "sourceId": "decisions-data",
+        "layout": "full",
+        "columns": [
+          { "field": "order", "label": "#", "type": "number" },
+          { "field": "decision", "label": "Decision", "type": "text" },
+          { "field": "importance", "label": "Why it is needed", "type": "text" }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "readiness-chart",
+        "title": "Readiness of audited platform capability areas",
+        "subtitle": "Ten capability areas assessed from the current codebase; the detailed assessment table defines each classification.",
+        "showDescription": true,
+        "question": "How much of the current platform is established software versus remaining integration or new capability work?",
+        "rationale": "A simple horizontal bar comparison shows the distribution of the ten audited capability areas without implying a delivery percentage or fabricated completion score.",
+        "type": "bar",
+        "dataset": "readiness_summary",
+        "sourceId": "readiness-query",
+        "encodings": {
+          "x": {
+            "field": "classification",
+            "type": "nominal",
+            "aggregate": "none",
+            "label": "Readiness classification"
+          },
+          "y": {
+            "field": "count",
+            "type": "quantitative",
+            "aggregate": "none",
+            "format": "number",
+            "label": "Capability areas"
+          }
+        },
+        "xAxisTitle": "Readiness classification",
+        "yAxisTitle": "Number of audited capability areas",
+        "valueFormat": "number",
+        "layout": "full",
+        "maxRows": 10,
+        "surface": {
+          "legend": "hidden",
+          "showValueLabels": true,
+          "paletteKind": "single-root",
+          "paletteRoot": "blue"
+        }
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "layout": "full",
+        "body": "# Completing the Airads Digital Platform\n\n**Current progress, essential remaining work, and four-month continuation proposal**\n\nPrepared for the Chief Executive Officer | July 20, 2026"
+      },
+      {
+        "id": "executive-summary",
+        "type": "markdown",
+        "layout": "full",
+        "sourceId": "code-review",
+        "body": "## Executive Summary\n\n- **Airads has already moved beyond the original LMS assignment.** The current platform combines the public college website, campuses, admissions, Virtual Campus, online course delivery, assessments, certificates, payments, learner operations and external learning integrations in one system.\n\n- **The self-paced online-learning foundation is working.** The platform can create and publish courses, enrol learners, deliver video, text, document, quiz and assignment activities, track progress, calculate grades and issue certificates. Focused verification completed for this report found no Django system-check issues and all 158 selected tests passed.\n\n- **The remaining work is institution-wide and integration-heavy.** A complete Airads platform now requires a separate Campus Operations workspace, ERP connectivity, student and staff portals, mature live classes, production Google services, SMS, secure content administration, management reporting, monitoring, staff training and controlled rollout.\n\n- **Approval is requested for a four-month continuation at twice the previous contract rate.** The role is no longer limited to LMS feature development. It now includes solution architecture, sensitive institutional-data integration, third-party vendor coordination, security, testing, deployment, training and post-launch stabilisation across the whole college platform."
+      },
+      {
+        "id": "progress-heading",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## A strong learning and admissions foundation is already in place\n\nThe investment to date has produced a substantial platform rather than a prototype. The table below separates capabilities that are ready as software foundations from those that still depend on institutional configuration, external providers or additional implementation."
+      },
+      {
+        "id": "current-state",
+        "type": "table",
+        "tableId": "current-state-table",
+        "layout": "full",
+        "sourceId": "current-state-data"
+      },
+      {
+        "id": "readiness-interpretation",
+        "type": "markdown",
+        "layout": "full",
+        "sourceId": "readiness-query",
+        "body": "### The platform is valuable but not institutionally complete\n\nFive of the ten audited capability areas have a working or strong software foundation. Three more have meaningful code but still require external configuration, provider validation or operational completion. The remaining two - ERP/campus operations and SMS - are major missing capabilities. This distribution explains why the next engagement is primarily integration, governance and rollout work rather than a restart of the LMS."
+      },
+      {
+        "id": "readiness-visual",
+        "type": "chart",
+        "chartId": "readiness-chart",
+        "layout": "full",
+        "sourceId": "readiness-query"
+      },
+      {
+        "id": "scope-change",
+        "type": "markdown",
+        "layout": "full",
+        "sourceId": "code-review",
+        "body": "## The assignment has changed from an LMS into a college-wide digital system\n\nThe original LMS problem was primarily about learning content, assessments and learner progress. The current requirement covers the full journey from public discovery and admission through campus administration, fee visibility, student and staff services, online and live teaching, communication, reporting and executive oversight.\n\nThis change matters because the platform now sits between multiple systems and departments. A wrong student identifier can affect enrolment and fees. A failed notification can affect admission or class attendance. A weak permission boundary can expose academic, financial or staff information. A failed ERP reconciliation can create conflicting institutional records. These are operational responsibilities, not ordinary website enhancements.\n\nAirads therefore needs two connected workspaces with one identity and permission model:\n\n1. **Campus Operations workspace:** admissions, student records, campuses, finance visibility, staff services, communications, reports and ERP-linked workflows.\n2. **LMS and Virtual Campus workspace:** courses, curriculum, instructors, learning progress, assessments, live sessions, Google Classroom, grades and certificates.\n\nThe workspaces must remain connected so a learner, programme, campus, payment and academic record can be traced consistently without forcing every employee into the LMS interface."
+      },
+      {
+        "id": "deliverables-heading",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## The four-month continuation must complete the institutional platform\n\nThe continuation should be managed as one integrated completion programme. Each deliverable below is required because omitting it would leave a critical part of the college operating outside the platform or create duplicated, unreliable records."
+      },
+      {
+        "id": "deliverables",
+        "type": "markdown",
+        "layout": "full",
+        "sourceId": "code-review",
+        "body": "1. **Campus Operations workspace and access model.** Admissions, finance, campus administrators and management perform different work from learners and instructors.\n2. **ERP selection, data mapping and integration.** Student IDs, admissions, programmes, enrolments, fees and campuses cannot remain duplicated across independent systems.\n3. **Student and staff service portals.** A complete college platform must support institutional services beyond online course playback.\n4. **Production-ready live classes.** Live and blended programmes require reliable scheduling, attendance evidence, recordings and reminders.\n5. **Google Cloud, Workspace, Classroom and sign-in completion.** Integration code cannot operate safely without institution-owned accounts, permissions and administration policy.\n6. **Production email and SMS communications.** Admissions, payments, classes and reminders require traceable channels with consent and failure recovery.\n7. **Payment and finance reconciliation.** A successful online payment must create the correct admission, fee and course-access state.\n8. **Secure website content administration.** News, events, campuses and forms must be maintained by authorised staff rather than hardcoded or browser-local processes.\n9. **Unified reporting, audit and integration monitoring.** Management needs one reliable view, while technical staff must detect failed synchronisation before operations are affected.\n10. **Security, testing, training and phased rollout.** Institutional data and daily workflows cannot be moved safely into production through code delivery alone."
+      },
+      {
+        "id": "integrations",
+        "type": "markdown",
+        "layout": "full",
+        "sourceId": "code-review",
+        "body": "## External integrations are business systems, not simple sign-ins\n\n**ERP integration** must map student identifiers, campuses, programmes, enrolments, fee status and ownership of each field. It must include reconciliation, duplicate handling, retry logic, audit records and a support procedure for mismatched data. The ERP should remain authoritative for the institutional records agreed by management, while the LMS remains authoritative for learning activity, progress, submissions and grades.\n\n**Google Classroom** should remain optional at course level. The code already supports OAuth connection, course linking, roster comparison, invitations, publication of LMS lessons and assessments as Classroom links, announcements, durable sync jobs and grade passback. Production completion still requires an Airads-controlled Google Cloud project, approved scopes, secure credentials, Workspace policy, scheduled job execution and a controlled pilot.\n\n**Google Meet, Zoom, Teams and streaming providers** serve live sessions, not self-paced lessons. The platform now has scheduled-session records, provider-aware presentation, passcodes, recordings, calendar links and manual attendance. It still needs provider lifecycle automation where selected, verified attendance import, reminders, focused tests and operational support rules. The LMS must continue to own course progress and final academic records.\n\n**Email and SMS** must become governed communication channels. Email and in-app delivery foundations exist, including Brevo configuration and retryable email outbox processing. Airads still needs verified sending domains, production credentials, message templates, consent and opt-out rules, delivery monitoring and an SMS provider integration. SMS code is not currently present.\n\n**Payments** have a strong Paystack foundation, including checkout, M-Pesa charge flows, webhooks, refunds and payout records. Production readiness still requires live merchant onboarding, webhook verification, finance procedures and ERP reconciliation so an online payment is reflected correctly in institutional fee records."
+      },
+      {
+        "id": "importance",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## Why completing this work is important now\n\n- **One reliable student journey:** applicants should not be re-entered manually into separate website, ERP, finance and LMS systems.\n- **Operational control:** admissions, finance, instructors and campus administrators need role-specific information without relying on spreadsheets and informal messages.\n- **Accurate fees and enrolment:** payment, admission and course access must reconcile before the system is trusted for daily operations.\n- **Live and flexible learning:** self-paced learning is established, but Airads also needs governed real-time classes, attendance, recordings and reminders for live and blended programmes.\n- **Institutional communication:** email and SMS delivery must be traceable, consent-aware and recoverable when a provider fails.\n- **Management visibility:** executives need unified summaries across campuses, admissions, finance and learning rather than disconnected reports.\n- **Security and continuity:** moving institutional operations online increases responsibility for permissions, audit logs, backups, incident response and staff training.\n- **Protection of the existing investment:** continued ownership during integration and rollout reduces the risk of fragmented vendor work, undocumented decisions and regressions in the functioning LMS."
+      },
+      {
+        "id": "renewal",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## Commercial recommendation: renew for four months at twice the previous rate\n\nThe proposed rate adjustment is based on the change in responsibility, risk and expected output. The continuation covers more than feature coding:\n\n- institution-wide solution architecture and data ownership design;\n- ERP, Google, communications and payment-provider integration;\n- student, staff, campus, finance and learning access controls;\n- migration, reconciliation, failure recovery and auditability;\n- production security, monitoring, backup and support readiness;\n- cross-department requirements, vendor coordination and acceptance testing;\n- staff training, controlled rollout and post-launch stabilisation; and\n- protection and maintenance of the working website, admissions and LMS capabilities during major integration work.\n\nA two-times contract rate is therefore recommended as a scope-adjusted continuation fee, not merely a time extension of the original LMS contract. Third-party subscriptions, SMS charges, Google Workspace licensing, ERP vendor fees, payment-provider charges and infrastructure costs should be budgeted separately by Airads.\n\n**Requested approval:** continue the current technical ownership for four months under a revised contract at twice the previous rate, with the deliverables in this report forming the basis of the statement of work and acceptance review."
+      },
+      {
+        "id": "acceptance",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## Completion should be measured by operational acceptance\n\nThe continuation should be considered successful when:\n\n1. authorised users can enter the correct Campus Operations or LMS workspace using one governed identity;\n2. agreed student, staff, programme, campus, enrolment and fee data synchronises with the ERP and exceptions are visible;\n3. self-paced, live-online, streamed and blended learning journeys operate with reliable progress and attendance evidence;\n4. Google Classroom and selected live-class providers pass a controlled production pilot;\n5. admissions, payment, class and reminder notifications are delivered through approved email and SMS providers with logs and retries;\n6. management reporting reconciles website, ERP, payment and LMS information;\n7. sensitive administration is server-controlled, role-based and auditable;\n8. backup, monitoring, incident handling and recovery procedures are documented and tested; and\n9. staff and pilot users complete acceptance testing before phased rollout across campuses."
+      },
+      {
+        "id": "questions-heading",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## Decisions required from the CEO and department heads\n\nTechnical implementation can proceed efficiently only after the institution confirms the following operating decisions."
+      },
+      {
+        "id": "decisions",
+        "type": "markdown",
+        "layout": "full",
+        "sourceId": "code-review",
+        "body": "1. **Select the ERP** and confirm its APIs, vendor support and obligations. Integration design depends on the actual ERP contract and interfaces.\n2. **Define system ownership** for student, programme, enrolment, fee, staff and learning records. Ownership rules prevent conflicting records and unsafe overwrites.\n3. **Approve first-release departments, roles and permissions.** The operations workspace must reflect real accountability.\n4. **Confirm Google Workspace administration and live-class providers.** Google sign-in, Classroom, Meet and account governance require institution-owned policy.\n5. **Approve email, SMS, payment and infrastructure providers and budgets.** Provider accounts, transaction charges and sender approvals are institutional costs.\n6. **Nominate departmental representatives and a pilot campus or programme.** Data mapping and acceptance require authorised process owners.\n7. **Approve the four-month continuation and revised contract rate.** Continuous ownership is needed across integration, testing, rollout and stabilisation."
+      },
+      {
+        "id": "caveats",
+        "type": "markdown",
+        "layout": "full",
+        "sourceId": "verification",
+        "body": "## Caveats and Assumptions\n\nThis assessment is based on the current platform codebase and focused automated verification, not a live production audit of every campus or external vendor account. Django reported no system-check issues and 158 selected tests passed. The review did not confirm production ERP access, Google Workspace administration, live email or SMS contracts, merchant settlement, production backups or end-user acceptance.\n\nExternal provider capabilities and exact implementation details will depend on the ERP selected, API access granted by each vendor, Airads data-governance decisions and the availability of departmental representatives for mapping and acceptance. The live-session module has a meaningful software foundation but requires focused automated tests and production-provider validation before it should be considered institutionally complete."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-07-20T12:00:00+10:00",
+    "status": "ready",
+    "datasets": {
+      "readiness_summary": [
+        {
+          "classification": "Operational software foundation",
+          "count": 5
+        },
+        {
+          "classification": "Integration or production completion required",
+          "count": 3
+        },
+        {
+          "classification": "Major capability not implemented",
+          "count": 2
+        }
+      ],
+      "current_state": [
+        {
+          "order": 1,
+          "capability": "Public college website and admissions",
+          "status": "Strong operational foundation",
+          "evidence": "Public campus, school, course, contact and admissions journeys exist, including online applications and applicant onboarding. Some public content remains hardcoded or browser-local and needs secure central administration."
+        },
+        {
+          "order": 2,
+          "capability": "Self-paced LMS and Virtual Campus",
+          "status": "Working and verified",
+          "evidence": "Course authoring, enrolment, player delivery, learning progress, prerequisites, assessments, gradebook, discussions, reviews and certificates are implemented."
+        },
+        {
+          "order": 3,
+          "capability": "Learner and instructor operations",
+          "status": "Working software foundation",
+          "evidence": "Learner activity, operational states, reminders, invitations, instructor workload and learner-management workflows are present and covered by focused tests."
+        },
+        {
+          "order": 4,
+          "capability": "Live and blended learning",
+          "status": "Partially complete",
+          "evidence": "Scheduled meetings, streams and in-person sessions, provider-aware student display, recordings, passcodes, calendar links and manual attendance exist. Provider automation, attendance import, focused tests and production validation remain."
+        },
+        {
+          "order": 5,
+          "capability": "Google Classroom",
+          "status": "Integration built; production onboarding pending",
+          "evidence": "Course linking, rosters, invitations, materials, assessments, announcements, queued sync and grade passback exist. Airads-owned cloud credentials, permissions, scheduled processing and pilot approval remain."
+        },
+        {
+          "order": 6,
+          "capability": "Email and in-app notifications",
+          "status": "Software foundation complete; provider readiness pending",
+          "evidence": "In-app notices, preferences, Brevo email configuration, queued delivery and retries exist. Production account, sending-domain verification, templates, consent and delivery monitoring remain."
+        },
+        {
+          "order": 7,
+          "capability": "SMS notifications",
+          "status": "Not implemented",
+          "evidence": "No SMS provider, sending service, delivery tracking, consent workflow or failure handling was found in the current codebase."
+        },
+        {
+          "order": 8,
+          "capability": "Online payments",
+          "status": "Strong Paystack foundation",
+          "evidence": "Checkout, M-Pesa charging, webhooks, refunds, payouts and payment records exist. Live merchant setup, finance procedures and ERP reconciliation remain."
+        },
+        {
+          "order": 9,
+          "capability": "Campus Operations and ERP",
+          "status": "Major remaining work",
+          "evidence": "The codebase has campus and admission records but no ERP connector, staff HR/payroll domain, fee ledger, institutional student-record portal or full campus-operations dashboard."
+        },
+        {
+          "order": 10,
+          "capability": "Institutional reporting and production operations",
+          "status": "Partial",
+          "evidence": "LMS, commerce and learning reports exist. Unified campus, ERP, finance and executive reporting, integration monitoring, backup validation and incident runbooks still need completion."
+        }
+      ],
+      "deliverables": [
+        {
+          "order": 1,
+          "deliverable": "Campus Operations workspace and access model",
+          "reason": "Admissions, finance, campus administrators and management perform different work from learners and instructors.",
+          "outcome": "Separate Campus Operations and LMS workspaces with role-based access, shared identity and clear data boundaries."
+        },
+        {
+          "order": 2,
+          "deliverable": "ERP selection, data mapping and integration",
+          "reason": "Student IDs, admissions, programmes, enrolments, fees and campuses cannot remain duplicated across independent systems.",
+          "outcome": "Documented source-of-truth rules, secure APIs, reconciliation, exception queues, retries and audit logs."
+        },
+        {
+          "order": 3,
+          "deliverable": "Student and staff service portals",
+          "reason": "A complete college website must support institutional services beyond online course playback.",
+          "outcome": "Students see their institutional profile, admission and fee status; staff access only the operational functions authorised for their roles."
+        },
+        {
+          "order": 4,
+          "deliverable": "Production-ready live classes",
+          "reason": "Self-paced learning is working, but live and blended programmes require reliable scheduling, attendance, recordings and reminders.",
+          "outcome": "Tested Google Meet, Zoom, Teams or streaming journeys with provider-aware joining, attendance evidence and recovery procedures."
+        },
+        {
+          "order": 5,
+          "deliverable": "Google Cloud, Workspace, Classroom and sign-in completion",
+          "reason": "Integration code cannot operate safely without institution-owned accounts, approved permissions, secure credentials and administration policy.",
+          "outcome": "Approved production configuration, account policy, scheduled sync processing, auditability and pilot acceptance."
+        },
+        {
+          "order": 6,
+          "deliverable": "Production email and SMS communications",
+          "reason": "Admissions, payments, live classes and learner reminders require traceable channels that do not depend on manual follow-up.",
+          "outcome": "Approved providers, templates, consent rules, preferences, delivery logs, retries, alerts and cost controls."
+        },
+        {
+          "order": 7,
+          "deliverable": "Payment and finance reconciliation",
+          "reason": "A successful online payment must result in the correct admission, fee and course-access state.",
+          "outcome": "Live payment configuration, verified webhooks, receipts, refunds and ERP-aligned reconciliation procedures."
+        },
+        {
+          "order": 8,
+          "deliverable": "Secure website content administration",
+          "reason": "News, events, campus information, forms and public content must be maintained by authorised staff rather than hardcoded or browser-local workflows.",
+          "outcome": "Server-backed content management with roles, validation, media storage, publication status and audit history."
+        },
+        {
+          "order": 9,
+          "deliverable": "Unified reporting, audit and integration monitoring",
+          "reason": "Management needs one trustworthy view and technical staff need to see failed synchronisation before operations are affected.",
+          "outcome": "Campus and executive reports, integration health, failure queues, retries, alerts and traceable activity logs."
+        },
+        {
+          "order": 10,
+          "deliverable": "Security, testing, training and phased rollout",
+          "reason": "Institutional data and daily workflows cannot be moved safely into production through code delivery alone.",
+          "outcome": "Permission review, backup and recovery, acceptance testing, staff training, pilot release and controlled campus rollout."
+        }
+      ],
+      "decisions": [
+        {
+          "order": 1,
+          "decision": "Select the ERP and confirm available APIs, support contacts and vendor obligations.",
+          "importance": "Integration design and achievable automation depend on the actual ERP contract and interfaces."
+        },
+        {
+          "order": 2,
+          "decision": "Define which system owns student identity, programme, enrolment, fee, staff and learning records.",
+          "importance": "Without ownership rules, synchronisation can overwrite correct data or create conflicting records."
+        },
+        {
+          "order": 3,
+          "decision": "Approve the first-release departments, roles and permissions.",
+          "importance": "The Campus Operations workspace must reflect real accountability across admissions, finance, campuses, academics and management."
+        },
+        {
+          "order": 4,
+          "decision": "Confirm Google Workspace administration and the preferred live-class providers.",
+          "importance": "Google sign-in, Classroom, Meet and account governance require institution-owned configuration and policy."
+        },
+        {
+          "order": 5,
+          "decision": "Approve production email, SMS, payment and infrastructure providers and budgets.",
+          "importance": "Provider accounts, transaction charges and sender approvals are institutional costs and cannot be supplied by application code."
+        },
+        {
+          "order": 6,
+          "decision": "Nominate departmental representatives and a pilot campus or programme.",
+          "importance": "Data mapping and operational acceptance require staff who understand current processes and can authorise changes."
+        },
+        {
+          "order": 7,
+          "decision": "Approve the four-month continuation and revised contract rate.",
+          "importance": "Continuous technical ownership is needed across integration, testing, training, rollout and stabilisation."
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "code-review",
+      "label": "Airads platform codebase assessment - July 20, 2026",
+      "query": {
+        "description": "Direct review of the current Django, React and Inertia platform across public, learning, operations and integration surfaces.",
+        "language": "Python, JavaScript and configuration",
+        "executed_at": "2026-07-20T12:00:00+10:00",
+        "tables_used": [
+          "application modules",
+          "frontend interfaces",
+          "configuration and tests"
+        ]
+      }
+    },
+    {
+      "id": "verification",
+      "label": "Focused platform verification - July 20, 2026",
+      "query": {
+        "description": "Django system check and 158 focused automated tests.",
+        "language": "Django system checks and pytest",
+        "executed_at": "2026-07-20T12:00:00+10:00",
+        "metric_definitions": [
+          "Focused tests passed: 158",
+          "Django system check issues: 0"
+        ],
+        "tables_used": [
+          "automated test suites",
+          "Django application configuration"
+        ]
+      }
+    },
+    {
+      "id": "readiness-query",
+      "label": "Capability readiness summary - July 20, 2026",
+      "query": {
+        "sql": "SELECT 'Operational software foundation' AS classification, 5 AS count UNION ALL SELECT 'Integration or production completion required', 3 UNION ALL SELECT 'Major capability not implemented', 2",
+        "description": "Groups the ten audited platform capability areas into the three readiness classifications defined in the detailed assessment table.",
+        "engine": "Django database connection",
+        "language": "SQL",
+        "executed_at": "2026-07-20T12:00:00+10:00",
+        "metric_definitions": [
+          "Count is the number of audited capability areas assigned to each classification after direct code review."
+        ],
+        "tables_used": [
+          "reviewed capability assessment"
+        ]
+      }
+    },
+    {
+      "id": "current-state-data",
+      "label": "Current capability assessment dataset",
+      "path": "airads_platform_report_evidence.sqlite",
+      "query": {
+        "sql": "SELECT order_num AS `order`, capability, status, evidence FROM current_state ORDER BY order_num",
+        "description": "Returns the ten capability assessments produced by the direct codebase review.",
+        "engine": "SQLite",
+        "language": "SQL",
+        "executed_at": "2026-07-20T12:00:00+10:00",
+        "tables_used": ["current_state"]
+      }
+    },
+    {
+      "id": "deliverables-data",
+      "label": "Required continuation deliverables dataset",
+      "path": "airads_platform_report_evidence.sqlite",
+      "query": {
+        "sql": "SELECT order_num AS `order`, deliverable, reason, outcome FROM deliverables ORDER BY order_num",
+        "description": "Returns the required continuation deliverables derived from the codebase gap assessment.",
+        "engine": "SQLite",
+        "language": "SQL",
+        "executed_at": "2026-07-20T12:00:00+10:00",
+        "tables_used": ["deliverables"]
+      }
+    },
+    {
+      "id": "decisions-data",
+      "label": "Required executive decisions dataset",
+      "path": "airads_platform_report_evidence.sqlite",
+      "query": {
+        "sql": "SELECT order_num AS `order`, decision, importance FROM decisions ORDER BY order_num",
+        "description": "Returns the executive and departmental decisions required to unblock platform completion.",
+        "engine": "SQLite",
+        "language": "SQL",
+        "executed_at": "2026-07-20T12:00:00+10:00",
+        "tables_used": ["decisions"]
+      }
+    }
+  ]
+}
