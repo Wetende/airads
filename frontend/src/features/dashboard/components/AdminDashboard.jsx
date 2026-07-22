@@ -178,7 +178,7 @@ const AdminDashboard = ({ firstName, recentActivity = [], stats = {} }) => {
                                 color: "#FFFFFF",
                                 background:
                                     "linear-gradient(145deg, #0C5AA6 0%, #082F63 100%)",
-                                boxShadow: "0 18px 34px rgba(33,64,154,0.24)",
+                                boxShadow: "0 18px 34px rgba(8,47,99,0.24)",
                             }}
                         >
                             <Typography
