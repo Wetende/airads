@@ -49,10 +49,10 @@ const History = () => {
   const campuses = [
     { name: "Eldoret Town Campus", isMain: true, students: "5,000+", established: "2006", icon: <AccountBalance fontSize="large" /> },
     { name: "Kericho Town Campus", isMain: false, students: "3,200+", established: "2012", icon: <LocationCity fontSize="large" /> },
-    { name: "Kisumu City Campus", isMain: false, students: "4,100+", established: "2014", icon: <LocationCity fontSize="large" /> },
+    { name: "Kisumu City Campus", isMain: false, students: "4,100+", established: "2008", icon: <LocationCity fontSize="large" /> },
     { name: "Nakuru City Campus", isMain: false, students: "3,800+", established: "2015", icon: <LocationCity fontSize="large" /> },
-    { name: "Bungoma Town Campus", isMain: false, students: "2,900+", established: "2017", icon: <LocationCity fontSize="large" /> },
-    { name: "Lodwar Campus", isMain: false, students: "1,500+", established: "2019", icon: <LocationCity fontSize="large" /> },
+    { name: "Bungoma Town Campus", isMain: false, students: "2,900+", established: "2010", icon: <LocationCity fontSize="large" /> },
+    { name: "Lodwar Campus", isMain: false, students: "1,500+", established: "2018", icon: <LocationCity fontSize="large" /> },
     { name: "Maralal Campus", isMain: false, students: "1,200+", established: "2020", icon: <LocationCity fontSize="large" /> }
   ];
 
