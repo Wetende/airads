@@ -14,7 +14,7 @@ const updates = [
   "NITA Short Courses Available — Enroll Today",
   "Industrial Attachment Placements Open for All Students",
   "Virtual Campus Now Open — Study from Anywhere",
-  "New Campus in Maralal — Bringing Education Closer to You",
+  "Maralal Campus",
 ];
 
 const NewsTicker = () => {
