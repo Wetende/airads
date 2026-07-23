@@ -1,4 +1,4 @@
-import { FONT_HEADING, FONT_BODY } from "@/config";
+import { FONT_ARCHIVO, FONT_HEADING, FONT_BODY } from "@/config";
 
 /**
  * LMS typography
@@ -101,3 +101,18 @@ export default function typography(theme) {
         },
     };
 }
+
+export const dashboardTypography = (theme) => {
+    const dashboard = typography(theme);
+
+    return {
+        ...dashboard,
+        fontFamily: FONT_ARCHIVO,
+        h1: { ...dashboard.h1, fontFamily: FONT_ARCHIVO },
+        h2: { ...dashboard.h2, fontFamily: FONT_ARCHIVO },
+        h3: { ...dashboard.h3, fontFamily: FONT_ARCHIVO },
+        h4: { ...dashboard.h4, fontFamily: FONT_ARCHIVO },
+        h5: { ...dashboard.h5, fontFamily: FONT_BODY },
+        h6: { ...dashboard.h6, fontFamily: FONT_BODY },
+    };
+};
