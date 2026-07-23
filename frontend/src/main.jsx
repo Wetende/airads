@@ -37,6 +37,10 @@ const featureMap = {
     "Dashboard/Assignments": "./features/dashboard/pages/Assignments.jsx",
     "Dashboard/Quizzes": "./features/dashboard/pages/Quizzes.jsx",
 
+    // Airads College Portal (product-only)
+    "CollegePortal/StudentDashboard":
+        "./features/college-portal/pages/StudentDashboard.jsx",
+
     // Course Builder
     "Instructor/Program/Manage": "./features/course-builder/pages/Builder.jsx",
 

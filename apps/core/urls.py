@@ -58,6 +58,11 @@ urlpatterns = [
     ),
     # Dashboard (authenticated)
     path("dashboard/", views.dashboard, name="dashboard"),
+    path(
+        "college/portal/",
+        views.airads_student_portal_dashboard,
+        name="airads.student_portal_dashboard",
+    ),
     # Admin Program Management
     path("admin/programs/", views.admin_programs, name="admin.programs"),
     path(

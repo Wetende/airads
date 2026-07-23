@@ -71,3 +71,20 @@ class TestDashboardViews(TestCase):
         assert response.status_code == 200
         data = response.json()
         assert data['component'] == 'Public/Home'
+
+    def test_college_student_portal_requires_authentication(self):
+        response = self.client.get(reverse('core:airads.student_portal_dashboard'))
+
+        assert response.status_code == 302
+        assert response.url.startswith('/login/')
+
+    def test_student_can_open_college_student_portal_design(self):
+        self.client.login(username="student@test.com", password="password123")
+
+        response = self.client.get(
+            reverse('core:airads.student_portal_dashboard'),
+            HTTP_X_INERTIA=True,
+        )
+
+        assert response.status_code == 200
+        assert response.json()['component'] == 'CollegePortal/StudentDashboard'

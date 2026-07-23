@@ -2086,6 +2086,12 @@ def dashboard(request):
     return render(request, "Dashboard", props)
 
 
+@login_required
+def airads_student_portal_dashboard(request):
+    """Render the Airads-owned college student portal design shell."""
+    return render(request, "CollegePortal/StudentDashboard")
+
+
 def _get_student_dashboard_data(user) -> dict:
     """Get dashboard data for students."""
     from apps.assessments.models import (
