@@ -18,9 +18,10 @@ from .utils import (
 
 
 try:
-    from apps.core.models import AdmissionApplication, Program
+    from apps.core.models import AdmissionApplication, Campus, Program
 except (ImportError, AttributeError):
     AdmissionApplication = None
+    Campus = None
     Program = None
 
 
@@ -65,8 +66,6 @@ def build_admin_admissions_report(request, filters: dict, selected_ids: list[str
     )
     if filters.get("status"):
         queryset = queryset.filter(status=filters["status"])
-    if filters.get("source"):
-        queryset = queryset.filter(source=filters["source"])
     if program_id:
         queryset = queryset.filter(program_id=program_id)
     if campus_id:
@@ -132,13 +131,18 @@ def build_admin_admissions_report(request, filters: dict, selected_ids: list[str
         program = Program.objects.filter(pk=program_id).first()
         program_label = program.name if program else str(program_id)
 
+    campus_label = "All"
+    if campus_id and Campus is not None:
+        campus = Campus.objects.filter(pk=campus_id).first()
+        campus_label = campus.name if campus else str(campus_id)
+
     return ReportResult(
         title="Admissions Applications Report",
         columns=list(ADMISSIONS_COLUMNS),
         rows=rows,
         filters={
             "Status": filters.get("status") or "All",
-            "Source": filters.get("source") or "All",
+            "Campus": campus_label,
             "Program": program_label,
             "Search": filters.get("search") or "None",
         },
@@ -158,7 +162,7 @@ if AdmissionApplication is not None:
             roles=("admin",),
             columns=ADMISSIONS_COLUMNS,
             builder=build_admin_admissions_report,
-            description="AIRADS admissions list by status, source, program, campus, and search.",
+            description="AIRADS admissions list by status, campus, program, and search.",
             orientation="landscape",
             shared_engine=False,
         )

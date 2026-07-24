@@ -552,13 +552,13 @@ class AdmissionOnboardingService:
             return queryset.filter(id__in=ids)
 
         status = str(filters.get("status") or "").strip()
-        source = str(filters.get("source") or "").strip()
+        campus = str(filters.get("campus") or "").strip()
         program = str(filters.get("program") or "").strip()
         search = str(filters.get("search") or "").strip()
         if status:
             queryset = queryset.filter(status=status)
-        if source:
-            queryset = queryset.filter(source=source)
+        if campus.isdigit():
+            queryset = queryset.filter(campus_id=int(campus))
         if program.isdigit():
             queryset = queryset.filter(program_id=int(program))
         if search:

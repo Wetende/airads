@@ -46,7 +46,7 @@ const AdminDashboard = ({ firstName, recentActivity = [], stats = {} }) => {
             <WelcomePanel
                 firstName={firstName}
                 title="Administration dashboard"
-                subtitle="Monitor Airads College, manage the learning community, and act on the work that needs attention."
+                subtitle="Manage your college."
                 actions={
                     <>
                         <Button

@@ -6,7 +6,7 @@ from django.core import mail
 from django.test import override_settings
 from django.urls import reverse
 
-from apps.core.models import AdmissionApplication, AdmissionOnboardingBatch, User
+from apps.core.models import AdmissionApplication, AdmissionOnboardingBatch, Campus, User
 from apps.core.tests.factories import UserFactory
 from apps.progression.models import Enrollment
 from apps.progression.tests.factories import ProgramFactory
@@ -234,17 +234,27 @@ def test_admin_can_preview_selected_applications_through_inertia_flow(client):
 def test_filtered_preview_snapshots_all_matching_applications(client):
     admin = UserFactory(admin=True)
     program = ProgramFactory(is_published=True, custom_pricing={"price": 0})
+    matching_campus = Campus.objects.create(
+        name="Matching Onboarding Campus",
+        slug="matching-onboarding-campus",
+    )
+    excluded_campus = Campus.objects.create(
+        name="Excluded Onboarding Campus",
+        slug="excluded-onboarding-campus",
+    )
     matching = create_application(
         program,
         email="match@example.com",
         status=AdmissionApplication.STATUS_NEW,
-        source="main_website",
+        campus=matching_campus,
+        preferred_campus=matching_campus.name,
     )
     create_application(
         program,
         email="excluded@example.com",
-        status=AdmissionApplication.STATUS_ACCEPTED,
-        source="main_website",
+        status=AdmissionApplication.STATUS_NEW,
+        campus=excluded_campus,
+        preferred_campus=excluded_campus.name,
     )
     client.force_login(admin)
 
@@ -256,9 +266,9 @@ def test_filtered_preview_snapshots_all_matching_applications(client):
                     "mode": "filters",
                     "filters": {
                         "status": AdmissionApplication.STATUS_NEW,
-                        "source": "main_website",
+                        "campus": str(matching_campus.id),
                         "program": str(program.id),
-                        "search": "match@example.com",
+                        "search": "",
                     },
                     "excludedIds": [],
                 }

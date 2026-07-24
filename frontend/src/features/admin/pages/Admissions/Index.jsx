@@ -31,6 +31,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import DataTable from '@/components/DataTable';
 import { formatAmount } from '@/services/commerceApi';
 import { ReportToolbar } from '@/features/reports';
+import AdmissionsMobileList from './AdmissionsMobileList';
 
 const statusColors = {
   new: 'info',
@@ -61,6 +62,20 @@ const enrollmentColors = {
   no_program: 'default',
 };
 
+const mobileFilterSx = {
+  flex: '0 0 auto',
+  '& .MuiOutlinedInput-root': {
+    bgcolor: 'background.paper',
+    borderRadius: 999,
+    fontSize: '0.72rem',
+    fontWeight: 600,
+    height: 34,
+  },
+  '& .MuiSelect-select': {
+    py: 0.75,
+  },
+};
+
 function formatDate(value) {
   return value ? new Date(value).toLocaleDateString() : '—';
 }
@@ -75,12 +90,12 @@ export default function AdmissionsIndex({
   filters = {},
   pagination = {},
   statusChoices = [],
-  sources = [],
+  campuses = [],
   onboardingBatches = [],
 }) {
   const [search, setSearch] = useState(filters.search || '');
   const [status, setStatus] = useState(filters.status || '');
-  const [source, setSource] = useState(filters.source || '');
+  const [campus, setCampus] = useState(filters.campus || '');
   const [program, setProgram] = useState(filters.program || '');
   const [selectedIds, setSelectedIds] = useState([]);
   const [onboardingMode, setOnboardingMode] = useState(null);
@@ -96,11 +111,19 @@ export default function AdmissionsIndex({
     ]);
   };
 
+  const handleSingleSelection = (id) => {
+    setSelectedIds((current) => (
+      current.includes(id)
+        ? current.filter((selectedId) => selectedId !== id)
+        : [...current, id]
+    ));
+  };
+
   const handleFilter = () => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (status) params.set('status', status);
-    if (source) params.set('source', source);
+    if (campus) params.set('campus', campus);
     if (program) params.set('program', program);
 
     setSelectedIds([]);
@@ -119,7 +142,7 @@ export default function AdmissionsIndex({
           filters: {
             search: filters.search || '',
             status: filters.status || '',
-            source: filters.source || '',
+            campus: filters.campus || '',
             program: filters.program || '',
           },
           excludedIds: [],
@@ -261,17 +284,44 @@ export default function AdmissionsIndex({
     <DashboardLayout role="admin" breadcrumbs={[{ label: 'Admissions' }]}>
       <Head title="Admissions" />
 
-      <Stack spacing={3}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+      <Stack spacing={{ xs: 2, md: 3 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
           <Box>
-            <Typography variant="h4" fontWeight="bold">
+            <Typography
+              variant="h4"
+              fontWeight="bold"
+              sx={{ fontSize: { xs: '1.25rem', md: '2.125rem' }, lineHeight: 1.15 }}
+            >
               Admissions
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Public applications, course-detail leads, payments, and enrollments
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.72rem', md: '0.875rem' }, mt: { xs: 0.25, md: 0 } }}
+            >
+              <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
+                Public applications, course-detail leads, payments, and enrollments
+              </Box>
+              <Box component="span" sx={{ display: { xs: 'inline', md: 'none' } }}>
+                Applications, leads, payments &amp; enrollments
+              </Box>
             </Typography>
           </Box>
-          <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            useFlexGap
+            flexWrap="wrap"
+            sx={{ display: { xs: 'none', md: 'flex' } }}
+          >
             <Button
               variant="contained"
               startIcon={<GroupAddIcon />}
@@ -294,7 +344,7 @@ export default function AdmissionsIndex({
               queryParams={{
                 search: filters.search,
                 status: filters.status,
-                source: filters.source,
+                campus: filters.campus,
                 program: filters.program,
               }}
             />
@@ -302,7 +352,107 @@ export default function AdmissionsIndex({
           </Stack>
         </Box>
 
-        <Card>
+        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+          <TextField
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search applicants..."
+            size="small"
+            fullWidth
+            slotProps={{
+              htmlInput: { 'aria-label': 'Search applicants' },
+            }}
+            onKeyDown={(event) => event.key === 'Enter' && handleFilter()}
+            sx={{
+              mb: 1,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                fontSize: '0.78rem',
+                height: 40,
+              },
+            }}
+          />
+          <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+            <FormControl size="small" sx={{ ...mobileFilterSx, minWidth: 86 }}>
+              <Select
+                value={status}
+                displayEmpty
+                onChange={(event) => setStatus(event.target.value)}
+                inputProps={{ 'aria-label': 'Filter by status' }}
+                renderValue={(value) => (
+                  value
+                    ? statusChoices.find((choice) => choice.value === value)?.label || value
+                    : 'Status'
+                )}
+              >
+                <MenuItem value="">All statuses</MenuItem>
+                {statusChoices.map((choice) => (
+                  <MenuItem key={choice.value} value={choice.value}>
+                    {choice.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ ...mobileFilterSx, minWidth: 92 }}>
+              <Select
+                value={campus}
+                displayEmpty
+                onChange={(event) => setCampus(event.target.value)}
+                inputProps={{ 'aria-label': 'Filter by campus' }}
+                renderValue={(value) => (
+                  value
+                    ? campuses.find((item) => String(item.id) === String(value))?.name || value
+                    : 'Campus'
+                )}
+              >
+                <MenuItem value="">All campuses</MenuItem>
+                {campuses.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ ...mobileFilterSx, minWidth: 88 }}>
+              <Select
+                value={program}
+                displayEmpty
+                onChange={(event) => setProgram(event.target.value)}
+                inputProps={{ 'aria-label': 'Filter by course' }}
+                renderValue={(value) => (
+                  value
+                    ? programs.find((item) => String(item.id) === String(value))?.name || value
+                    : 'Course'
+                )}
+              >
+                <MenuItem value="">All courses</MenuItem>
+                {programs.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button
+              variant="text"
+              size="small"
+              startIcon={<FilterListIcon sx={{ fontSize: '1rem !important' }} />}
+              onClick={handleFilter}
+              sx={{
+                borderRadius: 999,
+                fontSize: '0.72rem',
+                minHeight: 34,
+                minWidth: 74,
+                textTransform: 'none',
+              }}
+            >
+              Filter
+            </Button>
+          </Stack>
+        </Box>
+
+        <Card sx={{ display: { xs: 'none', md: 'block' } }}>
           <CardContent>
             <Stack
               direction={{ xs: 'column', lg: 'row' }}
@@ -333,12 +483,12 @@ export default function AdmissionsIndex({
                 </Select>
               </FormControl>
               <FormControl size="small" fullWidth sx={{ minWidth: { lg: 180 }, maxWidth: { lg: 240 } }}>
-                <InputLabel>Source</InputLabel>
-                <Select value={source} label="Source" onChange={(event) => setSource(event.target.value)}>
-                  <MenuItem value="">All Sources</MenuItem>
-                  {sources.map((value) => (
-                    <MenuItem key={value} value={value}>
-                      {sourceLabel(value)}
+                <InputLabel>Campus</InputLabel>
+                <Select value={campus} label="Campus" onChange={(event) => setCampus(event.target.value)}>
+                  <MenuItem value="">All Campuses</MenuItem>
+                  {campuses.map((item) => (
+                    <MenuItem key={item.id} value={item.id}>
+                      {item.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -362,7 +512,7 @@ export default function AdmissionsIndex({
         </Card>
 
         {onboardingBatches.length > 0 && (
-          <Card variant="outlined">
+          <Card variant="outlined" sx={{ display: { xs: 'none', md: 'block' } }}>
             <CardContent>
               <Stack
                 direction={{ xs: 'column', md: 'row' }}
@@ -393,19 +543,31 @@ export default function AdmissionsIndex({
           </Card>
         )}
 
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <DataTable
-            columns={columns}
-            rows={applications}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            actions={actions}
-            selectable
-            selectedIds={visibleSelectedIds}
-            onSelectionChange={handlePageSelection}
-            emptyMessage="No admission applications found"
-          />
-        </motion.div>
+        <AdmissionsMobileList
+          applications={applications}
+          pagination={pagination}
+          selectedIds={selectedIds}
+          onOpen={(id) => router.visit(`/admin/admissions/${id}/`)}
+          onPageChange={handlePageChange}
+          onSelectionChange={handleSingleSelection}
+          onOnboard={() => setOnboardingMode(selectedIds.length > 0 ? 'ids' : 'filters')}
+        />
+
+        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+            <DataTable
+              columns={columns}
+              rows={applications}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              actions={actions}
+              selectable
+              selectedIds={visibleSelectedIds}
+              onSelectionChange={handlePageSelection}
+              emptyMessage="No admission applications found"
+            />
+          </motion.div>
+        </Box>
       </Stack>
 
       <Dialog

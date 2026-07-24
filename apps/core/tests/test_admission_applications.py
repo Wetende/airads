@@ -661,6 +661,49 @@ def _create_paid_program(code="ADM-PAY-001", price=1500):
 
 
 @pytest.mark.django_db
+def test_admin_admissions_filters_by_campus_and_returns_campus_choices(client):
+    from apps.core.models import Campus
+
+    admin = UserFactory(admin=True)
+    selected_campus = Campus.objects.create(
+        name="Admissions Test Campus",
+        slug="admissions-test-campus",
+    )
+    other_campus = Campus.objects.create(
+        name="Other Admissions Campus",
+        slug="other-admissions-campus",
+    )
+    matching = _create_admission_application(
+        email="campus-match@example.com",
+        campus=selected_campus,
+        preferred_campus=selected_campus.name,
+    )
+    _create_admission_application(
+        email="other-campus@example.com",
+        campus=other_campus,
+        preferred_campus=other_campus.name,
+    )
+    client.force_login(admin)
+
+    response = client.get(
+        reverse("core:admin.admission_applications"),
+        {"campus": selected_campus.id},
+        HTTP_X_INERTIA=True,
+    )
+
+    assert response.status_code == 200
+    props = response.json()["props"]
+    assert [application["id"] for application in props["applications"]] == [
+        matching.id
+    ]
+    assert props["filters"]["campus"] == str(selected_campus.id)
+    assert {"id": selected_campus.id, "name": selected_campus.name} in props[
+        "campuses"
+    ]
+    assert "sources" not in props
+
+
+@pytest.mark.django_db
 def test_admin_can_link_existing_user_from_admission_application(client):
     student = UserFactory(username="existing-student", email="lead@example.com")
     admin = UserFactory(admin=True)

@@ -2816,7 +2816,7 @@ def admin_admission_applications(request):
         return redirect("/dashboard/")
 
     status = request.GET.get("status", "")
-    source = request.GET.get("source", "")
+    campus_id = request.GET.get("campus", "")
     program_id = request.GET.get("program", "")
     search = request.GET.get("search", "")
     try:
@@ -2830,7 +2830,7 @@ def admin_admission_applications(request):
     include_pagination = should_render_inertia_prop(request, "pagination")
     include_programs = should_render_inertia_prop(request, "programs")
     include_status_choices = should_render_inertia_prop(request, "statusChoices")
-    include_sources = should_render_inertia_prop(request, "sources")
+    include_campuses = should_render_inertia_prop(request, "campuses")
     include_onboarding_batches = should_render_inertia_prop(
         request,
         "onboardingBatches",
@@ -2846,8 +2846,8 @@ def admin_admission_applications(request):
 
     if status:
         applications_query = applications_query.filter(status=status)
-    if source:
-        applications_query = applications_query.filter(source=source)
+    if campus_id.isdigit():
+        applications_query = applications_query.filter(campus_id=int(campus_id))
     if program_id:
         applications_query = applications_query.filter(program_id=program_id)
     if search:
@@ -2877,7 +2877,7 @@ def admin_admission_applications(request):
     if include_filters:
         props["filters"] = {
             "status": status,
-            "source": source,
+            "campus": campus_id,
             "program": program_id,
             "search": search,
         }
@@ -2891,12 +2891,11 @@ def admin_admission_applications(request):
         )
     if include_status_choices:
         props["statusChoices"] = _admission_status_choices()
-    if include_sources:
-        props["sources"] = list(
-            AdmissionApplication.objects.exclude(source="")
-            .values_list("source", flat=True)
-            .distinct()
-            .order_by("source")
+    if include_campuses:
+        props["campuses"] = list(
+            Campus.objects.filter(is_active=True)
+            .order_by("campus_type", "name")
+            .values("id", "name")
         )
     if include_onboarding_batches:
         props["onboardingBatches"] = [
